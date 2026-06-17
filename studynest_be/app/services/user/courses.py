@@ -598,7 +598,7 @@ class CoursePublicService:
                         roles=["LECTURER"],
                         title=f"Học viên mới đăng ký khóa học '{course.title}' 🎉",
                         content=f"{user.fullname} ({user.email}) vừa đăng ký khóa học miễn phí của bạn.",
-                        url=f"/instructor/courses/{course.id}",
+                        url=f"/lecturer/courses/{course.id}",
                         type="course",
                         role_target=["LECTURER"],
                         metadata={

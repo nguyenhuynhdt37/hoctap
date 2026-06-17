@@ -7,8 +7,9 @@ import { useWebSocket } from '../hooks/websocket/useWebSocket';
 import { authService } from '../services/auth.service';
 import { notificationService } from '../services/notification.service';
 import * as Haptics from 'expo-haptics';
-import { showLocalNotification } from '../utils/notifications';
+import { showLocalNotification, requestNotificationPermissions, handleNotificationNavigation } from '../utils/notifications';
 import { resolveIPLocation, formatLocation } from '../utils/geo';
+import * as Notifications from 'expo-notifications';
 
 import { SecurityAlertModal } from '../../components/features/auth/SecurityAlertModal';
 
@@ -22,9 +23,16 @@ export function NotificationWS() {
   const clearTokens = useAuthStore(s => s.clearTokens);
   const addNotification = useNotificationStore(s => s.addNotification);
   const setNotifications = useNotificationStore(s => s.setNotifications);
+  const unreadCount = useNotificationStore(s => s.unreadCount);
+  
+  const unreadCountRef = useRef(unreadCount);
+  useEffect(() => {
+    unreadCountRef.current = unreadCount;
+  }, [unreadCount]);
 
   useEffect(() => {
     if (isAuthenticated && user) {
+      requestNotificationPermissions();
       notificationService.getNotifications({ limit: 20 })
         .then(res => {
           setNotifications(res.data.items, res.data.unread);
@@ -32,6 +40,30 @@ export function NotificationWS() {
         .catch(err => console.error('❌ [WS] Fetch initial notifications failed:', err));
     }
   }, [isAuthenticated, user, setNotifications]);
+
+  useEffect(() => {
+    // Handle app launch from notification (terminated state)
+    Notifications.getLastNotificationResponseAsync().then(response => {
+      if (response) {
+        const noti = response.notification.request.content.data as any;
+        if (noti) {
+          handleNotificationNavigation(noti.url || noti.url_, noti.action);
+        }
+      }
+    });
+
+    // Handle clicks while app is in background or active
+    const subscription = Notifications.addNotificationResponseReceivedListener(response => {
+      const noti = response.notification.request.content.data as any;
+      if (noti) {
+        handleNotificationNavigation(noti.url || noti.url_, noti.action);
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
 
   const role_name = user?.roles?.[0] || 'USER';
 
@@ -63,7 +95,7 @@ export function NotificationWS() {
     setAlertVisible(true);
   }, []);
 
-  const handleMessageRef = useRef<(data: any) => Promise<void>>();
+  const handleMessageRef = useRef<((data: any) => Promise<void>) | undefined>(undefined);
   
   const handleMessage = useCallback(async (data: any) => {
     if (handleMessageRef.current) {
@@ -150,6 +182,20 @@ export function NotificationWS() {
       }
 
       sendPresence('presence.away');
+
+      if (state === 'background') {
+        if (unreadCountRef.current > 0) {
+          showLocalNotification(
+            'Bạn có thông báo chưa đọc',
+            `Bạn có ${unreadCountRef.current} thông báo chưa đọc trong StudyNest.`
+          );
+        } else {
+          showLocalNotification(
+            'StudyNest đang chạy ngầm',
+            'Ứng dụng đang hoạt động để cập nhật bài học và thông báo mới cho bạn.'
+          );
+        }
+      }
     };
 
     const subscription = AppState.addEventListener('change', handleAppStateChange);

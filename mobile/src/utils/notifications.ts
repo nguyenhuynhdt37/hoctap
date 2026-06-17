@@ -1,12 +1,19 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+import { router } from 'expo-router';
 
 export async function requestNotificationPermissions() {
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
   let finalStatus = existingStatus;
   
   if (existingStatus !== 'granted') {
-    const { status } = await Notifications.requestPermissionsAsync();
+    const { status } = await Notifications.requestPermissionsAsync({
+      ios: {
+        allowAlert: true,
+        allowBadge: true,
+        allowSound: true,
+      },
+    });
     finalStatus = status;
   }
   
@@ -36,6 +43,7 @@ export async function showLocalNotification(title: string, body: string, data?: 
       priority: Notifications.AndroidNotificationPriority.MAX,
     },
     trigger: null, // show immediately
+    ...(Platform.OS === 'android' ? { channelId: 'default' } : {}),
   });
 }
 
@@ -49,3 +57,28 @@ Notifications.setNotificationHandler({
     shouldShowList: true,
   }),
 });
+
+export function handleNotificationNavigation(url?: string, action?: string) {
+  if (action === 'review_session') {
+    router.push('/(app)/profile' as any);
+    return;
+  }
+
+  if (!url) return;
+
+  // Map web URLs to mobile routes
+  if (url.startsWith('/learning/')) {
+    const slug = url.split('/').pop();
+    router.push(`/(app)/learning/${slug}` as any);
+  } 
+  else if (url === '/my-learning') {
+    router.push('/(app)/(tabs)/my-learn' as any);
+  }
+  else if (url.startsWith('/course/') || url.startsWith('/courses/')) {
+    const slug = url.split('/').pop();
+    router.push(`/(app)/course/${slug}` as any);
+  }
+  else if (url.includes('/wallets/') || url.includes('/refunds/')) {
+    router.push('/(app)/(tabs)/my-learn' as any);
+  }
+}

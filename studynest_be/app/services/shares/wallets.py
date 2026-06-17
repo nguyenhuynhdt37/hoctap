@@ -2,7 +2,7 @@ import uuid
 from datetime import timedelta
 from decimal import ROUND_HALF_UP, Decimal
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -63,6 +63,7 @@ class WalletsService:
         http,
         schema: PaymentCreateSchema,
         user_id: uuid.UUID,
+        request: Request = None,
     ):
         """
         Tạo giao dịch nạp ví PayPal (redirect flow)
@@ -103,8 +104,15 @@ class WalletsService:
             )
             usd_str = f"{usd_value:.2f}"
             # 2️⃣ Tạo order redirect PayPal
-            return_url = f"{settings.BACKEND_URL}/api/v1/wallets/callback"
-            cancel_url = f"{settings.BACKEND_URL}/api/v1/wallets/cancel"
+            if request:
+                proto = request.headers.get("x-forwarded-proto") or request.url.scheme
+                host = request.headers.get("x-forwarded-host") or request.headers.get("host") or request.url.netloc
+                base_url = f"{proto}://{host}"
+            else:
+                base_url = settings.BACKEND_URL
+
+            return_url = f"{base_url}/api/v1/wallets/callback"
+            cancel_url = f"{base_url}/api/v1/wallets/cancel"
 
             result = await paypal.create_order_redirect(
                 value=usd_str,

@@ -522,7 +522,7 @@ class TransactionsService:
                                 roles=roles,
                                 title="Đăng ký khóa học thành công 🎉",
                                 content=f"Bạn đã đăng ký khóa học '{course.title}' thành công.",
-                                url=f"/courses/{course.id}",
+                                url=f"/course/{course.slug}",
                                 type="course",
                                 role_target=["USER"],
                                 metadata={"course_id": str(course.id)},
@@ -536,7 +536,7 @@ class TransactionsService:
                                 roles=["LECTURER"],
                                 title=f"Học viên mới đăng ký khóa học '{course.title}' 🎉",
                                 content=f"Người dùng {user.fullname} ({user.email}) vừa đăng ký khóa học của bạn.",
-                                url=f"/instructor/courses/{course.id}",
+                                url=f"/lecturer/courses/{course.id}",
                                 type="course",
                                 role_target=["LECTURER"],
                                 metadata={
@@ -804,7 +804,7 @@ class TransactionsService:
                             roles=["LECTURER"],
                             title=f"Học viên mới đăng ký khóa học '{course.title}' 🎉",
                             content=f"Người dùng {user.fullname} ({user.email}) vừa đăng ký khóa học của bạn.",
-                            url=f"/instructor/courses/{course.id}",
+                            url=f"/lecturer/courses/{course.id}",
                             type="course",
                             role_target=["LECTURER"],
                             metadata={

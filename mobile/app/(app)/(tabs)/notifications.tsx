@@ -85,7 +85,7 @@ export default function NotificationsTab() {
       else if (targetPath === '/my-learning') {
         router.push('/(app)/(tabs)/my-learn' as any);
       }
-      else if (targetPath.startsWith('/course/')) {
+      else if (targetPath.startsWith('/course/') || targetPath.startsWith('/courses/')) {
         const slug = targetPath.split('/').pop();
         router.push(`/(app)/course/${slug}` as any);
       }

@@ -28,7 +28,7 @@ async def create_wallet_payment(
 ):
     user: User = await authorization_service.get_current_user()
     result = await payment_svc.create_payment_async(
-        request.app.state.http, schema=schema, user_id=user.id
+        request.app.state.http, schema=schema, user_id=user.id, request=request
     )
     return result
 
