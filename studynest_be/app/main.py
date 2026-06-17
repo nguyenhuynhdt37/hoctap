@@ -1,4 +1,6 @@
 from contextlib import asynccontextmanager
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
 
 import httpx
 import uvicorn

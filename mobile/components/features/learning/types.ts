@@ -3,6 +3,8 @@
  * Core types được sử dụng trong toàn bộ Learning Feature
  */
 
+import type { CodeExercise } from './types/code-lesson'
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // LESSON TYPES
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -22,6 +24,7 @@ export interface Lesson {
   file_id: string | null
   resources: LessonResource[]
   quizzes: Quiz[]
+  codes?: CodeExercise[]
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

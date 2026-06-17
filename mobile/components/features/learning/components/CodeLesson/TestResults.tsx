@@ -4,15 +4,14 @@
  */
 
 import React from 'react'
-import { View, ScrollView, Pressable } from 'react-native'
+import { View, ScrollView } from 'react-native'
 import { Feather } from '@expo/vector-icons'
 import { Text } from '@/components/ui'
-import type { TestCase } from '../../types/code-lesson'
-import type { CodeTestResult } from '../../types'
+import type { CodeLessonTestResult, TestCase } from '../../types/code-lesson'
 
 interface TestResultsProps {
   testcases: TestCase[]
-  testResult: CodeTestResult
+  testResult: CodeLessonTestResult
   isDark: boolean
 }
 
@@ -54,15 +53,24 @@ export function TestResults({ testcases, testResult, isDark }: TestResultsProps)
       {/* Test cases */}
       <ScrollView className="max-h-48" showsVerticalScrollIndicator={false}>
         <View className="p-4 gap-3">
-          {testcases.map((tc, idx) => {
+          {[...testcases].sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0)).map((tc, idx) => {
             const result = testResult.details.find(d => d.index === idx)
             const isPassed = result?.result === 'passed'
-            const isFailed = result?.result === 'failed'
+            const hasResult = Boolean(result)
+            const isFailed = hasResult && !isPassed
+            const isHidden = Boolean(tc.hidden)
+            const expected = tc.expected_output ?? tc.expected ?? ''
 
             return (
               <View
                 key={tc.id}
-                className={`p-3 rounded-lg ${isDark ? 'bg-zinc-800' : 'bg-gray-50'}`}
+                className={`p-3 rounded-lg border ${
+                  hasResult
+                    ? isPassed
+                      ? isDark ? 'bg-emerald-950/20 border-emerald-700' : 'bg-emerald-50 border-emerald-300'
+                      : isDark ? 'bg-rose-950/20 border-rose-700' : 'bg-rose-50 border-rose-300'
+                    : isDark ? 'bg-zinc-800 border-zinc-700' : 'bg-gray-50 border-gray-200'
+                }`}
               >
                 <View className="flex-row items-center justify-between mb-2">
                   <View className="flex-row items-center gap-2">
@@ -77,10 +85,20 @@ export function TestResults({ testcases, testResult, isDark }: TestResultsProps)
                     <Text className={`text-xs font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                       Test {idx + 1}
                     </Text>
+                    {tc.is_sample && (
+                      <View className="rounded bg-emerald-500/10 px-1.5 py-0.5">
+                        <Text className="text-[9px] font-bold text-emerald-600">Sample</Text>
+                      </View>
+                    )}
+                    {isHidden && (
+                      <View className="rounded bg-zinc-500/10 px-1.5 py-0.5">
+                        <Text className={`text-[9px] font-bold ${isDark ? 'text-zinc-300' : 'text-zinc-600'}`}>Hidden</Text>
+                      </View>
+                    )}
                   </View>
-                  <Text className={`text-[10px] font-medium ${isPassed ? 'text-emerald-600' : 'text-red-600'
+                  <Text className={`text-[10px] font-medium ${isPassed ? 'text-emerald-600' : hasResult ? 'text-red-600' : 'text-zinc-500'
                     }`}>
-                    {isPassed ? 'Passed' : 'Failed'}
+                    {hasResult ? (isPassed ? 'Passed' : 'Failed') : 'Chưa chạy'}
                   </Text>
                 </View>
 
@@ -89,29 +107,60 @@ export function TestResults({ testcases, testResult, isDark }: TestResultsProps)
                   <View className="flex-row">
                     <Text className="w-16 font-medium">Input:</Text>
                     <Text className={`font-mono flex-1 ${isDark ? 'text-zinc-300' : 'text-gray-800'}`}>
-                      {tc.input}
+                      {isHidden ? '•••' : tc.input || '∅'}
                     </Text>
                   </View>
                   <View className="flex-row">
                     <Text className="w-16 font-medium">Expected:</Text>
                     <Text className={`font-mono flex-1 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                      {tc.expected}
+                      {isHidden ? '•••' : expected || '∅'}
                     </Text>
                   </View>
-                  {isFailed && result?.output && (
+                  {!isHidden && result?.output !== undefined && (
                     <View className="flex-row">
                       <Text className="w-16 font-medium">Output:</Text>
                       <Text className={`font-mono flex-1 ${isDark ? 'text-red-400' : 'text-red-600'}`}>
-                        {result.output}
+                        {result.output || '(empty)'}
                       </Text>
                     </View>
                   )}
+                  {result?.stderr ? (
+                    <View className="flex-row">
+                      <Text className="w-16 font-medium">Error:</Text>
+                      <Text className={`font-mono flex-1 ${isDark ? 'text-red-400' : 'text-red-600'}`}>
+                        {result.stderr}
+                      </Text>
+                    </View>
+                  ) : null}
+                  {result?.error_message ? (
+                    <View className="flex-row">
+                      <Text className="w-16 font-medium">Error:</Text>
+                      <Text className={`font-mono flex-1 ${isDark ? 'text-red-400' : 'text-red-600'}`}>
+                        {result.error_message}
+                      </Text>
+                    </View>
+                  ) : null}
                 </View>
 
-                {/* Description */}
-                <Text className={`text-[10px] mt-2 ${isDark ? 'text-zinc-500' : 'text-gray-400'}`}>
-                  {tc.description}
-                </Text>
+                {result && (
+                  <View className="mt-2 flex-row flex-wrap gap-2">
+                    <Text className={`text-[10px] ${isDark ? 'text-zinc-400' : 'text-gray-500'}`}>
+                      CPU: {result.cpu_time ?? 0}ms
+                    </Text>
+                    <Text className={`text-[10px] ${isDark ? 'text-zinc-400' : 'text-gray-500'}`}>
+                      Memory: {((result.memory ?? 0) / 1000000).toFixed(2)} MB
+                    </Text>
+                    <Text className={`text-[10px] ${isDark ? 'text-zinc-400' : 'text-gray-500'}`}>
+                      Exit: {result.exit_code ?? 0}
+                    </Text>
+                  </View>
+                )}
+
+                {tc.description ? (
+                  <Text className={`text-[10px] mt-2 ${isDark ? 'text-zinc-500' : 'text-gray-400'}`}>
+                    {tc.description}
+                  </Text>
+                ) : null}
               </View>
             )
           })}

@@ -116,6 +116,10 @@ export function useLearning(courseId: string, initialData?: any, initialLessonId
 
   // Current lesson details - prioritize URL/sidebar selection, then backend active lesson.
   const currentLesson = useMemo(() => {
+    if (activeLessonData?.id && activeLessonData.id === activeLessonId) {
+      return activeLessonData
+    }
+
     if (curriculum && activeLessonId) {
       for (const section of curriculum.sections) {
         const lesson = section.lessons.find(l => l.id === activeLessonId)

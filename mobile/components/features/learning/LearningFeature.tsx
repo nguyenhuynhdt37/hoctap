@@ -3,21 +3,18 @@
  * Video Player + Tabs + Content + Sticky Bottom Navigation
  */
 
-import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react'
-import { View, ScrollView, Pressable, useColorScheme, RefreshControl } from 'react-native'
+import React, { useEffect, useState, useRef } from 'react'
+import { View, ScrollView, useColorScheme, RefreshControl } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Text } from '@/components/ui'
 
-// Hooks
 import { useLearning } from './hooks/useLearning'
-import * as Haptics from 'expo-haptics'
-
-// Components
 import { Header } from './components/Header'
 import { Sidebar } from './components/Sidebar'
 import { TabBar } from './components/TabBar'
 import { ContentTab } from './components/ContentTab'
 import { QuizLesson } from './components/QuizLessonView'
+import { CodeLesson } from './components/CodeLesson'
 import { QATab } from './components/QATab'
 import { ResourcesTab } from './components/ResourcesTab'
 import { NotesSection } from './components/NotesSection'
@@ -26,9 +23,7 @@ import { BottomNav } from './components/BottomNav'
 import { VideoLesson, VideoLessonRef } from './components/VideoLesson'
 import { Celebration } from './components/Celebration'
 import { QuizOverlay } from './components/VideoLesson/QuizOverlay'
-
-// Types
-import type { ContentTab as ContentTabType, LearningFeatureProps } from './types'
+import type { LearningFeatureProps } from './types'
 
 export function LearningFeature({ courseId, courseTitle, initialCourseInfo, initialLessonId, initialCommentId }: LearningFeatureProps) {
   const isDark = useColorScheme() === 'dark'
@@ -61,7 +56,6 @@ export function LearningFeature({ courseId, courseTitle, initialCourseInfo, init
     setShowQuizOverlay,
   } = useLearning(courseId, initialCourseInfo, initialLessonId)
 
-  // Tự động chuyển qua tab Hỏi đáp (qa) khi click từ thông báo
   useEffect(() => {
     if (initialLessonId && initialCommentId) {
       setActiveTab('qa')
@@ -81,7 +75,7 @@ export function LearningFeature({ courseId, courseTitle, initialCourseInfo, init
   const showVideo = currentLesson?.lesson_type === 'video' && currentLesson.file_id
 
   return (
-    <View 
+    <View
       className={`flex-1 ${isDark ? 'bg-zinc-950' : 'bg-white'}`}
       style={{ paddingTop: insets.top }}
     >
@@ -131,15 +125,16 @@ export function LearningFeature({ courseId, courseTitle, initialCourseInfo, init
         <View className="flex-1">
           {currentLesson && activeTab === 'content' && (
             currentLesson.lesson_type === 'quiz' ? (
-              <QuizLesson
+              <QuizLesson lesson={currentLesson} onMarkCompleted={onMarkCompleted} isDark={isDark} />
+            ) : currentLesson.lesson_type === 'code' ? (
+              <CodeLesson
                 lesson={currentLesson}
-                onMarkCompleted={onMarkCompleted}
                 isDark={isDark}
+                isCompleted={currentLesson.is_completed}
+                onMarkCompleted={onMarkCompleted}
               />
             ) : (
-              <ContentTab
-                lesson={currentLesson}
-              />
+              <ContentTab lesson={currentLesson} />
             )
           )}
 
@@ -152,8 +147,8 @@ export function LearningFeature({ courseId, courseTitle, initialCourseInfo, init
           )}
 
           {currentLesson && activeTab === 'notes' && (
-            <NotesSection 
-              lessonId={currentLesson.id} 
+            <NotesSection
+              lessonId={currentLesson.id}
               isDark={isDark}
               currentVideoTime={currentTime}
               onSeekToTime={(time) => videoRef.current?.seekTo(time)}
@@ -166,7 +161,7 @@ export function LearningFeature({ courseId, courseTitle, initialCourseInfo, init
         </View>
       </ScrollView>
 
-      <View 
+      <View
         className={`${isDark ? 'bg-zinc-950' : 'bg-white'}`}
         style={{ paddingBottom: Math.max(insets.bottom, 12) }}
       >
@@ -195,22 +190,18 @@ export function LearningFeature({ courseId, courseTitle, initialCourseInfo, init
         </View>
       )}
 
-      {/* Quiz Overlay - Rendered at root for full screen coverage */}
       {showQuizOverlay && currentLesson?.quizzes && currentLesson.quizzes.length > 0 && (
         <QuizOverlay
           quizzes={currentLesson.quizzes}
           onFinish={(score, passed) => {
             setShowQuizOverlay(false)
-            if (passed) {
-              onMarkCompleted(currentLesson.id)
-            }
+            if (passed) onMarkCompleted(currentLesson.id)
           }}
           onClose={() => setShowQuizOverlay(false)}
           isDark={isDark}
         />
       )}
 
-      {/* Pháo hoa chúc mừng - Phải nằm ở cuối cùng để nổi nhất */}
       <Celebration
         visible={celebration.visible}
         type={celebration.type}
