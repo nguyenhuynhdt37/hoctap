@@ -2,10 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'expo-router'
 import * as Haptics from 'expo-haptics'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { courseService } from '@/src/services/course.service'
 import { learningService } from '../services/learning.service'
 import type { Lesson, ContentTab, PrevNextLesson, CourseCurriculum } from '../types'
 
-export function useLearning(courseId: string, initialData?: any) {
+export function useLearning(courseId: string, initialData?: any, initialLessonId?: string) {
   const router = useRouter()
   const queryClient = useQueryClient()
 
@@ -114,16 +115,16 @@ export function useLearning(courseId: string, initialData?: any) {
   // DERIVED DATA
   // ─────────────────────────────────────────────────────────────────────────────
 
-  // Current lesson details - prioritize activeLessonData from backend
+  // Current lesson details - prioritize URL/sidebar selection, then backend active lesson.
   const currentLesson = useMemo(() => {
-    if (activeLessonData) return activeLessonData
-    
-    if (!curriculum || !activeLessonId) return null
-    for (const section of curriculum.sections) {
-      const lesson = section.lessons.find(l => l.id === activeLessonId)
-      if (lesson) return lesson
+    if (curriculum && activeLessonId) {
+      for (const section of curriculum.sections) {
+        const lesson = section.lessons.find(l => l.id === activeLessonId)
+        if (lesson) return lesson
+      }
     }
-    return null
+
+    return activeLessonData ?? null
   }, [curriculum, activeLessonId, activeLessonData])
 
   // Progress
@@ -135,7 +136,9 @@ export function useLearning(courseId: string, initialData?: any) {
 
   // Set active lesson ID when data is loaded
   useEffect(() => {
-    if (activeLessonData?.id) {
+    if (initialLessonId && curriculum?.sections.some(section => section.lessons.some(lesson => lesson.id === initialLessonId))) {
+      setActiveLessonId(initialLessonId)
+    } else if (activeLessonData?.id) {
       setActiveLessonId(activeLessonData.id)
     } else if (curriculum && !activeLessonId) {
       const first = curriculum.sections
@@ -143,7 +146,7 @@ export function useLearning(courseId: string, initialData?: any) {
         .find(l => !l.is_locked)
       if (first) setActiveLessonId(first.id)
     }
-  }, [curriculum, activeLessonData, activeLessonId])
+  }, [curriculum, activeLessonData, activeLessonId, initialLessonId])
 
   // ─────────────────────────────────────────────────────────────────────────────
   // ACTIONS

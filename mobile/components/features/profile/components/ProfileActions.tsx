@@ -110,7 +110,7 @@ export function ProfileActions({ onEdit }: { onEdit: () => void }) {
     // Coming soon features - show alert
     learning: () => { },
     favorites: () => router.push('/(app)/favorites' as any),
-    instructor: () => { },
+    instructor: () => router.push('/(lecturer)/lecturer' as any),
     messages: () => { },
     account_settings: () => { },
     wallet: () => router.push('/(app)/wallet' as any),
@@ -122,6 +122,9 @@ export function ProfileActions({ onEdit }: { onEdit: () => void }) {
   return (
     <View className="px-6 mb-[100px]">
       {SECTIONS.map((section, sIdx) => (
+        (() => {
+          const sectionLabel = (section as { label?: string }).label
+          return (
         <MotiView
           key={section.title}
           from={{ opacity: 0, scale: 0.95 }}
@@ -134,11 +137,11 @@ export function ProfileActions({ onEdit }: { onEdit: () => void }) {
             <Text className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">
               {t(`profile_screen.sections.${section.title}`)}
             </Text>
-            {section.label && (
+            {sectionLabel && (
               <View className="ml-auto mr-2">
                 <View className={`px-3 py-1 rounded-full ${isDark ? 'bg-emerald-500/10' : 'bg-emerald-50'}`}>
                   <Text className="text-[9px] font-bold text-emerald-500 uppercase tracking-wider">
-                    {t(section.label)}
+                    {t(sectionLabel)}
                   </Text>
                 </View>
               </View>
@@ -147,6 +150,7 @@ export function ProfileActions({ onEdit }: { onEdit: () => void }) {
 
           <View className={`rounded-[48px] overflow-hidden border ${isDark ? 'bg-zinc-900/40 border-white/5' : 'bg-white border-zinc-100'}`}>
             {section.items.map((item, iIdx) => {
+              const badge = (item as { badge?: string | null }).badge
               const label = item.key.includes('.')
                 ? t(`profile_screen.${item.key}`)
                 : t(`profile_screen.${item.key}`)
@@ -156,7 +160,7 @@ export function ProfileActions({ onEdit }: { onEdit: () => void }) {
                   <MenuItem
                     Icon={item.Icon}
                     label={label}
-                    badge={item.badge}
+                    badge={badge}
                     index={iIdx}
                     total={section.items.length}
                     isDark={isDark}
@@ -176,6 +180,8 @@ export function ProfileActions({ onEdit }: { onEdit: () => void }) {
             })}
           </View>
         </MotiView>
+          )
+        })()
       ))}
     </View>
   )

@@ -1,5 +1,5 @@
 import { api as axiosClient } from './api';
-import { Course } from '../types/course';
+import type { NewestCourse as Course } from '../types/course';
 
 export interface FavoritesResponse {
   items: Course[];

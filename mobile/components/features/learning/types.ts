@@ -153,4 +153,5 @@ export interface LearningFeatureProps {
   courseId: string
   courseTitle: string
   initialCourseInfo?: any
+  initialLessonId?: string
 }

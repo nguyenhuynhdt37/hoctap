@@ -293,6 +293,215 @@
       "description": "Chúng tôi sẽ thông báo cho bạn khi có tin mới."
     }
   },
+  "search": {
+    "eyebrow": "Khám phá",
+    "title": "Global Search",
+    "placeholder": "Tìm màn hình, khóa học, bài học, ví...",
+    "results_count": "{{count}} kết quả phù hợp",
+    "loading": {
+      "indexing": "Đang lập chỉ mục..."
+    },
+    "idle": {
+      "title": "Tìm kiếm toàn app",
+      "description": "Nhập từ khóa để tìm màn hình, khóa học, bài học, ví, thông báo và cài đặt."
+    },
+    "empty": {
+      "title": "Không tìm thấy",
+      "description": "Thử từ khóa khác, có dấu hoặc không dấu đều được."
+    },
+    "error": {
+      "title": "Kết nối thất bại",
+      "description": "Không thể tải dữ liệu tìm kiếm từ API."
+    },
+    "filters": {
+      "all": "Tất cả",
+      "course": "Khóa học",
+      "lesson": "Bài học",
+      "category": "Danh mục",
+      "topic": "Chủ đề",
+      "wallet": "Ví",
+      "transaction": "Giao dịch",
+      "notification": "Thông báo",
+      "screen": "Màn hình",
+      "feature": "Chức năng"
+    },
+    "types": {
+      "screen": "Màn hình",
+      "tab": "Tab",
+      "menu": "Menu",
+      "feature": "Chức năng",
+      "route": "Route",
+      "category": "Danh mục",
+      "topic": "Chủ đề",
+      "course": "Khóa học",
+      "lesson": "Bài học",
+      "profile": "Hồ sơ",
+      "wallet": "Ví",
+      "transaction": "Giao dịch",
+      "notification": "Thông báo",
+      "setting": "Cài đặt",
+      "language": "Ngôn ngữ"
+    }
+  },
+  "lecturer": {
+    "role": "Giảng viên",
+    "title": "Khu giảng viên",
+    "subtitle": "Quản lý khóa học, học viên, doanh thu và vận hành giảng dạy trên mobile.",
+    "home": {
+      "badge": "STUDYNEST CREATOR",
+      "heading": "Studio giảng dạy",
+      "description": "Trải nghiệm riêng cho giảng viên, tối ưu thao tác nhanh trên điện thoại."
+    },
+    "screens": {
+      "home": { "title": "Studio", "subtitle": "Trung tâm điều hướng cho toàn bộ nghiệp vụ giảng viên." },
+      "dashboard": { "title": "Dashboard", "subtitle": "Tổng quan hiệu suất, doanh thu, học viên và khóa học." },
+      "courses": { "title": "Khóa học", "subtitle": "Quản lý, lọc, tạo mới và theo dõi hiệu quả khóa học." },
+      "course-create": { "title": "Tạo khóa học", "subtitle": "Form mẫu cho thông tin cơ bản, giá, mô tả và mục tiêu." },
+      "course-edit": { "title": "Chỉnh sửa khóa học", "subtitle": "Cập nhật nội dung và trạng thái khóa học." },
+      "course-stats": { "title": "Thống kê khóa học", "subtitle": "Doanh thu, học viên, đánh giá và tiến độ theo khóa học." },
+      "course-students": { "title": "Học viên", "subtitle": "Danh sách học viên đã đăng ký khóa học." },
+      "student-detail": { "title": "Chi tiết học viên", "subtitle": "Tiến độ học, bài hiện tại và hoạt động gần đây." },
+      "chapters": { "title": "Chương & bài học", "subtitle": "Quản lý cấu trúc chương, bài học video, quiz và code." },
+      "lesson-create": { "title": "Tạo bài học", "subtitle": "Tạo bài video, quiz hoặc code lesson." },
+      "lesson-edit": { "title": "Sửa bài học", "subtitle": "Cập nhật nội dung, preview và tài nguyên bài học." },
+      "quizzes": { "title": "Quiz", "subtitle": "Quản lý câu hỏi kiểm tra trong bài học." },
+      "resources": { "title": "Tài nguyên", "subtitle": "Quản lý file PDF, ZIP và link đính kèm bài học." },
+      "discounts": { "title": "Mã giảm giá", "subtitle": "Tạo, lọc, bật tắt và theo dõi mã giảm giá." },
+      "discount-create": { "title": "Tạo mã giảm giá", "subtitle": "Thiết lập loại giảm giá, thời hạn và khóa học áp dụng." },
+      "discount-edit": { "title": "Sửa mã giảm giá", "subtitle": "Cập nhật trạng thái và điều kiện áp dụng mã." },
+      "wallet": { "title": "Ví giảng viên", "subtitle": "Theo dõi số dư, tiền giữ và giao dịch." },
+      "wallet-detail": { "title": "Chi tiết giao dịch", "subtitle": "Thông tin giao dịch và thu nhập giảng viên." },
+      "withdraw": { "title": "Rút tiền", "subtitle": "Danh sách yêu cầu rút tiền và trạng thái xử lý." },
+      "withdraw-create": { "title": "Tạo yêu cầu rút tiền", "subtitle": "Nhập số tiền, PayPal và ghi chú." },
+      "refunds": { "title": "Hoàn tiền", "subtitle": "Xử lý yêu cầu hoàn tiền từ học viên." },
+      "refund-detail": { "title": "Chi tiết hoàn tiền", "subtitle": "Duyệt hoặc từ chối yêu cầu hoàn tiền." },
+      "holds": { "title": "Tiền giữ", "subtitle": "Theo dõi khoản giữ chờ đối soát hoặc hoàn tiền." },
+      "notifications": { "title": "Thông báo", "subtitle": "Tin mới dành cho vai trò giảng viên." },
+      "profile": { "title": "Hồ sơ giảng viên", "subtitle": "Cập nhật hồ sơ, mô tả chuyên môn và thông tin thanh toán." },
+      "payouts": { "title": "Payouts", "subtitle": "Lịch sử chi trả và đối soát doanh thu." },
+      "welcome": { "title": "Trở thành giảng viên", "subtitle": "Màn chào mừng và thiết lập ban đầu cho giảng viên." }
+    },
+    "nav": {
+      "dashboard": "Dashboard",
+      "courses": "Khóa học",
+      "chapters": "Chương",
+      "lessons": "Bài học",
+      "discounts": "Mã giảm giá",
+      "wallet": "Ví",
+      "refunds": "Hoàn tiền",
+      "holds": "Tiền giữ",
+      "resources": "Tài nguyên",
+      "notifications": "Thông báo",
+      "profile": "Hồ sơ"
+    },
+    "nav_desc": {
+      "dashboard": "KPI và biểu đồ",
+      "courses": "Tạo và quản lý",
+      "chapters": "Cấu trúc học",
+      "lessons": "Video, quiz, code",
+      "discounts": "Chiến dịch bán hàng",
+      "wallet": "Số dư và giao dịch",
+      "refunds": "Yêu cầu hoàn tiền",
+      "holds": "Khoản đang giữ",
+      "resources": "File bài học",
+      "notifications": "Tin mới",
+      "profile": "Thông tin giảng viên"
+    },
+    "metrics": {
+      "revenue": "Doanh thu",
+      "students": "Học viên",
+      "courses": "Khóa học",
+      "reviews": "Đánh giá",
+      "rating": "Rating",
+      "sections": "chương",
+      "lessons": "bài"
+    },
+    "status": {
+      "approved": "Đã duyệt",
+      "pending": "Chờ duyệt",
+      "draft": "Nháp",
+      "rejected": "Từ chối"
+    },
+    "actions": {
+      "create_course": "Tạo khóa học mới",
+      "create_withdraw": "Tạo yêu cầu rút tiền",
+      "save_draft": "Lưu bản nháp"
+    },
+    "search": {
+      "courses": "Tìm khóa học..."
+    },
+    "dashboard": {
+      "revenue_chart": "Biểu đồ doanh thu",
+      "course_performance": "Hiệu suất khóa học"
+    },
+    "course": {
+      "create": "Thông tin khóa học mới",
+      "edit": "Form chỉnh sửa khóa học",
+      "stats": "Thống kê khóa học",
+      "students": "Danh sách học viên",
+      "form_hint": "UI mẫu bám theo form web, sẵn sàng nối API sau."
+    },
+    "lesson": {
+      "create": "Form tạo bài học",
+      "edit": "Form chỉnh sửa bài học",
+      "types": "Chọn loại bài học và nhập nội dung.",
+      "video": "Video",
+      "quiz": "Quiz",
+      "code": "Code"
+    },
+    "quiz": { "title": "Bộ câu hỏi" },
+    "resources": { "title": "Tài nguyên bài học" },
+    "discounts": { "title": "Danh sách mã giảm giá" },
+    "wallet": {
+      "available": "Có thể rút",
+      "holding": "Đang giữ",
+      "transactions": "Giao dịch gần đây"
+    },
+    "refunds": { "title": "Yêu cầu hoàn tiền" },
+    "holds": { "title": "Khoản tiền đang giữ" },
+    "notifications": { "title": "Thông báo giảng viên" },
+    "profile": {
+      "initials": "GV",
+      "mock_name": "Giảng viên mẫu",
+      "description": "Hồ sơ chuyên môn hiển thị với học viên và hệ thống xét duyệt."
+    },
+    "welcome": { "title": "Chào mừng giảng viên" },
+    "validity": {
+      "running": "Đang chạy",
+      "upcoming": "Sắp diễn ra",
+      "expired": "Hết hạn"
+    },
+    "form": {
+      "placeholder": "Nhập dữ liệu mẫu",
+      "title": "Tiêu đề",
+      "category": "Danh mục",
+      "price": "Giá bán",
+      "description": "Mô tả",
+      "requirements": "Yêu cầu",
+      "outcomes": "Kết quả học tập",
+      "lesson_title": "Tên bài học",
+      "lesson_type": "Loại bài",
+      "duration": "Thời lượng",
+      "preview": "Cho xem trước",
+      "content": "Nội dung",
+      "code": "Mã giảm giá",
+      "discount_type": "Loại giảm",
+      "value": "Giá trị",
+      "start_date": "Ngày bắt đầu",
+      "end_date": "Ngày kết thúc",
+      "target_courses": "Khóa học áp dụng",
+      "amount": "Số tiền",
+      "paypal_email": "PayPal email",
+      "note": "Ghi chú",
+      "decision": "Quyết định",
+      "lecturer_comment": "Nhận xét giảng viên",
+      "evidence": "Minh chứng",
+      "fullname": "Họ tên",
+      "headline": "Chức danh",
+      "bio": "Giới thiệu",
+      "expertise": "Chuyên môn"
+    }
+  },
   "favorites_screen": {
     "title": "Khóa học yêu thích",
     "personal": "Cá nhân",
