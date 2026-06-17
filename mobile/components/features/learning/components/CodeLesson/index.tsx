@@ -23,6 +23,14 @@ interface CodeLessonProps {
   onMarkCompleted: (lessonId: string) => void
 }
 
+type CodeLessonPanel = 'problem' | 'code' | 'results'
+
+const CODE_PANELS: { id: CodeLessonPanel; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { id: 'problem', label: 'Đề', icon: 'document-text-outline' },
+  { id: 'code', label: 'Code', icon: 'code-slash-outline' },
+  { id: 'results', label: 'Kết quả', icon: 'checkmark-done-outline' },
+]
+
 function normalizeExercise(exercise: CodeExercise, index: number): CodeExercise {
   return {
     ...exercise,
@@ -74,7 +82,7 @@ export function CodeLesson({ lesson, isDark, isCompleted, onMarkCompleted }: Cod
   const [isRunning, setIsRunning] = useState(false)
   const [testResult, setTestResult] = useState<CodeLessonTestResult | null>(null)
   const [showCelebration, setShowCelebration] = useState(false)
-  const [showInfo, setShowInfo] = useState(true)
+  const [activePanel, setActivePanel] = useState<CodeLessonPanel>('problem')
   const [exercisePassStatus, setExercisePassStatus] = useState<Record<string, boolean>>({})
   const prevFileIdRef = useRef<string | null>(null)
   const isSavingRef = useRef(false)
@@ -87,6 +95,7 @@ export function CodeLesson({ lesson, isDark, isCompleted, onMarkCompleted }: Cod
     setInitialFileContents({})
     setSavedFileContents({})
     setTestResult(null)
+    setActivePanel('problem')
     hasCalledCompleteRef.current = false
   }, [lesson.id])
 
@@ -271,6 +280,7 @@ export function CodeLesson({ lesson, isDark, isCompleted, onMarkCompleted }: Cod
       })
 
       setTestResult(response)
+      setActivePanel('results')
 
       const nextPassPercent = response.total > 0
         ? Math.round((response.passed / response.total) * 100)
@@ -327,6 +337,7 @@ export function CodeLesson({ lesson, isDark, isCompleted, onMarkCompleted }: Cod
     setCurrentExerciseIndex(index)
     setActiveFileId(null)
     setTestResult(null)
+    setActivePanel('problem')
   }, [saveCurrentFileIfChanged])
 
   if (exercisesWithPassStatus.length === 0) {
@@ -374,150 +385,191 @@ export function CodeLesson({ lesson, isDark, isCompleted, onMarkCompleted }: Cod
       </View>
 
       {currentExercise && (
-        <View className={`px-4 py-3 ${isDark ? 'bg-zinc-800' : 'bg-gray-50'} border-b ${isDark ? 'border-zinc-800' : 'border-gray-200'}`}>
-          <View className="flex-row items-start justify-between gap-3">
-            <View className="flex-1">
-              <Text className={`text-sm font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                {currentExercise.title}
-              </Text>
-              <View className="mt-2 flex-row flex-wrap gap-2">
-                <View className="rounded-full bg-emerald-500/10 px-2.5 py-1">
-                  <Text className="text-[10px] font-bold text-emerald-600">
-                    {currentExercise.language.name} {currentExercise.language.version}
+        <View className={`border-b px-4 py-3 ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-gray-200'}`}>
+          <Text className={`text-sm font-bold ${isDark ? 'text-white' : 'text-gray-900'}`} numberOfLines={1}>
+            {currentExercise.title}
+          </Text>
+
+          <View className={`mt-3 flex-row rounded-2xl p-1 ${isDark ? 'bg-zinc-800' : 'bg-gray-100'}`}>
+            {CODE_PANELS.map(panel => {
+              const active = activePanel === panel.id
+              return (
+                <Pressable
+                  key={panel.id}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                    setActivePanel(panel.id)
+                  }}
+                  className={`flex-1 flex-row items-center justify-center gap-1.5 rounded-xl py-2 ${
+                    active ? 'bg-emerald-500' : 'bg-transparent'
+                  }`}
+                >
+                  <Ionicons
+                    name={panel.icon}
+                    size={15}
+                    color={active ? '#FFFFFF' : isDark ? '#A1A1AA' : '#71717A'}
+                  />
+                  <Text className={`text-xs font-bold ${active ? 'text-white' : isDark ? 'text-zinc-300' : 'text-zinc-600'}`}>
+                    {panel.label}
                   </Text>
-                </View>
-                <View className="rounded-full bg-amber-500/10 px-2.5 py-1">
-                  <Text className="text-[10px] font-bold text-amber-600">
-                    {formatLimitMs(currentExercise.time_limit)}
-                  </Text>
-                </View>
-                <View className="rounded-full bg-sky-500/10 px-2.5 py-1">
-                  <Text className="text-[10px] font-bold text-sky-600">
-                    {formatMemory(currentExercise.memory_limit)}
-                  </Text>
-                </View>
-                <View className="rounded-full bg-zinc-500/10 px-2.5 py-1">
-                  <Text className={`text-[10px] font-bold ${isDark ? 'text-zinc-300' : 'text-zinc-600'}`}>
-                    {difficultyLabel(currentExercise.difficulty)}
-                  </Text>
-                </View>
+                </Pressable>
+              )
+            })}
+          </View>
+        </View>
+      )}
+
+      {currentExercise && activePanel === 'problem' && (
+        <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+          <View className="p-4 gap-4">
+            <View className="flex-row flex-wrap gap-2">
+              <View className="rounded-full bg-emerald-500/10 px-2.5 py-1">
+                <Text className="text-[10px] font-bold text-emerald-600">
+                  {currentExercise.language.name} {currentExercise.language.version}
+                </Text>
+              </View>
+              <View className="rounded-full bg-amber-500/10 px-2.5 py-1">
+                <Text className="text-[10px] font-bold text-amber-600">
+                  {formatLimitMs(currentExercise.time_limit)}
+                </Text>
+              </View>
+              <View className="rounded-full bg-sky-500/10 px-2.5 py-1">
+                <Text className="text-[10px] font-bold text-sky-600">
+                  {formatMemory(currentExercise.memory_limit)}
+                </Text>
+              </View>
+              <View className="rounded-full bg-zinc-500/10 px-2.5 py-1">
+                <Text className={`text-[10px] font-bold ${isDark ? 'text-zinc-300' : 'text-zinc-600'}`}>
+                  {difficultyLabel(currentExercise.difficulty)}
+                </Text>
               </View>
             </View>
 
-            <Pressable
-              onPress={() => setShowInfo(prev => !prev)}
-              className={`px-3 py-1.5 rounded-full ${isDark ? 'bg-zinc-700' : 'bg-white'}`}
-            >
-              <Text className={`text-xs font-bold ${isDark ? 'text-zinc-200' : 'text-zinc-700'}`}>
-                {showInfo ? 'Ẩn mô tả' : 'Mô tả'}
+            <View className={`rounded-2xl border p-4 ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-gray-200'}`}>
+              <Text className={`mb-3 text-sm font-bold ${isDark ? 'text-zinc-100' : 'text-gray-900'}`}>
+                Đề bài
               </Text>
-            </Pressable>
-          </View>
-
-          {showInfo && (
-            <View className={`mt-3 rounded-xl border p-3 ${isDark ? 'bg-zinc-900 border-zinc-700' : 'bg-white border-gray-200'}`}>
               {currentExercise.description ? (
                 <MarkdownRenderer content={currentExercise.description} />
               ) : (
                 <Text className="text-xs italic text-zinc-500">Chưa có mô tả</Text>
               )}
-              {testResult && (
-                <View className={`mt-3 rounded-lg p-3 ${isDark ? 'bg-emerald-950/20' : 'bg-emerald-50'}`}>
-                  <Text className="text-xs font-bold text-emerald-600">
-                    Kết quả: {testResult.passed}/{testResult.total} passed ({passPercent}%)
+            </View>
+
+            {testResult && (
+              <View className={`rounded-2xl border p-4 ${isDark ? 'bg-emerald-950/20 border-emerald-800' : 'bg-emerald-50 border-emerald-200'}`}>
+                <Text className="text-xs font-bold text-emerald-600">
+                  Kết quả gần nhất: {testResult.passed}/{testResult.total} passed ({passPercent}%)
+                </Text>
+              </View>
+            )}
+          </View>
+        </ScrollView>
+      )}
+
+      {currentExercise && activePanel === 'code' && (
+        <KeyboardAvoidingView
+          className="flex-1"
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={100}
+        >
+          {currentExercise.files.length > 1 && (
+            <FileTabs
+              files={currentUserFiles}
+              activeFileId={activeFileId}
+              onSelectFile={setActiveFileId}
+              isDark={isDark}
+            />
+          )}
+
+          <View className={`flex-1 p-4 ${isDark ? 'bg-zinc-950' : 'bg-gray-900'}`}>
+            <View className="flex-1">
+              <View className="mb-2 flex-row items-center justify-between">
+                <View className="flex-row items-center gap-2">
+                  <Ionicons name="code-slash" size={16} color="#10B981" />
+                  <Text className="text-xs font-medium text-zinc-400">
+                    {activeFile?.filename || 'solution'}
                   </Text>
+                  {activeFile?.is_main && (
+                    <View className="rounded bg-emerald-500/20 px-1.5 py-0.5">
+                      <Text className="text-[9px] font-bold text-emerald-400">main</Text>
+                    </View>
+                  )}
                 </View>
-              )}
+                <Text className="text-[10px] text-zinc-500">
+                  {currentExercise?.language.name}
+                </Text>
+              </View>
+
+              <TextInput
+                value={currentCode}
+                onChangeText={handleCodeChange}
+                multiline
+                autoCapitalize="none"
+                autoCorrect={false}
+                spellCheck={false}
+                textAlignVertical="top"
+                className="flex-1 font-mono text-sm leading-6 text-green-400"
+                placeholder="// Write your code here..."
+                placeholderTextColor="#52525B"
+                style={{ fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}
+              />
+            </View>
+          </View>
+
+          <View className={`px-4 py-3 flex-row items-center gap-3 ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-gray-100 border-gray-200'} border-t`}>
+            <Pressable
+              onPress={handleReset}
+              className={`px-4 py-2.5 rounded-xl ${isDark ? 'bg-zinc-800' : 'bg-white'}`}
+            >
+              <View className="flex-row items-center gap-2">
+                <Feather name="rotate-ccw" size={16} color={isDark ? '#A1A1AA' : '#71717A'} />
+                <Text className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-700'}`}>
+                  Reset
+                </Text>
+              </View>
+            </Pressable>
+
+            <Pressable
+              onPress={handleRun}
+              disabled={isRunning || !currentExercise}
+              className={`flex-1 py-2.5 rounded-xl items-center justify-center ${
+                isRunning ? 'bg-emerald-500/50' : 'bg-emerald-500'
+              } shadow-lg shadow-emerald-500/30`}
+            >
+              <View className="flex-row items-center gap-2">
+                <Feather name={isRunning ? 'loader' : 'play'} size={16} color="#FFFFFF" />
+                <Text className="text-white text-sm font-bold">
+                  {isRunning ? 'Đang chạy...' : 'Chạy code'}
+                </Text>
+              </View>
+            </Pressable>
+          </View>
+        </KeyboardAvoidingView>
+      )}
+
+      {currentExercise && activePanel === 'results' && (
+        <View className="flex-1">
+          {testResult ? (
+            <TestResults
+              testcases={currentExercise.testcases ?? []}
+              testResult={testResult}
+              isDark={isDark}
+            />
+          ) : (
+            <View className={`m-4 flex-1 items-center justify-center rounded-2xl border p-6 ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-gray-200'}`}>
+              <View className={`mb-3 h-12 w-12 items-center justify-center rounded-full ${isDark ? 'bg-zinc-800' : 'bg-gray-100'}`}>
+                <Ionicons name="flask-outline" size={24} color={isDark ? '#A1A1AA' : '#71717A'} />
+              </View>
+              <Text className={`text-center text-sm font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                Chưa có kết quả
+              </Text>
+              <Text className={`mt-1 text-center text-xs ${isDark ? 'text-zinc-400' : 'text-gray-500'}`}>
+                Chuyển sang tab Code và nhấn Chạy code để xem test case.
+              </Text>
             </View>
           )}
         </View>
-      )}
-
-      {currentExercise && currentExercise.files.length > 1 && (
-        <FileTabs
-          files={currentUserFiles}
-          activeFileId={activeFileId}
-          onSelectFile={setActiveFileId}
-          isDark={isDark}
-        />
-      )}
-
-      <KeyboardAvoidingView
-        className="flex-1"
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={100}
-      >
-        <View className={`flex-1 p-4 ${isDark ? 'bg-zinc-950' : 'bg-gray-900'}`}>
-          <View className="flex-1">
-            <View className="mb-2 flex-row items-center justify-between">
-              <View className="flex-row items-center gap-2">
-                <Ionicons name="code-slash" size={16} color="#10B981" />
-                <Text className="text-xs font-medium text-zinc-400">
-                  {activeFile?.filename || 'solution'}
-                </Text>
-                {activeFile?.is_main && (
-                  <View className="rounded bg-emerald-500/20 px-1.5 py-0.5">
-                    <Text className="text-[9px] font-bold text-emerald-400">main</Text>
-                  </View>
-                )}
-              </View>
-              <Text className="text-[10px] text-zinc-500">
-                {currentExercise?.language.name}
-              </Text>
-            </View>
-
-            <TextInput
-              value={currentCode}
-              onChangeText={handleCodeChange}
-              multiline
-              autoCapitalize="none"
-              autoCorrect={false}
-              spellCheck={false}
-              textAlignVertical="top"
-              className="flex-1 font-mono text-sm leading-6 text-green-400"
-              placeholder="// Write your code here..."
-              placeholderTextColor="#52525B"
-              style={{ fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}
-            />
-          </View>
-        </View>
-
-        <View className={`px-4 py-3 flex-row items-center gap-3 ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-gray-100 border-gray-200'} border-t`}>
-          <Pressable
-            onPress={handleReset}
-            className={`px-4 py-2.5 rounded-xl ${isDark ? 'bg-zinc-800' : 'bg-white'}`}
-          >
-            <View className="flex-row items-center gap-2">
-              <Feather name="rotate-ccw" size={16} color={isDark ? '#A1A1AA' : '#71717A'} />
-              <Text className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-700'}`}>
-                Reset
-              </Text>
-            </View>
-          </Pressable>
-
-          <Pressable
-            onPress={handleRun}
-            disabled={isRunning || !currentExercise}
-            className={`flex-1 py-2.5 rounded-xl items-center justify-center ${
-              isRunning ? 'bg-emerald-500/50' : 'bg-emerald-500'
-            } shadow-lg shadow-emerald-500/30`}
-          >
-            <View className="flex-row items-center gap-2">
-              <Feather name={isRunning ? 'loader' : 'play'} size={16} color="#FFFFFF" />
-              <Text className="text-white text-sm font-bold">
-                {isRunning ? 'Đang chạy...' : 'Chạy code'}
-              </Text>
-            </View>
-          </Pressable>
-        </View>
-      </KeyboardAvoidingView>
-
-      {testResult && (
-        <TestResults
-          testcases={currentExercise?.testcases ?? []}
-          testResult={testResult}
-          isDark={isDark}
-        />
       )}
 
       <Celebration

@@ -4,8 +4,9 @@
  */
 
 import React, { useEffect, useState, useRef } from 'react'
-import { View, ScrollView, useColorScheme, RefreshControl } from 'react-native'
+import { Modal, Pressable, RefreshControl, ScrollView, useColorScheme, View } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
+import { Ionicons } from '@expo/vector-icons'
 import { Text } from '@/components/ui'
 
 import { useLearning } from './hooks/useLearning'
@@ -16,9 +17,6 @@ import { ContentTab } from './components/ContentTab'
 import { QuizLesson } from './components/QuizLessonView'
 import { CodeLesson } from './components/CodeLesson'
 import { QATab } from './components/QATab'
-import { ResourcesTab } from './components/ResourcesTab'
-import { NotesSection } from './components/NotesSection'
-import { CourseOverviewTab } from './components/CourseOverviewTab'
 import { BottomNav } from './components/BottomNav'
 import { VideoLesson, VideoLessonRef } from './components/VideoLesson'
 import { Celebration } from './components/Celebration'
@@ -29,14 +27,14 @@ export function LearningFeature({ courseId, courseTitle, initialCourseInfo, init
   const isDark = useColorScheme() === 'dark'
   const insets = useSafeAreaInsets()
   const videoRef = useRef<VideoLessonRef>(null)
-  const [currentTime, setCurrentTime] = useState(0)
+  const [, setCurrentTime] = useState(0)
+  const [showQA, setShowQA] = useState(false)
 
   const {
     currentLesson,
     navData,
     progress,
     curriculum,
-    courseInfo,
     sidebarOpen,
     activeTab,
     isLoading,
@@ -58,11 +56,10 @@ export function LearningFeature({ courseId, courseTitle, initialCourseInfo, init
 
   useEffect(() => {
     if (initialLessonId && initialCommentId) {
-      setActiveTab('qa')
+      setActiveTab('content')
+      setShowQA(true)
     }
   }, [initialLessonId, initialCommentId, setActiveTab])
-
-  const effectiveCourseInfo = courseInfo || initialCourseInfo
 
   if (isLoading || !curriculum) {
     return (
@@ -138,28 +135,18 @@ export function LearningFeature({ courseId, courseTitle, initialCourseInfo, init
             )
           )}
 
-          {currentLesson && activeTab === 'qa' && (
-            <QATab lessonId={currentLesson.id} initialCommentId={initialCommentId} />
-          )}
-
-          {currentLesson && activeTab === 'resources' && (
-            <ResourcesTab resources={currentLesson.resources} />
-          )}
-
-          {currentLesson && activeTab === 'notes' && (
-            <NotesSection
-              lessonId={currentLesson.id}
-              isDark={isDark}
-              currentVideoTime={currentTime}
-              onSeekToTime={(time) => videoRef.current?.seekTo(time)}
-            />
-          )}
-
-          {activeTab === 'course_overview' && (
-            <CourseOverviewTab curriculum={curriculum} courseInfo={effectiveCourseInfo} />
-          )}
         </View>
       </ScrollView>
+
+      {currentLesson && (
+        <Pressable
+          onPress={() => setShowQA(true)}
+          className="absolute right-5 z-40 h-14 w-14 items-center justify-center rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/30"
+          style={{ bottom: Math.max(insets.bottom, 12) + 78 }}
+        >
+          <Ionicons name="chatbubbles" size={24} color="#FFFFFF" />
+        </Pressable>
+      )}
 
       <View
         className={`${isDark ? 'bg-zinc-950' : 'bg-white'}`}
@@ -201,6 +188,36 @@ export function LearningFeature({ courseId, courseTitle, initialCourseInfo, init
           isDark={isDark}
         />
       )}
+
+      <Modal
+        visible={showQA}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        onRequestClose={() => setShowQA(false)}
+      >
+        <SafeAreaView className={`flex-1 ${isDark ? 'bg-zinc-950' : 'bg-white'}`}>
+          <View className={`flex-row items-center justify-between border-b px-4 py-3 ${isDark ? 'border-zinc-800 bg-zinc-950' : 'border-zinc-200 bg-white'}`}>
+            <View className="flex-1 pr-3">
+              <Text className={`text-base font-bold ${isDark ? 'text-white' : 'text-zinc-900'}`}>
+                Hỏi đáp
+              </Text>
+              <Text numberOfLines={1} className={`mt-0.5 text-xs ${isDark ? 'text-zinc-400' : 'text-zinc-500'}`}>
+                {currentLesson?.title ?? courseTitle}
+              </Text>
+            </View>
+            <Pressable
+              onPress={() => setShowQA(false)}
+              className={`h-10 w-10 items-center justify-center rounded-full ${isDark ? 'bg-zinc-900' : 'bg-zinc-100'}`}
+            >
+              <Ionicons name="close" size={22} color={isDark ? '#FFFFFF' : '#18181B'} />
+            </Pressable>
+          </View>
+
+          {currentLesson && (
+            <QATab lessonId={currentLesson.id} initialCommentId={initialCommentId} />
+          )}
+        </SafeAreaView>
+      </Modal>
 
       <Celebration
         visible={celebration.visible}

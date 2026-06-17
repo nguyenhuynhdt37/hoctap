@@ -13,10 +13,6 @@ interface TabBarProps {
 
 const TABS: { id: ContentTab; label: string; icon: string }[] = [
   { id: 'content', label: 'Bài học', icon: 'book-outline' },
-  { id: 'resources', label: 'Công cụ', icon: 'construct-outline' },
-  { id: 'notes', label: 'Ghi chú', icon: 'create-outline' },
-  { id: 'qa', label: 'Hỏi đáp', icon: 'chatbubbles-outline' },
-  { id: 'course_overview', label: 'Khóa học', icon: 'grid-outline' },
 ]
 
 export function TabBar({ activeTab, onTabChange, insets }: TabBarProps) {
