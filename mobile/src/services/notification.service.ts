@@ -10,4 +10,7 @@ export const notificationService = {
 
   markAllAsRead: () =>
     api.post('/notifications/read-all/user'),
+
+  registerPushToken: (token: string, device_type: string) =>
+    api.post('/notifications/push-tokens', { token, device_type }),
 };

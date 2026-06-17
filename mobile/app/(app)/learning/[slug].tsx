@@ -3,15 +3,29 @@
 
 import React from 'react'
 import { View, ActivityIndicator, useColorScheme } from 'react-native'
-import { useLocalSearchParams, Stack } from 'expo-router'
+import { useLocalSearchParams } from 'expo-router'
 import { useQuery } from '@tanstack/react-query'
 import { Text } from '@/components/ui'
 import { learningService } from '@/components/features/learning/services/learning.service'
 import { LearningFeature } from '@/components/features/learning/LearningFeature'
 
 export default function LearningPage() {
-  const { slug, lessonId } = useLocalSearchParams<{ slug: string; lessonId?: string }>()
+  const { slug, lessonId, lesson_id, comment_id } = useLocalSearchParams<{
+    slug: string
+    lessonId?: string
+    lesson_id?: string
+    comment_id?: string
+  }>()
+  const initialLessonId = lesson_id ?? lessonId
   const isDark = useColorScheme() === 'dark'
+  const [isReady, setIsReady] = React.useState(false)
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsReady(true)
+    }, 150)
+    return () => clearTimeout(timer)
+  }, [])
 
   const { data: course, isLoading, error } = useQuery({
     queryKey: ['learning', 'course', slug],
@@ -19,7 +33,7 @@ export default function LearningPage() {
     enabled: !!slug,
   })
 
-  if (isLoading) {
+  if (isLoading || !isReady) {
     return (
       <View className={`flex-1 items-center justify-center ${isDark ? 'bg-zinc-950' : 'bg-white'}`}>
         <ActivityIndicator size="large" color="#10B981" />
@@ -42,12 +56,12 @@ export default function LearningPage() {
 
   return (
     <View className="flex-1">
-      <Stack.Screen options={{ title: course.title, headerShown: false }} />
       <LearningFeature
         courseId={course.id}
         courseTitle={course.title}
         initialCourseInfo={course}
-        initialLessonId={lessonId}
+        initialLessonId={initialLessonId}
+        initialCommentId={comment_id}
       />
     </View>
   )

@@ -154,4 +154,36 @@ export interface LearningFeatureProps {
   courseTitle: string
   initialCourseInfo?: any
   initialLessonId?: string
+  initialCommentId?: string
+}
+
+export interface CommentsResponse {
+  items: Comment[]
+  has_next: boolean
+  next_cursor: string | null
+}
+
+export interface CreateCommentPayload {
+  content: string
+  parent_id?: string | null
+}
+
+export interface CreateNotePayload {
+  content: string
+  time_seconds: number
+}
+
+export interface UpdateNotePayload {
+  content: string
+}
+
+export type CommentDepth = 0 | 1 | 2
+export type LearningTab = ContentTab
+
+export interface CodeTestResult {
+  passed: boolean
+  total: number
+  passed_count: number
+  failed_count: number
+  results: any[]
 }

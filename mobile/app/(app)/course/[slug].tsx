@@ -42,17 +42,23 @@ export default function CourseDetailPage() {
     <Screen safeArea withTabBar={false}>
       <Stack.Screen options={{ title: course.title, headerShown: false }} />
 
-      <Header 
-        course={course} 
-        data={data} 
-        onPreview={() => openPreview(course.id)} 
-        onBack={() => router.back()} 
+      <Header
+        course={course}
+        data={data}
+        onPreview={() => openPreview(course.id)}
+        onBack={() => {
+          if (router.canGoBack()) {
+            router.back()
+          } else {
+            router.replace('/')
+          }
+        }}
         isDark={isDark}
       />
 
-      <ScrollView 
-        className="flex-1 bg-white dark:bg-zinc-950" 
-        contentContainerStyle={{ paddingBottom: 24 }} 
+      <ScrollView
+        className="flex-1 bg-white dark:bg-zinc-950"
+        contentContainerStyle={{ paddingBottom: 24 }}
         showsVerticalScrollIndicator={false}
       >
         <CourseDetailSidebar course={course} router={router} isDark={isDark} />

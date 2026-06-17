@@ -45,3 +45,8 @@ class NotificationCreateSchema(BaseModel):
         default="open_url",
         description="Hành động của thông báo ('open_url', 'approve', 'confirm', ...)",
     )
+
+
+class PushTokenRegisterRequest(BaseModel):
+    token: str = Field(..., description="Expo push token (e.g. ExponentPushToken[xxx])")
+    device_type: str = Field(..., description="Device type (e.g. ios, android)")

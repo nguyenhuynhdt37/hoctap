@@ -21,6 +21,7 @@ export function NotificationWS({
   role_name,
 }: NotificationWSProps) {
   const userId = useUserStore((s) => s.user?.id ?? null);
+  const clearUser = useUserStore((s) => s.clearUser);
   const add = useRealtimeNotiStore((s) => s.add);
 
   const wsRef = useRef<WebSocket | null>(null);
@@ -90,19 +91,6 @@ export function NotificationWS({
             if (data.type === "notification.created") {
               add(role_name, data.data);
             }
-          },
-          () => {
-            wsRef.current = null;
-            if (isClosing.current || !mountedRef.current) return;
-
-            const timeout = Math.min(1000 * 2 ** attempts.current, 12000);
-            attempts.current++;
-
-            reconnectTimer.current = setTimeout(() => {
-              if (mountedRef.current && !isClosing.current) {
-                connect();
-              }
-            }, timeout);
           }
         );
 
@@ -112,6 +100,28 @@ export function NotificationWS({
           } catch {}
           return;
         }
+
+        ws.onclose = (event) => {
+          wsRef.current = null;
+          if (isClosing.current || !mountedRef.current) return;
+          if (event.code === 1000) return;
+
+          // Nếu session hết hạn/invalid (code 1008) -> dừng reconnect và logout
+          if (event.code === 1008) {
+            console.log("🔒 [WS] Session expired or invalid (code 1008). Logging out...");
+            clearUser();
+            return;
+          }
+
+          const timeout = Math.min(1000 * 2 ** attempts.current, 12000);
+          attempts.current++;
+
+          reconnectTimer.current = setTimeout(() => {
+            if (mountedRef.current && !isClosing.current) {
+              connect();
+            }
+          }, timeout);
+        };
 
         wsRef.current = ws;
         attempts.current = 0;

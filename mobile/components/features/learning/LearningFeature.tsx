@@ -17,6 +17,7 @@ import { Header } from './components/Header'
 import { Sidebar } from './components/Sidebar'
 import { TabBar } from './components/TabBar'
 import { ContentTab } from './components/ContentTab'
+import { QuizLesson } from './components/QuizLessonView'
 import { QATab } from './components/QATab'
 import { ResourcesTab } from './components/ResourcesTab'
 import { NotesSection } from './components/NotesSection'
@@ -29,7 +30,7 @@ import { QuizOverlay } from './components/VideoLesson/QuizOverlay'
 // Types
 import type { ContentTab as ContentTabType, LearningFeatureProps } from './types'
 
-export function LearningFeature({ courseId, courseTitle, initialCourseInfo, initialLessonId }: LearningFeatureProps) {
+export function LearningFeature({ courseId, courseTitle, initialCourseInfo, initialLessonId, initialCommentId }: LearningFeatureProps) {
   const isDark = useColorScheme() === 'dark'
   const insets = useSafeAreaInsets()
   const videoRef = useRef<VideoLessonRef>(null)
@@ -59,6 +60,13 @@ export function LearningFeature({ courseId, courseTitle, initialCourseInfo, init
     showQuizOverlay,
     setShowQuizOverlay,
   } = useLearning(courseId, initialCourseInfo, initialLessonId)
+
+  // Tự động chuyển qua tab Hỏi đáp (qa) khi click từ thông báo
+  useEffect(() => {
+    if (initialLessonId && initialCommentId) {
+      setActiveTab('qa')
+    }
+  }, [initialLessonId, initialCommentId, setActiveTab])
 
   const effectiveCourseInfo = courseInfo || initialCourseInfo
 
@@ -122,13 +130,21 @@ export function LearningFeature({ courseId, courseTitle, initialCourseInfo, init
 
         <View className="flex-1">
           {currentLesson && activeTab === 'content' && (
-            <ContentTab
-              lesson={currentLesson}
-            />
+            currentLesson.lesson_type === 'quiz' ? (
+              <QuizLesson
+                lesson={currentLesson}
+                onMarkCompleted={onMarkCompleted}
+                isDark={isDark}
+              />
+            ) : (
+              <ContentTab
+                lesson={currentLesson}
+              />
+            )
           )}
 
           {currentLesson && activeTab === 'qa' && (
-            <QATab lessonId={currentLesson.id} />
+            <QATab lessonId={currentLesson.id} initialCommentId={initialCommentId} />
           )}
 
           {currentLesson && activeTab === 'resources' && (
@@ -205,4 +221,3 @@ export function LearningFeature({ courseId, courseTitle, initialCourseInfo, init
 }
 
 export type { LearningFeatureProps }
-

@@ -20,7 +20,7 @@ export default function GamificationDemoScreen() {
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isChecking, setIsChecking] = useState(false);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
-  
+
   const [sound, setSound] = useState<Audio.Sound | null>(null);
   // Ref to trigger animations manually
   const [characterState, setCharacterState] = useState<'idle' | 'success' | 'fail'>('idle');
@@ -54,13 +54,13 @@ export default function GamificationDemoScreen() {
 
   const handleCheck = async () => {
     if (selectedOption === null) return;
-    
+
     setIsChecking(true);
-    
+
     // Simulate checking (e.g. You eat an apple -> Bạn ăn táo = id 2)
     const correct = selectedOption === 2;
     setIsCorrect(correct);
-    
+
     if (correct) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       playSound(true);
@@ -87,10 +87,19 @@ export default function GamificationDemoScreen() {
     <SafeAreaView style={styles.container}>
       {/* Top Header: Close, Progress Bar, Hearts, Streak */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.closeBtn}>
+        <TouchableOpacity
+          onPress={() => {
+            if (router.canGoBack()) {
+              router.back()
+            } else {
+              router.replace('/')
+            }
+          }}
+          style={styles.closeBtn}
+        >
           <X size={24} color="#9CA3AF" />
         </TouchableOpacity>
-        
+
         {/* Animated Progress Bar */}
         <View style={styles.progressTrack}>
           <MotiView
@@ -99,7 +108,7 @@ export default function GamificationDemoScreen() {
             transition={{ type: 'spring', damping: 15 }}
           />
         </View>
-        
+
         <View style={styles.stats}>
           <Flame size={20} color="#F97316" fill="#F97316" />
           <Text style={styles.statText}>5</Text>
@@ -112,7 +121,7 @@ export default function GamificationDemoScreen() {
 
       {/* Rive Character & Question */}
       <View style={styles.questionSection}>
-        <MotiView 
+        <MotiView
           style={styles.riveContainer}
           animate={{
             translateY: characterState === 'idle' ? [0, -5, 0] : characterState === 'success' ? [0, -20, 0] : 0,
@@ -128,8 +137,8 @@ export default function GamificationDemoScreen() {
             {characterState === 'fail' ? '😿' : characterState === 'success' ? '🥳' : '🦉'}
           </Text>
         </MotiView>
-        
-        <MotiView 
+
+        <MotiView
           from={{ opacity: 0, translateY: 10 }}
           animate={{ opacity: 1, translateY: 0 }}
           transition={{ delay: 200 }}
@@ -191,9 +200,9 @@ export default function GamificationDemoScreen() {
           </MotiView>
         )}
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[
-            styles.checkButton, 
+            styles.checkButton,
             selectedOption === null && !isChecking ? styles.checkButtonDisabled : {},
             isChecking && isCorrect ? styles.checkButtonSuccess : {},
             isChecking && !isCorrect ? styles.checkButtonError : {},

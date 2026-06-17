@@ -13,6 +13,7 @@ interface MarkdownRendererProps {
   content: string
   className?: string
   style?: object
+  compact?: boolean
 }
 
 // CSS cho markdown - theo chuẩn NeuralEarn emerald theme
@@ -155,12 +156,12 @@ const parseMarkdownToHTML = (markdown: string): string => {
 }
 
 // Tạo HTML document hoàn chỉnh
-const createHTMLDocument = (content: string, darkMode: boolean): string => {
+const createHTMLDocument = (content: string, darkMode: boolean, compact?: boolean): string => {
   const bgColor = darkMode ? '#09090b' : '#ffffff'
   const textColor = darkMode ? '#f4f4f5' : '#374151'
   const borderColor = darkMode ? '#27272a' : '#e5e7eb'
 
-  const css = MARKDOWN_CSS
+  let css = MARKDOWN_CSS
     .replace(/#374151/g, textColor)
     .replace(/#e5e7eb/g, borderColor)
     .replace(/#f9fafb/g, darkMode ? '#18181b' : '#f9fafb')
@@ -169,19 +170,46 @@ const createHTMLDocument = (content: string, darkMode: boolean): string => {
     .replace(/#d1fae5/g, darkMode ? '#14532d' : '#d1fae5')
     .replace(/body \{/, `body { background-color: ${bgColor};`)
 
+  if (compact) {
+    css += `
+      body {
+        padding: 0px !important;
+        margin: 0 !important;
+        line-height: 1.4 !important;
+      }
+      p {
+        margin: 2px 0 !important;
+      }
+    `
+  }
+
   return `
 <!DOCTYPE html>
 <html>
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <style>${css}</style>
+  <script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\\\(', '\\\\)']],
+      displayMath: [['$$', '$$'], ['\\\\[', '\\\\]']],
+      processEscapes: true
+    },
+    options: {
+      ignoreHtmlClass: 'tex2jax_ignore',
+      processHtmlClass: 'tex2jax_process'
+    }
+  };
+  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body>${content}</body>
 </html>
 `
 }
 
-export function MarkdownRenderer({ content, className, style }: MarkdownRendererProps) {
+export function MarkdownRenderer({ content, className, style, compact }: MarkdownRendererProps) {
   const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark'
 
@@ -192,8 +220,8 @@ export function MarkdownRenderer({ content, className, style }: MarkdownRenderer
 
   const fullHTML = useMemo(() => {
     if (!htmlContent) return ''
-    return createHTMLDocument(htmlContent, isDark)
-  }, [htmlContent, isDark])
+    return createHTMLDocument(htmlContent, isDark, compact)
+  }, [htmlContent, isDark, compact])
 
   if (!content || !content.trim()) {
     return null
@@ -203,11 +231,11 @@ export function MarkdownRenderer({ content, className, style }: MarkdownRenderer
     <View style={[styles.container, style]} className={className}>
       <WebView
         source={{ html: fullHTML }}
-        style={styles.webview}
-        scrollEnabled={true}
+        style={[styles.webview, compact ? { minHeight: 20 } : null]}
+        scrollEnabled={!compact}
         showsVerticalScrollIndicator={false}
         showsHorizontalScrollIndicator={false}
-        bounces={true}
+        bounces={!compact}
         overScrollMode="always"
         androidLayerType="hardware"
         mixedContentMode="always"

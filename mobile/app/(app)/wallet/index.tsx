@@ -113,7 +113,13 @@ export default function WalletScreen() {
           accessibilityRole="button"
           accessibilityLabel={t('common.back', 'Quay lại')}
           activeOpacity={0.7}
-          onPress={() => router.back()}
+          onPress={() => {
+            if (router.canGoBack()) {
+              router.back()
+            } else {
+              router.replace('/')
+            }
+          }}
           style={styles.iconButton}
         >
           <Feather name="chevron-left" size={24} color={colors.text} />

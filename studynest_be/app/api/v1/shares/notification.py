@@ -10,6 +10,7 @@ from app.core.settings import settings
 from app.core.deps import AuthorizationService
 from app.core.ws_manager import ws_manager
 from app.db.models.database import User
+from app.schemas.shares.notification import PushTokenRegisterRequest
 from app.schemas.shares.presence import PresenceBulkRequest, PresenceBulkResponse, PresenceResponse
 from app.services.shares.notification import NotificationService
 from app.services.shares.presence import PresenceService
@@ -230,3 +231,16 @@ async def read_notification(
     user = await authorization_service.get_current_user()
     updated = await service.mark_as_read(notification_id, user.id)
     return updated
+
+
+@router.post("/push-tokens")
+async def register_push_token(
+    body: PushTokenRegisterRequest,
+    service: NotificationService = Depends(NotificationService),
+    authorization_service: AuthorizationService = Depends(AuthorizationService),
+):
+    user = await authorization_service.get_current_user()
+    result = await service.register_push_token_async(
+        user.id, body.token, body.device_type
+    )
+    return result

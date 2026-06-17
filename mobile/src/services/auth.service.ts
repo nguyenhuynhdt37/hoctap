@@ -46,6 +46,7 @@ export const authService = {
 
   // ── User ───────────────────────────────────────────────────────────────────
   getMe: () => api.get<User>('/auth/me'),
+  getPublicProfile: (userId: string) => api.get<User>(`/profile/${userId}`),
   updateProfile: (data: {
     fullname: string
     bio?: string

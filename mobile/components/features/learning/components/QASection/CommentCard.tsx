@@ -3,10 +3,11 @@
  * Hiển thị một comment với replies
  */
 
-import React, { useState } from 'react'
-import { View, Pressable } from 'react-native'
+import React, { useState, useCallback } from 'react'
+import { View, Pressable, Alert, Linking, Image } from 'react-native'
 import { Feather, Ionicons } from '@expo/vector-icons'
 import * as Haptics from 'expo-haptics'
+import { router } from 'expo-router'
 import { Text } from '@/components/ui'
 import type { QAComment } from '../../types/chat'
 import { formatRelativeTime } from '../../mock-data'
@@ -18,6 +19,7 @@ interface CommentCardProps {
   onStartReply: (comment: QAComment) => void
   isDark: boolean
   isReply?: boolean
+  highlightedCommentId?: string
 }
 
 export function CommentCard({
@@ -27,8 +29,10 @@ export function CommentCard({
   onStartReply,
   isDark,
   isReply = false,
+  highlightedCommentId,
 }: CommentCardProps) {
   const [isExpanded, setIsExpanded] = useState(true)
+  const highlighted = highlightedCommentId && comment.id === highlightedCommentId
 
   // Get replies
   const replies = allComments.filter(c => c.parent_id === comment.id)
@@ -40,11 +44,10 @@ export function CommentCard({
 
     if (avatarUrl) {
       return (
-        <View className={`${sizeClass} rounded-full bg-zinc-200 overflow-hidden items-center justify-center`}>
-          <Text className={`${fontSize} font-bold ${isDark ? 'text-zinc-400' : 'text-gray-500'}`}>
-            {name.charAt(0).toUpperCase()}
-          </Text>
-        </View>
+        <Image
+          source={{ uri: avatarUrl }}
+          className={`${sizeClass} rounded-full`}
+        />
       )
     }
 
@@ -57,12 +60,87 @@ export function CommentCard({
     )
   }
 
+  // Handle clicking on a mention/link
+  const handleLinkPress = useCallback((url: string, linkText: string) => {
+    if (url.startsWith('/users/') || url.startsWith('/user/')) {
+      const userId = url.split('/').pop()
+      if (userId) {
+        router.push({
+          pathname: '/(app)/profile/[id]',
+          params: { id: userId }
+        })
+      }
+    } else {
+      if (url.startsWith('http')) {
+        Linking.openURL(url).catch(() => {
+          Alert.alert('Lỗi', `Không thể mở liên kết: ${url}`)
+        })
+      }
+    }
+  }, [])
+
+  // Parse markdown links/mentions and render as styled clickable Text components
+  const renderCommentContent = useCallback((contentStr: string) => {
+    if (!contentStr) return null
+
+    const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g
+    const parts = contentStr.split(linkRegex)
+
+    if (parts.length === 1) {
+      return <Text>{contentStr}</Text>
+    }
+
+    const elements = []
+    for (let i = 0; i < parts.length; i += 3) {
+      // Plain text
+      if (parts[i]) {
+        elements.push(<Text key={`text-${i}`}>{parts[i]}</Text>)
+      }
+
+      // Link/Mention
+      if (i + 1 < parts.length) {
+        const linkText = parts[i + 1]
+        const linkUrl = parts[i + 2]
+
+        elements.push(
+          <Text
+            key={`link-${i}`}
+            className="text-emerald-500 font-bold dark:text-emerald-400"
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+              handleLinkPress(linkUrl, linkText)
+            }}
+          >
+            {linkText}
+          </Text>
+        )
+      }
+    }
+
+    return <Text>{elements}</Text>
+  }, [handleLinkPress])
+
   return (
     <View className={isReply ? 'ml-8 mt-2' : ''}>
-      <View className={`p-4 rounded-xl ${isDark ? 'bg-zinc-800/50' : 'bg-gray-50'}`}>
+      <View className={`p-4 rounded-xl border ${
+        highlighted
+          ? 'border-emerald-500 bg-emerald-500/5'
+          : isDark ? 'bg-zinc-800/50 border-zinc-800/50' : 'bg-gray-50 border-gray-100'
+      }`}>
         {/* Author info */}
         <View className="flex-row items-center justify-between mb-3">
-          <View className="flex-row items-center gap-3">
+          <Pressable
+            onPress={() => {
+              if (comment.user_id) {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                router.push({
+                  pathname: '/(app)/profile/[id]',
+                  params: { id: comment.user_id }
+                })
+              }
+            }}
+            className="flex-row items-center gap-3 active:opacity-75"
+          >
             {renderAvatar(comment.user_avatar, comment.user_name)}
             <View>
               <View className="flex-row items-center gap-2">
@@ -84,12 +162,12 @@ export function CommentCard({
                 {formatRelativeTime(comment.created_at)}
               </Text>
             </View>
-          </View>
+          </Pressable>
         </View>
 
         {/* Content */}
         <Text className={`text-sm leading-relaxed mb-3 ${isDark ? 'text-zinc-300' : 'text-gray-700'}`}>
-          {comment.content}
+          {renderCommentContent(comment.content)}
         </Text>
 
         {/* Actions */}
@@ -100,12 +178,12 @@ export function CommentCard({
             className="flex-row items-center gap-1.5"
           >
             <Ionicons
-              name={comment.reactions.has_reacted ? 'heart' : 'heart-outline'}
+              name={comment.reactions?.has_reacted ? 'heart' : 'heart-outline'}
               size={16}
-              color={comment.reactions.has_reacted ? '#EF4444' : isDark ? '#71717A' : '#9CA3AF'}
+              color={comment.reactions?.has_reacted ? '#EF4444' : isDark ? '#71717A' : '#9CA3AF'}
             />
-            <Text className={`text-xs font-medium ${comment.reactions.has_reacted ? 'text-red-500' : isDark ? 'text-zinc-500' : 'text-gray-500'}`}>
-              {comment.reactions.total > 0 ? comment.reactions.total : 'Thích'}
+            <Text className={`text-xs font-medium ${comment.reactions?.has_reacted ? 'text-red-500' : isDark ? 'text-zinc-500' : 'text-gray-500'}`}>
+              {(comment.reactions?.total ?? 0) > 0 ? comment.reactions?.total : 'Thích'}
             </Text>
           </Pressable>
 
@@ -152,6 +230,7 @@ export function CommentCard({
               onStartReply={onStartReply}
               isDark={isDark}
               isReply
+              highlightedCommentId={highlightedCommentId}
             />
           ))}
         </View>

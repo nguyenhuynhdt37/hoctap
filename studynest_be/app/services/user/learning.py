@@ -2092,6 +2092,44 @@ class LearningService:
                 },
             }
 
+            # ✅ Gửi thông báo cho chủ nhân bình luận (nếu không phải là người thả tym)
+            if comment.user_id and comment.user_id != user_id:
+                try:
+                    from app.schemas.shares.notification import NotificationCreateSchema
+                    from app.services.shares.notification import NotificationService
+
+                    reactor = await self.db.scalar(select(User).where(User.id == user_id))
+                    reactor_name = reactor.fullname if reactor else "Một học viên"
+
+                    lesson_obj = await self.db.scalar(select(Lessons).where(Lessons.id == comment.lesson_id))
+                    course_slug = ""
+                    course_id = ""
+                    if lesson_obj:
+                        course_obj = await self.db.scalar(select(Courses).where(Courses.id == lesson_obj.course_id))
+                        if course_obj:
+                            course_slug = course_obj.slug
+                            course_id = str(course_obj.id)
+
+                    notification_service = NotificationService(self.db)
+                    await notification_service.create_notification_async(
+                        NotificationCreateSchema(
+                            user_id=comment.user_id,
+                            title="❤️ Bình luận của bạn đã được thích",
+                            content=f"{reactor_name} đã thích bình luận của bạn trong bài học \"{lesson_obj.title if lesson_obj else ''}\".",
+                            type="learning",
+                            role_target=["USER"],
+                            url=f"/learning/{course_slug}?lesson_id={comment.lesson_id}&comment_id={comment_id}" if course_slug else None,
+                            metadata={
+                                "course_id": course_id,
+                                "course_slug": course_slug,
+                                "lesson_id": str(comment.lesson_id),
+                                "comment_id": str(comment_id),
+                            }
+                        )
+                    )
+                except Exception as notif_err:
+                    logger.error(f"Lỗi khi tạo thông báo thích bình luận: {notif_err}")
+
             await ws_manager.broadcast(
                 f"lesson_comment_ws_lesson_id_{comment.lesson_id}", result
             )
@@ -2158,6 +2196,134 @@ class LearningService:
 
                 await db.commit()
                 await db.refresh(new_comment)
+
+                # ✅ GỬI THÔNG BÁO CHO INSTRUCTOR KHI CÓ CÂU HỎI MỚI, CHO MENTIONED USERS, VÀ CHO ENROLLED USERS
+                try:
+                    import re
+                    from app.schemas.shares.notification import NotificationCreateSchema
+                    from app.services.shares.notification import NotificationService
+
+                    # Query course and lesson title
+                    lesson_obj = await db.scalar(
+                        select(Lessons).where(Lessons.id == lesson_id)
+                    )
+                    if lesson_obj:
+                        course_obj = await db.scalar(
+                            select(Courses).where(Courses.id == lesson_obj.course_id)
+                        )
+                        if course_obj:
+                            notification_service = NotificationService(db)
+
+                            # Tập hợp các ID đã được gửi thông báo để tránh trùng lặp
+                            notified_user_ids = {user.id}  # Không gửi thông báo cho chính mình
+
+                            # 1️⃣ Gửi thông báo cho người được nhắc đến (@mention)
+                            mentioned_ids = set(re.findall(r'\[@[^\]]+\]\(/users/([a-f0-9\-]{36})\)', schema.content or ""))
+                            for m_id_str in mentioned_ids:
+                                try:
+                                    m_uuid = uuid.UUID(m_id_str)
+                                    if m_uuid not in notified_user_ids:
+                                        await notification_service.create_notification_async(
+                                            NotificationCreateSchema(
+                                                user_id=m_uuid,
+                                                title="🔔 Bạn được nhắc đến trong bài học",
+                                                content=f"{user.fullname or 'Người dùng'} đã nhắc đến bạn trong bài học \"{lesson_obj.title}\".",
+                                                type="learning",
+                                                role_target=["USER"],
+                                                url=f"/learning/{course_obj.slug}?lesson_id={lesson_id}&comment_id={new_comment.id}",
+                                                metadata={
+                                                    "course_id": str(course_obj.id),
+                                                    "course_slug": course_obj.slug,
+                                                    "lesson_id": str(lesson_id),
+                                                    "comment_id": str(new_comment.id),
+                                                },
+                                            )
+                                        )
+                                        notified_user_ids.add(m_uuid)
+                                except ValueError:
+                                    continue
+
+                            if depth == 0:
+                                # 2️⃣ Gửi thông báo cho Giảng viên (Instructor)
+                                if course_obj.instructor_id not in notified_user_ids:
+                                    await notification_service.create_notification_async(
+                                        NotificationCreateSchema(
+                                            user_id=course_obj.instructor_id,
+                                            title="❓ Có câu hỏi mới trong khóa học",
+                                            content=f"Học viên {user.fullname or 'Ẩn danh'} đã đặt một câu hỏi mới trong bài học \"{lesson_obj.title}\" của khóa học \"{course_obj.title}\".",
+                                            type="learning",
+                                            role_target=["LECTURER"],
+                                            url=f"/learning/{course_obj.slug}?lesson_id={lesson_id}&comment_id={new_comment.id}",
+                                            metadata={
+                                                "course_id": str(course_obj.id),
+                                                "course_slug": course_obj.slug,
+                                                "lesson_id": str(lesson_id),
+                                                "comment_id": str(new_comment.id),
+                                            },
+                                        )
+                                    )
+                                    notified_user_ids.add(course_obj.instructor_id)
+
+                                # 3️⃣ Gửi thông báo cho toàn bộ Học viên đã đăng ký khóa học (depth == 0)
+                                enrolled_stmt = select(CourseEnrollments.user_id).where(
+                                    CourseEnrollments.course_id == course_obj.id,
+                                    CourseEnrollments.status == "active"
+                                )
+                                enrolled_result = await db.execute(enrolled_stmt)
+                                enrolled_user_ids = [r[0] for r in enrolled_result.all() if r[0] is not None]
+
+                                for student_id in enrolled_user_ids:
+                                    if student_id not in notified_user_ids:
+                                        await notification_service.create_notification_async(
+                                            NotificationCreateSchema(
+                                                user_id=student_id,
+                                                title="❓ Câu hỏi mới trong khóa học bạn tham gia",
+                                                content=f"Có một câu hỏi mới trong bài học \"{lesson_obj.title}\" của khóa học \"{course_obj.title}\".",
+                                                type="learning",
+                                                role_target=["USER"],
+                                                url=f"/learning/{course_obj.slug}?lesson_id={lesson_id}&comment_id={new_comment.id}",
+                                                metadata={
+                                                    "course_id": str(course_obj.id),
+                                                    "course_slug": course_obj.slug,
+                                                    "lesson_id": str(lesson_id),
+                                                    "comment_id": str(new_comment.id),
+                                                },
+                                            )
+                                        )
+                                        notified_user_ids.add(student_id)
+                            else:
+                                # 4️⃣ Gửi thông báo cho chủ câu hỏi cha khi có phản hồi mới (depth > 0)
+                                parent_comment = await db.scalar(
+                                    select(LessonComments).where(
+                                        LessonComments.id == schema.parent_id
+                                    )
+                                )
+                                if (
+                                    parent_comment
+                                    and parent_comment.user_id not in notified_user_ids
+                                ):
+                                    await notification_service.create_notification_async(
+                                        NotificationCreateSchema(
+                                            user_id=parent_comment.user_id,
+                                            title="💬 Phản hồi mới cho câu hỏi của bạn",
+                                            content=f"{user.fullname or 'Người dùng'} đã phản hồi bình luận của bạn trong bài học \"{lesson_obj.title}\".",
+                                            type="learning",
+                                            role_target=["USER"],
+                                            url=f"/learning/{course_obj.slug}?lesson_id={lesson_id}&comment_id={new_comment.id}",
+                                            metadata={
+                                                "course_id": str(course_obj.id),
+                                                "course_slug": course_obj.slug,
+                                                "lesson_id": str(lesson_id),
+                                                "comment_id": str(new_comment.id),
+                                            },
+                                        )
+                                    )
+                                    notified_user_ids.add(parent_comment.user_id)
+                except Exception as notif_err:
+                    logger.error(
+                        f"Lỗi khi tạo thông báo bình luận: {notif_err}"
+                    )
+
                 return {
                     "type": "comment_created",
                     "comment": {
