@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "skills": {
+    "acceptance-orchestrator": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "computedHash": "73fd4f94dc673a0b4a13678e8225428975dda59e239db5b07bd152ced0de4673"
+    },
+    "advanced-evaluation": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "computedHash": "90e62d9695167e3b1109573451fa63b3ac2c46977123ff49cca437c236606ee2"
+    },
+    "agent-manager-skill": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "computedHash": "923cedf85e7d951b101ae8ad4f7cf6644760563f45ac46d59ae9fbd7f01888e2"
+    },
+    "agent-memory-mcp": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "computedHash": "ec74e1d0fc51c18c201a5699aa148badca891d2958c4912bcfce195a6e25b7de"
+    },
+    "agent-orchestration-improve-agent": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "computedHash": "a6a33f69b7d380b69890f1d4d393d3b608c7f5a5b22e9d79b5fac939e45317f6"
+    },
+    "agent-orchestrator": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "computedHash": "b5d229f4a137b176a0cce9f91e2fd3c817bda6031264b75e01170efce0e4d073"
+    },
+    "react-native-architecture": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "computedHash": "f8709fd6a17ea0d0ea4cb769d3ee01c02b1fe173ccd0d9d4bca9599397c56d23"
+    },
+    "typescript-expert": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "computedHash": "b286805fbc1e24cdbe238445c62f27889cdc48dac9dfb77fc927bd1b3c37ab2a"
+    },
+    "ui-ux-designer": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "computedHash": "2f0bcb6b7a81fbd31575b78a3d777d4b43fc8a2f602db46ad027dbbb6adc9a0f"
+    },
+    "vercel-react-native-skills": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "computedHash": "41d24eafa7c3d82e270439808f7cfbc4d51aeb2d14f2809a2267c16275784d06"
+    }
+  }
+}

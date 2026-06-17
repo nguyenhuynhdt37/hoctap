@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #FFFFFF;
+    --foreground: #000000;
+
+    --card: #FFFFFF;
+    --card-foreground: #000000;
+
+    --primary: #00A73D;
+    --primary-foreground: #FFFFFF;
+
+    --muted: #F3F4F6; /* Gray-100 */
+    --muted-foreground: #6B7280; /* Gray-500 */
+
+    --border: #E5E7EB; /* Gray-200 */
+  }
+
+  .dark {
+    --background: #09090B; /* Zinc-950 */
+    --foreground: #FAFAFA; /* Zinc-50 */
+
+    --card: #09090B;
+    --card-foreground: #FAFAFA;
+
+    --primary: #00A73D;
+    --primary-foreground: #FFFFFF;
+
+    --muted: #27272A; /* Zinc-800 */
+    --muted-foreground: #A1A1AA; /* Zinc-400 */
+
+    --border: #27272A; /* Zinc-800 */
+  }
+}

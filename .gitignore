@@ -1,0 +1,55 @@
+# Environment and secrets
+**/.env
+**/.env.*
+!**/.env.example
+**/app/core/secret/*.json
+**/credentials.json
+**/token.json
+**/client_secret.json
+
+# Dependency folders
+**/node_modules/
+**/.venv/
+**/venv/
+**/.pnpm-store/
+
+# Next.js / frontend build output
+**/.next/
+**/out/
+**/.turbo/
+**/next-env.d.ts
+
+# Expo / React Native generated state
+**/.expo/
+**/.expo-shared/
+**/web-build/
+**/android/.gradle/
+**/android/app/build/
+**/android/build/
+**/ios/Pods/
+**/ios/build/
+**/*.xcworkspace/xcuserdata/
+**/*.xcodeproj/xcuserdata/
+**/DerivedData/
+
+# Python
+**/__pycache__/
+**/*.py[cod]
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+
+# Database dumps and local backups
+studynest_be/backups/
+studynest_be/backup_*.sql
+
+# Logs and local runtime files
+**/*.log
+**/logs/
+**/.DS_Store
+**/Thumbs.db
+
+# Local tooling / agent indexes
+.codegraph/
+.agents/
+.cursor/

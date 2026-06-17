@@ -1,0 +1,434 @@
+{
+  "auth": {
+    "welcome": "Chào mừng bạn",
+    "login": "Đăng nhập",
+    "register": "Đăng ký",
+    "phone_placeholder": "Số điện thoại",
+    "otp_placeholder": "Nhập mã OTP",
+    "continue": "Tiếp tục",
+    "or": "Hoặc",
+    "google_login": "Đăng nhập với Google",
+    "github_login": "Đăng nhập với GitHub",
+    "email_login": "Đăng nhập Email",
+    "email_label": "Địa chỉ Email",
+    "email_placeholder": "example@gmail.com",
+    "use_email": "Sử dụng Email để đăng nhập",
+    "use_phone": "Sử dụng Số điện thoại để đăng nhập",
+    "phone_msg": "Sử dụng số điện thoại để đăng nhập vào tài khoản của bạn.",
+    "email_msg": "Nhập email để tiếp tục hành trình khám phá tri thức.",
+    "enter_password": "Vui lòng nhập mật khẩu",
+    "password_label": "Mật khẩu",
+    "password_login": "Đăng nhập Mật khẩu",
+    "password_msg": "Sử dụng mật khẩu để truy cập nhanh vào tài khoản của bạn.",
+    "use_password": "Đăng nhập bằng Mật khẩu",
+    "use_otp": "Đăng nhập bằng OTP",
+    "forgot_password": "Quên mật khẩu",
+    "dont_have_account": "Chưa có tài khoản?",
+    "register_now": "Đăng ký ngay",
+    "register_title": "Tạo tài khoản",
+    "register_msg": "Tham gia cùng hàng nghìn học viên trên khắp thế giới.",
+    "register_button": "Tạo tài khoản ngay",
+    "fullname_label": "Họ và tên",
+    "fullname_placeholder": "Nguyễn Văn A",
+    "confirm_password_label": "Xác nhận mật khẩu",
+    "already_have_account": "Đã có tài khoản?",
+    "login_now": "Đăng nhập ngay",
+    "password_mismatch": "Mật khẩu xác nhận không khớp",
+    "password_too_short": "Mật khẩu phải có ít nhất 6 ký tự",
+    "invalid_phone": "Số điện thoại không hợp lệ",
+    "invalid_email": "Email không hợp lệ",
+    "enter_value": "Vui lòng nhập giá trị",
+    "verify_title": "Xác thực tài khoản",
+    "verify_msg": "Mã 6 chữ số đã được gửi đến",
+    "not_received": "Chưa nhận được mã?",
+    "resend_after": "Gửi lại sau",
+    "resend_now": "Gửi lại ngay",
+    "otp_invalid": "Mã OTP không hợp lệ hoặc đã hết hạn",
+    "otp_expires_in": "Mã hết hạn sau",
+    "verify_success": "Xác thực thành công!",
+    "verify_welcome": "Chào mừng bạn đến với StudyNest.",
+    "onboarding": {
+      "badge": "NỀN TẢNG HỌC TẬP AI",
+      "title": "Học tập thông minh hơn cùng AI",
+      "description": "Nền tảng học tập cá nhân hóa, giúp bạn đạt được mục tiêu nhanh chóng và hiệu quả.",
+      "start": "Bắt đầu hành trình",
+      "try_dev": "Dùng thử ngay (Dev)"
+    },
+    "profile": {
+      "step_indicator": "Bước {{current}} trên {{total}}",
+      "basic_info": {
+        "title": "Bắt đầu nào! 👋",
+        "description": "Thiết lập những thông tin cơ bản nhất.",
+        "full_name": "Họ và tên",
+        "full_name_placeholder": "Nguyễn Văn A",
+        "username": "Tên đăng nhập",
+        "username_placeholder": "huynh_dev",
+        "bio": "Tiểu sử ngắn",
+        "bio_input_placeholder": "Mô tả bản thân một chút...",
+        "bio_placeholder": "Chưa có tiểu sử.",
+        "facebook_url": "Facebook",
+        "facebook_url_placeholder": "https://facebook.com/yourusername",
+        "birthday": "Ngày sinh",
+        "birthday_placeholder": "dd/mm/yyyy",
+        "location": "Địa chỉ",
+        "location_placeholder": "Tỉnh/Thành phố, Quận/Huyện",
+        "citizenship_identity": "Số CCCD/CMND",
+        "citizenship_identity_placeholder": "Số CCCD hoặc CMND",
+        "ai_prompt_title": "Tạo Bio bằng AI ✨",
+        "ai_prompt_placeholder": "VD: Tôi là sinh viên CNTT đam mê AI...",
+        "missing_info": "Vui lòng điền tên và username."
+      },
+      "education": {
+        "title": "Bạn học gì? 🎓",
+        "description": "Điều này giúp AI cá nhân hóa lộ trình cho bạn.",
+        "specialization": "Chuyên ngành / Khoa",
+        "level": "Trình độ hiện tại",
+        "missing_specialization": "Vui lòng chọn chuyên ngành và trình độ.",
+        "levels": {
+          "freshman_sophomore": "Sinh viên năm 1-2",
+          "junior_senior": "Sinh viên năm 3-4",
+          "graduated": "Đã tốt nghiệp",
+          "working": "Người đi làm"
+        }
+      },
+      "skills": {
+        "title": "Kỹ năng & Sở thích ⚡️",
+        "description": "NeuralEarn sẽ tìm những tài liệu phù hợp nhất.",
+        "skills_label": "Kỹ năng bạn đã có",
+        "interests_label": "Chủ đề bạn quan tâm"
+      },
+      "goals": {
+        "title": "Mục tiêu của bạn 🎯",
+        "description": "Hãy đặt mục tiêu để chúng tôi cùng bạn chinh phục.",
+        "goal_label": "Mục tiêu lớn nhất của bạn là gì?",
+        "goal_placeholder": "VD: Trở thành chuyên gia AI năm 2026...",
+        "daily_time": "Thời gian học mỗi ngày",
+        "minutes": "Phút / Ngày",
+        "style": "Phong cách học yêu thích",
+        "goal_too_short": "Vui lòng nhập ít nhất 10 ký tự cho mục tiêu.",
+        "styles": {
+          "video": "Xem Video",
+          "reading": "Đọc tài liệu",
+          "practice": "Thực hành"
+        }
+      },
+      "nav": {
+        "next": "Tiếp theo",
+        "back": "Quay lại",
+        "finish": "Hoàn tất & Bắt đầu"
+      },
+      "logout_confirm": {
+        "title": "Đăng xuất?",
+        "description": "Bạn có chắc chắn muốn thoát? Các thông tin chưa lưu sẽ bị mất.",
+        "confirm": "Đăng xuất"
+      },
+      "login_required": "Bạn cần đăng nhập để thực hiện tính năng này"
+    }
+  },
+  "common": {
+    "loading": "Đang tải...",
+    "home": "Trang chủ",
+    "error": "Có lỗi xảy ra",
+    "success": "Thành công",
+    "user": "Người dùng",
+    "cancel": "Hủy",
+    "confirm": "Xác nhận",
+    "vietnamese": "Tiếng Việt",
+    "english": "Tiếng Anh",
+    "retry": "Thử lại",
+    "generate": "Tạo",
+    "preview": "Xem trước",
+    "close": "Đóng",
+    "remove": "Gỡ bỏ",
+    "apply": "Áp dụng",
+    "view_more": "Xem thêm",
+    "view_more_count": "Xem thêm {{count}} mục",
+    "collapse": "Thu gọn",
+    "expand_all": "Mở rộng tất cả",
+    "collapse_all": "Thu gọn tất cả",
+    "select_level": "Chọn trình độ",
+    "share": "Chia sẻ",
+    "share_message": "Khám phá khóa học \"{{title}}\" trên StudyNest!\n{{url}}",
+    "processing": "Đang xử lý...",
+    "favourited": "Đã thích",
+    "time": {
+      "mins_ago": "{{count}} phút trước",
+      "hours_ago": "{{count}} giờ trước",
+      "days_ago": "{{count}} ngày trước",
+      "hours": "giờ",
+      "mins": "phút"
+    },
+    "greetings": {
+      "morning": "Chào buổi sáng",
+      "afternoon": "Chào buổi chiều",
+      "evening": "Chào buổi tối"
+    }
+  },
+  "errors": {
+    "INVALID_CREDENTIALS": "Email hoặc mật khẩu không chính xác.",
+    "EMAIL_NOT_VERIFIED": "Email chưa được xác thực. Vui lòng nhập mã xác thực đã gửi đến email của bạn.",
+    "OTP_INVALID": "Mã xác thực không chính xác. Vui lòng kiểm tra lại.",
+    "OTP_EXPIRED": "Mã xác thực đã hết hạn. Vui lòng gửi lại mã mới.",
+    "SEND_OTP_FAILED": "Không thể gửi mã OTP. Vui lòng thử lại sau.",
+    "USER_NOT_FOUND": "Không tìm thấy người dùng trong hệ thống.",
+    "USERNAME_TAKEN": "Tên người dùng này đã tồn tại. Vui lòng chọn tên khác.",
+    "ACCOUNT_BLOCKED": "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ hỗ trợ.",
+    "ACCOUNT_BANNED": "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ hỗ trợ.",
+    "ACCOUNT_DELETED": "Tài khoản này đã bị xóa.",
+    "UNAUTHORIZED": "Phiên làm việc hết hạn. Vui lòng đăng nhập lại.",
+    "INTERNAL_ERROR": "Đã có lỗi hệ thống xảy ra. Vui lòng thử lại sau.",
+    "NETWORK_ERROR": "Mất kết nối máy chủ",
+    "NETWORK_DESC": "Chúng tôi không thể kết nối tới hệ thống. Vui lòng kiểm tra kết nối mạng của bạn và thử lại.",
+    "REFRESH_TOKEN_INVALID": "Phiên làm việc không hợp lệ. Vui lòng đăng nhập lại.",
+    "FULL_NAME_TOO_SHORT": "Họ và tên phải có ít nhất 8 ký tự.",
+    "USERNAME_TOO_SHORT": "Tên đăng nhập phải có ít nhất 8 ký tự.",
+    "USERNAME_INVALID_FORMAT": "Tên đăng nhập chỉ được chứa chữ cái, số và dấu gạch dưới.",
+    "USERNAME_STARTS_WITH_NUMBER": "Tên đăng nhập không được bắt đầu bằng số.",
+    "EMAIL_TAKEN": "Email đã được sử dụng. Vui lòng sử dụng email khác."
+  },
+  "profile_screen": {
+    "title": "Hồ sơ cá nhân",
+    "edit_profile": "Chỉnh sửa hồ sơ",
+    "stats": {
+      "points": "Điểm tích lũy",
+      "streak": "Chuỗi ngày",
+      "courses": "Khóa học",
+      "next_level": "Còn {{xp}} XP để lên cấp"
+    },
+    "sections": {
+      "about": "Giới thiệu",
+      "expertise": "Chuyên môn & Kỹ năng",
+      "interests": "Lĩnh vực quan tâm",
+      "account": "Tài khoản",
+      "preferences": "Tùy chỉnh",
+      "support": "Hỗ trợ",
+      "settings": "Cài đặt & Bảo mật",
+      "features": "Tính năng"
+    },
+    "notifications": "Thông báo",
+    "language": "Ngôn ngữ",
+    "about_app": "Về ứng dụng",
+    "learning": "Học tập",
+    "favorites": "Yêu thích",
+    "instructor_dashboard": "Bảng giảng viên",
+    "messages": "Tin nhắn",
+    "account_settings": "Cài đặt tài khoản",
+    "my_wallet": "Ví của tôi",
+    "subscription": "Thuê bao",
+    "transaction_history": "Lịch sử giao dịch",
+    "refund_request": "Yêu cầu hoàn tiền",
+    "coming_soon": "Sắp ra mắt",
+    "fields": {
+      "full_name": "Họ và tên",
+      "username": "Tên người dùng",
+      "bio": "Tiểu sử",
+      "bio_placeholder": "Hãy viết gì đó về bạn...",
+      "learning_goals": "Mục tiêu học tập",
+      "daily_goal": "Mục tiêu mỗi ngày",
+      "learning_style": "Phong cách học",
+      "avatar": "Ảnh đại diện",
+      "full_name_placeholder": "Họ và tên của bạn",
+      "username_placeholder": "biệt_danh",
+      "bio_input_placeholder": "Kể về bản thân bạn một chút...",
+      "goals_placeholder": "Bạn muốn đạt được điều gì?",
+      "basic_info_title": "Thông tin cơ bản",
+      "goals_section_title": "Giới thiệu & Mục tiêu",
+      "tap_to_change_avatar": "Nhấn vào ảnh để thay đổi",
+      "gender": "Giới tính",
+      "birthday": "Ngày sinh",
+      "address": "Địa chỉ",
+      "interests": "Sở thích",
+      "joined_date": "Ngày tham gia",
+      "not_set": "Chưa thiết lập",
+      "minutes_per_day": "{{minutes}} phút/ngày",
+      "gender_male": "Nam",
+      "gender_female": "Nữ",
+      "gender_other": "Khác"
+    },
+    "actions": {
+      "save": "Lưu thay đổi",
+      "upload_photo": "Tải ảnh lên",
+      "change_photo": "Đổi ảnh đại diện"
+    },
+    "help": "Trợ giúp & Hỗ trợ"
+  },
+  "home_screen": {
+    "recommended": {
+      "badge": "Cho bạn",
+      "title": "Khóa học gợi ý",
+      "view_all": "Xem tất cả",
+      "match": "{{pct}}% phù hợp",
+      "instructor": "Giảng viên",
+      "no_data": "Đang cập nhật",
+      "empty": {
+        "title": "Không có gợi ý nào cho bạn lúc này",
+        "description": "Hãy hoàn thành hồ sơ để nhận gợi ý chính xác hơn"
+      }
+    },
+    "sections": {
+      "top_rated": "Khóa học đánh giá cao",
+      "newest": "Khóa học mới nhất",
+      "popular": "Phổ biến",
+      "view_all": "Xem tất cả"
+    },
+    "carousel": {
+      "loading_more": "Đang tải...",
+      "pull_to_load": "Kéo để xem thêm khóa học",
+      "subtitles": {
+        "top": "Được đánh giá cao bởi học viên",
+        "trending": "Được nhiều học viên xem gần đây",
+        "newest": "Vừa được ra mắt gần đây",
+        "featured": "Khám phá lựa chọn bán chạy",
+        "recommended": "Dựa trên sở thích và hành vi học tập của bạn"
+      }
+    }
+  },
+  "notifications_screen": {
+    "title": "Thông báo",
+    "all": "Tất cả",
+    "unread": "Chưa đọc",
+    "mark_all_read": "Đánh dấu tất cả đã đọc",
+    "empty": {
+      "title": "Chưa có thông báo nào",
+      "description": "Chúng tôi sẽ thông báo cho bạn khi có tin mới."
+    }
+  },
+  "favorites_screen": {
+    "title": "Khóa học yêu thích",
+    "personal": "Cá nhân",
+    "search_placeholder": "Tìm kiếm khóa học đã lưu...",
+    "all_categories": "Tất cả",
+    "sort": {
+      "newest": "Mới nhất",
+      "rating": "Đánh giá",
+      "views": "Lượt xem"
+    },
+    "stats": {
+      "saved": "Đã lưu",
+      "top_rated": "Đánh giá cao",
+      "views": "Lượt xem"
+    },
+    "empty": {
+      "title": "Chưa có mục yêu thích",
+      "description": "Hãy khám phá và lưu lại những khóa học bạn quan tâm!",
+      "explore_now": "Khám phá ngay"
+    }
+  },
+  "wallet_screen": {
+    "title": "Ví của tôi",
+    "all": "Tất cả",
+    "balance": "Số dư hiện tại",
+    "total_in": "Tổng nạp",
+    "total_out": "Tổng chi",
+    "top_up": "Nạp tiền",
+    "quick_top_up": "Nạp nhanh",
+    "amount_label": "Số tiền nạp (VND)",
+    "min_amount_hint": "Tối thiểu 50.000 VND",
+    "history": "Lịch sử giao dịch",
+    "view_all": "Xem tất cả",
+    "status": {
+      "pending": "Đang xử lý",
+      "completed": "Thành công",
+      "canceled": "Đã hủy",
+      "failed": "Thất bại"
+    },
+    "types": {
+      "deposit": "Nạp tiền",
+      "purchase": "Thanh toán",
+      "refund": "Hoàn tiền",
+      "withdrawal": "Rút tiền"
+    },
+    "empty": {
+      "history": "Bạn chưa có giao dịch nào",
+      "description": "Nạp tiền để bắt đầu mua các khóa học chất lượng cao."
+    },
+    "paypal_info": "Thanh toán an toàn qua PayPal",
+    "confirm_top_up": "Xác nhận nạp",
+    "success_creating": "Đang chuyển đến PayPal...",
+    "error_min_amount": "Số tiền tối thiểu là 50,000 VND"
+  },
+  "course_detail": {
+    "loading": "Đang tải khóa học...",
+    "not_found": "Không tìm thấy khóa học",
+    "building": "Khóa học đang được xây dựng",
+    "view_preview": "Xem giới thiệu",
+    "last_updated": "Cập nhật {{date}}",
+    "all_levels": "Mọi cấp độ",
+    "levels": {
+      "beginner": "Cơ bản",
+      "intermediate": "Trung cấp",
+      "advanced": "Nâng cao",
+      "all": "Mọi cấp độ"
+    },
+    "students": "Học viên",
+    "instructor": "Giảng viên",
+    "price": "Giá khóa học",
+    "description": "Mô tả khóa học",
+    "curriculum": "Nội dung khóa học",
+    "sections_count": "{{count}} chương",
+    "lessons_count": "{{count}} bài học",
+    "lessons_count_label": "bài học",
+    "instructor_courses_count": "{{count}} khóa học",
+    "enroll_success": "Đăng ký khóa học thành công!",
+    "total_duration_label": "Thời lượng",
+    "level_label": "Trình độ",
+    "language_label": "Ngôn ngữ",
+    "total_duration": "Tổng thời lượng {{duration}}",
+    "outcomes": "Bạn sẽ học được gì",
+    "requirements": "Yêu cầu",
+    "buy_now": "Mua ngay",
+    "add_to_cart": "Thêm vào giỏ hàng",
+    "enroll_now": "Đăng ký ngay",
+    "start_learning": "Bắt đầu học",
+    "already_enrolled": "Đã đăng ký",
+    "already_favourited": "Đã thích",
+    "favourite": "Yêu thích",
+    "free": "Miễn phí",
+    "reviews": "Đánh giá",
+    "no_reviews": "Chưa có đánh giá nào",
+    "related_topics": "Chủ đề liên quan",
+    "what_you_get": "Lợi ích từ khóa học",
+    "lifetime_access": "Truy cập trọn đời",
+    "completion_certificate": "Chứng chỉ hoàn thành",
+    "support_24_7": "Hỗ trợ 24/7",
+    "full_money_back": "Hoàn tiền trong 30 ngày",
+    "money_back_guarantee": "Đảm bảo hoàn tiền trong 30 ngày",
+    "view_available_discounts": "Xem {{count}} mã giảm giá khả dụng",
+    "apply_discount_placeholder": "Nhập mã giảm giá",
+    "checkout": {
+      "confirm_title": "Xác nhận đăng ký",
+      "confirm_subtitle": "Sẵn sàng nâng tầm kiến thức cùng StudyNest?",
+      "benefits_title": "Quyền lợi của bạn:",
+      "processing": "Đang xử lý...",
+      "success_title": "Đăng ký thành công!",
+      "success_subtitle": "Chúc mừng! Bạn đã sẵn sàng bắt đầu hành trình mới.",
+      "enroll_now": "Đăng ký ngay",
+      "start_learning": "Bắt đầu học ngay"
+    },
+    "discounts": {
+      "title": "Mã giảm giá",
+      "expiry": "Hết hạn: {{date}}",
+      "no_limit": "Không giới hạn",
+      "loading": "Đang tải...",
+      "no_discounts": "Không có mã giảm giá nào",
+      "select_hint": "Chọn mã giảm giá phù hợp nhất",
+      "view_more": "Xem chi tiết",
+      "apply": "Áp dụng",
+      "off": "GIẢM",
+      "discount_invalid": "Mã giảm giá không hợp lệ"
+    },
+    "building_course": {
+      "developing": "Đang hoàn thiện",
+      "title": "Nội dung đang được chuẩn bị",
+      "default_message": "Giảng viên đang nỗ lực hoàn thiện các bài học chất lượng cao nhất cho bạn. Hãy kiên nhẫn nhé!",
+      "explore_others": "Khám phá khóa học khác",
+      "favourite_hint": "Nhấn Yêu thích để nhận thông báo ngay khi có bài mới"
+    },
+    "preview": {
+      "title": "Xem trước khóa học",
+      "youtube_notice": "Để có trải nghiệm tốt nhất, bạn sẽ được chuyển đến YouTube để xem video giới thiệu này.",
+      "watch_on_youtube": "Xem trên YouTube",
+      "no_preview": "Hiện chưa có video giới thiệu"
+    }
+  }
+}

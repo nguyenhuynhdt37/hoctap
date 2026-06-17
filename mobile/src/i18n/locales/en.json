@@ -1,0 +1,428 @@
+{
+  "auth": {
+    "welcome": "Welcome",
+    "login": "Login",
+    "register": "Register",
+    "phone_placeholder": "Phone number",
+    "otp_placeholder": "Enter OTP code",
+    "continue": "Continue",
+    "or": "OR",
+    "google_login": "Continue with Google",
+    "github_login": "Continue with GitHub",
+    "email_login": "Email Login",
+    "email_label": "Email Address",
+    "email_placeholder": "example@gmail.com",
+    "use_email": "Use Email to Login",
+    "use_phone": "Use Phone Number to Login",
+    "phone_msg": "Use your phone number to sign in to your account.",
+    "email_msg": "Enter your email to continue your knowledge journey.",
+    "invalid_phone": "Invalid phone number",
+    "invalid_email": "Invalid email address",
+    "enter_password": "Please enter your password",
+    "password_label": "Password",
+    "password_login": "Password Login",
+    "password_msg": "Use your password for quick access to your account.",
+    "forgot_password": "Forgot password",
+    "register_now": "Register now",
+    "register_title": "Create Account",
+    "register_msg": "Join thousands of learners worldwide.",
+    "register_button": "Create Account",
+    "fullname_label": "Full Name",
+    "fullname_placeholder": "John Doe",
+    "confirm_password_label": "Confirm Password",
+    "already_have_account": "Already have an account?",
+    "login_now": "Login now",
+    "password_mismatch": "Passwords do not match",
+    "password_too_short": "Password must be at least 6 characters",
+    "enter_value": "Please enter a value",
+    "verify_title": "Account Verification",
+    "verify_msg": "A 6-digit code has been sent to",
+    "not_received": "Didn't receive the code?",
+    "resend_after": "Resend in",
+    "resend_now": "Resend now",
+    "otp_invalid": "Invalid or expired OTP code",
+    "otp_expires_in": "Code expires in",
+    "verify_success": "Verification successful!",
+    "verify_welcome": "Welcome to StudyNest.",
+    "onboarding": {
+      "badge": "AI LEARNING PLATFORM",
+      "title": "Learn Smarter with AI",
+      "description": "Personalized learning platform helping you achieve your goals faster and more effectively.",
+      "start": "Start Journey",
+      "try_dev": "Try Now (Dev)"
+    },
+    "profile": {
+      "step_indicator": "Step {{current}} of {{total}}",
+      "basic_info": {
+        "title": "Let's Get Started! 👋",
+        "description": "Set up your basic information.",
+        "full_name": "Full Name",
+        "full_name_placeholder": "John Doe",
+        "username": "Username",
+        "username_placeholder": "john_dev",
+        "bio": "Short Bio",
+        "bio_input_placeholder": "Tell us a bit about yourself...",
+        "bio_placeholder": "No bio yet.",
+        "facebook_url": "Facebook",
+        "facebook_url_placeholder": "https://facebook.com/yourusername",
+        "birthday": "Birthday",
+        "birthday_placeholder": "dd/mm/yyyy",
+        "location": "Location",
+        "location_placeholder": "City, District",
+        "citizenship_identity": "ID Number",
+        "citizenship_identity_placeholder": "ID or Passport Number",
+        "ai_prompt_title": "Generate Bio with AI ✨",
+        "ai_prompt_placeholder": "e.g., I am a CS student passionate about AI...",
+        "missing_info": "Please enter your name and username."
+      },
+      "education": {
+        "title": "What are you studying? 🎓",
+        "description": "This helps AI personalize your path.",
+        "specialization": "Specialization / Department",
+        "level": "Current Level",
+        "missing_specialization": "Please select your specialization and level.",
+        "levels": {
+          "freshman_sophomore": "Freshman - Sophomore",
+          "junior_senior": "Junior - Senior",
+          "graduated": "Graduated",
+          "working": "Working Professional"
+        }
+      },
+      "skills": {
+        "title": "Skills & Interests ⚡️",
+        "description": "NeuralEarn will find the best materials for you.",
+        "skills_label": "Skills you already have",
+        "interests_label": "Topics you care about"
+      },
+      "goals": {
+        "title": "Your Goals 🎯",
+        "description": "Set goals for us to conquer together.",
+        "goal_label": "What is your biggest goal?",
+        "goal_placeholder": "e.g., Become an AI expert by 2026...",
+        "daily_time": "Daily Study Time",
+        "minutes": "Mins / Day",
+        "style": "Preferred Learning Style",
+        "goal_too_short": "Please enter at least 10 characters for your goal.",
+        "styles": {
+          "video": "Watch Videos",
+          "reading": "Read Materials",
+          "practice": "Practice"
+        }
+      },
+      "nav": {
+        "next": "Next",
+        "back": "Back",
+        "finish": "Finish & Start"
+      },
+      "logout_confirm": {
+        "title": "Logout?",
+        "description": "Are you sure you want to exit? Unsaved progress will be lost.",
+        "confirm": "Logout"
+      },
+      "login_required": "You need to log in to use this feature"
+    }
+  },
+  "common": {
+    "loading": "Loading...",
+    "home": "Home",
+    "error": "Something went wrong",
+    "success": "Success",
+    "user": "User",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "vietnamese": "Vietnamese",
+    "english": "English",
+    "retry": "Retry",
+    "generate": "Generate",
+    "preview": "Preview",
+    "close": "Close",
+    "remove": "Remove",
+    "apply": "Apply",
+    "view_more": "View More",
+    "view_more_count": "View {{count}} more",
+    "collapse": "Collapse",
+    "expand_all": "Expand All",
+    "collapse_all": "Collapse All",
+    "select_level": "Select Level",
+    "share": "Share",
+    "share_message": "Explore the course \"{{title}}\" on StudyNest!\n{{url}}",
+    "processing": "Processing...",
+    "favourited": "Favourited",
+    "time": {
+      "mins_ago": "{{count}} mins ago",
+      "hours_ago": "{{count}} hours ago",
+      "days_ago": "{{count}} days ago",
+      "hours": "hours",
+      "mins": "mins"
+    },
+    "greetings": {
+      "morning": "Good morning",
+      "afternoon": "Good afternoon",
+      "evening": "Good evening"
+    }
+  },
+  "errors": {
+    "INVALID_CREDENTIALS": "Email or password is incorrect.",
+    "EMAIL_NOT_VERIFIED": "Email is not verified. Please enter the verification code sent to your email.",
+    "OTP_INVALID": "Incorrect verification code. Please check again.",
+    "OTP_EXPIRED": "Verification code has expired. Please resend a new code.",
+    "SEND_OTP_FAILED": "Could not send OTP. Please try again later.",
+    "USER_NOT_FOUND": "User not found in the system.",
+    "USERNAME_TAKEN": "This username is already taken. Please choose another one.",
+    "ACCOUNT_BLOCKED": "Your account has been blocked. Please contact support.",
+    "ACCOUNT_BANNED": "Your account has been blocked. Please contact support.",
+    "ACCOUNT_DELETED": "This account has been deleted.",
+    "UNAUTHORIZED": "Session expired. Please log in again.",
+    "INTERNAL_ERROR": "A system error occurred. Please try again later.",
+    "REFRESH_TOKEN_INVALID": "Invalid session. Please log in again.",
+    "FULL_NAME_TOO_SHORT": "Full name must be at least 8 characters long.",
+    "USERNAME_TOO_SHORT": "Username must be at least 8 characters long.",
+    "USERNAME_INVALID_FORMAT": "Username can only contain letters, numbers, and underscores.",
+    "USERNAME_STARTS_WITH_NUMBER": "Username cannot start with a number.",
+    "EMAIL_TAKEN": "Email has already been taken. Please use another one."
+  },
+  "profile_screen": {
+    "title": "Personal Profile",
+    "edit_profile": "Edit Profile",
+    "stats": {
+      "points": "Earned Points",
+      "streak": "Days Streak",
+      "courses": "Courses"
+    },
+    "sections": {
+      "about": "About",
+      "expertise": "Expertise & Skills",
+      "interests": "Interests",
+      "account": "Account",
+      "preferences": "Preferences",
+      "support": "Support",
+      "settings": "Settings & Security",
+      "features": "Upcoming Features"
+    },
+    "notifications": "Notifications",
+    "language": "Language",
+    "about_app": "About App",
+    "help": "Help & Support",
+    "learning": "Learning",
+    "favorites": "Favorites",
+    "instructor_dashboard": "Instructor Dashboard",
+    "messages": "Messages",
+    "account_settings": "Account Settings",
+    "my_wallet": "My Wallet",
+    "subscription": "Subscription",
+    "transaction_history": "Transaction History",
+    "refund_request": "Refund Request",
+    "coming_soon": "Coming Soon",
+    "fields": {
+      "full_name": "Full Name",
+      "username": "Username",
+      "bio": "Bio",
+      "bio_placeholder": "Tell us a bit about yourself...",
+      "learning_goals": "Learning Goals",
+      "daily_goal": "Daily Goal",
+      "learning_style": "Learning Style",
+      "avatar": "Profile Picture",
+      "full_name_placeholder": "Your full name",
+      "username_placeholder": "username",
+      "bio_input_placeholder": "Tell us about yourself...",
+      "goals_placeholder": "What do you want to achieve?",
+      "basic_info_title": "Basic Information",
+      "goals_section_title": "About & Goals",
+      "tap_to_change_avatar": "Tap to change photo",
+      "gender": "Gender",
+      "birthday": "Birthday",
+      "address": "Address",
+      "interests": "Interests",
+      "joined_date": "Joined Date",
+      "not_set": "Not set",
+      "minutes_per_day": "{{minutes}} mins/day",
+      "gender_male": "Male",
+      "gender_female": "Female",
+      "gender_other": "Other"
+    },
+    "actions": {
+      "save": "Save Changes",
+      "upload_photo": "Upload Photo",
+      "change_photo": "Change Photo"
+    }
+  },
+  "home_screen": {
+    "recommended": {
+      "badge": "For you",
+      "title": "Recommended",
+      "view_all": "View all",
+      "match": "{{pct}}% match",
+      "instructor": "Instructor",
+      "no_data": "Updating",
+      "empty": {
+        "title": "No recommendations yet",
+        "description": "Complete your profile to get better recommendations"
+      }
+    },
+    "sections": {
+      "top_rated": "Top Rated Courses",
+      "newest": "Newest Courses",
+      "popular": "Popular",
+      "view_all": "View all"
+    },
+    "carousel": {
+      "loading_more": "Loading...",
+      "pull_to_load": "Pull to load more courses",
+      "subtitles": {
+        "top": "Top rated by students",
+        "trending": "Trending among students",
+        "newest": "Recently launched",
+        "featured": "Explore best sellers",
+        "recommended": "Based on your interests"
+      }
+    }
+  },
+  "notifications_screen": {
+    "title": "Notifications",
+    "all": "All",
+    "unread": "Unread",
+    "mark_all_read": "Mark all as read",
+    "empty": {
+      "title": "No notifications yet",
+      "description": "We'll notify you when something new arrives."
+    }
+  },
+  "favorites_screen": {
+    "title": "Favorite Courses",
+    "personal": "Personal",
+    "search_placeholder": "Search saved courses...",
+    "all_categories": "All",
+    "sort": {
+      "newest": "Newest",
+      "rating": "Rating",
+      "views": "Views"
+    },
+    "stats": {
+      "saved": "Saved",
+      "top_rated": "Top Rated",
+      "views": "Views"
+    },
+    "empty": {
+      "title": "No favorites yet",
+      "description": "Explore and save courses you are interested in!",
+      "explore_now": "Explore now"
+    }
+  },
+  "wallet_screen": {
+    "title": "My Wallet",
+    "all": "All",
+    "balance": "Current Balance",
+    "total_in": "Total In",
+    "total_out": "Total Out",
+    "top_up": "Top Up",
+    "quick_top_up": "Quick Top Up",
+    "amount_label": "Amount (VND)",
+    "min_amount_hint": "Min 50,000 VND",
+    "history": "Recent Transactions",
+    "view_all": "View all",
+    "status": {
+      "pending": "Pending",
+      "completed": "Completed",
+      "canceled": "Canceled",
+      "failed": "Failed"
+    },
+    "types": {
+      "deposit": "Deposit",
+      "purchase": "Payment",
+      "refund": "Refund",
+      "withdrawal": "Withdraw"
+    },
+    "empty": {
+      "history": "No transactions yet",
+      "description": "Top up your wallet to start buying high-quality courses."
+    },
+    "paypal_info": "Secure payment via PayPal",
+    "confirm_top_up": "Confirm Top Up",
+    "success_creating": "Redirecting to PayPal...",
+    "error_min_amount": "Minimum amount is 50,000 VND"
+  },
+  "course_detail": {
+    "loading": "Loading course...",
+    "not_found": "Course not found",
+    "building": "Course is under construction",
+    "view_preview": "View Preview",
+    "last_updated": "Updated {{date}}",
+    "all_levels": "All Levels",
+    "levels": {
+      "beginner": "Beginner",
+      "intermediate": "Intermediate",
+      "advanced": "Advanced",
+      "all": "All Levels"
+    },
+    "students": "Students",
+    "instructor": "Instructor",
+    "price": "Course Price",
+    "description": "Course Description",
+    "curriculum": "Curriculum",
+    "sections_count": "{{count}} sections",
+    "lessons_count": "{{count}} lessons",
+    "lessons_count_label": "lessons",
+    "instructor_courses_count": "{{count}} courses",
+    "enroll_success": "Successfully enrolled!",
+    "total_duration_label": "Duration",
+    "level_label": "Level",
+    "language_label": "Language",
+    "total_duration": "Total duration {{duration}}",
+    "outcomes": "What you'll learn",
+    "requirements": "Requirements",
+    "buy_now": "Buy Now",
+    "add_to_cart": "Add to Cart",
+    "enroll_now": "Enroll Now",
+    "start_learning": "Start Learning",
+    "already_enrolled": "Already Enrolled",
+    "already_favourited": "Favourited",
+    "favourite": "Favourite",
+    "free": "Free",
+    "reviews": "Reviews",
+    "no_reviews": "No reviews yet",
+    "related_topics": "Related Topics",
+    "what_you_get": "What you will get",
+    "lifetime_access": "Lifetime access",
+    "completion_certificate": "Completion certificate",
+    "support_24_7": "24/7 Support",
+    "full_money_back": "30-day money back",
+    "money_back_guarantee": "30-day money back guarantee",
+    "view_available_discounts": "View {{count}} available discounts",
+    "apply_discount_placeholder": "Enter discount code",
+    "checkout": {
+      "confirm_title": "Confirm Enrollment",
+      "confirm_subtitle": "Ready to level up with StudyNest?",
+      "benefits_title": "Your benefits:",
+      "processing": "Processing...",
+      "success_title": "Enrollment Successful!",
+      "success_subtitle": "Congratulations! You are ready to start a new journey.",
+      "enroll_now": "Enroll Now",
+      "start_learning": "Start Learning Now"
+    },
+    "discounts": {
+      "title": "Discounts",
+      "expiry": "Expires: {{date}}",
+      "no_limit": "No limit",
+      "loading": "Loading...",
+      "no_discounts": "No available discounts",
+      "select_hint": "Select the best discount",
+      "view_more": "View details",
+      "apply": "Apply",
+      "off": "OFF",
+      "discount_invalid": "Invalid discount code"
+    },
+    "building_course": {
+      "developing": "Developing",
+      "title": "Content is being prepared",
+      "default_message": "The instructor is working hard to complete the highest quality lessons for you. Please be patient!",
+      "explore_others": "Explore other courses",
+      "favourite_hint": "Tap Favourite to get notified when new lessons are available"
+    },
+    "preview": {
+      "title": "Course Preview",
+      "youtube_notice": "For the best experience, you will be redirected to YouTube to watch this video.",
+      "watch_on_youtube": "Watch on YouTube",
+      "no_preview": "No preview video available"
+    }
+  }
+}

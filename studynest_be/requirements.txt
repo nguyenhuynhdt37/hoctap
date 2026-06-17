@@ -1,0 +1,72 @@
+# === Core FastAPI stack ===
+fastapi>=0.115.6
+uvicorn[standard]>=0.37,<0.38
+anyio>=4.6
+starlette>=0.37.2
+python-multipart>=0.0.9
+pydantic>=2.8
+pydantic-settings>=2.7
+psycopg2-binary
+psycopg[binary]
+
+# === Database & ORM ===
+SQLAlchemy[asyncio]>=2.0.35
+greenlet>=3.0.3
+asyncpg>=0.30
+pgvector>=0.3
+alembic>=1.13
+redis>=5.0
+
+# === Auth & Security ===
+bcrypt>=4.2
+passlib[bcrypt]>=1.7
+pyjwt[crypto]>=2.9
+python-slugify>=8.0
+email-validator>=2.3
+fastapi-mail>=1.5.7
+
+# === Google & AI APIs ===
+google-generativeai>=0.5
+google-api-python-client>=2.152
+google-auth>=2.35
+google-auth-httplib2>=0.2
+google-auth-oauthlib>=1.2
+tiktoken>=0.7
+isodate>=0.6
+langchain-google-genai>=2.0.0
+langchain-text-splitters>=0.3.0
+langchain-core>=0.3.0
+
+
+# === Data & Utils ===
+numpy==1.26.4
+scipy==1.11.4
+faker>=26
+pandas>=2.2
+openpyxl>=3.1
+python-dotenv>=1.0
+sqlakeyset[asyncio]>=2.0
+fastapi-pagination[sqlalchemy]>=0.12
+
+# === Developer tools ===
+black>=25.9
+ruff>=0.6
+sqlalchemy2-stubs>=0.0.2a38
+sqlacodegen>=3.0
+
+# === OCR + Document Parsing (EasyOCR) ===
+easyocr>=1.7.2
+opencv-python-headless<4.11
+torch>=2.5
+PyMuPDF>=1.24
+pillow>=10.4
+python-docx>=1.1
+unstructured>=0.16
+semantic-text-splitter>=0.12
+loguru>=0.7
+youtube-transcript-api
+
+
+
+apscheduler
+google-auth
