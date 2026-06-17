@@ -9,8 +9,6 @@ import { useColorScheme } from 'nativewind'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as Haptics from 'expo-haptics'
 import { MotiView } from 'moti'
-import { authService } from '@/src/services/auth.service'
-import { useAuthStore } from '@/src/stores/auth.store'
 import { useThemeStore } from '@/src/stores/theme.store'
 import { BackButton } from '@/components/ui/BackButton'
 
@@ -44,7 +42,6 @@ export default function LanguageScreen() {
   const { colorScheme, setColorScheme } = useColorScheme()
   const setPreference = useThemeStore(s => s.setPreference)
   const isDark = colorScheme === 'dark'
-  const { user, setUser } = useAuthStore()
 
   const currentLang = i18n.language
 
@@ -54,13 +51,6 @@ export default function LanguageScreen() {
     try {
       await i18n.changeLanguage(code)
       await AsyncStorage.setItem(LANGUAGE_KEY, code)
-      if (user) {
-        const { data } = await authService.updateProfile({
-          fullname: user.fullname || '',
-          bio: user.bio || '',
-        })
-        setUser(data)
-      }
     } catch (error) {
       console.error(error)
     }

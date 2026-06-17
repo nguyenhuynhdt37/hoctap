@@ -122,7 +122,7 @@ const EmailAuthentication = () => {
     try {
       await api.post("/auth/verify-email", {
         email: email_register,
-        otp: otpString,
+        code: otpString,
       });
       setIsVerified(true);
       // Redirect về URL được chỉ định hoặc về trang chủ sau khi xác thực thành công

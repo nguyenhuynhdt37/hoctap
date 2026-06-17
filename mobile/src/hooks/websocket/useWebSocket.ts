@@ -10,6 +10,22 @@ interface UseWebSocketProps {
   role_name?: string | null;
 }
 
+function resolveWebSocketBaseUrl() {
+  const explicitWsUrl = process.env.EXPO_PUBLIC_WS_URL;
+  if (explicitWsUrl) return explicitWsUrl.replace(/\/$/, '');
+
+  const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+  if (apiUrl) {
+    return apiUrl
+      .replace(/\/api\/v1\/?$/, '')
+      .replace(/^https:\/\//, 'wss://')
+      .replace(/^http:\/\//, 'ws://')
+      .replace(/\/$/, '');
+  }
+
+  return 'ws://127.0.0.1:8000';
+}
+
 export function useWebSocket({
   endpoint,
   onMessage,
@@ -34,7 +50,7 @@ export function useWebSocket({
 
     try {
       const token = await SecureStore.getItemAsync('access_token');
-      const baseUrl = process.env.EXPO_PUBLIC_WS_URL || 'ws://127.0.0.1:8000';
+      const baseUrl = resolveWebSocketBaseUrl();
       
       // Ghép URL chính xác như web
       let wsUrl = `${baseUrl}${endpoint}`;

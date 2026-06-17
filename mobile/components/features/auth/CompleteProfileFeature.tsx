@@ -42,8 +42,15 @@ export function CompleteProfileFeature() {
     queryFn: metaService.getCategoriesWithTopics
   });
 
-  const handleFieldsChange = (fields: any[]) => {
-    setSelectedFields(fields)
+  const handleFieldToggle = (field: any) => {
+    setSelectedFields(currentFields => {
+      const exists = currentFields.some(item => item.id === field.id)
+      if (exists) {
+        return currentFields.filter(item => item.id !== field.id)
+      }
+
+      return [...currentFields, field]
+    })
     setSelectedTopics([])
   }
 
@@ -153,7 +160,7 @@ export function CompleteProfileFeature() {
               {step === 1 && (
                 <StepFields
                   selectedFields={selectedFields}
-                  setSelectedFields={handleFieldsChange}
+                  onToggleField={handleFieldToggle}
                   remoteCategories={remoteCategories}
                   isLoading={isCategoriesLoading}
                 />

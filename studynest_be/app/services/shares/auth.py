@@ -46,6 +46,19 @@ class AuthService:
         self.mail_service = mail_service
         self.wallet_service = wallet_service
 
+    async def _send_mail_or_503(self, mail_coro):
+        try:
+            return await mail_coro
+        except Exception as exc:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail={
+                    "error_code": "MAIL_SEND_FAILED",
+                    "message": "Không gửi được email. Vui lòng kiểm tra SMTP hoặc đổi tài khoản gửi mail.",
+                    "provider_error": str(exc),
+                },
+            ) from exc
+
     async def _create_session(self, user_id: Any, res: Response, user_agent: str | None = None, ip: str | None = None):
         # 1. Tạo session_id và refresh_token
         refresh_token = await self.security.generate_refresh_token()
@@ -265,7 +278,6 @@ class AuthService:
             new_user.email = schema.email
             new_user.fullname = schema.full_name if schema.full_name else ""
             password_hash = await self.security.hash_password(schema.password)
-            new_user.is_active = False
             new_user.password = password_hash
             new_user.create_at = get_now()
             self.db.add(new_user)
@@ -288,8 +300,10 @@ class AuthService:
                 user_id=new_user.id, code=code, expired_at=expired_at
             )
             self.db.add(verification)
-            await self.mail_service.send_verification_email(
-                schema.email, schema.full_name or "", code
+            await self._send_mail_or_503(
+                self.mail_service.send_verification_email(
+                    schema.email, schema.full_name or "", code
+                )
             )
             await self.db.commit()
             return {"message": "send Email ok"}
@@ -359,8 +373,10 @@ class AuthService:
             )
             await self.db.commit()
             await self.db.refresh(user)
-            await self.mail_service.send_verification_email(
-                email=schema.email, fullname=user.fullname, code=code
+            await self._send_mail_or_503(
+                self.mail_service.send_verification_email(
+                    email=schema.email, fullname=user.fullname, code=code
+                )
             )
             return True
 
@@ -405,7 +421,6 @@ class AuthService:
 
             # User đã được gán role USER từ lúc register, chỉ cần cập nhật trạng thái
             user.is_verified_email = True
-            user.is_active = True
             user.email_verified_at = get_now()
             user.update_at = get_now()
             
@@ -529,7 +544,6 @@ class AuthService:
                     password="google-oauth",
                     is_verified_email=True,
                     email_verified_at=get_now(),
-                    is_active=True,
                     create_at=get_now(),
                     update_at=get_now(),
                 )
@@ -706,10 +720,12 @@ class AuthService:
             await self.db.commit()
 
             # 4. Gửi email
-            await self.mail_service.send_login_otp_email(
-                email=user.email,
-                fullname=user.fullname,
-                code=code
+            await self._send_mail_or_503(
+                self.mail_service.send_login_otp_email(
+                    email=user.email,
+                    fullname=user.fullname,
+                    code=code,
+                )
             )
 
             return {

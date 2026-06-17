@@ -20,11 +20,17 @@ export default function AppLayout() {
 
     const inAppGroup = segments[0] === '(app)'
     const inAuthGroup = segments[0] === '(auth)'
-    const isCompleteProfile = segments[segments.length - 1] === 'complete-profile'
+    const currentScreen = segments[segments.length - 1]
+    const isCompleteProfile = currentScreen === 'complete-profile'
+    const isAccountSettingsScreen = ['language', 'settings', 'profile'].includes(
+      String(currentScreen)
+    )
 
     if (isAuthenticated) {
+      if (!user) return
+
       if (!user?.preferences_str) {
-        if (!isCompleteProfile) {
+        if (!isCompleteProfile && !isAccountSettingsScreen) {
           router.replace('/(app)/complete-profile')
         }
       } else {
@@ -35,7 +41,7 @@ export default function AppLayout() {
     } else if (!inAuthGroup && segments[0] !== 'demo') {
       router.replace('/(auth)/onboarding')
     }
-  }, [isAuthenticated, user?.preferences_str, isLoading, segments, isNavReady])
+  }, [isAuthenticated, user, isLoading, segments, isNavReady])
 
   if (!isNavReady || isLoading) {
     return null

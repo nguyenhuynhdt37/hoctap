@@ -153,8 +153,13 @@ export function ProfileFeature() {
         daily_goal_minutes: editData.daily_goal_minutes,
         preferred_learning_style: editData.preferred_learning_style,
       })
-      setUser(data)
+      if (data && user) {
+        setUser({ ...user, ...data })
+      } else if (data) {
+        setUser(data)
+      }
       setIsEditing(false)
+      await useAuthStore.getState().refreshUser()
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
     } catch (e) {
       Alert.alert(t('common.error'), 'Update failed.')

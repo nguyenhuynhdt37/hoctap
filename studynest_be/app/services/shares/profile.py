@@ -100,16 +100,30 @@ class ProfileService:
             await self.db.rollback()
             raise HTTPException(status_code=500, detail=f"Lỗi khi cập nhật hồ sơ: {e}")
 
-            return {
-                "id": str(user.id),
-                "fullname": user.fullname,
-                "bio": user.bio,
-                "facebook_url": user.facebook_url,
-                "birthday": user.birthday,
-                "conscious": user.conscious,
-                "district": user.district,
-                "citizenship_identity": user.citizenship_identity,
-                "learning_goals": user.learning_goals,
-                "daily_goal_minutes": user.daily_goal_minutes,
-                "preferred_learning_style": user.preferred_learning_style,
-            }
+        return {
+            "id": user.id,
+            "fullname": user.fullname,
+            "email": user.email,
+            "avatar": user.avatar,
+            "bio": user.bio,
+            "facebook_url": user.facebook_url,
+            "birthday": user.birthday,
+            "conscious": user.conscious,
+            "district": user.district,
+            "citizenship_identity": user.citizenship_identity,
+            "is_verified_email": bool(user.is_verified_email),
+            "email_verified_at": user.email_verified_at if user.is_verified_email else None,
+            "is_banned": bool(user.is_banned),
+            "banned_reason": user.banned_reason,
+            "banned_until": user.banned_until,
+            "last_login_at": user.last_login_at,
+            "preferences_str": user.preferences_str,
+            "learning_goals": user.learning_goals,
+            "daily_goal_minutes": user.daily_goal_minutes,
+            "preferred_learning_style": user.preferred_learning_style,
+            "paypal_email": user.paypal_email,
+            "paypal_payer_id": user.paypal_payer_id,
+            "paypal_raw_payer_id": user.paypal_payer_id,
+            "created_at": user.create_at,
+            "updated_at": user.update_at,
+        }

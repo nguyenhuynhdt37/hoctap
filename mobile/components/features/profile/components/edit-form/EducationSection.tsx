@@ -1,4 +1,4 @@
-import React, { memo, useState } from 'react'
+import React, { memo } from 'react'
 import { View, Pressable, ActivityIndicator } from 'react-native'
 import { Text } from '@/components/ui/Text'
 import { useTranslation } from 'react-i18next'
@@ -31,7 +31,6 @@ const SelectionItem = memo(({
   level,
   onSelectLevel,
   isExpanded,
-  onToggleExpand
 }: { 
   label: string, 
   selected: boolean, 
@@ -39,7 +38,6 @@ const SelectionItem = memo(({
   level?: string,
   onSelectLevel?: (l: string) => void,
   isExpanded?: boolean,
-  onToggleExpand: () => void
 }) => {
   const { t } = useTranslation()
   const { colorScheme } = useColorScheme()
@@ -53,7 +51,7 @@ const SelectionItem = memo(({
         <Pressable 
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-            onToggleExpand()
+            onToggle()
           }} 
           className="flex-1 flex-row items-center gap-4"
         >
@@ -111,18 +109,12 @@ export function EducationSection({ specializations, onChange }: EducationSection
     queryFn: metaService.getSpecializations
   })
 
-  const [expandedId, setExpandedId] = useState<string | null>(
-    specializations.length > 0 ? specializations[0].specialization_id : null
-  )
-
   const toggleSpecialization = (id: string) => {
     const exists = specializations.find(s => s.specialization_id === id)
     if (exists) {
       onChange(specializations.filter(s => s.specialization_id !== id))
-      if (expandedId === id) setExpandedId(null)
     } else {
       onChange([...specializations, { specialization_id: id, level: 'freshman_sophomore', skill_ids: [] }])
-      setExpandedId(id)
     }
   }
 
@@ -166,15 +158,8 @@ export function EducationSection({ specializations, onChange }: EducationSection
               label={displayName}
               selected={isSelected}
               level={specData?.level}
-              isExpanded={expandedId === spec.id && isSelected}
+              isExpanded={false}
               onToggle={() => toggleSpecialization(spec.id)}
-              onToggleExpand={() => {
-                if (isSelected) {
-                  setExpandedId(expandedId === spec.id ? null : spec.id)
-                } else {
-                  toggleSpecialization(spec.id)
-                }
-              }}
               onSelectLevel={(l) => updateLevel(spec.id, l)}
             />
           )
@@ -183,4 +168,3 @@ export function EducationSection({ specializations, onChange }: EducationSection
     </View>
   )
 }
-

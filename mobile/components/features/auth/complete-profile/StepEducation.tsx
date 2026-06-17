@@ -3,15 +3,13 @@ import { View, Pressable, StyleSheet, ActivityIndicator, Text } from 'react-nati
 // import { Text } from '../../../ui/Text';
 import { useTranslation } from 'react-i18next';
 import { CheckCircle2 } from 'lucide-react-native';
-import { useQuery } from '@tanstack/react-query';
-import { metaService } from '../../../../src/services/meta.service';
 import * as Haptics from 'expo-haptics';
 
 export function StepFields({
-  selectedFields, setSelectedFields, remoteCategories, isLoading
+  selectedFields, onToggleField, remoteCategories, isLoading
 }: {
   selectedFields: any[]
-  setSelectedFields: (v: any[]) => void
+  onToggleField: (field: any) => void
   remoteCategories: any[] | undefined
   isLoading: boolean
 }) {
@@ -19,14 +17,7 @@ export function StepFields({
 
   const toggleField = (field: any) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setSelectedFields(prev => {
-      const exists = prev.find(s => s.id === field.id);
-      if (exists) {
-        return prev.filter(s => s.id !== field.id);
-      } else {
-        return [...prev, field];
-      }
-    });
+    onToggleField(field);
   };
 
   if (isLoading) {
@@ -88,6 +79,9 @@ export function StepFields({
 const styles = StyleSheet.create({
   container: {
     paddingVertical: 10,
+  },
+  gridContainer: {
+    gap: 12,
   },
   loadingContainer: {
     height: 200,
