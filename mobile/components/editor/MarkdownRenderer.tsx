@@ -5,6 +5,7 @@
 import React, { useMemo } from 'react'
 import { StyleSheet, useColorScheme, View } from 'react-native'
 import { WebView } from 'react-native-webview'
+import type { WebViewMessageEvent } from 'react-native-webview'
 import MarkdownIt from 'markdown-it'
 import markdownItTaskLists from 'markdown-it-task-lists'
 import markdownItAttrs from 'markdown-it-attrs'
@@ -14,6 +15,7 @@ interface MarkdownRendererProps {
   className?: string
   style?: object
   compact?: boolean
+  autoHeight?: boolean
 }
 
 // CSS cho markdown - theo chuẩn NeuralEarn emerald theme
@@ -209,9 +211,10 @@ const createHTMLDocument = (content: string, darkMode: boolean, compact?: boolea
 `
 }
 
-export function MarkdownRenderer({ content, className, style, compact }: MarkdownRendererProps) {
+export function MarkdownRenderer({ content, className, style, compact, autoHeight }: MarkdownRendererProps) {
   const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark'
+  const [contentHeight, setContentHeight] = React.useState(0)
 
   const htmlContent = useMemo(() => {
     if (!content || !content.trim()) return ''
@@ -227,11 +230,59 @@ export function MarkdownRenderer({ content, className, style, compact }: Markdow
     return null
   }
 
+  const webViewStyle = [
+    styles.webview,
+    compact ? { minHeight: 20 } : null,
+    autoHeight && contentHeight > 0 ? { height: contentHeight } : null,
+  ]
+
+  if (autoHeight) {
+    return (
+      <View style={[styles.container, style]} className={className}>
+        <WebView
+          source={{ html: fullHTML }}
+          style={webViewStyle}
+          scrollEnabled={false}
+          showsVerticalScrollIndicator={false}
+          showsHorizontalScrollIndicator={false}
+          bounces={false}
+          overScrollMode="never"
+          androidLayerType="hardware"
+          mixedContentMode="always"
+          originWhitelist={['*']}
+          injectedJavaScript={`
+            (function() {
+              function postHeight() {
+                var height = Math.max(
+                  document.body.scrollHeight,
+                  document.documentElement.scrollHeight,
+                  document.body.offsetHeight,
+                  document.documentElement.offsetHeight
+                );
+                window.ReactNativeWebView.postMessage(String(height));
+              }
+              postHeight();
+              setTimeout(postHeight, 150);
+              setTimeout(postHeight, 500);
+            })();
+            true;
+          `}
+          onMessage={(event: WebViewMessageEvent) => {
+            const nextHeight = Number(event.nativeEvent.data)
+            if (Number.isFinite(nextHeight) && nextHeight > 0) {
+              setContentHeight(Math.ceil(nextHeight))
+            }
+          }}
+        />
+      </View>
+    )
+  }
+
   return (
     <View style={[styles.container, style]} className={className}>
       <WebView
         source={{ html: fullHTML }}
-        style={[styles.webview, compact ? { minHeight: 20 } : null]}
+        style={webViewStyle}
         scrollEnabled={!compact}
         showsVerticalScrollIndicator={false}
         showsHorizontalScrollIndicator={false}

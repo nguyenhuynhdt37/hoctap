@@ -17,6 +17,9 @@ import { ContentTab } from './components/ContentTab'
 import { QuizLesson } from './components/QuizLessonView'
 import { CodeLesson } from './components/CodeLesson'
 import { QATab } from './components/QATab'
+import { ResourcesTab } from './components/ResourcesTab'
+import { NotesSection } from './components/NotesSection'
+import { CourseOverviewTab } from './components/CourseOverviewTab'
 import { BottomNav } from './components/BottomNav'
 import { VideoLesson, VideoLessonRef } from './components/VideoLesson'
 import { Celebration } from './components/Celebration'
@@ -27,7 +30,7 @@ export function LearningFeature({ courseId, courseTitle, initialCourseInfo, init
   const isDark = useColorScheme() === 'dark'
   const insets = useSafeAreaInsets()
   const videoRef = useRef<VideoLessonRef>(null)
-  const [, setCurrentTime] = useState(0)
+  const [currentTime, setCurrentTime] = useState(0)
   const [showQA, setShowQA] = useState(false)
 
   const {
@@ -35,6 +38,7 @@ export function LearningFeature({ courseId, courseTitle, initialCourseInfo, init
     navData,
     progress,
     curriculum,
+    courseInfo,
     sidebarOpen,
     activeTab,
     isLoading,
@@ -56,10 +60,22 @@ export function LearningFeature({ courseId, courseTitle, initialCourseInfo, init
 
   useEffect(() => {
     if (initialLessonId && initialCommentId) {
-      setActiveTab('content')
-      setShowQA(true)
+      if (currentLesson?.lesson_type === 'code') {
+        setActiveTab('content')
+        setShowQA(true)
+      } else {
+        setActiveTab('qa')
+      }
     }
-  }, [initialLessonId, initialCommentId, setActiveTab])
+  }, [currentLesson?.lesson_type, initialLessonId, initialCommentId, setActiveTab])
+
+  useEffect(() => {
+    if (currentLesson?.lesson_type === 'code' && activeTab !== 'content') {
+      setActiveTab('content')
+    }
+  }, [activeTab, currentLesson?.lesson_type, setActiveTab])
+
+  const effectiveCourseInfo = courseInfo || initialCourseInfo
 
   if (isLoading || !curriculum) {
     return (
@@ -70,6 +86,7 @@ export function LearningFeature({ courseId, courseTitle, initialCourseInfo, init
   }
 
   const showVideo = currentLesson?.lesson_type === 'video' && currentLesson.file_id
+  const isCodeLesson = currentLesson?.lesson_type === 'code'
 
   return (
     <View
@@ -117,7 +134,9 @@ export function LearningFeature({ courseId, courseTitle, initialCourseInfo, init
           />
         )}
 
-        <TabBar activeTab={activeTab} onTabChange={setActiveTab} insets={insets} />
+        {!isCodeLesson && (
+          <TabBar activeTab={activeTab} onTabChange={setActiveTab} insets={insets} />
+        )}
 
         <View className="flex-1">
           {currentLesson && activeTab === 'content' && (
@@ -135,10 +154,31 @@ export function LearningFeature({ courseId, courseTitle, initialCourseInfo, init
             )
           )}
 
+          {currentLesson && activeTab === 'qa' && !isCodeLesson && (
+            <QATab lessonId={currentLesson.id} initialCommentId={initialCommentId} />
+          )}
+
+          {currentLesson && activeTab === 'resources' && !isCodeLesson && (
+            <ResourcesTab resources={currentLesson.resources} />
+          )}
+
+          {currentLesson && activeTab === 'notes' && !isCodeLesson && (
+            <NotesSection
+              lessonId={currentLesson.id}
+              isDark={isDark}
+              currentVideoTime={currentTime}
+              onSeekToTime={(time) => videoRef.current?.seekTo(time)}
+            />
+          )}
+
+          {activeTab === 'course_overview' && !isCodeLesson && (
+            <CourseOverviewTab curriculum={curriculum} courseInfo={effectiveCourseInfo} />
+          )}
+
         </View>
       </ScrollView>
 
-      {currentLesson && (
+      {currentLesson && isCodeLesson && (
         <Pressable
           onPress={() => setShowQA(true)}
           className="absolute right-5 z-40 h-14 w-14 items-center justify-center rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/30"
