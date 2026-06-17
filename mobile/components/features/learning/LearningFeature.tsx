@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect, useState, useRef } from 'react'
-import { Modal, Pressable, RefreshControl, ScrollView, useColorScheme, View } from 'react-native'
+import { Pressable, RefreshControl, ScrollView, useColorScheme, View } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { Text } from '@/components/ui'
@@ -17,6 +17,7 @@ import { ContentTab } from './components/ContentTab'
 import { QuizLesson } from './components/QuizLessonView'
 import { CodeLesson } from './components/CodeLesson'
 import { QATab } from './components/QATab'
+import { CodeQABottomSheet } from './components/CodeLesson/CodeQABottomSheet'
 import { ResourcesTab } from './components/ResourcesTab'
 import { NotesSection } from './components/NotesSection'
 import { CourseOverviewTab } from './components/CourseOverviewTab'
@@ -229,35 +230,14 @@ export function LearningFeature({ courseId, courseTitle, initialCourseInfo, init
         />
       )}
 
-      <Modal
+      <CodeQABottomSheet
         visible={showQA}
-        animationType="slide"
-        presentationStyle="fullScreen"
-        onRequestClose={() => setShowQA(false)}
-      >
-        <SafeAreaView className={`flex-1 ${isDark ? 'bg-zinc-950' : 'bg-white'}`}>
-          <View className={`flex-row items-center justify-between border-b px-4 py-3 ${isDark ? 'border-zinc-800 bg-zinc-950' : 'border-zinc-200 bg-white'}`}>
-            <View className="flex-1 pr-3">
-              <Text className={`text-base font-bold ${isDark ? 'text-white' : 'text-zinc-900'}`}>
-                Hỏi đáp
-              </Text>
-              <Text numberOfLines={1} className={`mt-0.5 text-xs ${isDark ? 'text-zinc-400' : 'text-zinc-500'}`}>
-                {currentLesson?.title ?? courseTitle}
-              </Text>
-            </View>
-            <Pressable
-              onPress={() => setShowQA(false)}
-              className={`h-10 w-10 items-center justify-center rounded-full ${isDark ? 'bg-zinc-900' : 'bg-zinc-100'}`}
-            >
-              <Ionicons name="close" size={22} color={isDark ? '#FFFFFF' : '#18181B'} />
-            </Pressable>
-          </View>
-
-          {currentLesson && (
-            <QATab lessonId={currentLesson.id} initialCommentId={initialCommentId} />
-          )}
-        </SafeAreaView>
-      </Modal>
+        lessonId={currentLesson?.id}
+        lessonTitle={currentLesson?.title ?? courseTitle}
+        initialCommentId={initialCommentId}
+        isDark={isDark}
+        onClose={() => setShowQA(false)}
+      />
 
       <Celebration
         visible={celebration.visible}

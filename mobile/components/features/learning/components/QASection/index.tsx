@@ -22,13 +22,14 @@ interface QASectionProps {
   lessonId: string
   isDark: boolean
   initialCommentId?: string
+  hideHeader?: boolean
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // COMPONENT
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export function QASection({ lessonId, isDark, initialCommentId }: QASectionProps) {
+export function QASection({ lessonId, isDark, initialCommentId, hideHeader }: QASectionProps) {
   const [comments, setComments] = useState<QAComment[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -230,24 +231,25 @@ export function QASection({ lessonId, isDark, initialCommentId }: QASectionProps
 
   return (
     <View className="flex-1">
-      {/* Header */}
-      <View className={`px-5 py-4 border-b ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-gray-100'}`}>
-        <View className="flex-row items-center justify-between">
-          <View className="flex-row items-center gap-3">
-            <View className={`w-10 h-10 rounded-full items-center justify-center ${isDark ? 'bg-zinc-800' : 'bg-gray-100'}`}>
-              <Ionicons name="chatbubbles" size={20} color={isDark ? '#A1A1AA' : '#71717A'} />
-            </View>
-            <View>
-              <Text className={`text-base font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                Hỏi & Đáp
-              </Text>
-              <Text className={`text-xs ${isDark ? 'text-zinc-500' : 'text-gray-500'}`}>
-                {comments.length} bình luận
-              </Text>
+      {!hideHeader && (
+        <View className={`px-5 py-4 border-b ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-gray-100'}`}>
+          <View className="flex-row items-center justify-between">
+            <View className="flex-row items-center gap-3">
+              <View className={`w-10 h-10 rounded-full items-center justify-center ${isDark ? 'bg-zinc-800' : 'bg-gray-100'}`}>
+                <Ionicons name="chatbubbles" size={20} color={isDark ? '#A1A1AA' : '#71717A'} />
+              </View>
+              <View>
+                <Text className={`text-base font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                  Hỏi & Đáp
+                </Text>
+                <Text className={`text-xs ${isDark ? 'text-zinc-500' : 'text-gray-500'}`}>
+                  {comments.length} bình luận
+                </Text>
+              </View>
             </View>
           </View>
         </View>
-      </View>
+      )}
 
       {/* Comment Form */}
       <CommentForm
