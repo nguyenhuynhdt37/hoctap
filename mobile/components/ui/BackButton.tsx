@@ -24,7 +24,11 @@ export function BackButton({ onPress, className, icon = 'chevron-back', size = 2
     if (onPress) {
       onPress()
     } else {
-      router.back()
+      if (router.canGoBack()) {
+        router.back()
+      } else {
+        router.replace('/')
+      }
     }
   }
 

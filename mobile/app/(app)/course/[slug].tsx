@@ -46,7 +46,13 @@ export default function CourseDetailPage() {
         course={course} 
         data={data} 
         onPreview={() => openPreview(course.id)} 
-        onBack={() => router.back()} 
+        onBack={() => {
+          if (router.canGoBack()) {
+            router.back()
+          } else {
+            router.replace('/')
+          }
+        }} 
         isDark={isDark}
       />
 

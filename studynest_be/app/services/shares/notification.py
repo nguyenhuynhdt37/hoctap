@@ -1,6 +1,8 @@
+import asyncio
 import uuid
 from typing import Optional
 
+import httpx
 from fastapi import Depends, HTTPException
 from loguru import logger
 from sqlalchemy import func, or_, select, update
@@ -8,11 +10,50 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.embedding import EmbeddingService, get_embedding_service
 from app.core.ws_manager import ws_manager
-from app.db.models.database import Notifications
+from app.db.models.database import Notifications, UserPushTokens
 from app.db.sesson import get_session
 from app.libs.formats.datetime import now as get_now
 from app.libs.formats.datetime import serialize, to_utc_naive
 from app.schemas.shares.notification import NotificationCreateSchema
+
+
+async def send_expo_push_notifications_async(
+    tokens: list[str], title: str, body: str, data: dict = None
+):
+    if not tokens:
+        return
+
+    url = "https://exp.host/--/api/v2/push/send"
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Accept-Encoding": "gzip, deflate",
+    }
+
+    messages = []
+    for token in tokens:
+        if not token.startswith("ExponentPushToken"):
+            continue
+        messages.append({
+            "to": token,
+            "title": title,
+            "body": body,
+            "data": data or {},
+            "sound": "default",
+        })
+
+    if not messages:
+        return
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, headers=headers, json=messages, timeout=10.0)
+            if response.status_code != 200:
+                logger.error(f"[ExpoPush] Failed to send push: {response.text}")
+            else:
+                logger.info(f"[ExpoPush] Sent {len(messages)} push notifications successfully.")
+    except Exception as e:
+        logger.error(f"[ExpoPush] Exception during push: {e}")
 
 
 class NotificationService:
@@ -211,6 +252,38 @@ class NotificationService:
             # KHÔNG rollback DB — chỉ log
             logger.exception(f"[Notifications][WS] Lỗi WebSocket: {ws_err}")
 
+        # ==========================================================================
+        # 📲 Gửi Push Notification (Expo) (KHÔNG ảnh hưởng DB nếu lỗi)
+        # ==========================================================================
+        try:
+            if notif.user_id:
+                # Lấy danh sách push tokens của user
+                tokens_stmt = select(UserPushTokens.token).where(
+                    UserPushTokens.user_id == notif.user_id
+                )
+                tokens_result = await self.db.execute(tokens_stmt)
+                tokens = [r[0] for r in tokens_result.all()]
+
+                if tokens:
+                    # Chạy gửi background để ko block response
+                    asyncio.create_task(
+                        send_expo_push_notifications_async(
+                            tokens=tokens,
+                            title=notif.title,
+                            body=notif.content or "",
+                            data={
+                                "id": str(notif.id),
+                                "url": notif.url or "",
+                                "type": notif.type,
+                                "metadata": notif.metadata_ or {},
+                            },
+                        )
+                    )
+        except Exception as push_err:
+            logger.exception(
+                f"[Notifications][Push] Lỗi gửi Push notification: {push_err}"
+            )
+
         return notif
 
     async def mark_all_as_read(self, user_id: str, role: str):
@@ -272,3 +345,49 @@ class NotificationService:
         except Exception as e:
             await self.db.rollback()
             raise e
+
+    async def register_push_token_async(
+        self, user_id: uuid.UUID, token: str, device_type: str
+    ) -> dict:
+        try:
+            # Check if token exists for this user
+            stmt = select(UserPushTokens).where(
+                UserPushTokens.user_id == user_id,
+                UserPushTokens.token == token
+            )
+            existing = (await self.db.execute(stmt)).scalar_one_or_none()
+
+            if existing:
+                # Update device type if changed
+                if existing.device_type != device_type:
+                    existing.device_type = device_type
+                    existing.updated_at = await to_utc_naive(get_now())
+                    await self.db.commit()
+                return {
+                    "success": True,
+                    "message": "Token already registered.",
+                    "id": str(existing.id),
+                }
+
+            # Create new token record
+            new_token = UserPushTokens(
+                id=uuid.uuid4(),
+                user_id=user_id,
+                token=token,
+                device_type=device_type,
+                created_at=await to_utc_naive(get_now()),
+                updated_at=await to_utc_naive(get_now()),
+            )
+            self.db.add(new_token)
+            await self.db.commit()
+            await self.db.refresh(new_token)
+            return {
+                "success": True,
+                "message": "Token registered successfully.",
+                "id": str(new_token.id),
+            }
+        except Exception as e:
+            logger.exception(f"[Notifications][RegisterToken] Error: {e}")
+            await self.db.rollback()
+            raise HTTPException(500, "Lỗi hệ thống khi đăng ký token thông báo.")
+

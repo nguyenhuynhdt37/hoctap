@@ -12,10 +12,10 @@ import { Text } from '@/components/ui'
 import type { LessonResource } from '../types'
 
 interface ResourcesTabProps {
-  resources: LessonResource[]
+  resources?: LessonResource[]
 }
 
-export function ResourcesTab({ resources }: ResourcesTabProps) {
+export function ResourcesTab({ resources = [] }: ResourcesTabProps) {
   const isDark = useColorScheme() === 'dark'
 
   return (
@@ -136,7 +136,7 @@ function ResourceCard({ resource, isDark }: { resource: LessonResource; isDark: 
       setIsDownloading(true)
       
       const fileName = resource.title || `document_${resource.id.slice(0, 8)}`
-      const fileUri = FileSystem.cacheDirectory + fileName
+      const fileUri = (FileSystem as any).cacheDirectory + fileName
 
       const downloadResumable = FileSystem.createDownloadResumable(
         resource.url,

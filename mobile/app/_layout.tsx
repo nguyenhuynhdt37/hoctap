@@ -23,7 +23,6 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { NetworkErrorScreen } from '../components/ui/NetworkErrorScreen';
 import { NetworkMonitor } from '../components/layout/NetworkMonitor';
 import { useColorScheme as useNativeWindColorScheme } from 'nativewind';
-import { NotificationWS } from '../src/providers/NotificationWS';
 import { GlobalToast } from '../components/ui/GlobalToast';
 
 // Disable Reanimated strict mode
@@ -75,7 +74,6 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
           <NetworkMonitor>
-            <NotificationWS />
             <GlobalToast />
             {connectionError ? (
               <NetworkErrorScreen />

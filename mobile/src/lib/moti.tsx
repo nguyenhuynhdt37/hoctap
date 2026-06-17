@@ -36,31 +36,46 @@ export function AnimatePresence({ children }: AnimatePresenceProps) {
   return <>{children}</>
 }
 
-export function MotiView({ children, animate, style, from, transition, className, ...rest }: MotiViewProps) {
+export function MotiView({ 
+  children, 
+  animate, 
+  style, 
+  from, 
+  transition, 
+  exit, 
+  state, 
+  className, 
+  ...rest 
+}: MotiViewProps) {
+  const styleObj = typeof animate === 'object' && !Array.isArray(animate) ? animate : {};
+  const opacityVal = styleObj.opacity;
+  const scaleVal = styleObj.scale;
+  const txVal = styleObj.translateX ?? styleObj.x;
+  const tyVal = styleObj.translateY ?? styleObj.y;
+  const rotateVal = styleObj.rotate;
+
   const animatedStyle = useAnimatedStyle(() => {
-    if (!animate) return {}
-    const styleObj = typeof animate === 'object' && !Array.isArray(animate) ? animate : {}
     const last = (value: any, fallback: any) => {
-      if (Array.isArray(value)) return value[value.length - 1] ?? fallback
-      return value ?? fallback
-    }
+      if (Array.isArray(value)) return value[value.length - 1] ?? fallback;
+      return value ?? fallback;
+    };
 
     return {
-      opacity: last(styleObj.opacity, 1),
+      opacity: last(opacityVal, 1),
       transform: [
-        { scale: last(styleObj.scale, 1) },
-        { translateX: last(styleObj.translateX ?? styleObj.x, 0) },
-        { translateY: last(styleObj.translateY ?? styleObj.y, 0) },
-        { rotate: last(styleObj.rotate, '0deg') },
+        { scale: last(scaleVal, 1) },
+        { translateX: last(txVal, 0) },
+        { translateY: last(tyVal, 0) },
+        { rotate: last(rotateVal, '0deg') },
       ],
-    }
-  }, [animate])
+    };
+  }, [opacityVal, scaleVal, txVal, tyVal, rotateVal]);
 
   return (
     <Animated.View className={className} style={[animatedStyle, style]} {...rest}>
       {children}
     </Animated.View>
-  )
+  );
 }
 
 export { useAnimatedStyle, withSpring, withTiming, interpolate, Extrapolate }

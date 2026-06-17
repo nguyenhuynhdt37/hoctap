@@ -5,7 +5,7 @@ interface UseWebSocketProps {
   endpoint: string;
   onMessage?: (data: any) => void;
   onConnect?: () => void;
-  onDisconnect?: () => void;
+  onDisconnect?: (code?: number, reason?: string) => void;
   enabled?: boolean;
   role_name?: string | null;
 }
@@ -37,10 +37,30 @@ export function useWebSocket({
   const ws = useRef<WebSocket | null>(null);
   const reconnectTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isClosing = useRef(false);
+  const isConnecting = useRef(false);
   const [isConnected, setIsConnected] = useState(false);
 
+  // Latest ref pattern to avoid recreation of connect callback and effect loops
+  const onMessageRef = useRef(onMessage);
+  const onConnectRef = useRef(onConnect);
+  const onDisconnectRef = useRef(onDisconnect);
+  const endpointRef = useRef(endpoint);
+  const enabledRef = useRef(enabled);
+  const roleNameRef = useRef(role_name);
+
+  useEffect(() => {
+    onMessageRef.current = onMessage;
+    onConnectRef.current = onConnect;
+    onDisconnectRef.current = onDisconnect;
+    endpointRef.current = endpoint;
+    enabledRef.current = enabled;
+    roleNameRef.current = role_name;
+  });
+
   const connect = useCallback(async () => {
-    if (!enabled || isClosing.current) return;
+    const currentEnabled = enabledRef.current;
+    if (!currentEnabled || isClosing.current) return;
+    if (isConnecting.current) return;
     if (
       ws.current &&
       (ws.current.readyState === WebSocket.OPEN || ws.current.readyState === WebSocket.CONNECTING)
@@ -48,16 +68,16 @@ export function useWebSocket({
       return;
     }
 
+    isConnecting.current = true;
     try {
       const token = await SecureStore.getItemAsync('access_token');
       const baseUrl = resolveWebSocketBaseUrl();
       
-      // Ghép URL chính xác như web
-      let wsUrl = `${baseUrl}${endpoint}`;
+      let wsUrl = `${baseUrl}${endpointRef.current}`;
       const params = new URLSearchParams();
       
       if (token) params.append('access_token', token);
-      if (role_name) params.append('role_name', role_name);
+      if (roleNameRef.current) params.append('role_name', roleNameRef.current);
       
       const queryString = params.toString();
       if (queryString) {
@@ -69,31 +89,43 @@ export function useWebSocket({
       const socket = new WebSocket(wsUrl);
 
       socket.onopen = () => {
-        console.log('✅ [WS] Connected:', endpoint);
+        if (ws.current !== socket) return;
+        console.log('✅ [WS] Connected:', endpointRef.current);
         setIsConnected(true);
-        onConnect?.();
+        onConnectRef.current?.();
       };
 
       socket.onmessage = (event) => {
+        if (ws.current !== socket) return;
         try {
           const data = JSON.parse(event.data);
-          onMessage?.(data);
+          onMessageRef.current?.(data);
         } catch (err) {
           console.error('⚠️ [WS] Parse error:', err);
         }
       };
 
       socket.onerror = (err) => {
+        if (ws.current !== socket) return;
         console.error('⚡ [WS] Error:', err);
       };
 
       socket.onclose = (event) => {
-        console.log('🔴 [WS] Closed:', endpoint, event.code, event.reason);
-        setIsConnected(false);
-        onDisconnect?.();
+        console.log('🔴 [WS] Closed:', endpointRef.current, event.code, event.reason);
         
-        // Reconnect logic
-        if (!isClosing.current && enabled) {
+        // Only handle close events for the active socket
+        if (ws.current !== socket) {
+          return;
+        }
+
+        setIsConnected(false);
+        onDisconnectRef.current?.(event.code, event.reason);
+        
+        // Reconnect only on abnormal closes. Code 1000 is a clean server close.
+        if (!isClosing.current && enabledRef.current && event.code !== 1000 && event.code !== 1008) {
+          if (reconnectTimeout.current) {
+            clearTimeout(reconnectTimeout.current);
+          }
           reconnectTimeout.current = setTimeout(() => {
             connect();
           }, 3000);
@@ -103,8 +135,10 @@ export function useWebSocket({
       ws.current = socket;
     } catch (err) {
       console.error('❌ [WS] Connection setup failed:', err);
+    } finally {
+      isConnecting.current = false;
     }
-  }, [endpoint, enabled, onMessage, onConnect, onDisconnect, role_name]);
+  }, []);
 
   const disconnect = useCallback(() => {
     isClosing.current = true;
@@ -132,14 +166,29 @@ export function useWebSocket({
     };
   }, [enabled, connect, disconnect]);
 
+  // Handle changes to endpoint or role_name by reconnecting
+  const lastEndpoint = useRef(endpoint);
+  const lastRoleName = useRef(role_name);
+
+  useEffect(() => {
+    if (endpoint !== lastEndpoint.current || role_name !== lastRoleName.current) {
+      lastEndpoint.current = endpoint;
+      lastRoleName.current = role_name;
+      if (enabled) {
+        disconnect();
+        isClosing.current = false;
+        connect();
+      }
+    }
+  }, [endpoint, role_name, enabled, connect, disconnect]);
+
   const sendMessage = useCallback((data: any) => {
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
       ws.current.send(JSON.stringify(data));
       return true;
-    } else {
-      console.warn('⚠️ [WS] Cannot send message, socket not open');
-      return false;
     }
+
+    return false;
   }, []);
 
   return {

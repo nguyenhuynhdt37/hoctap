@@ -87,7 +87,16 @@ export default function GamificationDemoScreen() {
     <SafeAreaView style={styles.container}>
       {/* Top Header: Close, Progress Bar, Hearts, Streak */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.closeBtn}>
+        <TouchableOpacity 
+          onPress={() => {
+            if (router.canGoBack()) {
+              router.back()
+            } else {
+              router.replace('/')
+            }
+          }} 
+          style={styles.closeBtn}
+        >
           <X size={24} color="#9CA3AF" />
         </TouchableOpacity>
         

@@ -42,6 +42,7 @@ export interface User {
   updated_at: string
   // Backend trả về
   email: string
+  instructor_description?: string | null
   // Profile UI
   specializations?: UserSpecialization[]
   interest_ids?: string[]

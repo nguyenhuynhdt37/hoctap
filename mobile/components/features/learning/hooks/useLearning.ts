@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useRouter } from 'expo-router'
+import { router } from 'expo-router'
 import * as Haptics from 'expo-haptics'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { learningService } from '../services/learning.service'
-import type { Lesson, ContentTab, PrevNextLesson, CourseCurriculum } from '../types'
+import { courseService } from '@/src/services/course.service'
+import type { Lesson, ContentTab } from '../types'
 
-export function useLearning(courseId: string, initialData?: any) {
-  const router = useRouter()
+export function useLearning(courseId: string, initialData?: any, initialLessonId?: string) {
   const queryClient = useQueryClient()
 
   // State
@@ -116,7 +116,9 @@ export function useLearning(courseId: string, initialData?: any) {
 
   // Current lesson details - prioritize activeLessonData from backend
   const currentLesson = useMemo(() => {
-    if (activeLessonData) return activeLessonData
+    if (activeLessonData && (!activeLessonId || activeLessonData.id === activeLessonId)) {
+      return activeLessonData
+    }
     
     if (!curriculum || !activeLessonId) return null
     for (const section of curriculum.sections) {
@@ -135,7 +137,9 @@ export function useLearning(courseId: string, initialData?: any) {
 
   // Set active lesson ID when data is loaded
   useEffect(() => {
-    if (activeLessonData?.id) {
+    if (initialLessonId) {
+      setActiveLessonId(initialLessonId)
+    } else if (activeLessonData?.id) {
       setActiveLessonId(activeLessonData.id)
     } else if (curriculum && !activeLessonId) {
       const first = curriculum.sections
@@ -143,7 +147,12 @@ export function useLearning(courseId: string, initialData?: any) {
         .find(l => !l.is_locked)
       if (first) setActiveLessonId(first.id)
     }
-  }, [curriculum, activeLessonData, activeLessonId])
+  }, [curriculum, activeLessonData, activeLessonId, initialLessonId])
+
+  useEffect(() => {
+    if (!initialLessonId || activeLessonData?.id === initialLessonId) return
+    setActiveLessonMutation.mutate(initialLessonId)
+  }, [initialLessonId, activeLessonData?.id, setActiveLessonMutation])
 
   // ─────────────────────────────────────────────────────────────────────────────
   // ACTIONS
@@ -160,11 +169,15 @@ export function useLearning(courseId: string, initialData?: any) {
     setActiveLessonId(lesson.id)
     setActiveLessonMutation.mutate(lesson.id)
     setSidebarOpen(false)
-  }, [courseId, setActiveLessonMutation, navData?.next_lesson_id, currentLesson?.is_completed])
+  }, [setActiveLessonMutation, navData?.next_lesson_id, currentLesson?.is_completed])
 
   const goBack = useCallback(() => {
-    router.back()
-  }, [router])
+    if (router.canGoBack()) {
+      router.back()
+    } else {
+      router.replace('/')
+    }
+  }, [])
 
   const goToPrev = useCallback(() => {
     if (navData?.prev_lesson_id) {

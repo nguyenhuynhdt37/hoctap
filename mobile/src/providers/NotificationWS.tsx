@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, AppState, AppStateStatus } from 'react-native';
+import { Alert, AppState, AppStateStatus, Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { useAuthStore } from '../stores/auth.store';
 import { useNotificationStore } from '../stores/notification.store';
@@ -9,12 +9,16 @@ import { notificationService } from '../services/notification.service';
 import * as Haptics from 'expo-haptics';
 import { showLocalNotification, requestNotificationPermissions, handleNotificationNavigation } from '../utils/notifications';
 import { resolveIPLocation, formatLocation } from '../utils/geo';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import * as Notifications from 'expo-notifications';
-
 import { SecurityAlertModal } from '../../components/features/auth/SecurityAlertModal';
+
+const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 
 export function NotificationWS() {
   const handledSecurityAlerts = useRef<Set<string>>(new Set());
+  const hasCheckedLaunchNotiRef = useRef(false);
+  
   const [alertVisible, setAlertVisible] = useState(false);
   const [alertData, setAlertData] = useState<{ session: any; location: string; eventKey?: string } | null>(null);
   
@@ -32,7 +36,42 @@ export function NotificationWS() {
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      requestNotificationPermissions();
+      const registerPush = async () => {
+        if (isExpoGo) {
+          console.log('📱 [PushToken] Skipped register push token (Expo Go).');
+          return;
+        }
+        try {
+          const granted = await requestNotificationPermissions();
+          if (granted) {
+            let projectId = undefined;
+            try {
+              const ConstantsMod = require('expo-constants').default;
+              projectId = ConstantsMod?.expoConfig?.extra?.eas?.projectId ?? ConstantsMod?.easConfig?.projectId;
+            } catch (e) {
+              console.warn('[PushToken] expo-constants projectId check failed:', e);
+            }
+
+            const tokenData = await Notifications.getExpoPushTokenAsync({
+              ...(projectId ? { projectId } : {})
+            });
+            
+            if (tokenData?.data) {
+              console.log('📱 [PushToken] Retrieved Expo push token:', tokenData.data);
+              await notificationService.registerPushToken(
+                tokenData.data,
+                Platform.OS.toUpperCase()
+              );
+              console.log('✅ [PushToken] Registered push token with backend successfully.');
+            }
+          }
+        } catch (pushErr) {
+          console.warn('⚠️ [PushToken] Registering push token failed (ignoring to prevent crash):', pushErr);
+        }
+      };
+
+      registerPush();
+
       notificationService.getNotifications({ limit: 20 })
         .then(res => {
           setNotifications(res.data.items, res.data.unread);
@@ -42,26 +81,43 @@ export function NotificationWS() {
   }, [isAuthenticated, user, setNotifications]);
 
   useEffect(() => {
-    // Handle app launch from notification (terminated state)
-    Notifications.getLastNotificationResponseAsync().then(response => {
-      if (response) {
-        const noti = response.notification.request.content.data as any;
-        if (noti) {
-          handleNotificationNavigation(noti.url || noti.url_, noti.action);
+    if (!Notifications) return;
+
+    const navigateFromNotification = (url?: string, action?: string) => {
+      setTimeout(() => {
+        handleNotificationNavigation(url, action);
+      }, 500);
+    };
+
+    if (!hasCheckedLaunchNotiRef.current) {
+      hasCheckedLaunchNotiRef.current = true;
+      // Handle app launch from notification (terminated state)
+      Notifications.getLastNotificationResponseAsync().then((response: any) => {
+        if (response) {
+          const noti = response.notification.request.content.data as any;
+          if (noti) {
+            const url = noti.url || noti.url_;
+            const action = noti.action;
+            navigateFromNotification(url, action);
+          }
         }
-      }
-    });
+      });
+    }
 
     // Handle clicks while app is in background or active
-    const subscription = Notifications.addNotificationResponseReceivedListener(response => {
+    const subscription = Notifications.addNotificationResponseReceivedListener((response: any) => {
       const noti = response.notification.request.content.data as any;
       if (noti) {
-        handleNotificationNavigation(noti.url || noti.url_, noti.action);
+        const url = noti.url || noti.url_;
+        const action = noti.action;
+        navigateFromNotification(url, action);
       }
     });
 
     return () => {
-      subscription.remove();
+      if (subscription) {
+        subscription.remove();
+      }
     };
   }, []);
 
@@ -158,19 +214,32 @@ export function NotificationWS() {
     console.log('✅ [WS] Notification channel connected');
   }, []);
 
-  const { sendMessage, reconnect, disconnect, isConnected } = useWebSocket({
+  const handleDisconnect = useCallback(async (code?: number) => {
+    console.log('🔴 [WS] Notification channel disconnected, code:', code);
+    if (code === 1008) {
+      console.log('🔒 [WS] Session expired or invalid (code 1008). Logging out...');
+      showLocalNotification(
+        'Phiên đăng nhập đã hết hạn',
+        'Vui lòng đăng nhập lại.'
+      );
+      await clearTokens();
+    }
+  }, [clearTokens]);
+
+  const { sendMessage, reconnect, isConnected } = useWebSocket({
     endpoint: '/api/v1/notifications/ws/notifications',
     enabled: isAuthenticated && !!user,
     role_name,
     onMessage: handleMessage,
     onConnect: handleConnect,
+    onDisconnect: handleDisconnect,
   });
 
   useEffect(() => {
     if (!isAuthenticated || !user) return;
 
     const sendPresence = (type: 'presence.online' | 'presence.away') => {
-      // Bỏ qua kiểm tra isConnected vì sendMessage đã tự kiểm tra ws.current.readyState
+      if (!isConnected) return;
       sendMessage({ type, sent_at: new Date().toISOString() });
     };
 
@@ -211,7 +280,7 @@ export function NotificationWS() {
       sendPresence('presence.away');
       // Không gọi disconnect() ở đây vì useWebSocket đã lo việc dọn dẹp khi unmount.
     };
-  }, [isAuthenticated, reconnect, sendMessage, user]);
+  }, [isAuthenticated, isConnected, reconnect, sendMessage, user]);
 
   useEffect(() => {
     if (isConnected) {

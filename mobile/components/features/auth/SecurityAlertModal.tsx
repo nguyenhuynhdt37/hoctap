@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Pressable, Modal, useColorScheme, Platform } from 'react-native';
+import { View, Pressable, Modal, useColorScheme, Platform, StyleSheet } from 'react-native';
 import { Text } from '@/components/ui/Text';
 import { ShieldAlert, X, Smartphone, MapPin, ShieldCheck, ShieldX, ArrowRight } from 'lucide-react-native';
 import { MotiView, AnimatePresence } from 'moti';
@@ -59,7 +59,7 @@ export function SecurityAlertModal({
               }}
             >
               {Platform.OS === 'ios' && (
-                <BlurView intensity={30} tint={isDark ? 'dark' : 'light'} className="absolute inset-0" />
+                <BlurView intensity={30} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
               )}
               
               <LinearGradient
@@ -144,7 +144,7 @@ export function SecurityAlertModal({
                   >
                     <ShieldX size={20} color="white" />
                     <Text className="ml-3 text-base font-black text-white uppercase tracking-widest">Không phải tôi</Text>
-                    <ArrowRight size={18} color="white" className="ml-2" />
+                    <ArrowRight size={18} color="white" style={{ marginLeft: 8 }} />
                   </Pressable>
                 </View>
 
