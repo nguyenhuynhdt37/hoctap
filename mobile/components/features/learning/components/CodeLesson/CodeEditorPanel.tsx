@@ -1,9 +1,10 @@
 import React from 'react'
-import { Platform, Pressable, TextInput, View } from 'react-native'
+import { Pressable, View } from 'react-native'
 import { Feather, Ionicons } from '@expo/vector-icons'
 import { Text } from '@/components/ui'
 import type { CodeExercise, CodeFile } from '../../types/code-lesson'
 import { FileTabs } from './FileTabs'
+import { CodeWebEditor } from './CodeWebEditor'
 
 interface CodeEditorPanelProps {
   exercise: CodeExercise
@@ -95,19 +96,13 @@ export function CodeEditorPanel({
           </View>
         </View>
 
-        <TextInput
+        <CodeWebEditor
           value={currentCode}
-          onChangeText={onCodeChange}
-          multiline
-          autoCapitalize="none"
-          autoCorrect={false}
-          spellCheck={false}
-          textAlignVertical="top"
-          editable={!activeFile?.is_readonly}
-          className="min-h-[420px] px-4 py-3 font-mono text-sm leading-6 text-green-300"
-          placeholder="// Write your code here..."
-          placeholderTextColor="#52525B"
-          style={{ fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}
+          language={exercise.language.name}
+          filename={activeFile?.filename}
+          readOnly={activeFile?.is_readonly}
+          isDark={isDark}
+          onChange={onCodeChange}
         />
       </View>
     </View>
