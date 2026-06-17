@@ -7,10 +7,10 @@ import type { Lesson } from '../types'
 
 interface ContentTabProps {
   lesson: Lesson
-  showNoteInput: boolean
-  noteText: string
-  onShowNoteInput: (show: boolean) => void
-  onNoteTextChange: (text: string) => void
+  showNoteInput?: boolean
+  noteText?: string
+  onShowNoteInput?: (show: boolean) => void
+  onNoteTextChange?: (text: string) => void
 }
 
 export function ContentTab({

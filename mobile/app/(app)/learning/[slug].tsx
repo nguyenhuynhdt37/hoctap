@@ -10,7 +10,7 @@ import { learningService } from '@/components/features/learning/services/learnin
 import { LearningFeature } from '@/components/features/learning/LearningFeature'
 
 export default function LearningPage() {
-  const { slug } = useLocalSearchParams<{ slug: string }>()
+  const { slug, lessonId } = useLocalSearchParams<{ slug: string; lessonId?: string }>()
   const isDark = useColorScheme() === 'dark'
 
   const { data: course, isLoading, error } = useQuery({
@@ -47,6 +47,7 @@ export default function LearningPage() {
         courseId={course.id}
         courseTitle={course.title}
         initialCourseInfo={course}
+        initialLessonId={lessonId}
       />
     </View>
   )

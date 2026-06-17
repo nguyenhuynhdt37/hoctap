@@ -4,11 +4,12 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "node ./scripts/start-dev.js",
-    "start": "node ./scripts/update-ip.js && expo start",
+    "generate-search-index": "node ./scripts/generate-search-index.js",
+    "start": "node ./scripts/generate-search-index.js && node ./scripts/update-ip.js && expo start --lan -c",
     "reset-project": "node ./scripts/reset-project.js",
-    "android": "node ./scripts/update-ip.js && expo run:android",
-    "ios": "node ./scripts/update-ip.js && expo run:ios",
-    "web": "expo start --web",
+    "android": "node ./scripts/generate-search-index.js && node ./scripts/update-ip.js && expo run:android",
+    "ios": "node ./scripts/generate-search-index.js && node ./scripts/update-ip.js && expo run:ios",
+    "web": "node ./scripts/generate-search-index.js && node ./scripts/update-ip.js && expo start --web",
     "lint": "expo lint"
   },
   "dependencies": {
@@ -60,6 +61,7 @@
     "react-i18next": "^17.0.7",
     "react-native": "0.81.5",
     "react-native-confetti-cannon": "^1.5.2",
+    "react-native-css-interop": "0.2.4",
     "react-native-gesture-handler": "~2.28.0",
     "react-native-pager-view": "^8.0.1",
     "react-native-pell-rich-editor": "^1.10.0",

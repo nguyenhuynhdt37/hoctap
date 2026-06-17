@@ -29,7 +29,7 @@ import { QuizOverlay } from './components/VideoLesson/QuizOverlay'
 // Types
 import type { ContentTab as ContentTabType, LearningFeatureProps } from './types'
 
-export function LearningFeature({ courseId, courseTitle, initialCourseInfo }: LearningFeatureProps) {
+export function LearningFeature({ courseId, courseTitle, initialCourseInfo, initialLessonId }: LearningFeatureProps) {
   const isDark = useColorScheme() === 'dark'
   const insets = useSafeAreaInsets()
   const videoRef = useRef<VideoLessonRef>(null)
@@ -58,7 +58,7 @@ export function LearningFeature({ courseId, courseTitle, initialCourseInfo }: Le
     onRefresh,
     showQuizOverlay,
     setShowQuizOverlay,
-  } = useLearning(courseId, initialCourseInfo)
+  } = useLearning(courseId, initialCourseInfo, initialLessonId)
 
   const effectiveCourseInfo = courseInfo || initialCourseInfo
 

@@ -287,6 +287,215 @@
       "description": "We'll notify you when something new arrives."
     }
   },
+  "search": {
+    "eyebrow": "Explore",
+    "title": "Global Search",
+    "placeholder": "Search screens, courses, lessons, wallet...",
+    "results_count": "{{count}} matching results",
+    "loading": {
+      "indexing": "Building search index..."
+    },
+    "idle": {
+      "title": "Search the whole app",
+      "description": "Enter a keyword to find screens, courses, lessons, wallet, notifications and settings."
+    },
+    "empty": {
+      "title": "No results",
+      "description": "Try another keyword. Vietnamese accents and English aliases are supported."
+    },
+    "error": {
+      "title": "Connection failed",
+      "description": "Could not load search data from the API."
+    },
+    "filters": {
+      "all": "All",
+      "course": "Courses",
+      "lesson": "Lessons",
+      "category": "Categories",
+      "topic": "Topics",
+      "wallet": "Wallet",
+      "transaction": "Transactions",
+      "notification": "Notifications",
+      "screen": "Screens",
+      "feature": "Features"
+    },
+    "types": {
+      "screen": "Screen",
+      "tab": "Tab",
+      "menu": "Menu",
+      "feature": "Feature",
+      "route": "Route",
+      "category": "Category",
+      "topic": "Topic",
+      "course": "Course",
+      "lesson": "Lesson",
+      "profile": "Profile",
+      "wallet": "Wallet",
+      "transaction": "Transaction",
+      "notification": "Notification",
+      "setting": "Setting",
+      "language": "Language"
+    }
+  },
+  "lecturer": {
+    "role": "Lecturer",
+    "title": "Lecturer Area",
+    "subtitle": "Manage courses, students, revenue and teaching operations on mobile.",
+    "home": {
+      "badge": "STUDYNEST CREATOR",
+      "heading": "Teaching Studio",
+      "description": "A dedicated lecturer experience optimized for fast phone workflows."
+    },
+    "screens": {
+      "home": { "title": "Studio", "subtitle": "Navigation hub for all lecturer workflows." },
+      "dashboard": { "title": "Dashboard", "subtitle": "Performance, revenue, students and course overview." },
+      "courses": { "title": "Courses", "subtitle": "Manage, filter, create and track course performance." },
+      "course-create": { "title": "Create Course", "subtitle": "Mock form for basics, pricing, description and goals." },
+      "course-edit": { "title": "Edit Course", "subtitle": "Update course content and status." },
+      "course-stats": { "title": "Course Stats", "subtitle": "Revenue, students, reviews and progress by course." },
+      "course-students": { "title": "Students", "subtitle": "Students enrolled in this course." },
+      "student-detail": { "title": "Student Detail", "subtitle": "Learning progress, current lesson and recent activity." },
+      "chapters": { "title": "Chapters & Lessons", "subtitle": "Manage chapters, video lessons, quizzes and code lessons." },
+      "lesson-create": { "title": "Create Lesson", "subtitle": "Create a video, quiz or code lesson." },
+      "lesson-edit": { "title": "Edit Lesson", "subtitle": "Update content, preview and lesson resources." },
+      "quizzes": { "title": "Quizzes", "subtitle": "Manage lesson quiz questions." },
+      "resources": { "title": "Resources", "subtitle": "Manage PDF, ZIP and link resources attached to lessons." },
+      "discounts": { "title": "Discounts", "subtitle": "Create, filter, toggle and track discount codes." },
+      "discount-create": { "title": "Create Discount", "subtitle": "Set discount type, validity and target courses." },
+      "discount-edit": { "title": "Edit Discount", "subtitle": "Update discount status and conditions." },
+      "wallet": { "title": "Lecturer Wallet", "subtitle": "Track available balance, holds and transactions." },
+      "wallet-detail": { "title": "Transaction Detail", "subtitle": "Transaction and lecturer earning details." },
+      "withdraw": { "title": "Withdraw", "subtitle": "Withdrawal requests and processing status." },
+      "withdraw-create": { "title": "Create Withdrawal", "subtitle": "Enter amount, PayPal account and note." },
+      "refunds": { "title": "Refunds", "subtitle": "Handle student refund requests." },
+      "refund-detail": { "title": "Refund Detail", "subtitle": "Approve or reject a refund request." },
+      "holds": { "title": "Holds", "subtitle": "Track held amounts pending settlement or refund." },
+      "notifications": { "title": "Notifications", "subtitle": "News for lecturer role." },
+      "profile": { "title": "Lecturer Profile", "subtitle": "Update professional profile and payout information." },
+      "payouts": { "title": "Payouts", "subtitle": "Payout history and revenue settlement." },
+      "welcome": { "title": "Become a Lecturer", "subtitle": "Welcome and initial setup for lecturers." }
+    },
+    "nav": {
+      "dashboard": "Dashboard",
+      "courses": "Courses",
+      "chapters": "Chapters",
+      "lessons": "Lessons",
+      "discounts": "Discounts",
+      "wallet": "Wallet",
+      "refunds": "Refunds",
+      "holds": "Holds",
+      "resources": "Resources",
+      "notifications": "Notifications",
+      "profile": "Profile"
+    },
+    "nav_desc": {
+      "dashboard": "KPIs and charts",
+      "courses": "Create and manage",
+      "chapters": "Learning structure",
+      "lessons": "Video, quiz, code",
+      "discounts": "Sales campaigns",
+      "wallet": "Balance and transactions",
+      "refunds": "Refund requests",
+      "holds": "Held amounts",
+      "resources": "Lesson files",
+      "notifications": "Updates",
+      "profile": "Lecturer info"
+    },
+    "metrics": {
+      "revenue": "Revenue",
+      "students": "Students",
+      "courses": "Courses",
+      "reviews": "Reviews",
+      "rating": "Rating",
+      "sections": "sections",
+      "lessons": "lessons"
+    },
+    "status": {
+      "approved": "Approved",
+      "pending": "Pending",
+      "draft": "Draft",
+      "rejected": "Rejected"
+    },
+    "actions": {
+      "create_course": "Create new course",
+      "create_withdraw": "Create withdrawal request",
+      "save_draft": "Save draft"
+    },
+    "search": {
+      "courses": "Search courses..."
+    },
+    "dashboard": {
+      "revenue_chart": "Revenue chart",
+      "course_performance": "Course performance"
+    },
+    "course": {
+      "create": "New course information",
+      "edit": "Course edit form",
+      "stats": "Course statistics",
+      "students": "Student list",
+      "form_hint": "Mock UI based on web forms, ready for API wiring later."
+    },
+    "lesson": {
+      "create": "Create lesson form",
+      "edit": "Edit lesson form",
+      "types": "Choose lesson type and enter content.",
+      "video": "Video",
+      "quiz": "Quiz",
+      "code": "Code"
+    },
+    "quiz": { "title": "Question sets" },
+    "resources": { "title": "Lesson resources" },
+    "discounts": { "title": "Discount list" },
+    "wallet": {
+      "available": "Available",
+      "holding": "Holding",
+      "transactions": "Recent transactions"
+    },
+    "refunds": { "title": "Refund requests" },
+    "holds": { "title": "Held amounts" },
+    "notifications": { "title": "Lecturer notifications" },
+    "profile": {
+      "initials": "LC",
+      "mock_name": "Demo Lecturer",
+      "description": "Professional profile shown to students and review systems."
+    },
+    "welcome": { "title": "Welcome lecturer" },
+    "validity": {
+      "running": "Running",
+      "upcoming": "Upcoming",
+      "expired": "Expired"
+    },
+    "form": {
+      "placeholder": "Enter mock data",
+      "title": "Title",
+      "category": "Category",
+      "price": "Price",
+      "description": "Description",
+      "requirements": "Requirements",
+      "outcomes": "Learning outcomes",
+      "lesson_title": "Lesson title",
+      "lesson_type": "Lesson type",
+      "duration": "Duration",
+      "preview": "Preview enabled",
+      "content": "Content",
+      "code": "Discount code",
+      "discount_type": "Discount type",
+      "value": "Value",
+      "start_date": "Start date",
+      "end_date": "End date",
+      "target_courses": "Target courses",
+      "amount": "Amount",
+      "paypal_email": "PayPal email",
+      "note": "Note",
+      "decision": "Decision",
+      "lecturer_comment": "Lecturer comment",
+      "evidence": "Evidence",
+      "fullname": "Full name",
+      "headline": "Headline",
+      "bio": "Bio",
+      "expertise": "Expertise"
+    }
+  },
   "favorites_screen": {
     "title": "Favorite Courses",
     "personal": "Personal",
