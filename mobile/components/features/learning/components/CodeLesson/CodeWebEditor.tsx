@@ -170,14 +170,84 @@ function createEditorHTML(isDark: boolean, language: string, readOnly: boolean):
       return 'break|case|catch|class|const|continue|debugger|default|delete|do|else|export|extends|false|finally|for|function|if|import|in|instanceof|let|new|null|return|super|switch|this|throw|true|try|typeof|undefined|var|void|while|with|yield|async|await';
     }
 
+    const keywordSet = new Set(keywords().split('|'));
+
+    function token(type, value) {
+      return '<span class="' + type + '">' + esc(value) + '</span>';
+    }
+
+    function isIdentStart(char) {
+      return /[A-Za-z_$]/.test(char);
+    }
+
+    function isIdentPart(char) {
+      return /[A-Za-z0-9_$]/.test(char);
+    }
+
+    function renderLine(line) {
+      var html = '';
+      var i = 0;
+      while (i < line.length) {
+        var char = line[i];
+        var next = line[i + 1];
+
+        if ((char === '/' && next === '/') || (char === '#' && lang !== 'json')) {
+          html += token('com', line.slice(i));
+          break;
+        }
+
+        if (char === '"' || char === "'" || char.charCodeAt(0) === 96) {
+          var quote = char;
+          var start = i;
+          i += 1;
+          while (i < line.length) {
+            if (line[i] === '\\\\') {
+              i += 2;
+              continue;
+            }
+            if (line[i] === quote) {
+              i += 1;
+              break;
+            }
+            i += 1;
+          }
+          html += token('str', line.slice(start, i));
+          continue;
+        }
+
+        if (/\\d/.test(char)) {
+          var numStart = i;
+          i += 1;
+          while (i < line.length && /[0-9._a-fA-FxX]/.test(line[i])) i += 1;
+          html += token('num', line.slice(numStart, i));
+          continue;
+        }
+
+        if (isIdentStart(char)) {
+          var identStart = i;
+          i += 1;
+          while (i < line.length && isIdentPart(line[i])) i += 1;
+          var word = line.slice(identStart, i);
+          var cursor = i;
+          while (cursor < line.length && /\\s/.test(line[cursor])) cursor += 1;
+          if (keywordSet.has(word)) {
+            html += token('kw', word);
+          } else if (line[cursor] === '(') {
+            html += token('fn', word);
+          } else {
+            html += esc(word);
+          }
+          continue;
+        }
+
+        html += esc(char);
+        i += 1;
+      }
+      return html || ' ';
+    }
+
     function paint(value) {
-      let html = esc(value);
-      html = html.replace(/(\\/\\/.*$|#.*$)/gm, '<span class="com">$1</span>');
-      html = html.replace(/("(?:\\\\.|[^"\\\\])*"|'(?:\\\\.|[^'\\\\])*')/g, '<span class="str">$1</span>');
-      html = html.replace(/\\b(\\d+(?:\\.\\d+)?)\\b/g, '<span class="num">$1</span>');
-      html = html.replace(new RegExp('\\\\b(' + keywords() + ')\\\\b', 'g'), '<span class="kw">$1</span>');
-      html = html.replace(/\\b([a-zA-Z_$][\\w$]*)(?=\\s*\\()/g, '<span class="fn">$1</span>');
-      highlight.innerHTML = html + (value.endsWith('\\n') ? ' ' : '');
+      highlight.innerHTML = value.split('\\n').map(renderLine).join('\\n') + (value.endsWith('\\n') ? ' ' : '');
     }
 
     function updateLines(value) {
