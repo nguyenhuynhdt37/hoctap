@@ -81,8 +81,8 @@ export const VideoLesson = forwardRef<VideoLessonRef, VideoLessonProps>(({
       }
     }
   }))
-  const intervalRef = useRef<NodeJS.Timeout | null>(null)
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const intervalRef = useRef<any>(null)
+  const timeoutRef = useRef<any>(null)
   const previousTimeRef = useRef(0)
   const lastCheckTimeRef = useRef(Date.now())
   const isFastForwardingRef = useRef(false)

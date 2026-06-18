@@ -8,7 +8,7 @@ export function NetworkMonitor({ children }: { children: React.ReactNode }) {
   const setConnectionError = useAuthStore(s => s.setConnectionError)
   const connectionError = useAuthStore(s => s.connectionError)
   const initialize = useAuthStore(s => s.initialize)
-  const timerRef = useRef<NodeJS.Timeout | null>(null)
+  const timerRef = useRef<any>(null)
 
   const checkHealth = async () => {
     try {

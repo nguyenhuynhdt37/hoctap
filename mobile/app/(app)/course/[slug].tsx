@@ -179,7 +179,7 @@ function Header({ course, data, onPreview, onBack, isDark }: {
         <View className="rounded-[24px] overflow-hidden border border-zinc-100 dark:border-white/5 shadow-xl shadow-black/5">
           {course.thumbnail_url ? (
             <Image
-              source={{ uri: getFullImageUrl(course.thumbnail_url) }}
+              source={{ uri: getFullImageUrl(course.thumbnail_url) ?? undefined }}
               className="w-full h-52"
               resizeMode="cover"
             />

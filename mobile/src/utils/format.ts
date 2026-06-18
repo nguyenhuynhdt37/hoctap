@@ -17,8 +17,16 @@ export const formatCurrency = (amount: number): string => {
  * @param date ISO string or Date object
  * @returns Formatted date string
  */
-export const formatDate = (date: string | Date): string => {
+export const formatDate = (date: string | Date, formatStr?: string): string => {
   if (!date) return '';
   const d = typeof date === 'string' ? new Date(date) : date;
+  if (formatStr === 'HH:mm • DD/MM/YYYY') {
+    const hours = d.getHours().toString().padStart(2, '0');
+    const minutes = d.getMinutes().toString().padStart(2, '0');
+    const day = d.getDate().toString().padStart(2, '0');
+    const month = (d.getMonth() + 1).toString().padStart(2, '0');
+    const year = d.getFullYear();
+    return `${hours}:${minutes} • ${day}/${month}/${year}`;
+  }
   return d.toLocaleDateString('vi-VN');
 };

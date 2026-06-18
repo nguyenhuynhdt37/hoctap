@@ -3,6 +3,9 @@ import uuid
 from datetime import datetime
 from typing import Any, Optional
 
+from app.core.event_bus.base import BaseEvent
+from app.core.event_bus.redis_bus import event_bus
+
 from fastapi import BackgroundTasks, Depends, HTTPException, status
 from loguru import logger
 from sqlalchemy import asc, delete, desc, exists, func, insert, select, update
@@ -1129,7 +1132,23 @@ class LearningService:
             # ✅ Commit thay đổi
             await self.db.commit()
 
-            # 6️⃣ Trả kết quả
+            # 6️⃣ Publish gamification event (fire-and-forget)
+            try:
+                lesson_type = getattr(lesson, "lesson_type", "video") or "video"
+                event_name = "quiz.completed" if lesson_type in ("quiz", "Quiz") else "lesson.completed"
+                await event_bus.publish(
+                    BaseEvent(
+                        event_name=event_name,
+                        user_id=user.id,
+                        source_type="lesson",
+                        source_id=lesson_id,
+                        payload={"lesson_type": lesson_type, "course_id": str(course_id)},
+                    )
+                )
+            except Exception as evt_err:
+                logger.warning(f"[EventBus] Failed to publish {event_name}: {evt_err}")
+
+            # 7️⃣ Trả kết quả
             return {
                 "status": "success",
                 "lesson_id": str(lesson_id),
@@ -1531,6 +1550,22 @@ class LearningService:
                     .values(is_pass=True, updated_at=await to_utc_naive(get_now()))
                 )
                 await self.db.commit()
+
+                # 🔔 Publish code.completed event
+                try:
+                    await event_bus.publish(
+                        BaseEvent(
+                            event_name="code.completed",
+                            user_id=user.id,
+                            source_type="lesson_code",
+                            source_id=lesson_code.id,
+                            payload={
+                                "lesson_id": str(lesson_code.lesson_id) if hasattr(lesson_code, 'lesson_id') else None,
+                            },
+                        )
+                    )
+                except Exception as evt_err:
+                    logger.warning(f"[EventBus] Failed to publish code.completed: {evt_err}")
 
             # 8️⃣ Trả kết quả
             return {

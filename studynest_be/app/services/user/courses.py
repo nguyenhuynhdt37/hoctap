@@ -3,6 +3,8 @@ import uuid
 from datetime import datetime, timedelta
 
 import numpy as np
+from app.core.event_bus.base import BaseEvent
+from app.core.event_bus.redis_bus import event_bus
 from fastapi import BackgroundTasks, Depends, HTTPException
 from sqlalchemy import cast, func, literal_column, select
 from sqlalchemy.dialects.postgresql import UUID
@@ -609,6 +611,20 @@ class CoursePublicService:
                     )
                 )
 
+                # 🔔 Publish course.purchased event (free)
+                try:
+                    await event_bus.publish(
+                        BaseEvent(
+                            event_name="course.purchased",
+                            user_id=user.id,
+                            source_type="course",
+                            source_id=course_id,
+                            payload={"is_free": True, "course_title": course.title},
+                        )
+                    )
+                except Exception as evt_err:
+                    logger.warning(f"[EventBus] Failed to publish course.purchased: {evt_err}")
+
                 return {"message": "Đăng ký thành công"}
 
             # ===== Case 3: Khóa học có phí → FE phải gọi checkout =====
@@ -1203,7 +1219,7 @@ class CoursePublicService:
                             "name": r["instructor_name"],
                             "avatar": r["instructor_avatar"],
                         },
-                        "similarity": float(r["similarity"]),
+                        "similarity": float(r["similarity"]) if r["similarity"] is not None else 0.0,
                     }
                     for r in rows
                 ]

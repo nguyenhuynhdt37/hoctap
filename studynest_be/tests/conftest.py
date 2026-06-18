@@ -33,22 +33,29 @@ def event_loop():
     loop.close()
 
 
+from sqlalchemy.pool import NullPool
+
+
 @pytest_asyncio.fixture(scope="session")
 async def async_engine():
-    engine = create_async_engine(TEST_DATABASE_URL, echo=False, pool_pre_ping=True)
+    engine = create_async_engine(
+        TEST_DATABASE_URL,
+        echo=False,
+        poolclass=NullPool,
+    )
     yield engine
     await engine.dispose()
 
 
 @pytest_asyncio.fixture
 async def db_session(async_engine) -> AsyncGenerator[AsyncSession, None]:
-    """Session với transaction rollback sau mỗi test."""
-    session_factory = async_sessionmaker(
-        bind=async_engine,
-        class_=AsyncSession,
-        expire_on_commit=False,
-    )
-    async with session_factory() as session:
-        async with session.begin():
-            yield session
-            await session.rollback()
+    """Session với transaction rollback sau mỗi test, hỗ trợ commit() trong code ứng dụng."""
+    connection = await async_engine.connect()
+    transaction = await connection.begin()
+    session = AsyncSession(bind=connection, expire_on_commit=False)
+
+    yield session
+
+    await session.close()
+    await transaction.rollback()
+    await connection.close()

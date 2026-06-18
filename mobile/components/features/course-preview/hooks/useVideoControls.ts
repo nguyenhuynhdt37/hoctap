@@ -36,7 +36,7 @@ export function useVideoControls(
   const [showControls, setShowControls] = useState(true)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const isPlaying = status?.isLoaded && status.isPlaying
+  const isPlaying = !!(status?.isLoaded && status.isPlaying)
   const currentTime = status?.isLoaded ? status.positionMillis / 1000 : 0
   const duration = status?.isLoaded
     ? status.durationMillis

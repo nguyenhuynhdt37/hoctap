@@ -52,6 +52,9 @@ from app.api.v1.user import tutor_chat as user_tutor_chat
 
 # --- GAMIFICATION ROUTES ---
 from app.api.v1.gamification import daily_checkin as gamification_checkin
+from app.api.v1.gamification import profile as gamification_profile
+from app.api.v1.gamification import streak as gamification_streak
+from app.api.v1.gamification import websocket as gamification_ws
 from app.core.scheduler import scheduler, start_scheduler
 from app.core.redis import close_redis, ping_redis
 
@@ -81,10 +84,33 @@ async def lifespan(app: FastAPI):
     redis_ready = await ping_redis()
     print("🧠 Redis presence ready" if redis_ready else "⚠ Redis presence unavailable")
 
+    # ================================
+    # 5) REDIS EVENT BUS & SUBSCRIBERS
+    # ================================
+    from app.core.event_bus.redis_bus import event_bus
+    from app.services.gamification.mission_subscriber import register_mission_subscribers
+    from app.services.gamification.streak_subscriber import register_streak_subscribers
+    from app.api.v1.gamification.websocket import register_websocket_subscribers
+
+    await register_mission_subscribers()
+    await register_streak_subscribers()
+    await register_websocket_subscribers()
+    await event_bus.start_listening()
+    print("🧠 Redis Event Bus listening started")
+
     # App chạy
     try:
         yield
     finally:
+        # ================================
+        # 5) STOP REDIS EVENT BUS
+        # ================================
+        try:
+            await event_bus.stop_listening()
+            print("🧠 Redis Event Bus stopped")
+        except Exception as e:
+            print("⚠ Redis Event Bus stop error:", e)
+
         # ================================
         # 3) CLOSE HTTP CLIENT
         # ================================
@@ -119,12 +145,16 @@ origins = [
     "http://127.0.0.1:3000",
     "http://localhost:8000",
     "http://127.0.0.1:8000",
+    "http://localhost:19006",
+    "http://127.0.0.1:19006",
+    # Allow all ngrok/tunnel origins for development
+    "*",
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,  # Must be False when allow_origins=["*"]
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["Content-Disposition"],
@@ -161,6 +191,9 @@ app.include_router(user_chat_sql.router, prefix=prefix)
 
 # --- GAMIFICATION ROUTES ---
 app.include_router(gamification_checkin.router, prefix=prefix)
+app.include_router(gamification_profile.router, prefix=prefix)
+app.include_router(gamification_streak.router, prefix=prefix)
+app.include_router(gamification_ws.router, prefix=f"{prefix}/gamification")
 
 # --- LECTURER ROUTES ---
 app.include_router(lecturer_courses.router, prefix=prefix)

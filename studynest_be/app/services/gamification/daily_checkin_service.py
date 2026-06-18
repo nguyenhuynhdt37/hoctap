@@ -11,6 +11,8 @@ import datetime
 import uuid
 from typing import Optional
 
+from app.core.event_bus.base import BaseEvent
+from app.core.event_bus.redis_bus import event_bus
 from fastapi import Depends, HTTPException, Request
 from loguru import logger
 from sqlalchemy import exc as sa_exc
@@ -330,6 +332,41 @@ class DailyCheckinService:
 
             # Commit outer transaction
             await self.db.commit()
+
+            # 🔔 Publish daily_checkin.completed event (fire-and-forget)
+            try:
+                await event_bus.publish(
+                    BaseEvent(
+                        event_name="daily_checkin.completed",
+                        user_id=user.id,
+                        source_type="checkin",
+                        source_id=event.id,
+                        payload={
+                            "consecutive_day": consecutive_day,
+                            "day_in_cycle": current_day,
+                            "event_code": event.code,
+                        },
+                    )
+                )
+            except Exception as evt_err:
+                logger.warning(f"[EventBus] Failed to publish daily_checkin.completed: {evt_err}")
+
+            if peak_amount > 0:
+                try:
+                    await event_bus.publish(
+                        BaseEvent(
+                            event_name="peak.earned",
+                            user_id=user.id,
+                            source_type="checkin",
+                            source_id=event.id,
+                            payload={
+                                "amount": peak_amount,
+                                "balance": after_balance,
+                            },
+                        )
+                    )
+                except Exception as evt_err:
+                    logger.warning(f"[EventBus] Failed to publish peak.earned: {evt_err}")
 
             # l. Build calendar response
             history = await self.repo.get_checkin_history(

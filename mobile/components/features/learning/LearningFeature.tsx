@@ -195,11 +195,7 @@ export function LearningFeature({ courseId, courseTitle, initialCourseInfo, init
           onNext={goToNext}
           onMenu={toggleSidebar}
           onChat={() => {
-            if (isCodeLesson) {
-              setShowTutorChat(true)
-            } else {
-              setActiveTab('qa')
-            }
+            setShowTutorChat(true)
           }}
           shouldShake={celebration.visible}
           insets={insets}

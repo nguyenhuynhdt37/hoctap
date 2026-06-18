@@ -88,7 +88,7 @@ export function VerifyOTPFeature({
         )
         
         await saveTokens(data)
-        router.replace('/(app)')
+        router.replace('/')
       }
     } catch (e: any) {
       const detail = e.response?.data?.detail

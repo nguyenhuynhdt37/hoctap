@@ -186,13 +186,13 @@ export function StreakBadge({ streak, label, isDark }: StreakBadgeProps) {
           marginBottom: 4,
         }}
       >
-        <Feather name="zap" size={18} color={GamificationColors.streak} />
+        <Feather name="zap" size={18} color={GamificationColors.streak.DEFAULT} />
       </View>
       <RNText
         style={{
           fontSize: 28,
           fontWeight: '900',
-          color: GamificationColors.streak,
+          color: GamificationColors.streak.DEFAULT,
           letterSpacing: -1,
           marginTop: 2,
         }}

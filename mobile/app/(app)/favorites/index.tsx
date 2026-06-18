@@ -61,8 +61,8 @@ export default function FavoritesScreen() {
         sort_by: sortBy,
         order,
       }).then(res => {
-        // Map backend 'favourites' to 'items' and normalize fields for CourseCard
-        const mappedItems = (res.data.favourites || []).map((item: any) => ({
+        const list = (res.data as any).favourites || (res.data as any).items || [];
+        const mappedItems = list.map((item: any) => ({
           ...item,
           thumbnail: item.thumbnail_url,
           rating: item.rating_avg || item.avg_rating || 0,
@@ -214,8 +214,8 @@ export default function FavoritesScreen() {
           <View className="px-5 mb-6">
             <View className="flex-row items-center gap-3">
               <StatBadge icon="heart" value={courses.length} label={t('favorites_screen.stats.saved')} color="#10B981" />
-              <StatBadge icon="star" value={courses.filter(c => c.rating > 4.5).length} label={t('favorites_screen.stats.top_rated')} color="#F59E0B" />
-              <StatBadge icon="eye" value={courses.reduce((acc, c) => acc + (c.views || 0), 0)} label={t('favorites_screen.stats.views')} color="#3B82F6" />
+              <StatBadge icon="star" value={courses.filter((c: any) => c.rating > 4.5).length} label={t('favorites_screen.stats.top_rated')} color="#F59E0B" />
+              <StatBadge icon="eye" value={courses.reduce((acc: number, c: any) => acc + (c.views || 0), 0)} label={t('favorites_screen.stats.views')} color="#3B82F6" />
             </View>
           </View>
         )}

@@ -9,7 +9,7 @@ import { MotiView } from 'moti'
 import {
   User, Shield, Bell, Languages, HelpCircle, Info, ChevronRight,
   BookOpen, Heart, LayoutDashboard, MessageCircle, Settings,
-  Wallet, FileText, History, RotateCcw, BadgePercent
+  Wallet, FileText, History, RotateCcw, BadgePercent, Zap
 } from 'lucide-react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 
@@ -35,6 +35,7 @@ const SECTIONS = [
       { Icon: BookOpen, key: 'learning', action: 'learning', badge: null },
       { Icon: Heart, key: 'favorites', action: 'favorites', badge: null },
       { Icon: LayoutDashboard, key: 'instructor_dashboard', action: 'instructor', badge: null },
+      { Icon: Zap, key: 'gamification', action: 'gamification', badge: null },
       { Icon: MessageCircle, key: 'messages', action: 'messages', badge: '1' },
       { Icon: Wallet, key: 'my_wallet', action: 'wallet', badge: null },
       { Icon: FileText, key: 'subscription', action: 'subscription', badge: null },
@@ -111,6 +112,7 @@ export function ProfileActions({ onEdit }: { onEdit: () => void }) {
     learning: () => { },
     favorites: () => router.push('/(app)/favorites' as any),
     instructor: () => router.push('/(lecturer)/lecturer' as any),
+    gamification: () => router.push('/(app)/gamification' as any),
     messages: () => { },
     account_settings: () => { },
     wallet: () => router.push('/(app)/wallet' as any),

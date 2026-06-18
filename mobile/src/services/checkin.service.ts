@@ -6,7 +6,7 @@
  */
 
 import { api } from '@/src/services/api'
-import type { CheckinStatusResponse, CheckinClaimResponse } from '../daily-checkin/types'
+import type { CheckinStatusResponse, CheckinClaimResponse } from '../../components/features/gamification/daily-checkin/types'
 
 export const checkinService = {
   /**

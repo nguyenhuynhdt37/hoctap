@@ -99,9 +99,9 @@ export function ProfileFeature() {
 
     try {
       setUploading(true)
-      const { data } = await authService.uploadAvatar(res.assets[0].uri)
-      const newAvatar = data.avatar || data.avatar_url
-      setEditData(p => ({ ...p, avatar: newAvatar }))
+       const { data } = await authService.uploadAvatar(res.assets[0].uri)
+       const newAvatar = data.avatar
+       setEditData(p => ({ ...p, avatar: newAvatar }))
       if (user) {
         setUser({ ...user, avatar: newAvatar })
       }
@@ -126,9 +126,9 @@ export function ProfileFeature() {
     try {
       setUploading(true)
       const { data } = await authService.uploadCover(res.assets[0].uri)
-      setEditData(p => ({ ...p, cover: data.cover || data.cover_url }))
+      setEditData(p => ({ ...p, cover: data.cover_url } as any))
       if (user) {
-        setUser({ ...user, cover: data.cover || data.cover_url } as any)
+        setUser({ ...user, cover: data.cover_url } as any)
       }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
     } catch (e) {
@@ -144,11 +144,11 @@ export function ProfileFeature() {
       const { data } = await authService.updateProfile({
         fullname: editData.fullname,
         bio: editData.bio,
-        facebook_url: editData.facebook_url,
-        birthday: editData.birthday,
-        conscious: editData.conscious,
-        district: editData.district,
-        citizenship_identity: editData.citizenship_identity,
+        facebook_url: editData.facebook_url ?? undefined,
+        birthday: editData.birthday ?? undefined,
+        conscious: editData.conscious ?? undefined,
+        district: editData.district ?? undefined,
+        citizenship_identity: editData.citizenship_identity ?? undefined,
         learning_goals: editData.learning_goals,
         daily_goal_minutes: editData.daily_goal_minutes,
         preferred_learning_style: editData.preferred_learning_style,

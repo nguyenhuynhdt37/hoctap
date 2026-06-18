@@ -58,7 +58,28 @@ export const GamificationColors = {
   },
 
   // Streak fire
-  streak: '#F97316',
+  streak: {
+    DEFAULT: '#F97316',
+    glow: 'rgba(249,115,22,0.35)',
+    dark: '#EA580C',
+    light: '#FFEDD5',
+  },
+
+  // EXP / Level
+  exp: {
+    DEFAULT: '#6366F1',
+    glow: 'rgba(99,102,241,0.35)',
+    dark: '#4F46E5',
+    light: '#E0E7FF',
+  },
+
+  // Achievement
+  achievement: {
+    DEFAULT: '#A855F7',
+    glow: 'rgba(168,85,247,0.35)',
+    dark: '#9333EA',
+    light: '#F3E8FF',
+  },
 
   // Dark mode overrides
   dark: {
@@ -115,6 +136,20 @@ export const GamificationShadow = {
     shadowRadius: 10,
     elevation: 6,
   },
+  streak: {
+    shadowColor: '#F97316',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  exp: {
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 6,
+  },
   glow: {
     shadowColor: '#10b981',
     shadowOffset: { width: 0, height: 0 },
@@ -158,6 +193,17 @@ export const GamificationMotion = {
     fast: 200,
     normal: 350,
     slow: 600,
+  },
+  // Fade / FadeUp transition config for Moti
+  fade: {
+    from: { opacity: 0 },
+    animate: { opacity: 1 },
+    transition: { type: 'timing' as const, duration: 200 },
+  },
+  fadeUp: {
+    from: { opacity: 0, translateY: 8 },
+    animate: { opacity: 1, translateY: 0 },
+    transition: { type: 'spring' as const, damping: 22, stiffness: 200 },
   },
 } as const
 

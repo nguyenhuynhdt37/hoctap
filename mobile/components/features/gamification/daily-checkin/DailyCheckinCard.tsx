@@ -111,6 +111,8 @@ function MiniCalendar({
   )
 }
 
+import { useGamificationStore } from '@/src/stores/gamification.store'
+
 // ─────────────────────────────────────────────────────────────
 // DailyCheckinCard (main widget)
 // ─────────────────────────────────────────────────────────────
@@ -129,6 +131,20 @@ export function DailyCheckinCard() {
 
   const [sheetOpen, setSheetOpen] = useState(false)
   const [popupVisible, setPopupVisible] = useState(false)
+
+  const updatePeak = useGamificationStore(s => s.updatePeak)
+  const updateStreak = useGamificationStore(s => s.updateStreak)
+
+  // Sync checkin status results to the central gamification store
+  useEffect(() => {
+    if (status) {
+      updatePeak(status.current_peak_balance)
+      updateStreak({
+        current_streak: status.current_streak,
+        best_streak: status.best_streak,
+      })
+    }
+  }, [status, updatePeak, updateStreak])
 
   // Trigger popup on success
   useEffect(() => {
@@ -394,7 +410,7 @@ export function DailyCheckinCard() {
                 }}
               >
                 Streak:{' '}
-                <RNText style={{ color: GamificationColors.streak, fontWeight: '800' }}>
+                <RNText style={{ color: GamificationColors.streak.DEFAULT, fontWeight: '800' }}>
                   {status.current_streak} ngày
                 </RNText>
                 {'  ·  '}Kỷ lục:{' '}

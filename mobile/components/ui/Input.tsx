@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react'
-import { View, TextInput, Text, type TextInputProps, StyleSheet } from 'react-native'
+import { View, TextInput, Text, type TextInputProps, StyleSheet, type TextStyle } from 'react-native'
 import { useColorScheme } from 'nativewind'
 
 interface InputProps extends TextInputProps {
@@ -7,9 +7,10 @@ interface InputProps extends TextInputProps {
   error?: string
   leftSlot?: React.ReactNode
   rightSlot?: React.ReactNode
+  labelStyle?: TextStyle
 }
 
-export function Input({ label, error, className, style, ...props }: InputProps) {
+export function Input({ label, error, className, style, labelStyle, ...props }: InputProps) {
   const [focused, setFocused] = useState(false)
   const { colorScheme } = useColorScheme()
   
@@ -19,6 +20,7 @@ export function Input({ label, error, className, style, ...props }: InputProps) 
     <View style={styles.container}>
       {label && (
         <Text 
+          style={labelStyle}
           className={`font-bold text-[10px] ml-5 mb-1 uppercase tracking-[2px] ${
             isDark ? 'text-zinc-500' : 'text-zinc-400'
           }`}

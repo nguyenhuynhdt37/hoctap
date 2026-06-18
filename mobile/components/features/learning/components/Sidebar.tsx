@@ -3,7 +3,7 @@ import { View, ScrollView, Pressable, useColorScheme } from 'react-native'
 import { Ionicons, Feather } from '@expo/vector-icons'
 import * as Haptics from 'expo-haptics'
 import { Text } from '@/components/ui'
-import type { Lesson, CourseSection } from '../../types'
+import type { Lesson, CourseSection } from '../types'
 
 interface SidebarProps {
   sections: CourseSection[]
@@ -86,7 +86,7 @@ export function Sidebar({
       >
         {sections.map((section, sIdx) => {
           const isExpanded = expandedSections.has(section.id)
-          const completedInSection = section.lessons.filter((l) => l.is_completed).length
+          const completedInSection = section.lessons.filter((l: Lesson) => l.is_completed).length
           const sectionDuration = getSectionDuration(section.lessons)
 
           return (
@@ -125,7 +125,7 @@ export function Sidebar({
               {/* Lessons */}
               {isExpanded && (
                 <View className={isDark ? 'bg-zinc-900/30' : 'bg-zinc-50/50'}>
-                  {section.lessons.map((lesson, lIdx) => {
+                  {section.lessons.map((lesson: Lesson, lIdx: number) => {
                     const isActive = lesson.id === currentLessonId
 
                     return (

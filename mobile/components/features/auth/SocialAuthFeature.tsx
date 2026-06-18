@@ -44,7 +44,7 @@ export function SocialAuthFeature() {
     try {
       const { data } = await authService.loginWithGoogle(idToken)
       await saveTokens(data)
-      router.replace('/(app)')
+      router.replace('/')
     } catch (error) {
       console.error('Google Login Error:', error)
     }

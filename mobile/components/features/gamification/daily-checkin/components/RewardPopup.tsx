@@ -282,7 +282,7 @@ export function RewardPopup({ visible, result, isDark, onClose }: RewardPopupPro
                     style={{
                       fontSize: 22,
                       fontWeight: '900',
-                      color: GamificationColors.streak,
+                      color: GamificationColors.streak.DEFAULT,
                       letterSpacing: -0.8,
                     }}
                   >

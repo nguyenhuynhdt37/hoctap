@@ -40,6 +40,8 @@ export const mockResources: LessonResource[] = [
     title: 'Slide bài giảng - Python cơ bản',
     file_url: 'https://example.com/slides/python-basics.pdf',
     file_type: 'pdf',
+    url: 'https://example.com/slides/python-basics.pdf',
+    resource_type: 'pdf',
     file_size: 2500000,
   },
   {
@@ -47,6 +49,8 @@ export const mockResources: LessonResource[] = [
     title: 'Mã nguồn mẫu',
     file_url: 'https://example.com/code/sample.zip',
     file_type: 'zip',
+    url: 'https://example.com/code/sample.zip',
+    resource_type: 'zip',
     file_size: 120000,
   },
   {
@@ -54,6 +58,8 @@ export const mockResources: LessonResource[] = [
     title: 'Tài liệu tham khảo',
     file_url: 'https://python.org/doc',
     file_type: 'link',
+    url: 'https://python.org/doc',
+    resource_type: 'link',
     file_size: 0,
   },
 ]
@@ -249,6 +255,7 @@ const createCodeLesson = (
   sectionIndex: number,
   position: number,
   isCompleted = false,
+  isLocked = false,
 ): Lesson => ({
   id,
   title,
@@ -256,7 +263,7 @@ const createCodeLesson = (
   description: `Bài tập lập trình thực hành. Áp dụng kiến thức đã học để giải quyết các bài toán cụ thể.`,
   position,
   is_preview: false,
-  is_locked: false,
+  is_locked: isLocked,
   is_completed: isCompleted,
   duration,
   file_id: null,
@@ -495,6 +502,7 @@ export const mockNotes: LessonNote[] = [
     time_seconds: 560,
     content: 'Ép kiểu: int("42") → 42, str(42) → "42", float(42) → 42.0',
     created_at: new Date(Date.now() - 43200000).toISOString(),
+    updated_at: new Date(Date.now() - 43200000).toISOString(),
   },
 ]
 

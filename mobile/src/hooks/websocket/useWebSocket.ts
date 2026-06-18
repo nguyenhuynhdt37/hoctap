@@ -121,8 +121,10 @@ export function useWebSocket({
         setIsConnected(false);
         onDisconnectRef.current?.(event.code, event.reason);
 
-        // Reconnect only on abnormal closes. Code 1000 is a clean server close.
-        if (!isClosing.current && enabledRef.current && event.code !== 1000 && event.code !== 1008) {
+        // Reconnect whenever the active socket closes unexpectedly.
+        // Code 1000 can still be emitted by a server/proxy clean close; only
+        // skip reconnect for intentional client closes or auth/policy failures.
+        if (!isClosing.current && enabledRef.current && event.code !== 1008) {
           if (reconnectTimeout.current) {
             clearTimeout(reconnectTimeout.current);
           }

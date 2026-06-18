@@ -55,11 +55,12 @@ export const MyCoursesContent = memo(function MyCoursesContent({ isDark = false 
     isError,
     isFetching,
     refetch,
-    isFetchingNextPage,
   } = useQuery({
     queryKey: ['my-courses', queryParams],
     queryFn: () => purchaseService.getMyCourses(queryParams).then(r => r.data),
   })
+
+  const isFetchingNextPage = false
 
   const courses = data?.courses ?? []
   const total = data?.total ?? 0

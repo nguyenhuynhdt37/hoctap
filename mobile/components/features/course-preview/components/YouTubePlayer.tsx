@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react'
 import { View, StyleSheet, Pressable, Dimensions } from 'react-native'
-import YoutubePlayer, { PlaybackState } from 'react-native-youtube-iframe'
+import YoutubePlayer from 'react-native-youtube-iframe'
 import { Ionicons } from '@expo/vector-icons'
 import { Text } from '@/components/ui/Text'
 
@@ -28,7 +28,7 @@ export function YouTubePlayer({ url, isDark }: YouTubePlayerProps) {
   const [isReady, setIsReady] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
 
-  const onChangeState = useCallback((state: PlaybackState) => {
+  const onChangeState = useCallback((state: string) => {
     if (state === 'playing') {
       setIsPlaying(true)
       setIsReady(true)
