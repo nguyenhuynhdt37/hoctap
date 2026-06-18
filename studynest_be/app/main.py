@@ -49,6 +49,9 @@ from app.api.v1.user import lecturer as user_lecturer
 from app.api.v1.user import refunds as user_refunds
 from app.api.v1.user import transaction as user_transaction
 from app.api.v1.user import tutor_chat as user_tutor_chat
+
+# --- GAMIFICATION ROUTES ---
+from app.api.v1.gamification import daily_checkin as gamification_checkin
 from app.core.scheduler import scheduler, start_scheduler
 from app.core.redis import close_redis, ping_redis
 
@@ -155,6 +158,9 @@ app.include_router(user_refunds.router, prefix=prefix)
 app.include_router(user_lecturer.router, prefix=prefix)
 app.include_router(user_tutor_chat.router, prefix=prefix)
 app.include_router(user_chat_sql.router, prefix=prefix)
+
+# --- GAMIFICATION ROUTES ---
+app.include_router(gamification_checkin.router, prefix=prefix)
 
 # --- LECTURER ROUTES ---
 app.include_router(lecturer_courses.router, prefix=prefix)

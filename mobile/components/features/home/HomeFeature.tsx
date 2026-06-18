@@ -5,6 +5,8 @@ import { Screen } from '@/components/layout/Screen'
 import { HomeHeader } from './HomeHeader'
 import { RecommendedCourses } from './RecommendedCourses'
 import { HomeCoursesSection } from './HomeCoursesSection'
+import { DailyCheckinCard } from '@/components/features/gamification/daily-checkin'
+import { CHECKIN_QUERY_KEY } from '@/components/features/gamification/daily-checkin'
 
 export function HomeFeature() {
   const isDark = useColorScheme() === 'dark'
@@ -15,6 +17,7 @@ export function HomeFeature() {
     setRefreshing(true)
     queryClient.invalidateQueries({ queryKey: ['courses'] })
     queryClient.invalidateQueries({ queryKey: ['recommended-courses'] })
+    queryClient.invalidateQueries({ queryKey: CHECKIN_QUERY_KEY })
     setTimeout(() => setRefreshing(false), 500)
   }, [queryClient])
 
@@ -33,6 +36,8 @@ export function HomeFeature() {
         }
       >
         <HomeHeader />
+        {/* ── Gamification: Daily Check-in Widget ─────────────── */}
+        <DailyCheckinCard />
         <RecommendedCourses />
         <HomeCoursesSection />
       </ScrollView>
