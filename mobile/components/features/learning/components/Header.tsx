@@ -11,6 +11,8 @@ interface HeaderProps {
   onBack: () => void
   onMenuPress: () => void
   insets?: { left: number; right: number }
+  isCodeLesson?: boolean
+  onQAPress?: () => void
 }
 
 import { BackButton } from '@/components/ui/BackButton'
@@ -23,6 +25,8 @@ export function Header({
   onBack,
   onMenuPress,
   insets,
+  isCodeLesson,
+  onQAPress,
 }: HeaderProps) {
   const isDark = useColorScheme() === 'dark'
   const scaleAnim = useRef(new Animated.Value(1)).current
@@ -80,13 +84,17 @@ export function Header({
         </View>
       </View>
 
-      {/* Menu Button */}
+      {/* Menu or Q&A Button */}
       <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
         <Pressable
-          onPress={() => animatePress(onMenuPress)}
+          onPress={() => animatePress(isCodeLesson && onQAPress ? onQAPress : onMenuPress)}
           className="w-11 h-11 rounded-2xl items-center justify-center border border-emerald-500/10 bg-emerald-500/[0.08]"
         >
-          <Feather name="menu" size={20} color="#10B981" />
+          {isCodeLesson ? (
+            <Feather name="message-square" size={20} color="#10B981" />
+          ) : (
+            <Feather name="menu" size={20} color="#10B981" />
+          )}
         </Pressable>
       </Animated.View>
     </View>

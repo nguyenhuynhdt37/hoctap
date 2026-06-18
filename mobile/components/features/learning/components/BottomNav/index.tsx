@@ -11,6 +11,7 @@ interface BottomNavProps {
   onPrev: () => void
   onNext: () => void
   onMenu: () => void
+  onChat?: () => void
   insets?: { left: number; right: number }
   shouldShake?: boolean
 }
@@ -22,6 +23,7 @@ export function BottomNav({
   onPrev,
   onNext,
   onMenu,
+  onChat,
   insets,
   shouldShake,
 }: BottomNavProps) {
@@ -132,7 +134,7 @@ export function BottomNav({
 
       {/* Chat */}
       <Pressable
-        onPress={() => { }}
+        onPress={() => onChat && animatePress(onChat)}
         className={`w-11 h-11 rounded-2xl items-center justify-center border ${
           isDark ? 'border-zinc-800 bg-zinc-900' : 'border-zinc-200 bg-white'
         }`}

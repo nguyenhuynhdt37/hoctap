@@ -20,7 +20,11 @@ interface MarkdownRendererProps {
 
 // CSS cho markdown - theo chuẩn NeuralEarn emerald theme
 const MARKDOWN_CSS = `
-* { box-sizing: border-box; }
+* { 
+  box-sizing: border-box; 
+  -webkit-user-select: text;
+  user-select: text;
+}
 body { 
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   color: #374151;
@@ -62,7 +66,7 @@ code:not(pre code) {
   padding: 0.2em 0.4em;
   border-radius: 4px;
   font-family: 'SF Mono', 'Menlo', monospace;
-  font-size: 0.9em;
+  font-size: 1.05em;
   border: 1px solid #d1fae5;
 }
 pre {
@@ -79,7 +83,7 @@ pre code {
   padding: 0;
   border: none;
   font-family: 'SF Mono', 'Menlo', monospace;
-  font-size: 0.875em;
+  font-size: 1.05em;
   line-height: 1.6;
 }
 img { max-width: 100%; height: auto; border-radius: 8px; margin: 1em 0; }

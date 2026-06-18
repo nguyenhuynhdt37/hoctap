@@ -25,6 +25,7 @@ import { BottomNav } from './components/BottomNav'
 import { VideoLesson, VideoLessonRef } from './components/VideoLesson'
 import { Celebration } from './components/Celebration'
 import { QuizOverlay } from './components/VideoLesson/QuizOverlay'
+import { TutorChat } from './components/TutorChat'
 import type { LearningFeatureProps } from './types'
 
 export function LearningFeature({ courseId, courseTitle, initialCourseInfo, initialLessonId, initialCommentId }: LearningFeatureProps) {
@@ -33,6 +34,7 @@ export function LearningFeature({ courseId, courseTitle, initialCourseInfo, init
   const videoRef = useRef<VideoLessonRef>(null)
   const [currentTime, setCurrentTime] = useState(0)
   const [showQA, setShowQA] = useState(false)
+  const [showTutorChat, setShowTutorChat] = useState(false)
 
   const {
     currentLesson,
@@ -116,6 +118,8 @@ export function LearningFeature({ courseId, courseTitle, initialCourseInfo, init
           onBack={goBack}
           onMenuPress={toggleSidebar}
           insets={insets}
+          isCodeLesson={isCodeLesson}
+          onQAPress={() => setShowQA(true)}
         />
 
         {showVideo && currentLesson && (
@@ -179,16 +183,6 @@ export function LearningFeature({ courseId, courseTitle, initialCourseInfo, init
         </View>
       </ScrollView>
 
-      {currentLesson && isCodeLesson && (
-        <Pressable
-          onPress={() => setShowQA(true)}
-          className="absolute right-5 z-40 h-14 w-14 items-center justify-center rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/30"
-          style={{ bottom: Math.max(insets.bottom, 12) + 78 }}
-        >
-          <Ionicons name="chatbubbles" size={24} color="#FFFFFF" />
-        </Pressable>
-      )}
-
       <View
         className={`${isDark ? 'bg-zinc-950' : 'bg-white'}`}
         style={{ paddingBottom: Math.max(insets.bottom, 12) }}
@@ -200,6 +194,13 @@ export function LearningFeature({ courseId, courseTitle, initialCourseInfo, init
           onPrev={goToPrev}
           onNext={goToNext}
           onMenu={toggleSidebar}
+          onChat={() => {
+            if (isCodeLesson) {
+              setShowTutorChat(true)
+            } else {
+              setActiveTab('qa')
+            }
+          }}
           shouldShake={celebration.visible}
           insets={insets}
         />
@@ -237,6 +238,16 @@ export function LearningFeature({ courseId, courseTitle, initialCourseInfo, init
         initialCommentId={initialCommentId}
         isDark={isDark}
         onClose={() => setShowQA(false)}
+      />
+
+      <TutorChat
+        isOpen={showTutorChat}
+        onClose={() => setShowTutorChat(false)}
+        lessonId={currentLesson?.id ?? ''}
+        lessonTitle={currentLesson?.title ?? ''}
+        courseId={courseId}
+        courseTitle={courseTitle}
+        isDark={isDark}
       />
 
       <Celebration
