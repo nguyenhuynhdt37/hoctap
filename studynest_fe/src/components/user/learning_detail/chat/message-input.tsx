@@ -328,10 +328,12 @@ function MessageInput({
       onDragOver={(e) => e.preventDefault()}
       onDrop={handleDrop}
     >
-      {/* Scope */}
+      {/* Scope selector hidden to enforce lesson-only scope */}
+      {/* 
       <div className="mb-2 flex justify-center">
         <ScopeSelector scope={scope} onScopeChange={handleScopeChange} />
-      </div>
+      </div> 
+      */}
 
       {/* Image previews */}
       {localImages.length > 0 && (

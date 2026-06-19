@@ -20,8 +20,7 @@ class LLMService:
         genai.configure(api_key=settings.GOOGLE_API_KEY_CHAT)
 
         # === Model MỚI CHÍNH XÁC NHẤT CHO generate_content ===
-        self.primary_model = "models/gemini-2.0-flash"
-        self.fallback_model = "models/gemini-2.0-pro"
+        self.primary_model = "models/gemini-3.1-flash-lite"
 
     async def call_model(
         self,
@@ -58,35 +57,36 @@ class LLMService:
 
             return await asyncio.to_thread(_sync_call)
 
-        # ===== Gọi model chính (retry) =====
+        # ===== Gọi model chính (retry nếu gặp lỗi tạm thời hoặc quota) =====
+        last_error = None
         for attempt in range(1, retries + 1):
             try:
                 return await _safe_call(self.primary_model)
 
-            except ResourceExhausted:
+            except ResourceExhausted as e:
+                last_error = e
                 wait_time = 2 * attempt
                 logger.warning(
                     f"⚠️ Quota bị giới hạn (attempt {attempt}/{retries}), đợi {wait_time}s..."
                 )
-                await asyncio.sleep(wait_time)
+                if attempt < retries:
+                    await asyncio.sleep(wait_time)
 
-            except PermissionDenied:
+            except PermissionDenied as e:
                 logger.error("🚫 API key sai hoặc chưa bật billing.")
-                return "🚫 API key không hợp lệ hoặc chưa bật billing."
+                return f"🚫 Lỗi bảo mật: API key không hợp lệ hoặc chưa bật billing. Chi tiết: {e}"
 
             except InvalidArgument as e:
                 logger.error(f"❌ Lỗi tham số: {e}")
-                return "⚠️ Prompt không hợp lệ hoặc định dạng sai."
+                return f"⚠️ Lỗi cú pháp/tham số prompt: {e}"
 
             except Exception as e:
-                logger.warning(f"⚠️ Lỗi tạm thời từ Gemini: {e}")
-                await asyncio.sleep(2)
+                last_error = e
+                logger.warning(f"⚠️ Lỗi tạm thời từ Gemini (attempt {attempt}/{retries}): {e}")
+                if attempt < retries:
+                    await asyncio.sleep(2)
 
-        # ===== Fallback sang model mạnh hơn =====
-        try:
-            logger.info("🔁 Đang thử gọi model dự phòng (gemini-2.0-pro)...")
-            return await _safe_call(self.fallback_model)
-
-        except Exception as e:
-            logger.error(f"❌ Fallback cũng fail: {e}")
-            return "❌ Máy chủ AI đang quá tải, thử lại sau."
+        # Nếu chạy hết số lần retry mà vẫn lỗi thì trả về thông báo lỗi chi tiết
+        err_msg = f"❌ Gọi Gemini thất bại sau {retries} lần thử. Lỗi cuối: {last_error}"
+        logger.error(err_msg)
+        return err_msg

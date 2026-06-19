@@ -71,8 +71,8 @@ class PreprocessResponse(BaseModel):
 # =========================
 
 GREETING_RESPONSES = {
-    "vi": "Xin chào! Tôi là trợ lý SQL. Bạn có thể hỏi tôi về dữ liệu khóa học, học viên, doanh thu... Ví dụ: 'Có bao nhiêu khóa học đang active?'",
-    "en": "Hello! I'm the SQL assistant. You can ask me about courses, students, revenue... For example: 'How many active courses are there?'",
+    "vi": "Xin chào! Tôi là trợ lý STUDY NEST. Bạn có thể hỏi tôi về dữ liệu khóa học. Ví dụ: 'Có bao nhiêu khóa học đang active?'",
+    "en": "Hello! I'm the STUDY NEST assistant. You can ask me about courses For example: 'How many active courses are there?'",
 }
 
 THANKS_RESPONSES = {

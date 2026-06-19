@@ -42,7 +42,7 @@ export function PasswordFeature() {
     try {
       const { data } = await authService.loginWithEmail(normalizedEmail, password)
       await login(data.access_token, data.refresh_token, data.session_id)
-      router.replace('/(app)')
+      router.replace('/')
     } catch (e: any) {
       const detail = e.response?.data?.detail
       const errorCode = detail?.error_code || detail?.code

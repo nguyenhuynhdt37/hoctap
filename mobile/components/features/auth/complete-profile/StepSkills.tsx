@@ -19,7 +19,7 @@ export function StepTopics({
 }: {
   selectedFields: any[]
   selectedTopics: any[]
-  setSelectedTopics: (v: any[]) => void
+  setSelectedTopics: React.Dispatch<React.SetStateAction<any[]>>
 }) {
   const { t, i18n } = useTranslation();
   const currentLang = i18n.language === 'vi' ? 'vi' : 'en';

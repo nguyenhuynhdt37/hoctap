@@ -1,6 +1,6 @@
 import '../global.css';
 import '../src/i18n';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -10,7 +10,8 @@ import * as SplashScreen from 'expo-splash-screen';
 import { ReanimatedLogLevel, configureReanimatedLogger } from 'react-native-reanimated';
 import { useAuthStore } from '../src/stores/auth.store';
 import { useThemeStore } from '../src/stores/theme.store';
-import { useColorScheme } from 'react-native';
+import { useColorScheme, View } from 'react-native';
+import { AnimatedSplashScreen } from '../components/ui/AnimatedSplashScreen';
 import { useFonts } from 'expo-font';
 import {
   BeVietnamPro_400Regular,
@@ -34,6 +35,7 @@ configureReanimatedLogger({
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  const [showSplash, setShowSplash] = useState(true);
   const { setColorScheme } = useNativeWindColorScheme();
   const [fontsLoaded] = useFonts({
     'BeVietnamPro-Regular': BeVietnamPro_400Regular,
@@ -61,10 +63,10 @@ export default function RootLayout() {
   }, [colorScheme, setColorScheme]);
 
   useEffect(() => {
-    if (fontsLoaded && !isLoading) {
+    if (fontsLoaded) {
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded, isLoading]);
+  }, [fontsLoaded]);
 
   if (!fontsLoaded) return null;
 
@@ -78,14 +80,23 @@ export default function RootLayout() {
             {connectionError ? (
               <NetworkErrorScreen />
             ) : (
-              <Stack screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="index" />
-                <Stack.Screen name="(auth)" />
-                <Stack.Screen name="(app)" />
-                <Stack.Screen name="(lecturer)" />
-                <Stack.Screen name="payment-result" />
-                <Stack.Screen name="demo" />
-              </Stack>
+              <View style={{ flex: 1 }}>
+                <Stack screenOptions={{ headerShown: false }}>
+                  <Stack.Screen name="index" />
+                  <Stack.Screen name="(auth)" />
+                  <Stack.Screen name="(app)" />
+                  <Stack.Screen name="(lecturer)" />
+                  <Stack.Screen name="payment-result" />
+                  <Stack.Screen name="demo" />
+                </Stack>
+                {showSplash && (
+                  <AnimatedSplashScreen
+                    isDark={colorScheme === 'dark'}
+                    isAppReady={fontsLoaded && !isLoading}
+                    onAnimationComplete={() => setShowSplash(false)}
+                  />
+                )}
+              </View>
             )}
           </NetworkMonitor>
         </QueryClientProvider>

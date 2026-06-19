@@ -99,7 +99,7 @@ export function CompleteProfileFeature() {
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
       await refreshUser()
-      router.replace('/(app)')
+      router.replace('/')
     } catch (e: any) {
       const errorMsg = e.response?.data?.detail?.message || e.message || t('common.error')
       Alert.alert(t('common.error'), errorMsg)

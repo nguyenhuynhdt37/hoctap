@@ -1,9 +1,7 @@
 /**
  * Code Lesson Types
- * Mở rộng từ types.ts
+ * Mirrors the web learning code-lesson contract.
  */
-
-import type { CodeTestResult } from '../types'
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // LANGUAGE
@@ -12,9 +10,11 @@ import type { CodeTestResult } from '../types'
 export interface CodeLanguage {
   id: string
   name: string
-  display_name: string
-  extensions: string[]
-  monaco_language: string
+  version: string
+  runtime: string | null
+  display_name?: string
+  extensions?: string[]
+  monaco_language?: string
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -25,7 +25,8 @@ export interface CodeFile {
   id: string
   filename: string
   content: string
-  language: CodeLanguage
+  role?: 'starter' | 'solution' | 'user'
+  language?: CodeLanguage
   is_main: boolean
   is_readonly?: boolean
   size?: number
@@ -38,21 +39,28 @@ export interface CodeFile {
 export interface TestCase {
   id: string
   input: string
-  expected: string
-  description: string
+  expected?: string
+  expected_output?: string
+  description?: string
+  hidden?: boolean
   is_sample?: boolean
+  order_index?: number
 }
 
 export interface TestCaseResult {
   id: string
   index: number
-  result: 'passed' | 'failed' | 'runtime_error' | 'time_limit_exceeded' | 'internal_error'
+  result: 'passed' | 'failed' | 'runtime_error' | 'time_limit_exceeded' | 'memory_limit_exceeded' | 'internal_error'
   input?: string
   expected?: string
   output?: string
   stderr?: string
   cpu_time?: number
   memory?: number
+  language?: string
+  version?: string
+  exit_code?: number
+  is_hidden?: boolean
   error_message?: string
 }
 
@@ -64,13 +72,27 @@ export interface CodeExercise {
   id: string
   title: string
   description: string
+  difficulty?: 'easy' | 'medium' | 'hard'
+  time_limit?: number
+  memory_limit?: number
   language: CodeLanguage
   files: CodeFile[]
   testcases: TestCase[]
   hints?: string[]
   solution?: string
-  is_pass: boolean
-  order: number
+  is_pass?: boolean
+  order?: number
+}
+
+export interface CodeLessonTestResult {
+  status: 'passed' | 'failed' | 'success' | 'partial' | 'error'
+  passed: number
+  failed: number
+  total: number
+  saved?: boolean
+  language?: string
+  version?: string
+  details: TestCaseResult[]
 }
 
 export interface CodeLessonData {
@@ -99,7 +121,7 @@ export interface EditorState {
 
 export interface RunResult {
   status: 'idle' | 'running' | 'success' | 'error'
-  testResult: CodeTestResult | null
+  testResult: CodeLessonTestResult | null
   executedAt: string | null
   executionTime?: number
 }
@@ -138,11 +160,11 @@ export interface SaveFilePayload {
 export interface RunCodePayload {
   exerciseId: string
   languageId: string
-  files: Array<{
+  files: {
     filename: string
     content: string
     is_main: boolean
-  }>
+  }[]
 }
 
 export interface SaveFileResult {
@@ -153,6 +175,6 @@ export interface SaveFileResult {
 
 export interface RunCodeResult {
   status: 'success' | 'error'
-  test_result: CodeTestResult
+  test_result: CodeLessonTestResult
   execution_time_ms: number
 }

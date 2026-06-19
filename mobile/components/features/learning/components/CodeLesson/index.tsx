@@ -1,24 +1,22 @@
 /**
  * Code Lesson Component
- * Code editor với file tabs và test runner
+ * Mobile port of the web Study FE code lesson flow.
  */
 
-import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { View, ScrollView, Pressable, TextInput, KeyboardAvoidingView, Platform, Alert } from 'react-native'
-import { Feather, Ionicons } from '@expo/vector-icons'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Alert, Pressable, ScrollView, View } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
 import * as Haptics from 'expo-haptics'
 import { Text } from '@/components/ui'
-import type { Lesson } from '../types'
-import type { CodeExercise } from '../types/code-lesson'
-import { FileTabs } from './FileTabs'
-import { TestRunner } from './TestRunner'
-import { TestResults } from './TestResults'
-import { mockTestResult } from '../../mock-data'
+import type { Lesson } from '../../types'
+import type { CodeExercise, CodeFile, CodeLessonTestResult } from '../../types/code-lesson'
+import { learningService } from '../../services/learning.service'
 import { Celebration } from '../Celebration'
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// PROPS
-// ═══════════════════════════════════════════════════════════════════════════════
+import { CodeEditorPanel } from './CodeEditorPanel'
+import { CodeLessonTabs, type CodeLessonPanel } from './CodeLessonTabs'
+import { CodeProblemPanel } from './CodeProblemPanel'
+import { CodeResultPanel } from './CodeResultPanel'
+import { TestCasesPanel } from './TestCasesPanel'
 
 interface CodeLessonProps {
   lesson: Lesson
@@ -27,181 +25,277 @@ interface CodeLessonProps {
   onMarkCompleted: (lessonId: string) => void
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// COMPONENT
-// ═══════════════════════════════════════════════════════════════════════════════
+function normalizeExercise(exercise: CodeExercise, index: number): CodeExercise {
+  return {
+    ...exercise,
+    order: exercise.order ?? index + 1,
+    is_pass: exercise.is_pass ?? false,
+    files: (exercise.files ?? []).map(file => ({
+      ...file,
+      language: file.language ?? exercise.language,
+    })),
+    testcases: [...(exercise.testcases ?? [])].sort((a, b) => {
+      return (a.order_index ?? 0) - (b.order_index ?? 0)
+    }),
+  }
+}
+
+function formatLimitMs(value?: number): string {
+  if (!value) return '2.00s'
+  return value >= 100 ? `${(value / 1000).toFixed(2)}s` : `${value.toFixed(2)}s`
+}
+
+function formatMemory(value?: number): string {
+  if (!value) return '256 MB'
+  return `${(value / (1024 * 1024)).toFixed(0)} MB`
+}
+
+function difficultyLabel(value?: string): string {
+  switch (value) {
+    case 'easy':
+      return 'Dễ'
+    case 'medium':
+      return 'Trung bình'
+    case 'hard':
+      return 'Khó'
+    default:
+      return 'Code'
+  }
+}
 
 export function CodeLesson({ lesson, isDark, isCompleted, onMarkCompleted }: CodeLessonProps) {
-  // Mock exercises data - trong thực tế sẽ fetch từ API
-  const [exercises] = useState<CodeExercise[]>([
-    {
-      id: 'code-001',
-      title: 'Bài 1: Viết hàm tính tổng',
-      description: 'Viết một hàm `sum_numbers(a, b)` nhận vào hai số và trả về tổng của chúng.',
-      language: { id: 'lang-py', name: 'python', display_name: 'Python', extensions: ['.py'], monaco_language: 'python' },
-      files: [
-        {
-          id: 'file-001',
-          filename: 'solution.py',
-          content: '# Viết hàm tính tổng ở đây\ndef sum_numbers(a, b):\n    pass\n',
-          language: { id: 'lang-py', name: 'python', display_name: 'Python', extensions: ['.py'], monaco_language: 'python' },
-          is_main: true,
-        },
-      ],
-      testcases: [
-        { id: 'tc-001', input: 'sum_numbers(1, 2)', expected: '3', description: 'Tổng 1 + 2 = 3' },
-        { id: 'tc-002', input: 'sum_numbers(0, 0)', expected: '0', description: 'Tổng 0 + 0 = 0' },
-        { id: 'tc-003', input: 'sum_numbers(-1, 1)', expected: '0', description: 'Tổng -1 + 1 = 0' },
-      ],
-      is_pass: false,
-      order: 1,
-    },
-    {
-      id: 'code-002',
-      title: 'Bài 2: Kiểm tra số chẵn/lẻ',
-      description: 'Viết hàm `is_even(n)` trả về True nếu n là số chẵn.',
-      language: { id: 'lang-py', name: 'python', display_name: 'Python', extensions: ['.py'], monaco_language: 'python' },
-      files: [
-        {
-          id: 'file-002',
-          filename: 'solution.py',
-          content: '# Viết hàm kiểm tra số chẵn ở đây\ndef is_even(n):\n    pass\n',
-          language: { id: 'lang-py', name: 'python', display_name: 'Python', extensions: ['.py'], monaco_language: 'python' },
-          is_main: true,
-        },
-      ],
-      testcases: [
-        { id: 'tc-004', input: 'is_even(4)', expected: 'True', description: '4 là số chẵn' },
-        { id: 'tc-005', input: 'is_even(7)', expected: 'False', description: '7 là số lẻ' },
-        { id: 'tc-006', input: 'is_even(0)', expected: 'True', description: '0 là số chẵn' },
-      ],
-      is_pass: false,
-      order: 2,
-    },
-  ])
+  const exercises = useMemo(() => {
+    return (lesson.codes ?? []).map(normalizeExercise)
+  }, [lesson])
 
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0)
   const [activeFileId, setActiveFileId] = useState<string | null>(null)
-  const [userCode, setUserCode] = useState<Record<string, string>>({})
+  const [userFiles, setUserFiles] = useState<Record<string, Record<string, string>>>({})
+  const [initialFileContents, setInitialFileContents] = useState<Record<string, Record<string, string>>>({})
+  const [savedFileContents, setSavedFileContents] = useState<Record<string, Record<string, string>>>({})
   const [isRunning, setIsRunning] = useState(false)
-  const [testResult, setTestResult] = useState<typeof mockTestResult | null>(null)
+  const [testResult, setTestResult] = useState<CodeLessonTestResult | null>(null)
   const [showCelebration, setShowCelebration] = useState(false)
-  const [showHint, setShowHint] = useState(false)
+  const [activePanel, setActivePanel] = useState<CodeLessonPanel>('problem')
+  const [exercisePassStatus, setExercisePassStatus] = useState<Record<string, boolean>>({})
+  const prevFileIdRef = useRef<string | null>(null)
+  const isSavingRef = useRef(false)
+  const hasCalledCompleteRef = useRef(false)
 
-  const currentExercise = exercises[currentExerciseIndex]
-
-  // Initialize code state
   useEffect(() => {
-    if (currentExercise) {
-      const initialCode: Record<string, string> = {}
-      currentExercise.files.forEach(file => {
-        initialCode[file.id] = file.content
-      })
-      setUserCode(prev => {
-        const merged = { ...prev }
-        currentExercise.files.forEach(file => {
-          if (!merged[file.id]) {
-            merged[file.id] = file.content
-          }
-        })
-        return merged
-      })
-      if (currentExercise.files.length > 0 && !activeFileId) {
-        const mainFile = currentExercise.files.find(f => f.is_main) || currentExercise.files[0]
-        setActiveFileId(mainFile.id)
+    setCurrentExerciseIndex(0)
+    setActiveFileId(null)
+    setUserFiles({})
+    setInitialFileContents({})
+    setSavedFileContents({})
+    setTestResult(null)
+    setActivePanel('problem')
+    hasCalledCompleteRef.current = false
+  }, [lesson.id])
+
+  useEffect(() => {
+    if (exercises.length === 0) return
+    const initialStatus: Record<string, boolean> = {}
+    exercises.forEach(exercise => {
+      initialStatus[exercise.id] = exercise.is_pass ?? false
+    })
+    setExercisePassStatus(prev => ({ ...initialStatus, ...prev }))
+  }, [exercises])
+
+  const exercisesWithPassStatus = useMemo(() => {
+    return exercises.map(exercise => ({
+      ...exercise,
+      is_pass: exercisePassStatus[exercise.id] ?? exercise.is_pass ?? false,
+    }))
+  }, [exercises, exercisePassStatus])
+
+  const currentExercise = exercisesWithPassStatus[currentExerciseIndex]
+  const activeFiles = useMemo(() => currentExercise?.files ?? [], [currentExercise])
+
+  useEffect(() => {
+    if (!currentExercise || userFiles[currentExercise.id]) return
+
+    const initialFiles: Record<string, string> = {}
+    currentExercise.files.forEach(file => {
+      initialFiles[file.id] = file.content
+    })
+
+    setUserFiles(prev => ({ ...prev, [currentExercise.id]: initialFiles }))
+    setInitialFileContents(prev => ({ ...prev, [currentExercise.id]: { ...initialFiles } }))
+    setSavedFileContents(prev => ({ ...prev, [currentExercise.id]: { ...initialFiles } }))
+  }, [currentExercise, userFiles])
+
+  const currentUserFiles = useMemo<CodeFile[]>(() => {
+    if (!currentExercise) return []
+    const exerciseId = currentExercise.id
+    const contents = userFiles[exerciseId]
+    if (!contents) return activeFiles
+
+    return activeFiles.map(file => ({
+      ...file,
+      content: contents[file.id] ?? file.content,
+    }))
+  }, [activeFiles, currentExercise, userFiles])
+
+  useEffect(() => {
+    if (!currentExercise || currentUserFiles.length === 0) return
+    const mainFile = currentUserFiles.find(file => file.is_main) || currentUserFiles[0]
+    setActiveFileId(currentId => {
+      return currentId && currentUserFiles.some(file => file.id === currentId)
+        ? currentId
+        : mainFile.id
+    })
+  }, [currentExercise, currentUserFiles])
+
+  const activeFile = currentUserFiles.find(file => file.id === activeFileId)
+  const currentCode = activeFile?.content ?? ''
+
+  const saveFile = useCallback(async (
+    exerciseId: string,
+    filename: string,
+    content: string,
+    isMain: boolean
+  ) => {
+    await learningService.saveCodeFile(exerciseId, {
+      filename,
+      content,
+      is_main: isMain,
+    })
+    setExercisePassStatus(prev => ({ ...prev, [exerciseId]: false }))
+    setTestResult(null)
+  }, [])
+
+  const saveCurrentFileIfChanged = useCallback(async () => {
+    if (isSavingRef.current || !activeFileId || !currentExercise) return
+
+    const file = currentUserFiles.find(item => item.id === activeFileId)
+    if (!file) return
+
+    const exerciseId = currentExercise.id
+    const savedContent = savedFileContents[exerciseId]?.[activeFileId] ?? ''
+    const currentContent = userFiles[exerciseId]?.[activeFileId] ?? ''
+
+    if (currentContent === savedContent || currentContent.trim() === '') return
+
+    isSavingRef.current = true
+    try {
+      await saveFile(exerciseId, file.filename, currentContent, file.is_main)
+      setSavedFileContents(prev => ({
+        ...prev,
+        [exerciseId]: {
+          ...prev[exerciseId],
+          [activeFileId]: currentContent,
+        },
+      }))
+    } catch (error) {
+      console.error('Lỗi khi lưu file:', error)
+    } finally {
+      isSavingRef.current = false
+    }
+  }, [activeFileId, currentExercise, currentUserFiles, savedFileContents, saveFile, userFiles])
+
+  useEffect(() => {
+    if (prevFileIdRef.current && prevFileIdRef.current !== activeFileId) {
+      const oldFileId = prevFileIdRef.current
+      const oldFile = currentUserFiles.find(file => file.id === oldFileId)
+
+      if (oldFile && currentExercise && !isSavingRef.current) {
+        const exerciseId = currentExercise.id
+        const savedContent = savedFileContents[exerciseId]?.[oldFileId] ?? ''
+        const currentContent = userFiles[exerciseId]?.[oldFileId] ?? ''
+
+        if (currentContent !== savedContent && currentContent.trim() !== '') {
+          isSavingRef.current = true
+          saveFile(exerciseId, oldFile.filename, currentContent, oldFile.is_main)
+            .then(() => {
+              setSavedFileContents(prev => ({
+                ...prev,
+                [exerciseId]: {
+                  ...prev[exerciseId],
+                  [oldFileId]: currentContent,
+                },
+              }))
+            })
+            .catch(error => {
+              console.error('Lỗi khi lưu file:', error)
+            })
+            .finally(() => {
+              isSavingRef.current = false
+            })
+        }
       }
     }
-  }, [currentExercise])
+    prevFileIdRef.current = activeFileId
+  }, [activeFileId, currentExercise, currentUserFiles, savedFileContents, saveFile, userFiles])
 
-  const activeFile = currentExercise?.files.find(f => f.id === activeFileId)
-  const currentCode = activeFile ? (userCode[activeFile.id] ?? activeFile.content) : ''
+  useEffect(() => {
+    if (exercisesWithPassStatus.length === 0 || hasCalledCompleteRef.current) return
 
-  // Test result stats
-  const passPercent = testResult
-    ? Math.round((testResult.passed / testResult.total) * 100)
-    : 0
+    const allExercisesPassed = exercisesWithPassStatus.every(exercise => exercise.is_pass === true)
+    if (!allExercisesPassed || isCompleted) return
 
-  // Handle code change
+    hasCalledCompleteRef.current = true
+    setShowCelebration(true)
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+    onMarkCompleted(lesson.id)
+    setTimeout(() => setShowCelebration(false), 3000)
+  }, [exercisesWithPassStatus, isCompleted, lesson.id, onMarkCompleted])
+
   const handleCodeChange = useCallback((text: string) => {
-    if (!activeFile) return
-    setUserCode(prev => ({ ...prev, [activeFile.id]: text }))
-  }, [activeFile])
+    if (!activeFile || !currentExercise) return
+    setUserFiles(prev => ({
+      ...prev,
+      [currentExercise.id]: {
+        ...prev[currentExercise.id],
+        [activeFile.id]: text,
+      },
+    }))
+  }, [activeFile, currentExercise])
 
-  // Run tests
   const handleRun = useCallback(async () => {
+    if (!currentExercise || currentUserFiles.length === 0) return
+
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    await saveCurrentFileIfChanged()
     setIsRunning(true)
     setTestResult(null)
 
-    // Simulate API call - trong thực tế sẽ gọi API
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      const response = await learningService.testCodeExercise(currentExercise.id, {
+        language_id: currentExercise.language.id,
+        files: currentUserFiles.map(file => ({
+          filename: file.filename,
+          content: file.content || '',
+          is_main: file.is_main,
+        })),
+      })
 
-      // Mock test result based on code content
-      const hasReturn = currentCode.includes('return')
-      const passed = hasReturn ? 2 : 1
-      const failed = hasReturn ? 1 : 2
+      setTestResult(response)
+      setActivePanel('results')
 
-      const result = {
-        ...mockTestResult,
-        passed,
-        failed,
-        total: 3,
-        status: (passed === 3 ? 'success' : 'partial') as 'success' | 'partial',
-        details: [
-          {
-            id: 'tc-001',
-            index: 0,
-            result: (passed >= 1 ? 'passed' : 'failed') as 'passed' | 'failed',
-            input: 'sum_numbers(1, 2)',
-            expected: '3',
-            output: hasReturn ? '3' : 'None',
-            cpu_time: 0.001,
-          },
-          {
-            id: 'tc-002',
-            index: 1,
-            result: (passed >= 2 ? 'passed' : 'failed') as 'passed' | 'failed',
-            input: 'sum_numbers(0, 0)',
-            expected: '0',
-            output: hasReturn ? '0' : 'None',
-            cpu_time: 0.001,
-          },
-          {
-            id: 'tc-003',
-            index: 2,
-            result: (passed === 3 ? 'passed' : 'failed') as 'passed' | 'failed',
-            input: 'sum_numbers(-1, 1)',
-            expected: '0',
-            output: hasReturn ? '0' : 'None',
-            cpu_time: 0.001,
-          },
-        ],
+      const nextPassPercent = response.total > 0
+        ? Math.round((response.passed / response.total) * 100)
+        : 0
+
+      if (nextPassPercent >= 85) {
+        setExercisePassStatus(prev => ({ ...prev, [currentExercise.id]: true }))
       }
 
-      setTestResult(result)
-
-      // Celebration if all pass
-      if (passed >= 1) {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
-        setShowCelebration(true)
-        if (!isCompleted) {
-          onMarkCompleted(lesson.id)
-        }
-        setTimeout(() => setShowCelebration(false), 3000)
-      } else {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
-      }
-    } catch {
-      Alert.alert('Lỗi', 'Không thể chạy code. Vui lòng thử lại.')
+      Haptics.notificationAsync(
+        nextPassPercent >= 85
+          ? Haptics.NotificationFeedbackType.Success
+          : Haptics.NotificationFeedbackType.Warning
+      )
+    } catch (error: any) {
+      console.error('Lỗi khi test code:', error)
+      const message = error?.response?.data?.detail || error?.message || 'Không thể chạy code. Vui lòng thử lại.'
+      Alert.alert('Lỗi', String(message))
     } finally {
       setIsRunning(false)
     }
-  }, [currentCode, isCompleted, lesson.id, onMarkCompleted])
+  }, [currentExercise, currentUserFiles, saveCurrentFileIfChanged])
 
-  // Reset code
   const handleReset = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
     if (!activeFile || !currentExercise) return
 
     Alert.alert(
@@ -213,186 +307,135 @@ export function CodeLesson({ lesson, isDark, isCompleted, onMarkCompleted }: Cod
           text: 'Đặt lại',
           style: 'destructive',
           onPress: () => {
-            setUserCode(prev => ({ ...prev, [activeFile.id]: activeFile.content }))
+            const exerciseId = currentExercise.id
+            const initialContents = initialFileContents[exerciseId] || {}
+            const resetFiles: Record<string, string> = {}
+            activeFiles.forEach(file => {
+              resetFiles[file.id] = initialContents[file.id] ?? file.content
+            })
+            setUserFiles(prev => ({ ...prev, [exerciseId]: resetFiles }))
+            setSavedFileContents(prev => ({ ...prev, [exerciseId]: { ...resetFiles } }))
+            setExercisePassStatus(prev => ({ ...prev, [exerciseId]: false }))
             setTestResult(null)
           },
         },
       ]
     )
-  }, [activeFile, currentExercise])
+  }, [activeFile, activeFiles, currentExercise, initialFileContents])
 
-  // Change exercise
   const handleSelectExercise = useCallback((index: number) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+    saveCurrentFileIfChanged()
     setCurrentExerciseIndex(index)
-    setTestResult(null)
     setActiveFileId(null)
-  }, [])
+    setTestResult(null)
+    setActivePanel('problem')
+  }, [saveCurrentFileIfChanged])
+
+  if (exercisesWithPassStatus.length === 0) {
+    return (
+      <View className={`m-5 p-6 rounded-2xl border ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-50 border-zinc-200'}`}>
+        <Text className="text-zinc-500 text-center">Không có bài tập code nào trong bài học này.</Text>
+      </View>
+    )
+  }
 
   return (
     <View className="flex-1">
-      {/* Exercise Tabs */}
       <View className={`px-4 py-3 ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-gray-50 border-gray-200'} border-b`}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <View className="flex-row gap-2">
-            {exercises.map((ex, idx) => (
-              <Pressable
-                key={ex.id}
-                onPress={() => handleSelectExercise(idx)}
-                className={`px-4 py-2 rounded-full flex-row items-center gap-2 ${idx === currentExerciseIndex
-                    ? 'bg-emerald-500'
-                    : isDark ? 'bg-zinc-800' : 'bg-white'
+            {exercisesWithPassStatus.map((exercise, index) => {
+              const active = index === currentExerciseIndex
+              const passed = exercise.is_pass === true
+              return (
+                <Pressable
+                  key={exercise.id}
+                  onPress={() => handleSelectExercise(index)}
+                  className={`px-4 py-2 rounded-full flex-row items-center gap-2 ${
+                    active ? 'bg-emerald-500' : isDark ? 'bg-zinc-800' : 'bg-white'
                   }`}
-              >
-                <Ionicons
-                  name="code-slash"
-                  size={14}
-                  color={idx === currentExerciseIndex ? '#FFFFFF' : isDark ? '#A1A1AA' : '#71717A'}
-                />
-                <Text className={`text-xs font-semibold ${idx === currentExerciseIndex
-                    ? 'text-white'
-                    : isDark ? 'text-zinc-300' : 'text-gray-700'
-                  }`}>
-                  {ex.title}
-                </Text>
-              </Pressable>
-            ))}
+                >
+                  <Ionicons
+                    name={passed ? 'checkmark-circle' : 'code-slash'}
+                    size={14}
+                    color={active ? '#FFFFFF' : passed ? '#10B981' : isDark ? '#A1A1AA' : '#71717A'}
+                  />
+                  <Text
+                    numberOfLines={1}
+                    className={`text-xs font-semibold ${
+                      active ? 'text-white' : isDark ? 'text-zinc-300' : 'text-gray-700'
+                    }`}
+                  >
+                    Bài {index + 1}
+                  </Text>
+                </Pressable>
+              )
+            })}
           </View>
         </ScrollView>
       </View>
 
-      {/* Exercise Info */}
-      <View className={`px-4 py-3 ${isDark ? 'bg-zinc-800' : 'bg-gray-50'} border-b ${isDark ? 'border-zinc-800' : 'border-gray-200'}`}>
-        <View className="flex-row items-center justify-between">
-          <View className="flex-1">
-            <Text className={`text-sm font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-              {currentExercise?.title}
-            </Text>
-            <Text className={`text-xs mt-0.5 ${isDark ? 'text-zinc-400' : 'text-gray-500'}`} numberOfLines={1}>
-              {currentExercise?.description}
-            </Text>
+      {currentExercise && (
+        <View className={`border-b px-4 py-4 ${isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-white border-gray-200'}`}>
+          <Text className={`text-lg font-black ${isDark ? 'text-white' : 'text-gray-900'}`}>
+            {currentExercise.title}
+          </Text>
+          <Text className={`mt-1 text-xs ${isDark ? 'text-zinc-400' : 'text-gray-500'}`}>
+            {currentExercise.language.name} {currentExercise.language.version} • {difficultyLabel(currentExercise.difficulty)}
+          </Text>
+          <View className="mt-4">
+            <CodeLessonTabs activePanel={activePanel} onChange={setActivePanel} isDark={isDark} />
           </View>
-          <Pressable
-            onPress={() => setShowHint(!showHint)}
-            className="ml-3 px-3 py-1.5 rounded-full bg-amber-500/10"
-          >
-            <Text className="text-xs font-bold text-amber-600">Gợi ý</Text>
-          </Pressable>
         </View>
-        {showHint && (
-          <View className={`mt-2 p-3 rounded-lg ${isDark ? 'bg-zinc-700' : 'bg-amber-50'}`}>
-            <Text className={`text-xs ${isDark ? 'text-zinc-300' : 'text-amber-800'}`}>
-              💡 Hàm cần có `return` để trả về kết quả. Ví dụ: `return a + b`
-            </Text>
-          </View>
-        )}
-      </View>
-
-      {/* File Tabs */}
-      {currentExercise && currentExercise.files.length > 1 && (
-        <FileTabs
-          files={currentExercise.files}
-          activeFileId={activeFileId}
-          onSelectFile={setActiveFileId}
-          isDark={isDark}
-        />
       )}
 
-      {/* Code Editor */}
-      <KeyboardAvoidingView
-        className="flex-1"
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={100}
-      >
-        <View className={`flex-1 p-4 ${isDark ? 'bg-zinc-950' : 'bg-gray-900'}`}>
-          {/* Line numbers + Code */}
-          <View className="flex-1">
-            {/* Code header */}
-            <View className="flex-row items-center justify-between mb-2">
-              <View className="flex-row items-center gap-2">
-                <Ionicons name="code-slash" size={16} color="#10B981" />
-                <Text className="text-zinc-400 text-xs font-medium">
-                  {activeFile?.filename || 'solution.py'}
-                </Text>
-              </View>
-              <View className="flex-row items-center gap-3">
-                <Text className="text-zinc-500 text-[10px]">
-                  {currentExercise?.language.display_name}
-                </Text>
-              </View>
-            </View>
-
-            {/* Code area */}
-            <TextInput
-              value={currentCode}
-              onChangeText={handleCodeChange}
-              multiline
-              autoCapitalize="none"
-              autoCorrect={false}
-              spellCheck={false}
-              textAlignVertical="top"
-              className="flex-1 text-sm font-mono leading-6 text-green-400"
-              placeholder="// Write your code here..."
-              placeholderTextColor="#52525B"
-              style={{
-                fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-              }}
+      {currentExercise && (
+        <View className="p-4">
+          {activePanel === 'problem' && (
+            <CodeProblemPanel
+              exercise={currentExercise}
+              isDark={isDark}
+              formatLimitMs={formatLimitMs}
+              formatMemory={formatMemory}
+              difficultyLabel={difficultyLabel}
             />
-          </View>
+          )}
+
+          {activePanel === 'code' && (
+            <CodeEditorPanel
+              exercise={currentExercise}
+              files={currentUserFiles}
+              activeFileId={activeFileId}
+              activeFile={activeFile}
+              currentCode={currentCode}
+              isDark={isDark}
+              isRunning={isRunning}
+              onSelectFile={setActiveFileId}
+              onCodeChange={handleCodeChange}
+              onRun={handleRun}
+              onReset={handleReset}
+            />
+          )}
+
+          {activePanel === 'testcases' && (
+            <TestCasesPanel testcases={currentExercise.testcases ?? []} isDark={isDark} />
+          )}
+
+          {activePanel === 'results' && (
+            <CodeResultPanel
+              testcases={currentExercise.testcases ?? []}
+              testResult={testResult}
+              isDark={isDark}
+            />
+          )}
         </View>
-
-        {/* Action buttons */}
-        <View className={`px-4 py-3 flex-row items-center gap-3 ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-gray-100 border-gray-200'} border-t`}>
-          <Pressable
-            onPress={handleReset}
-            className={`px-4 py-2.5 rounded-xl ${isDark ? 'bg-zinc-800' : 'bg-white'}`}
-          >
-            <View className="flex-row items-center gap-2">
-              <Feather name="rotate-ccw" size={16} color={isDark ? '#A1A1AA' : '#71717A'} />
-              <Text className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-700'}`}>
-                Reset
-              </Text>
-            </View>
-          </Pressable>
-
-          <Pressable
-            onPress={handleRun}
-            disabled={isRunning}
-            className={`flex-1 py-2.5 rounded-xl items-center justify-center ${isRunning ? 'bg-emerald-500/50' : 'bg-emerald-500'
-              } shadow-lg shadow-emerald-500/30`}
-          >
-            <View className="flex-row items-center gap-2">
-              {isRunning ? (
-                <>
-                  <View className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <Text className="text-white text-sm font-bold">Đang chạy...</Text>
-                </>
-              ) : (
-                <>
-                  <Feather name="play" size={16} color="#FFFFFF" />
-                  <Text className="text-white text-sm font-bold">Chạy code</Text>
-                </>
-              )}
-            </View>
-          </Pressable>
-        </View>
-      </KeyboardAvoidingView>
-
-      {/* Test Results */}
-      {testResult && (
-        <TestResults
-          testcases={currentExercise?.testcases ?? []}
-          testResult={testResult}
-          isDark={isDark}
-        />
       )}
 
-      {/* Celebration */}
       <Celebration
         visible={showCelebration}
         type="code_pass"
         message="Code hoàn hảo!"
-        subMessage="Tất cả test cases đều pass"
+        subMessage="Tất cả bài tập đều đã pass"
       />
     </View>
   )

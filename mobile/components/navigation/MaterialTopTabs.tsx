@@ -6,7 +6,4 @@ import { withLayoutContext } from 'expo-router';
 
 const { Navigator } = createMaterialTopTabNavigator();
 
-export const MaterialTopTabs = withLayoutContext<
-  MaterialTopTabNavigationOptions,
-  typeof Navigator
->(Navigator);
+export const MaterialTopTabs = withLayoutContext(Navigator);

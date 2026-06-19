@@ -73,16 +73,16 @@ export const Typography = {
   display: 28,
 
   // Line heights
-  tight: 1.2,
-  normal: 1.5,
-  relaxed: 1.65,
+  lhTight: 1.2,
+  lhNormal: 1.5,
+  lhRelaxed: 1.65,
 
   // Letter spacing
-  tightest: -0.02,
-  tight: -0.01,
-  normal: 0,
-  wide: 0.02,
-  widest: 0.05,
+  lsTightest: -0.02,
+  lsTight: -0.01,
+  lsNormal: 0,
+  lsWide: 0.02,
+  lsWidest: 0.05,
 } as const
 
 export const Shadow = {

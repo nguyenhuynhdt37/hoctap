@@ -37,8 +37,8 @@ export function useWatchTracking({
   const previousTimeRef = useRef(0)
   const lastCheckTimeRef = useRef(Date.now())
   const isPlayingRef = useRef(false)
-  const fastForwardTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const intervalRef = useRef<NodeJS.Timeout | null>(null)
+  const fastForwardTimeoutRef = useRef<any>(null)
+  const intervalRef = useRef<any>(null)
   const hasCalledCompleteRef = useRef(false)
 
   const requiredWatchTime = useMemo(() => Math.floor(duration * requiredPercent), [duration, requiredPercent])

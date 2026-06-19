@@ -46,7 +46,7 @@ export function BasicInfoSection({ data, onChange }: BasicInfoSectionProps) {
       try {
         setUploading(true)
         const res = await authService.uploadAvatar(result.assets[0].uri)
-        onChange('avatar', res.data.avatar || res.data.avatar_url)
+        onChange('avatar', res.data.avatar)
         await refreshUser()
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
       } catch (err) {
@@ -146,7 +146,7 @@ export function BasicInfoSection({ data, onChange }: BasicInfoSectionProps) {
           <Input
             label={t('profile_screen.fields.facebook_url')}
             labelStyle={{ fontSize: 11, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 1.5, color: '#10b981', marginBottom: 8 }}
-            value={data.facebook_url}
+            value={data.facebook_url ?? undefined}
             onChangeText={v => onChange('facebook_url', v)}
             placeholder="https://facebook.com/yourusername"
             className="rounded-full h-14 px-6 border-zinc-100 dark:border-white/5"
@@ -177,7 +177,7 @@ export function BasicInfoSection({ data, onChange }: BasicInfoSectionProps) {
           <Input
             label={t('profile_screen.fields.citizenship_identity')}
             labelStyle={{ fontSize: 11, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 1.5, color: '#10b981', marginBottom: 8 }}
-            value={data.citizenship_identity}
+            value={data.citizenship_identity ?? undefined}
             onChangeText={v => onChange('citizenship_identity', v)}
             placeholder="Số CCCD/CMND"
             className="rounded-full h-14 px-6 border-zinc-100 dark:border-white/5"

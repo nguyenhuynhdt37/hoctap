@@ -3,6 +3,8 @@
  * Core types được sử dụng trong toàn bộ Learning Feature
  */
 
+import type { CodeExercise } from './types/code-lesson'
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // LESSON TYPES
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -22,6 +24,7 @@ export interface Lesson {
   file_id: string | null
   resources: LessonResource[]
   quizzes: Quiz[]
+  codes?: CodeExercise[]
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -64,7 +67,7 @@ export interface QuizOption {
 export interface Quiz {
   id: string
   question: string
-  difficulty_level: number
+  difficulty_level: number | string
   explanation: string
   options: QuizOption[]
 }
@@ -77,6 +80,9 @@ export interface LessonResource {
   id: string
   title: string
   url: string | null
+  // Legacy alias fields from mock data / older API versions
+  file_url?: string | null
+  file_type?: string | null
   resource_type: 'pdf' | 'zip' | 'link' | 'other' | string
   mime_type?: string
   file_size: number
@@ -180,6 +186,24 @@ export interface UpdateNotePayload {
 export type CommentDepth = 0 | 1 | 2
 export type LearningTab = ContentTab
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// UI STATE TYPES
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export interface VideoPlayerState {
+  isPlaying: boolean
+  currentTime: number
+  duration: number
+  isBuffering: boolean
+  volume: number
+  isMuted: boolean
+}
+
+export interface SidebarState {
+  isOpen: boolean
+  activeTab: ContentTab
+}
+
 export interface CodeTestResult {
   passed: boolean
   total: number
@@ -187,3 +211,6 @@ export interface CodeTestResult {
   failed_count: number
   results: any[]
 }
+
+export type CelebrationType = 'lesson_complete' | 'quiz_pass' | 'quiz_fail' | 'code_pass' | 'streak'
+

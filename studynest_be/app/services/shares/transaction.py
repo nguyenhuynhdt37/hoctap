@@ -4,6 +4,9 @@ from datetime import timedelta
 from decimal import Decimal
 from typing import Optional
 
+from app.core.event_bus.base import BaseEvent
+from app.core.event_bus.redis_bus import event_bus
+
 from fastapi import Depends, HTTPException
 from loguru import logger
 from sqlalchemy import String, and_, case, func, or_, select, update
@@ -551,6 +554,21 @@ class TransactionsService:
                         f"[CHECKOUT FREE][NOTI] Lỗi gửi thông báo: {noti_err}"
                     )
 
+                # 🔔 Publish course.purchased events (free checkout)
+                for course in courses:
+                    try:
+                        await event_bus.publish(
+                            BaseEvent(
+                                event_name="course.purchased",
+                                user_id=user.id,
+                                source_type="course",
+                                source_id=course.id,
+                                payload={"is_free": True, "course_title": course.title},
+                            )
+                        )
+                    except Exception as evt_err:
+                        logger.warning(f"[EventBus] Failed to publish course.purchased: {evt_err}")
+
                 return {
                     "message": "Đăng ký khóa học thành công 🎉",
                     "is_free": True,
@@ -817,6 +835,21 @@ class TransactionsService:
 
             except Exception as noti_err:
                 logger.exception(f"[CHECKOUT PAID][NOTI] Lỗi gửi thông báo: {noti_err}")
+
+            # 🔔 Publish course.purchased events (paid checkout)
+            for course in courses:
+                try:
+                    await event_bus.publish(
+                        BaseEvent(
+                            event_name="course.purchased",
+                            user_id=user.id,
+                            source_type="course",
+                            source_id=course.id,
+                            payload={"is_free": False, "course_title": course.title},
+                        )
+                    )
+                except Exception as evt_err:
+                    logger.warning(f"[EventBus] Failed to publish course.purchased: {evt_err}")
 
             # ============================
             # 7) RETURN

@@ -116,6 +116,10 @@ export function useLearning(courseId: string, initialData?: any, initialLessonId
 
   // Current lesson details - prioritize URL/sidebar selection, then backend active lesson.
   const currentLesson = useMemo(() => {
+    if (activeLessonData?.id && activeLessonData.id === activeLessonId) {
+      return activeLessonData
+    }
+
     if (curriculum && activeLessonId) {
       for (const section of curriculum.sections) {
         const lesson = section.lessons.find(l => l.id === activeLessonId)
@@ -269,4 +273,14 @@ export function useLearning(courseId: string, initialData?: any, initialLessonId
     },
     onRefresh: handleRefresh,
   }
+}
+
+/** Stub hook - notes functionality not implemented on mobile yet */
+export function useNotes(lessonId?: string | null) {
+  return { notes: [], isLoading: false, addNote: (_: any) => {}, deleteNote: (_: string) => {} }
+}
+
+/** Stub hook - comments functionality not implemented on mobile yet */
+export function useComments(lessonId?: string | null) {
+  return { comments: [], isLoading: false, addComment: (_: any) => {}, hasNext: false, fetchNext: () => {} }
 }

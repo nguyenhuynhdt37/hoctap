@@ -2,7 +2,7 @@ import React, { useEffect } from 'react'
 import { MaterialTopTabs } from '@/components/navigation/MaterialTopTabs'
 import { View, Pressable, Dimensions, Text } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
-import { Home, Search, Bell, BookOpen, User } from 'lucide-react-native'
+import { Home, Search, Bell, BookOpen, User, Bot } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import Animated, {
   useAnimatedStyle,
@@ -28,6 +28,7 @@ function TabBarIcon({ isFocused, routeName }: { isFocused: boolean, routeName: s
     if (routeName === 'explore') return <Search {...props} />
     if (routeName === 'notifications') return <Bell {...props} />
     if (routeName === 'my-learn') return <BookOpen {...props} />
+    if (routeName === 'ai-chat') return <Bot {...props} />
     return <User {...props} />
   }
 
@@ -171,7 +172,6 @@ export default function TabsLayout() {
       tabBar={(props) => <CustomTabBar {...props} />}
       tabBarPosition="bottom"
       screenOptions={{ 
-        headerShown: false,
         swipeEnabled: true,
         animationEnabled: true,
         lazy: true,
@@ -181,6 +181,7 @@ export default function TabsLayout() {
       <MaterialTopTabs.Screen name="explore" />
       <MaterialTopTabs.Screen name="notifications" />
       <MaterialTopTabs.Screen name="my-learn" />
+      <MaterialTopTabs.Screen name="ai-chat" />
       <MaterialTopTabs.Screen name="profile" />
       <MaterialTopTabs.Screen 
         name="settings" 

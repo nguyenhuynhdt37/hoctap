@@ -3,12 +3,17 @@ import { Stack, router, useSegments } from 'expo-router'
 import { useAuthStore } from '@/src/stores/auth.store'
 import { requestNotificationPermissions } from '@/src/utils/notifications'
 import { NotificationWS } from '../../src/providers/NotificationWS'
+import { useGamificationSocket } from '@/src/hooks/useGamificationSocket'
+import { GamificationRealtimeOverlay } from '@/components/features/gamification/realtime/GamificationRealtimeOverlay'
 
 export default function AppLayout() {
   const user = useAuthStore(s => s.user)
   const isLoading = useAuthStore(s => s.isLoading)
   const isAuthenticated = useAuthStore(s => s.isAuthenticated)
   const segments = useSegments()
+
+  // Initialize gamification WebSocket listener globally
+  useGamificationSocket()
 
   useEffect(() => {
     requestNotificationPermissions()
@@ -71,6 +76,7 @@ export default function AppLayout() {
           }}
         />
       </Stack>
+      <GamificationRealtimeOverlay />
     </>
   )
 }

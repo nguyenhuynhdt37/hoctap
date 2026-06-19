@@ -156,6 +156,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       district: null,
       citizenship_identity: null,
       facebook_url: null,
+      gender: null,
       is_verified_email: true,
       email_verified_at: null,
       is_banned: false,

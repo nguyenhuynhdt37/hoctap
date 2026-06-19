@@ -94,6 +94,8 @@ const CONFETTI_COLORS = [
 export function Celebration({ visible, type, message, subMessage }: CelebrationProps) {
   if (!visible) return null
 
+  const Cannon = ConfettiCannon as any;
+
   const defaultMessages: Record<CelebrationType, { message: string; subMessage: string }> = {
     lesson_complete: { message: 'Hoàn thành!', subMessage: 'Bạn đã hoàn thành bài học này' },
     quiz_pass: { message: 'Xuất sắc!', subMessage: 'Bạn đã vượt qua bài kiểm tra' },
@@ -108,7 +110,7 @@ export function Celebration({ visible, type, message, subMessage }: CelebrationP
   return (
     <View style={styles.container} pointerEvents="none">
       {/* Left Cannon */}
-      <ConfettiCannon
+      <Cannon
         count={80}
         origin={{ x: -20, y: SCREEN_H * 0.8 }}
         fadeOut
@@ -120,7 +122,7 @@ export function Celebration({ visible, type, message, subMessage }: CelebrationP
       />
 
       {/* Right Cannon */}
-      <ConfettiCannon
+      <Cannon
         count={80}
         origin={{ x: SCREEN_W + 20, y: SCREEN_H * 0.8 }}
         fadeOut
@@ -132,7 +134,7 @@ export function Celebration({ visible, type, message, subMessage }: CelebrationP
       />
 
       {/* Center Fireworks Effect */}
-      <ConfettiCannon
+      <Cannon
         count={50}
         origin={{ x: SCREEN_W / 2, y: SCREEN_H / 2 }}
         fadeOut

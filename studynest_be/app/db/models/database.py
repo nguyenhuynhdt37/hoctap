@@ -5,7 +5,7 @@ import enum
 import uuid
 
 from pgvector.sqlalchemy.vector import VECTOR
-from sqlalchemy import ARRAY, BigInteger, Boolean, CheckConstraint, Computed, DateTime, Double, Enum, ForeignKeyConstraint, Index, Integer, Numeric, PrimaryKeyConstraint, REAL, SmallInteger, String, Text, UniqueConstraint, Uuid, text
+from sqlalchemy import ARRAY, BigInteger, Boolean, CheckConstraint, Computed, Date, DateTime, Double, Enum, ForeignKeyConstraint, Index, Integer, Numeric, PrimaryKeyConstraint, REAL, SmallInteger, String, Text, UniqueConstraint, Uuid, text
 from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -26,6 +26,30 @@ class LessonTypeEnum(str, enum.Enum):
     CODE = 'code'
     ASSIGNMENT = 'assignment'
     RESOURCE = 'resource'
+
+
+class Badges(Base):
+    __tablename__ = 'badges'
+    __table_args__ = (
+        PrimaryKeyConstraint('id', name='badges_pkey'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    image_url: Mapped[str] = mapped_column(Text, nullable=False)
+    badge_type: Mapped[str] = mapped_column(String(50), nullable=False, server_default=text("'event'::character varying"))
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('true'))
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    description: Mapped[Optional[str]] = mapped_column(Text)
+    target_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    deleted_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+
+    achievements: Mapped[list['Achievements']] = relationship('Achievements', back_populates='target_badge')
+    loot_tables: Mapped[list['LootTables']] = relationship('LootTables', back_populates='target_badge')
+    rewards: Mapped[list['Rewards']] = relationship('Rewards', back_populates='target_badge')
+    user_badges: Mapped[list['UserBadges']] = relationship('UserBadges', back_populates='badge')
+    quest_rewards: Mapped[list['QuestRewards']] = relationship('QuestRewards', back_populates='target_badge')
 
 
 class Categories(Base):
@@ -52,6 +76,39 @@ class Categories(Base):
     discount_targets: Mapped[list['DiscountTargets']] = relationship('DiscountTargets', back_populates='category')
 
 
+class LevelsConfig(Base):
+    __tablename__ = 'levels_config'
+    __table_args__ = (
+        CheckConstraint('level > 0', name='chk_levels_config_level'),
+        CheckConstraint('xp_required >= 0', name='chk_levels_config_xp'),
+        PrimaryKeyConstraint('level', name='levels_config_pkey'),
+        {'schema': 'public'}
+    )
+
+    level: Mapped[int] = mapped_column(Integer, primary_key=True)
+    xp_required: Mapped[int] = mapped_column(Integer, nullable=False)
+    rewards_config: Mapped[Optional[dict]] = mapped_column(JSONB)
+
+
+class MysteryBoxes(Base):
+    __tablename__ = 'mystery_boxes'
+    __table_args__ = (
+        PrimaryKeyConstraint('id', name='mystery_boxes_pkey'),
+        UniqueConstraint('code', name='uq_mystery_boxes_code'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    code: Mapped[str] = mapped_column(String(50), nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('true'))
+    description: Mapped[Optional[str]] = mapped_column(Text)
+
+    achievements: Mapped[list['Achievements']] = relationship('Achievements', back_populates='target_box')
+    loot_tables: Mapped[list['LootTables']] = relationship('LootTables', back_populates='box')
+    daily_checkin_rewards_config: Mapped[list['DailyCheckinRewardsConfig']] = relationship('DailyCheckinRewardsConfig', back_populates='target_box')
+
+
 class PlatformWallets(Base):
     __tablename__ = 'platform_wallets'
     __table_args__ = (
@@ -72,6 +129,28 @@ class PlatformWallets(Base):
     platform_wallet_history: Mapped[list['PlatformWalletHistory']] = relationship('PlatformWalletHistory', back_populates='wallet')
 
 
+class RankConfig(Base):
+    __tablename__ = 'rank_config'
+    __table_args__ = (
+        CheckConstraint('min_score >= 0 AND max_score >= min_score', name='chk_rank_config_score'),
+        PrimaryKeyConstraint('id', name='rank_config_pkey'),
+        UniqueConstraint('name', name='uq_rank_config_name'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    name: Mapped[str] = mapped_column(String(50), nullable=False)
+    min_score: Mapped[int] = mapped_column(Integer, nullable=False)
+    max_score: Mapped[int] = mapped_column(Integer, nullable=False)
+    icon_url: Mapped[str] = mapped_column(Text, nullable=False)
+    color_hex: Mapped[str] = mapped_column(String(7), nullable=False)
+    priority: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('1'))
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+
+    user_gamification_profiles: Mapped[list['UserGamificationProfiles']] = relationship('UserGamificationProfiles', back_populates='current_rank')
+
+
 class Role(Base):
     __tablename__ = 'role'
     __table_args__ = (
@@ -87,6 +166,32 @@ class Role(Base):
     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, server_default=text('now()'))
 
     user_roles: Mapped[list['UserRoles']] = relationship('UserRoles', back_populates='role')
+
+
+class Seasons(Base):
+    __tablename__ = 'seasons'
+    __table_args__ = (
+        PrimaryKeyConstraint('id', name='seasons_pkey'),
+        UniqueConstraint('code', name='uq_seasons_code'),
+        Index('idx_seasons_active_dates', 'is_active', 'start_date', 'end_date'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    code: Mapped[str] = mapped_column(String(50), nullable=False)
+    start_date: Mapped[datetime.date] = mapped_column(Date, nullable=False)
+    end_date: Mapped[datetime.date] = mapped_column(Date, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('true'))
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    deleted_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+
+    achievements: Mapped[list['Achievements']] = relationship('Achievements', back_populates='season')
+    daily_checkin_events: Mapped[list['DailyCheckinEvents']] = relationship('DailyCheckinEvents', back_populates='season')
+    leaderboard_snapshots: Mapped[list['LeaderboardSnapshots']] = relationship('LeaderboardSnapshots', back_populates='season')
+    missions: Mapped[list['Missions']] = relationship('Missions', back_populates='season')
+    quests: Mapped[list['Quests']] = relationship('Quests', back_populates='season')
 
 
 class SupportedLanguages(Base):
@@ -153,22 +258,35 @@ class User(Base):
 
     discounts: Mapped[list['Discounts']] = relationship('Discounts', back_populates='user')
     email_verifications: Mapped[list['EmailVerifications']] = relationship('EmailVerifications', back_populates='user')
+    gamification_activity_logs: Mapped[list['GamificationActivityLogs']] = relationship('GamificationActivityLogs', back_populates='user')
+    gamification_notifications: Mapped[list['GamificationNotifications']] = relationship('GamificationNotifications', back_populates='user')
+    leaderboard_snapshots: Mapped[list['LeaderboardSnapshots']] = relationship('LeaderboardSnapshots', back_populates='user')
     notifications: Mapped[list['Notifications']] = relationship('Notifications', back_populates='user')
+    peak_transactions: Mapped[list['PeakTransactions']] = relationship('PeakTransactions', back_populates='user')
     platform_settings: Mapped[list['PlatformSettings']] = relationship('PlatformSettings', back_populates='user')
     sessions: Mapped[list['Sessions']] = relationship('Sessions', back_populates='user')
+    user_badges: Mapped[list['UserBadges']] = relationship('UserBadges', back_populates='user')
     user_push_tokens: Mapped[list['UserPushTokens']] = relationship('UserPushTokens', back_populates='user')
     user_roles: Mapped[list['UserRoles']] = relationship('UserRoles', back_populates='user')
     wallets: Mapped['Wallets'] = relationship('Wallets', uselist=False, back_populates='user')
+    xp_transactions: Mapped[list['XpTransactions']] = relationship('XpTransactions', back_populates='user')
     courses_approved_by: Mapped[list['Courses']] = relationship('Courses', foreign_keys='[Courses.approved_by]', back_populates='user')
     courses_instructor: Mapped[list['Courses']] = relationship('Courses', foreign_keys='[Courses.instructor_id]', back_populates='instructor')
+    reward_redemptions_approved_by: Mapped[list['RewardRedemptions']] = relationship('RewardRedemptions', foreign_keys='[RewardRedemptions.approved_by]', back_populates='user')
+    reward_redemptions_user: Mapped[list['RewardRedemptions']] = relationship('RewardRedemptions', foreign_keys='[RewardRedemptions.user_id]', back_populates='user_')
+    user_achievements: Mapped[list['UserAchievements']] = relationship('UserAchievements', back_populates='user')
+    user_checkins: Mapped[list['UserCheckins']] = relationship('UserCheckins', back_populates='user')
+    user_missions: Mapped[list['UserMissions']] = relationship('UserMissions', back_populates='user')
     course_enrollments: Mapped[list['CourseEnrollments']] = relationship('CourseEnrollments', back_populates='user')
     course_favourites: Mapped[list['CourseFavourites']] = relationship('CourseFavourites', back_populates='user')
     course_reviews: Mapped[list['CourseReviews']] = relationship('CourseReviews', back_populates='user')
     course_views: Mapped[list['CourseViews']] = relationship('CourseViews', back_populates='user')
     transactions: Mapped[list['Transactions']] = relationship('Transactions', back_populates='user')
     user_embedding_history: Mapped[list['UserEmbeddingHistory']] = relationship('UserEmbeddingHistory', back_populates='user')
+    user_reward_inventory: Mapped[list['UserRewardInventory']] = relationship('UserRewardInventory', back_populates='user')
     instructor_earnings: Mapped[list['InstructorEarnings']] = relationship('InstructorEarnings', back_populates='instructor')
     purchase_items: Mapped[list['PurchaseItems']] = relationship('PurchaseItems', back_populates='user')
+    user_quest_progress: Mapped[list['UserQuestProgress']] = relationship('UserQuestProgress', back_populates='user')
     withdrawal_requests: Mapped[list['WithdrawalRequests']] = relationship('WithdrawalRequests', back_populates='lecturer')
     discount_history: Mapped[list['DiscountHistory']] = relationship('DiscountHistory', back_populates='user')
     lesson_active: Mapped[list['LessonActive']] = relationship('LessonActive', back_populates='user')
@@ -183,6 +301,75 @@ class User(Base):
     lesson_comment_reactions: Mapped[list['LessonCommentReactions']] = relationship('LessonCommentReactions', back_populates='user')
     tutor_chat_messages: Mapped[list['TutorChatMessages']] = relationship('TutorChatMessages', back_populates='user')
     tutor_chat_images: Mapped[list['TutorChatImages']] = relationship('TutorChatImages', back_populates='user')
+    # 🧩 Auto relationship (parent → child): UserGamificationProfiles
+    user_gamification_profiles: Mapped[Optional['UserGamificationProfiles']] = relationship(
+        'UserGamificationProfiles', back_populates='user', uselist=False)
+    # 🧩 Auto relationship (parent → child): UserPeakBalances
+    user_peak_balances: Mapped[Optional['UserPeakBalances']] = relationship(
+        'UserPeakBalances', back_populates='user', uselist=False)
+    # 🧩 Auto relationship (parent → child): UserStatistics
+    user_statistics: Mapped[Optional['UserStatistics']] = relationship(
+        'UserStatistics', back_populates='user', uselist=False)
+
+
+class Achievements(Base):
+    __tablename__ = 'achievements'
+    __table_args__ = (
+        CheckConstraint('max_repeats >= 1', name='chk_achievements_repeats'),
+    ForeignKeyConstraint(['season_id'], ['public.seasons.id'], ondelete='SET NULL', name='fk_achievements_season_id'),
+    ForeignKeyConstraint(['target_badge_id'], ['public.badges.id'], ondelete='RESTRICT', name='fk_achievements_badge_id'),
+    ForeignKeyConstraint(['target_box_id'], ['public.mystery_boxes.id'], ondelete='RESTRICT', name='fk_achievements_box_id'),
+        PrimaryKeyConstraint('id', name='achievements_pkey'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    criteria_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    criteria_value: Mapped[int] = mapped_column(Integer, nullable=False)
+    reward_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    is_hidden: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
+    is_secret: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
+    is_repeatable: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
+    max_repeats: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('1'))
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('true'))
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    description: Mapped[Optional[str]] = mapped_column(Text)
+    reward_amount: Mapped[Optional[int]] = mapped_column(Integer)
+    target_badge_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    target_box_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    reward_metadata: Mapped[Optional[dict]] = mapped_column(JSONB)
+    season_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    deleted_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+
+    season: Mapped[Optional['Seasons']] = relationship('Seasons', back_populates='achievements')
+    target_badge: Mapped[Optional['Badges']] = relationship('Badges', back_populates='achievements')
+    target_box: Mapped[Optional['MysteryBoxes']] = relationship('MysteryBoxes', back_populates='achievements')
+    user_achievements: Mapped[list['UserAchievements']] = relationship('UserAchievements', back_populates='achievement')
+
+
+class DailyCheckinEvents(Base):
+    __tablename__ = 'daily_checkin_events'
+    __table_args__ = (
+    ForeignKeyConstraint(['season_id'], ['public.seasons.id'], ondelete='SET NULL', name='fk_daily_checkin_events_season_id'),
+        PrimaryKeyConstraint('id', name='daily_checkin_events_pkey'),
+        UniqueConstraint('code', name='uq_daily_checkin_events_code'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    code: Mapped[str] = mapped_column(String(50), nullable=False)
+    cycle_days: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('7'))
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('true'))
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    start_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
+    end_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
+    season_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+
+    season: Mapped[Optional['Seasons']] = relationship('Seasons', back_populates='daily_checkin_events')
+    daily_checkin_rewards_config: Mapped[list['DailyCheckinRewardsConfig']] = relationship('DailyCheckinRewardsConfig', back_populates='event')
+    user_checkins: Mapped[list['UserCheckins']] = relationship('UserCheckins', back_populates='event')
 
 
 class Discounts(Base):
@@ -238,6 +425,134 @@ class EmailVerifications(Base):
     user: Mapped[Optional['User']] = relationship('User', back_populates='email_verifications')
 
 
+class GamificationActivityLogs(Base):
+    __tablename__ = 'gamification_activity_logs'
+    __table_args__ = (
+    ForeignKeyConstraint(['user_id'], ['public.user.id'], ondelete='CASCADE', name='fk_gamification_activity_logs_user_id'),
+        PrimaryKeyConstraint('id', name='gamification_activity_logs_pkey'),
+        Index('idx_activity_logs_fraud_check', 'is_suspicious', 'risk_score'),
+        Index('idx_activity_logs_user_action_time', 'user_id', 'action_type', 'created_at'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    action_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    risk_score: Mapped[decimal.Decimal] = mapped_column(Numeric(3, 2), nullable=False, server_default=text('0.00'))
+    is_suspicious: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    ip_address: Mapped[Optional[str]] = mapped_column(String(45))
+    user_agent: Mapped[Optional[str]] = mapped_column(Text)
+    device_fingerprint: Mapped[Optional[str]] = mapped_column(Text)
+    detection_reason: Mapped[Optional[str]] = mapped_column(Text)
+    source_event_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    metadata_: Mapped[Optional[dict]] = mapped_column('metadata', JSONB)
+
+    user: Mapped['User'] = relationship('User', back_populates='gamification_activity_logs')
+
+
+class GamificationNotifications(Base):
+    __tablename__ = 'gamification_notifications'
+    __table_args__ = (
+    ForeignKeyConstraint(['user_id'], ['public.user.id'], ondelete='CASCADE', name='fk_gamification_notifications_user_id'),
+        PrimaryKeyConstraint('id', name='gamification_notifications_pkey'),
+        Index('idx_gamification_notifications_unread', 'user_id', 'is_read'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    notification_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    payload: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    is_read: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    icon_url: Mapped[Optional[str]] = mapped_column(Text)
+
+    user: Mapped['User'] = relationship('User', back_populates='gamification_notifications')
+
+
+class LeaderboardSnapshots(Base):
+    __tablename__ = 'leaderboard_snapshots'
+    __table_args__ = (
+    ForeignKeyConstraint(['season_id'], ['public.seasons.id'], ondelete='SET NULL', name='fk_leaderboard_snapshots_season_id'),
+    ForeignKeyConstraint(['user_id'], ['public.user.id'], ondelete='CASCADE', name='fk_leaderboard_snapshots_user_id'),
+        PrimaryKeyConstraint('id', name='leaderboard_snapshots_pkey'),
+        UniqueConstraint('leaderboard_type', 'cycle_start_date', 'season_id', 'user_id', name='uq_leaderboard_snapshots_user'),
+        Index('idx_leaderboard_snapshots_ranking', 'leaderboard_type', 'cycle_start_date', 'rank'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    leaderboard_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    cycle_start_date: Mapped[datetime.date] = mapped_column(Date, nullable=False)
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    rank: Mapped[int] = mapped_column(Integer, nullable=False)
+    score: Mapped[int] = mapped_column(Integer, nullable=False)
+    level: Mapped[int] = mapped_column(Integer, nullable=False)
+    display_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    streak: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('0'))
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    season_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    avatar_url: Mapped[Optional[str]] = mapped_column(Text)
+    badge_image_url: Mapped[Optional[str]] = mapped_column(Text)
+
+    season: Mapped[Optional['Seasons']] = relationship('Seasons', back_populates='leaderboard_snapshots')
+    user: Mapped['User'] = relationship('User', back_populates='leaderboard_snapshots')
+
+
+class LootTables(Base):
+    __tablename__ = 'loot_tables'
+    __table_args__ = (
+        CheckConstraint('probability >= 0.0000 AND probability <= 1.0000', name='chk_loot_tables_probability'),
+    ForeignKeyConstraint(['box_id'], ['public.mystery_boxes.id'], ondelete='CASCADE', name='fk_loot_tables_box_id'),
+    ForeignKeyConstraint(['target_badge_id'], ['public.badges.id'], ondelete='RESTRICT', name='fk_loot_tables_badge_id'),
+        PrimaryKeyConstraint('id', name='loot_tables_pkey'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    box_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    reward_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    probability: Mapped[decimal.Decimal] = mapped_column(Numeric(5, 4), nullable=False, server_default=text('0.0000'))
+    quantity: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('1'))
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('true'))
+    reward_amount: Mapped[Optional[int]] = mapped_column(Integer)
+    target_badge_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    reward_metadata: Mapped[Optional[dict]] = mapped_column(JSONB)
+
+    box: Mapped['MysteryBoxes'] = relationship('MysteryBoxes', back_populates='loot_tables')
+    target_badge: Mapped[Optional['Badges']] = relationship('Badges', back_populates='loot_tables')
+
+
+class Missions(Base):
+    __tablename__ = 'missions'
+    __table_args__ = (
+        CheckConstraint("frequency::text = ANY (ARRAY['daily'::character varying::text, 'weekly'::character varying::text])", name='chk_missions_frequency'),
+    ForeignKeyConstraint(['season_id'], ['public.seasons.id'], ondelete='SET NULL', name='fk_missions_season_id'),
+        PrimaryKeyConstraint('id', name='missions_pkey'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    frequency: Mapped[str] = mapped_column(String(50), nullable=False, server_default=text("'daily'::character varying"))
+    event_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    target_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('1'))
+    reward_xp: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('0'))
+    reward_peak_wallet: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('0'))
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('true'))
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    description: Mapped[Optional[str]] = mapped_column(Text)
+    season_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    deleted_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+
+    season: Mapped[Optional['Seasons']] = relationship('Seasons', back_populates='missions')
+    user_missions: Mapped[list['UserMissions']] = relationship('UserMissions', back_populates='mission')
+
+
 class Notifications(Base):
     __tablename__ = 'notifications'
     __table_args__ = (
@@ -261,6 +576,31 @@ class Notifications(Base):
     role_target: Mapped[Optional[list[str]]] = mapped_column(ARRAY(Text()), server_default=text("'{}'::text[]"))
 
     user: Mapped[Optional['User']] = relationship('User', back_populates='notifications')
+
+
+class PeakTransactions(Base):
+    __tablename__ = 'peak_transactions'
+    __table_args__ = (
+        CheckConstraint('amount > 0', name='chk_peak_transactions_amount'),
+    ForeignKeyConstraint(['user_id'], ['public.user.id'], ondelete='CASCADE', name='fk_peak_transactions_user_id'),
+        PrimaryKeyConstraint('id', name='peak_transactions_pkey'),
+        Index('idx_peak_transactions_user_time', 'user_id', 'created_at'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    amount: Mapped[int] = mapped_column(Integer, nullable=False)
+    type: Mapped[str] = mapped_column(String(50), nullable=False)
+    before_balance: Mapped[int] = mapped_column(Integer, nullable=False)
+    after_balance: Mapped[int] = mapped_column(Integer, nullable=False)
+    source: Mapped[str] = mapped_column(String(50), nullable=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    event_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    event_type: Mapped[Optional[str]] = mapped_column(String(100))
+    metadata_: Mapped[Optional[dict]] = mapped_column('metadata', JSONB)
+
+    user: Mapped['User'] = relationship('User', back_populates='peak_transactions')
 
 
 class PlatformSettings(Base):
@@ -318,6 +658,59 @@ class PlatformWalletHistory(Base):
     wallet: Mapped['PlatformWallets'] = relationship('PlatformWallets', back_populates='platform_wallet_history')
 
 
+class Quests(Base):
+    __tablename__ = 'quests'
+    __table_args__ = (
+        CheckConstraint("quest_type::text = ANY (ARRAY['main'::character varying::text, 'side'::character varying::text, 'event'::character varying::text])", name='chk_quests_type'),
+    ForeignKeyConstraint(['season_id'], ['public.seasons.id'], ondelete='SET NULL', name='fk_quests_season_id'),
+        PrimaryKeyConstraint('id', name='quests_pkey'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    quest_type: Mapped[str] = mapped_column(String(50), nullable=False, server_default=text("'main'::character varying"))
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('true'))
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    description: Mapped[Optional[str]] = mapped_column(Text)
+    season_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+
+    season: Mapped[Optional['Seasons']] = relationship('Seasons', back_populates='quests')
+    quest_chapters: Mapped[list['QuestChapters']] = relationship('QuestChapters', back_populates='quest')
+    quest_rewards: Mapped[list['QuestRewards']] = relationship('QuestRewards', back_populates='quest')
+
+
+class Rewards(Base):
+    __tablename__ = 'rewards'
+    __table_args__ = (
+        CheckConstraint('cost_peak >= 0', name='chk_rewards_cost'),
+        CheckConstraint('stock_quantity IS NULL OR stock_quantity >= 0', name='chk_rewards_stock'),
+    ForeignKeyConstraint(['target_badge_id'], ['public.badges.id'], ondelete='RESTRICT', name='fk_rewards_badge_id'),
+        PrimaryKeyConstraint('id', name='rewards_pkey'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    cost_peak: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('0'))
+    reward_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('true'))
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    description: Mapped[Optional[str]] = mapped_column(Text)
+    reward_amount: Mapped[Optional[int]] = mapped_column(Integer)
+    target_badge_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    reward_metadata: Mapped[Optional[dict]] = mapped_column(JSONB)
+    stock_quantity: Mapped[Optional[int]] = mapped_column(Integer)
+    deleted_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+
+    target_badge: Mapped[Optional['Badges']] = relationship('Badges', back_populates='rewards')
+    reward_instances: Mapped[list['RewardInstances']] = relationship('RewardInstances', back_populates='reward')
+    reward_redemptions: Mapped[list['RewardRedemptions']] = relationship('RewardRedemptions', back_populates='reward')
+    user_reward_inventory: Mapped[list['UserRewardInventory']] = relationship('UserRewardInventory', back_populates='reward')
+
+
 class Sessions(Base):
     __tablename__ = 'sessions'
     __table_args__ = (
@@ -367,6 +760,74 @@ class Topics(Base):
     courses: Mapped[list['Courses']] = relationship('Courses', back_populates='topic')
 
 
+class UserBadges(Base):
+    __tablename__ = 'user_badges'
+    __table_args__ = (
+    ForeignKeyConstraint(['badge_id'], ['public.badges.id'], ondelete='CASCADE', name='fk_user_badges_badge_id'),
+    ForeignKeyConstraint(['user_id'], ['public.user.id'], ondelete='CASCADE', name='fk_user_badges_user_id'),
+        PrimaryKeyConstraint('id', name='user_badges_pkey'),
+        UniqueConstraint('user_id', 'badge_id', name='uq_user_badges_user_badge'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    badge_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    is_equipped: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
+    unlocked_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+
+    badge: Mapped['Badges'] = relationship('Badges', back_populates='user_badges')
+    user: Mapped['User'] = relationship('User', back_populates='user_badges')
+
+
+class UserGamificationProfiles(Base):
+    __tablename__ = 'user_gamification_profiles'
+    __table_args__ = (
+    ForeignKeyConstraint(['current_rank_id'], ['public.rank_config.id'], ondelete='SET NULL', name='fk_user_gamification_profiles_rank_id'),
+    ForeignKeyConstraint(['user_id'], ['public.user.id'], ondelete='CASCADE', name='fk_user_gamification_profiles_user_id'),
+        PrimaryKeyConstraint('user_id', name='user_gamification_profiles_pkey'),
+        {'schema': 'public'}
+    )
+
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
+    level: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('1'))
+    current_xp: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('0'))
+    total_xp: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('0'))
+    total_peak_score: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('0'))
+    current_streak: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('0'))
+    best_streak: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('0'))
+    streak_freezes: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('0'))
+    version: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('1'))
+    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    current_rank_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    last_active_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
+
+    current_rank: Mapped[Optional['RankConfig']] = relationship('RankConfig', back_populates='user_gamification_profiles')
+    # 🧩 Auto relationship (child → parent): User
+    user: Mapped['User'] = relationship(
+        'User', back_populates='user_gamification_profiles', uselist=False)
+
+
+class UserPeakBalances(Base):
+    __tablename__ = 'user_peak_balances'
+    __table_args__ = (
+        CheckConstraint('current_balance >= 0', name='chk_user_peak_balances_positive'),
+    ForeignKeyConstraint(['user_id'], ['public.user.id'], ondelete='CASCADE', name='fk_user_peak_balances_user_id'),
+        PrimaryKeyConstraint('user_id', name='user_peak_balances_pkey'),
+        {'schema': 'public'}
+    )
+
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
+    current_balance: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('0'))
+    total_earned: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('0'))
+    total_spent: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('0'))
+    version: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('1'))
+    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    # 🧩 Auto relationship (child → parent): User
+    user: Mapped['User'] = relationship(
+        'User', back_populates='user_peak_balances', uselist=False)
+
+
 class UserPushTokens(Base):
     __tablename__ = 'user_push_tokens'
     __table_args__ = (
@@ -406,6 +867,26 @@ class UserRoles(Base):
     user: Mapped[Optional['User']] = relationship('User', back_populates='user_roles')
 
 
+class UserStatistics(Base):
+    __tablename__ = 'user_statistics'
+    __table_args__ = (
+    ForeignKeyConstraint(['user_id'], ['public.user.id'], ondelete='CASCADE', name='fk_user_statistics_user_id'),
+        PrimaryKeyConstraint('user_id', name='user_statistics_pkey'),
+        {'schema': 'public'}
+    )
+
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
+    total_lessons_completed: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('0'))
+    total_quizzes_passed: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('0'))
+    total_code_lessons_solved: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('0'))
+    total_study_time_seconds: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('0'))
+    total_active_days: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('0'))
+    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    # 🧩 Auto relationship (child → parent): User
+    user: Mapped['User'] = relationship(
+        'User', back_populates='user_statistics', uselist=False)
+
+
 class Wallets(Base):
     __tablename__ = 'wallets'
     __table_args__ = (
@@ -428,6 +909,29 @@ class Wallets(Base):
     kyc_verified: Mapped[Optional[bool]] = mapped_column(Boolean, server_default=text('false'))
 
     user: Mapped['User'] = relationship('User', back_populates='wallets')
+
+
+class XpTransactions(Base):
+    __tablename__ = 'xp_transactions'
+    __table_args__ = (
+    ForeignKeyConstraint(['user_id'], ['public.user.id'], ondelete='CASCADE', name='fk_xp_transactions_user_id'),
+        PrimaryKeyConstraint('id', name='xp_transactions_pkey'),
+        Index('idx_xp_transactions_user_time', 'user_id', 'created_at'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    amount: Mapped[int] = mapped_column(Integer, nullable=False)
+    before_xp: Mapped[int] = mapped_column(Integer, nullable=False)
+    after_xp: Mapped[int] = mapped_column(Integer, nullable=False)
+    source: Mapped[str] = mapped_column(String(50), nullable=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    event_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    event_type: Mapped[Optional[str]] = mapped_column(String(100))
+    metadata_: Mapped[Optional[dict]] = mapped_column('metadata', JSONB)
+
+    user: Mapped['User'] = relationship('User', back_populates='xp_transactions')
 
 
 class Courses(Base):
@@ -499,6 +1003,174 @@ class Courses(Base):
     lesson_progress: Mapped[list['LessonProgress']] = relationship('LessonProgress', back_populates='course')
     lesson_quizzes: Mapped[list['LessonQuizzes']] = relationship('LessonQuizzes', back_populates='course')
     tutor_chat_threads: Mapped[list['TutorChatThreads']] = relationship('TutorChatThreads', back_populates='course')
+
+
+class DailyCheckinRewardsConfig(Base):
+    __tablename__ = 'daily_checkin_rewards_config'
+    __table_args__ = (
+        CheckConstraint('day_number > 0', name='chk_daily_checkin_rewards_day'),
+    ForeignKeyConstraint(['event_id'], ['public.daily_checkin_events.id'], ondelete='CASCADE', name='fk_daily_checkin_rewards_event_id'),
+    ForeignKeyConstraint(['target_box_id'], ['public.mystery_boxes.id'], ondelete='RESTRICT', name='fk_daily_checkin_rewards_box_id'),
+        PrimaryKeyConstraint('id', name='daily_checkin_rewards_config_pkey'),
+        UniqueConstraint('event_id', 'day_number', name='uq_daily_checkin_rewards_event_day'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    event_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    day_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    reward_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    reward_amount: Mapped[Optional[int]] = mapped_column(Integer)
+    target_box_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    reward_metadata: Mapped[Optional[dict]] = mapped_column(JSONB)
+
+    event: Mapped['DailyCheckinEvents'] = relationship('DailyCheckinEvents', back_populates='daily_checkin_rewards_config')
+    target_box: Mapped[Optional['MysteryBoxes']] = relationship('MysteryBoxes', back_populates='daily_checkin_rewards_config')
+
+
+class QuestChapters(Base):
+    __tablename__ = 'quest_chapters'
+    __table_args__ = (
+    ForeignKeyConstraint(['quest_id'], ['public.quests.id'], ondelete='CASCADE', name='fk_quest_chapters_quest_id'),
+        PrimaryKeyConstraint('id', name='quest_chapters_pkey'),
+        UniqueConstraint('quest_id', 'order_index', name='uq_quest_chapters_quest_order'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    quest_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    order_index: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('1'))
+
+    quest: Mapped['Quests'] = relationship('Quests', back_populates='quest_chapters')
+    quest_rewards: Mapped[list['QuestRewards']] = relationship('QuestRewards', back_populates='chapter')
+    quest_steps: Mapped[list['QuestSteps']] = relationship('QuestSteps', back_populates='chapter')
+
+
+class RewardInstances(Base):
+    __tablename__ = 'reward_instances'
+    __table_args__ = (
+    ForeignKeyConstraint(['reward_id'], ['public.rewards.id'], ondelete='CASCADE', name='fk_reward_instances_reward_id'),
+        PrimaryKeyConstraint('id', name='reward_instances_pkey'),
+        Index('idx_reward_instances_lookup', 'reward_id', 'status'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    reward_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    code_encrypted: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(String(50), nullable=False, server_default=text("'available'::character varying"))
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    assigned_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+    expires_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+
+    reward: Mapped['Rewards'] = relationship('Rewards', back_populates='reward_instances')
+    user_reward_inventory: Mapped[list['UserRewardInventory']] = relationship('UserRewardInventory', back_populates='reward_instance')
+
+
+class RewardRedemptions(Base):
+    __tablename__ = 'reward_redemptions'
+    __table_args__ = (
+    ForeignKeyConstraint(['approved_by'], ['public.user.id'], ondelete='SET NULL', name='fk_reward_redemptions_admin_id'),
+    ForeignKeyConstraint(['reward_id'], ['public.rewards.id'], ondelete='CASCADE', name='fk_reward_redemptions_reward_id'),
+    ForeignKeyConstraint(['user_id'], ['public.user.id'], ondelete='CASCADE', name='fk_reward_redemptions_user_id'),
+        PrimaryKeyConstraint('id', name='reward_redemptions_pkey'),
+        Index('idx_reward_redemptions_user_created', 'user_id', 'created_at'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    reward_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    cost_peak: Mapped[int] = mapped_column(Integer, nullable=False)
+    status: Mapped[str] = mapped_column(String(50), nullable=False, server_default=text("'pending'::character varying"))
+    delivery_status: Mapped[str] = mapped_column(String(50), nullable=False, server_default=text("'pending'::character varying"))
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    approved_by: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    approved_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+    rejected_reason: Mapped[Optional[str]] = mapped_column(Text)
+    delivery_metadata: Mapped[Optional[dict]] = mapped_column(JSONB)
+
+    user: Mapped[Optional['User']] = relationship('User', foreign_keys=[approved_by], back_populates='reward_redemptions_approved_by')
+    reward: Mapped['Rewards'] = relationship('Rewards', back_populates='reward_redemptions')
+    user_: Mapped['User'] = relationship('User', foreign_keys=[user_id], back_populates='reward_redemptions_user')
+
+
+class UserAchievements(Base):
+    __tablename__ = 'user_achievements'
+    __table_args__ = (
+    ForeignKeyConstraint(['achievement_id'], ['public.achievements.id'], ondelete='CASCADE', name='fk_user_achievements_achievement_id'),
+    ForeignKeyConstraint(['user_id'], ['public.user.id'], ondelete='CASCADE', name='fk_user_achievements_user_id'),
+        PrimaryKeyConstraint('id', name='user_achievements_pkey'),
+        UniqueConstraint('user_id', 'achievement_id', name='uq_user_achievements'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    achievement_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    unlocked_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    reward_claimed: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
+    claimed_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+
+    achievement: Mapped['Achievements'] = relationship('Achievements', back_populates='user_achievements')
+    user: Mapped['User'] = relationship('User', back_populates='user_achievements')
+
+
+class UserCheckins(Base):
+    __tablename__ = 'user_checkins'
+    __table_args__ = (
+    ForeignKeyConstraint(['event_id'], ['public.daily_checkin_events.id'], ondelete='CASCADE', name='fk_user_checkins_event_id'),
+    ForeignKeyConstraint(['user_id'], ['public.user.id'], ondelete='CASCADE', name='fk_user_checkins_user_id'),
+        PrimaryKeyConstraint('id', name='user_checkins_pkey'),
+        UniqueConstraint('user_id', 'event_id', 'checkin_date', name='uq_user_checkins_date'),
+        Index('idx_user_checkins_user_date', 'user_id', 'checkin_date'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    event_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    checkin_date: Mapped[datetime.date] = mapped_column(Date, nullable=False)
+    consecutive_day: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('1'))
+    reward_claimed: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+
+    event: Mapped['DailyCheckinEvents'] = relationship('DailyCheckinEvents', back_populates='user_checkins')
+    user: Mapped['User'] = relationship('User', back_populates='user_checkins')
+
+
+class UserMissions(Base):
+    __tablename__ = 'user_missions'
+    __table_args__ = (
+    ForeignKeyConstraint(['mission_id'], ['public.missions.id'], ondelete='CASCADE', name='fk_user_missions_mission_id'),
+    ForeignKeyConstraint(['user_id'], ['public.user.id'], ondelete='CASCADE', name='fk_user_missions_user_id'),
+        PrimaryKeyConstraint('id', name='user_missions_pkey'),
+        UniqueConstraint('user_id', 'mission_id', 'cycle_date', name='uq_user_missions_cycle'),
+        Index('idx_user_missions_status', 'user_id', 'status', 'cycle_date'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    mission_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    event_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    target_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('1'))
+    current_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('0'))
+    reward_xp: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('0'))
+    reward_peak_wallet: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('0'))
+    status: Mapped[str] = mapped_column(String(50), nullable=False, server_default=text("'assigned'::character varying"))
+    cycle_date: Mapped[datetime.date] = mapped_column(Date, nullable=False)
+    version: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('1'))
+    assigned_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    description: Mapped[Optional[str]] = mapped_column(Text)
+    completed_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+    claimed_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+
+    mission: Mapped['Missions'] = relationship('Missions', back_populates='user_missions')
+    user: Mapped['User'] = relationship('User', back_populates='user_missions')
 
 
 class CourseEnrollments(Base):
@@ -624,6 +1296,58 @@ class DiscountTargets(Base):
     discount: Mapped['Discounts'] = relationship('Discounts', back_populates='discount_targets')
 
 
+class QuestRewards(Base):
+    __tablename__ = 'quest_rewards'
+    __table_args__ = (
+        CheckConstraint('quest_id IS NOT NULL AND chapter_id IS NULL OR quest_id IS NULL AND chapter_id IS NOT NULL', name='chk_quest_rewards_exclusivity'),
+        CheckConstraint('reward_amount IS NULL OR reward_amount >= 0', name='chk_quest_rewards_amount'),
+    ForeignKeyConstraint(['chapter_id'], ['public.quest_chapters.id'], ondelete='CASCADE', name='fk_quest_rewards_chapter_id'),
+    ForeignKeyConstraint(['quest_id'], ['public.quests.id'], ondelete='CASCADE', name='fk_quest_rewards_quest_id'),
+    ForeignKeyConstraint(['target_badge_id'], ['public.badges.id'], ondelete='RESTRICT', name='fk_quest_rewards_badge_id'),
+        PrimaryKeyConstraint('id', name='quest_rewards_pkey'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    reward_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    quest_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    chapter_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    reward_amount: Mapped[Optional[int]] = mapped_column(Integer)
+    target_badge_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    reward_metadata: Mapped[Optional[dict]] = mapped_column(JSONB)
+
+    chapter: Mapped[Optional['QuestChapters']] = relationship('QuestChapters', back_populates='quest_rewards')
+    quest: Mapped[Optional['Quests']] = relationship('Quests', back_populates='quest_rewards')
+    target_badge: Mapped[Optional['Badges']] = relationship('Badges', back_populates='quest_rewards')
+
+
+class QuestSteps(Base):
+    __tablename__ = 'quest_steps'
+    __table_args__ = (
+    ForeignKeyConstraint(['chapter_id'], ['public.quest_chapters.id'], ondelete='CASCADE', name='fk_quest_steps_chapter_id'),
+    ForeignKeyConstraint(['parent_step_id'], ['public.quest_steps.id'], ondelete='SET NULL', name='fk_quest_steps_parent_id'),
+        PrimaryKeyConstraint('id', name='quest_steps_pkey'),
+        Index('idx_quest_steps_parent', 'parent_step_id'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    chapter_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    order_index: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('1'))
+    event_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    target_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('1'))
+    is_optional: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
+    parent_step_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    branch_group: Mapped[Optional[str]] = mapped_column(String(50))
+    criteria_metadata: Mapped[Optional[dict]] = mapped_column(JSONB)
+
+    chapter: Mapped['QuestChapters'] = relationship('QuestChapters', back_populates='quest_steps')
+    parent_step: Mapped[Optional['QuestSteps']] = relationship('QuestSteps', remote_side=[id], back_populates='parent_step_reverse')
+    parent_step_reverse: Mapped[list['QuestSteps']] = relationship('QuestSteps', remote_side=[parent_step_id], back_populates='parent_step')
+    user_quest_progress: Mapped[list['UserQuestProgress']] = relationship('UserQuestProgress', back_populates='step')
+
+
 class Transactions(Base):
     __tablename__ = 'transactions'
     __table_args__ = (
@@ -686,6 +1410,33 @@ class UserEmbeddingHistory(Base):
 
     course: Mapped['Courses'] = relationship('Courses', back_populates='user_embedding_history')
     user: Mapped['User'] = relationship('User', back_populates='user_embedding_history')
+
+
+class UserRewardInventory(Base):
+    __tablename__ = 'user_reward_inventory'
+    __table_args__ = (
+    ForeignKeyConstraint(['reward_id'], ['public.rewards.id'], ondelete='SET NULL', name='fk_user_reward_inventory_reward_id'),
+    ForeignKeyConstraint(['reward_instance_id'], ['public.reward_instances.id'], ondelete='SET NULL', name='fk_user_reward_inventory_instance_id'),
+    ForeignKeyConstraint(['user_id'], ['public.user.id'], ondelete='CASCADE', name='fk_user_reward_inventory_user_id'),
+        PrimaryKeyConstraint('id', name='user_reward_inventory_pkey'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    reward_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    status: Mapped[str] = mapped_column(String(50), nullable=False, server_default=text("'active'::character varying"))
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    reward_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    reward_instance_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    reward_amount: Mapped[Optional[int]] = mapped_column(Integer)
+    inventory_metadata: Mapped[Optional[dict]] = mapped_column(JSONB)
+    used_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+    expires_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+
+    reward: Mapped[Optional['Rewards']] = relationship('Rewards', back_populates='user_reward_inventory')
+    reward_instance: Mapped[Optional['RewardInstances']] = relationship('RewardInstances', back_populates='user_reward_inventory')
+    user: Mapped['User'] = relationship('User', back_populates='user_reward_inventory')
 
 
 class InstructorEarnings(Base):
@@ -788,6 +1539,30 @@ class PurchaseItems(Base):
     user: Mapped['User'] = relationship('User', back_populates='purchase_items')
     discount_history: Mapped[list['DiscountHistory']] = relationship('DiscountHistory', back_populates='purchase_item')
     refund_requests: Mapped[list['RefundRequests']] = relationship('RefundRequests', back_populates='purchase_item')
+
+
+class UserQuestProgress(Base):
+    __tablename__ = 'user_quest_progress'
+    __table_args__ = (
+    ForeignKeyConstraint(['step_id'], ['public.quest_steps.id'], ondelete='CASCADE', name='fk_user_quest_progress_step_id'),
+    ForeignKeyConstraint(['user_id'], ['public.user.id'], ondelete='CASCADE', name='fk_user_quest_progress_user_id'),
+        PrimaryKeyConstraint('id', name='user_quest_progress_pkey'),
+        UniqueConstraint('user_id', 'step_id', name='uq_user_quest_progress_step'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    step_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    current_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('0'))
+    status: Mapped[str] = mapped_column(String(50), nullable=False, server_default=text("'in_progress'::character varying"))
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    completed_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+    claimed_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+
+    step: Mapped['QuestSteps'] = relationship('QuestSteps', back_populates='user_quest_progress')
+    user: Mapped['User'] = relationship('User', back_populates='user_quest_progress')
 
 
 class WithdrawalRequests(Base):

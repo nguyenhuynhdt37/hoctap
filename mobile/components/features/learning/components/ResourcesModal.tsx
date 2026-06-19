@@ -106,7 +106,7 @@ export function ResourcesModal({
             ) : (
               <View className="gap-3">
                 {resources.map(res => {
-                  const { icon, color } = getResourceIcon(res.file_type)
+                  const { icon, color } = getResourceIcon(res.file_type || '')
                   return (
                     <Pressable
                       key={res.id}
@@ -123,7 +123,7 @@ export function ResourcesModal({
                         <View className="flex-row items-center gap-2 mt-0.5">
                           <View className={`px-2 py-0.5 rounded ${isDark ? 'bg-zinc-700' : 'bg-gray-200'}`}>
                             <Text className={`text-[10px] font-bold ${isDark ? 'text-zinc-400' : 'text-gray-500'}`}>
-                              {getResourceLabel(res.file_type)}
+                              {getResourceLabel(res.file_type || '')}
                             </Text>
                           </View>
                           {formatSize(res.file_size) && (

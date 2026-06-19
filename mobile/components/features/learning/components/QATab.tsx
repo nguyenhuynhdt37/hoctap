@@ -5,9 +5,10 @@ import { QASection } from './QASection'
 interface QATabProps {
   lessonId: string
   initialCommentId?: string
+  hideHeader?: boolean
 }
 
-export function QATab({ lessonId, initialCommentId }: QATabProps) {
+export function QATab({ lessonId, initialCommentId, hideHeader }: QATabProps) {
   const isDark = useColorScheme() === 'dark'
   
   return (
@@ -15,6 +16,7 @@ export function QATab({ lessonId, initialCommentId }: QATabProps) {
       lessonId={lessonId}
       isDark={isDark}
       initialCommentId={initialCommentId}
+      hideHeader={hideHeader}
     />
   )
 }

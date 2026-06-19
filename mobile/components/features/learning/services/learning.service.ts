@@ -13,6 +13,7 @@ import type {
   UpdateNotePayload,
   CreateCommentPayload,
 } from '../types'
+import type { CodeLessonTestResult } from '../types/code-lesson'
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // API ENDPOINTS
@@ -36,6 +37,10 @@ const learningEndpoints = {
 
   // Progress
   markCompleted: (lessonId: string) => `${API_BASE}/${lessonId}/complete`,
+
+  // Code lessons
+  saveCodeFile: (lessonCodeId: string) => `${API_BASE}/code/${lessonCodeId}/save`,
+  testCodeExercise: (lessonCodeId: string) => `${API_BASE}/code/${lessonCodeId}/test`,
 
   // Notes
   notes: (lessonId: string) => `${API_BASE}/${lessonId}/lesson_notes`,
@@ -135,6 +140,33 @@ export const learningService = {
     next_lesson_suggestion?: { id: string; title: string }
   }> => {
     const response = await api.post(learningEndpoints.markCompleted(lessonId))
+    return response.data
+  },
+
+  /**
+   * Lưu file code của user cho một exercise.
+   */
+  saveCodeFile: async (
+    lessonCodeId: string,
+    payload: { filename: string; content: string; is_main: boolean }
+  ): Promise<void> => {
+    await api.post(learningEndpoints.saveCodeFile(lessonCodeId), payload)
+  },
+
+  /**
+   * Chạy test cases cho một exercise code.
+   */
+  testCodeExercise: async (
+    lessonCodeId: string,
+    payload: {
+      language_id: string
+      files: { filename: string; content: string; is_main: boolean }[]
+    }
+  ): Promise<CodeLessonTestResult> => {
+    const response = await api.post<CodeLessonTestResult>(
+      learningEndpoints.testCodeExercise(lessonCodeId),
+      payload
+    )
     return response.data
   },
 

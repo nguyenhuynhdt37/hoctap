@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { View, KeyboardAvoidingView, Platform, ScrollView, Image, Dimensions, useColorScheme } from 'react-native'
+import { View, KeyboardAvoidingView, Platform, ScrollView, Image, Dimensions, useColorScheme, Pressable } from 'react-native'
 import { useRouter } from 'expo-router'
 import { Button, Input } from '@/components/ui'
 import { Text } from '@/components/ui/Text'
@@ -159,7 +159,7 @@ export function PhoneFeature() {
 
               <Button
                 label={t('auth.onboarding.try_dev')}
-                onPress={async () => { setLoading(true); await bypassLogin(); router.replace('/(app)') }}
+                onPress={async () => { setLoading(true); await bypassLogin(); router.replace('/') }}
                 variant="ghost"
                 fullWidth
               />
