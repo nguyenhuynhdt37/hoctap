@@ -1,41 +1,28 @@
-# HocTap / StudyNest Monorepo
+# 📦 StudyNest Monorepo - All-In-One Education Ecosystem
 
-Repo gom 3 phần chính:
+![FastAPI](https://img.shields.io/badge/FastAPI-Backend-009688?style=for-the-badge&logo=fastapi&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js-Web_Frontend-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
+![Expo](https://img.shields.io/badge/Expo-Mobile_App-000000?style=for-the-badge&logo=expo&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
 
-- `studynest_be`: FastAPI backend + PostgreSQL/Redis Docker Compose
-- `studynest_fe`: Next.js web frontend
-- `mobile`: Expo React Native app
+Monorepo hợp nhất toàn bộ hệ sinh thái giáo dục **StudyNest**, bao gồm:
+1. **`backend/`**: FastAPI REST API Service.
+2. **`frontend/`**: Web Client App Next.js.
+3. **`mobile/`**: Mobile App Expo React Native (iOS & Android).
 
-## Backend
+---
 
-```bash
-cd studynest_be
-cp .env.example .env
-docker compose up -d
-python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
-.venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+## 📂 Cấu Trúc Dự Án
+
+```
+hoctap/
+├── backend/            # FastAPI Python Backend & Database Scripts
+├── frontend/           # Next.js Web Frontend Client & Admin Portal
+└── mobile/             # Expo React Native App
 ```
 
-## Web Frontend
+---
 
-```bash
-cd studynest_fe
-cp .env.example .env.local
-pnpm install
-pnpm dev
-```
+## 👨‍💻 Tác Giả
 
-## Mobile
-
-```bash
-cd mobile
-cp .env.example .env
-pnpm install
-npx expo start -c
-```
-
-## Notes
-
-- Secret files (`.env`, Google tokens, local caches) are ignored by Git.
-- `studynest_be/db.sql` is kept as the local database init dump for Docker Compose.
+**Nguyễn Xuân Huỳnh** — [GitHub Profile](https://github.com/nguyenhuynhdt37)
