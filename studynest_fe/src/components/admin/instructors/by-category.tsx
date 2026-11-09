@@ -2,7 +2,7 @@
 
 import api from "@/lib/utils/fetcher/client/axios";
 import { InstructorByCategoryResponse } from "@/types/admin/statistics";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import {
   HiUser,
   HiBookOpen,
@@ -94,7 +94,7 @@ export default function InstructorByCategory() {
                       <div className="w-6 h-6 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
                         {inst.avatar ? (
                           <img
-                            src={getGoogleDriveImageUrl(inst.avatar)}
+                            src={getImageUrl(inst.avatar)}
                             alt={inst.name}
                             className="w-full h-full object-cover"
                           />

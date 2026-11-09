@@ -10,6 +10,7 @@ import * as FileSystem from 'expo-file-system'
 import * as Sharing from 'expo-sharing'
 import { Text } from '@/components/ui'
 import type { LessonResource } from '../types'
+import { resolveDownloadUrl } from '@/src/services/storage'
 
 interface ResourcesTabProps {
   resources?: LessonResource[]
@@ -121,14 +122,12 @@ function ResourceCard({ resource, isDark }: { resource: LessonResource; isDark: 
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
 
-    // Kiểm tra nếu là link Google Drive (thường là link view, không download trực tiếp được qua FileSystem)
-    const isGoogleDrive = resource.url.includes('drive.google.com')
-    
-    // Nếu là link hoặc là Google Drive thì mở browser
-    if (resource.resource_type === 'link' || isGoogleDrive) {
-      Linking.openURL(resource.url).catch(() => {
+    if (resource.resource_type === 'link') {
+      try {
+        await Linking.openURL(await resolveDownloadUrl(resource.url))
+      } catch {
         Alert.alert('Lỗi', 'Không thể mở liên kết')
-      })
+      }
       return
     }
 
@@ -137,9 +136,10 @@ function ResourceCard({ resource, isDark }: { resource: LessonResource; isDark: 
       
       const fileName = resource.title || `document_${resource.id.slice(0, 8)}`
       const fileUri = (FileSystem as any).cacheDirectory + fileName
+      const downloadUrl = await resolveDownloadUrl(resource.url)
 
       const downloadResumable = FileSystem.createDownloadResumable(
-        resource.url,
+        downloadUrl,
         fileUri,
         {},
         (downloadProgress) => {

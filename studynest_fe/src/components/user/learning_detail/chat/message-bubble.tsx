@@ -4,7 +4,7 @@ import { memo, useState } from "react";
 import { TutorMessage, MessageSource } from "@/types/user/tutor-chat";
 import MarkdownRenderer from "./markdown-renderer";
 import { SourceList } from "./chat-chips";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import { ImagePreviewModal } from "@/components/ui/image-preview-modal";
 
 interface Props {
@@ -26,7 +26,7 @@ function MessageBubble({ message, onSourceClick, currentLessonId }: Props) {
           {message.images && message.images.length > 0 ? (
             <div className="flex flex-wrap justify-end gap-1 mb-2 max-w-[300px]">
               {message.images.map((img, index) => {
-                const src = getGoogleDriveImageUrl(img.url);
+                const src = getImageUrl(img.url);
                 return (
                   <img
                     key={img.id || index}

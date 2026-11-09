@@ -2,7 +2,7 @@
 
 import api from "@/lib/utils/fetcher/client/axios";
 import { CoursePerformanceItem } from "@/types/lecturer/statistics";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import { HiStar, HiUserGroup, HiCurrencyDollar } from "react-icons/hi";
 import useSWR from "swr";
 
@@ -99,7 +99,7 @@ export default function CoursePerformance() {
                       <div className="w-12 h-8 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0">
                         {course.thumbnail && (
                           <img
-                            src={getGoogleDriveImageUrl(course.thumbnail)}
+                            src={getImageUrl(course.thumbnail)}
                             alt={course.title}
                             className="w-full h-full object-cover"
                           />

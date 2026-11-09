@@ -2,7 +2,7 @@
 
 import api from "@/lib/utils/fetcher/client/axios";
 import { RevenueByInstructorResponse } from "@/types/admin/statistics";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import { HiUser, HiCalendar } from "react-icons/hi";
 import { useState } from "react";
 import useSWR from "swr";
@@ -134,7 +134,7 @@ export default function InstructorRevenue() {
                       <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-100 flex-shrink-0">
                         {item.avatar ? (
                           <img
-                            src={getGoogleDriveImageUrl(item.avatar)}
+                            src={getImageUrl(item.avatar)}
                             alt={item.name}
                             className="w-full h-full object-cover"
                           />

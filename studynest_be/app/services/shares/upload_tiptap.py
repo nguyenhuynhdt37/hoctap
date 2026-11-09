@@ -2,7 +2,7 @@ import uuid
 
 from fastapi import HTTPException, UploadFile
 
-from app.services.shares.google_driver import GoogleDriveAsyncService
+from app.services.shares.file_storage import FileStorageService
 
 
 class UploadTiptapService:
@@ -13,19 +13,19 @@ class UploadTiptapService:
         self,
         user_id: uuid.UUID,
         file: UploadFile,
-        google_drive_service: GoogleDriveAsyncService,
+        storage_service: FileStorageService,
         role: str,
     ):
         # Implementation to get user profile by user_id
         try:
 
-            file_url = await google_drive_service.upload_file(
+            file_url = await storage_service.upload_file(
                 [f"shares/{role}", str(object=user_id)],
-                file.filename or f"picture_{user_id}_{uuid.uuid4()}_{uuid.uuid4()}.png",
+                file.filename or "image.png",
                 await file.read(),
                 file.content_type,
             )
-            return file_url.get("webViewLink", None)
+            return file_url["url"]
         except Exception as e:
 
             raise HTTPException(status_code=500, detail=f"error {e}")

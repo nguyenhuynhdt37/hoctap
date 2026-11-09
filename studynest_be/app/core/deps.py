@@ -264,11 +264,5 @@ class AuthorizationService:
 
 @lru_cache(maxsize=1)
 def get_authorization_service() -> AuthorizationService:
-    """
-    Singleton GoogleDriveAsyncService — chỉ khởi tạo 1 lần duy nhất trong suốt vòng đời app.
-    Dùng cho FastAPI: google_drive: GoogleDriveAsyncService = Depends(get_google_drive_service)
-    """
-    logger.info(
-        "🚀 get_google_drive_service() gọi lần đầu → tạo GoogleDriveAsyncService singleton"
-    )
+    """Shared authorization service."""
     return AuthorizationService()

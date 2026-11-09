@@ -3,7 +3,7 @@
 import MarkdownRenderer from "@/components/shared/markdown-renderer";
 import Pagination from "@/components/shared/pagination";
 import api from "@/lib/utils/fetcher/client/axios";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import { showToast } from "@/lib/utils/helpers/toast";
 import {
   LecturerCoursesResponse,
@@ -500,7 +500,7 @@ export default function DetailLecturer({ lecturerId }: { lecturerId: string }) {
                       className="bg-gray-50 rounded-lg p-3 cursor-pointer hover:bg-green-50 hover:border-green-200 border border-transparent transition-all"
                     >
                       <img
-                        src={getGoogleDriveImageUrl(course.thumbnail)}
+                        src={getImageUrl(course.thumbnail)}
                         alt={course.title}
                         className="aspect-video rounded-lg mb-2 object-cover w-full"
                         onError={(e) => {
@@ -960,7 +960,7 @@ function CourseModal({
         <div className="p-6 overflow-y-auto flex-1">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <img
-              src={getGoogleDriveImageUrl(course.thumbnail)}
+              src={getImageUrl(course.thumbnail)}
               alt={course.title}
               className="rounded-lg w-full aspect-video object-cover"
             />

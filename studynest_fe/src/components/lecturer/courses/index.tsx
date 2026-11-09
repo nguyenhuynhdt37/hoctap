@@ -1,7 +1,7 @@
 "use client";
 
 import api from "@/lib/utils/fetcher/client/axios";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import { showToast } from "@/lib/utils/helpers/toast";
 import { LecturerCoursesResponse } from "@/types/lecturer/course";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
@@ -341,7 +341,7 @@ const LecturerCourses = () => {
                 {/* Thumbnail */}
                 <div className="relative h-48 bg-gray-200 overflow-hidden">
                   <img
-                    src={getGoogleDriveImageUrl(course.thumbnail_url)}
+                    src={getImageUrl(course.thumbnail_url)}
                     alt={course.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />

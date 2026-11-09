@@ -2,7 +2,7 @@
 
 import TiptapEditor from "@/components/shared/tiptap_editor";
 import api from "@/lib/utils/fetcher/client/axios";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import { CategoriesPaginatedResponse } from "@/types/admin/category";
 import { TopicsResponse } from "@/types/admin/topic";
 import { CourseDetailResponse, CourseFormData } from "@/types/lecturer/course";
@@ -137,7 +137,7 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
         is_lock_lesson: courseData.is_lock_lesson || false,
       });
       if (courseData.thumbnail_url) {
-        setThumbnailPreview(getGoogleDriveImageUrl(courseData.thumbnail_url));
+        setThumbnailPreview(getImageUrl(courseData.thumbnail_url));
       }
       setIsLoadingCourse(false);
       isInitialLoadRef.current = false;

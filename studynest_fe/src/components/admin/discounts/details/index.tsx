@@ -1,6 +1,6 @@
 "use client";
 
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import { DiscountDetail } from "@/types/admin/discount";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
@@ -280,7 +280,7 @@ export default function DiscountDetails({ data }: DiscountDetailsProps) {
                         <div className="flex items-center gap-3">
                           {usage.avatar ? (
                             <img
-                              src={getGoogleDriveImageUrl(usage.avatar)}
+                              src={getImageUrl(usage.avatar)}
                               alt={usage.user_name}
                               className="h-10 w-10 rounded-full object-cover"
                               onError={(e) => {

@@ -17,6 +17,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from pydantic import BaseModel
 
+from app.core.chat_stream import chat_stream_response
 from app.core.deps import AuthorizationService
 from app.db.models.database import User
 from app.schemas.chat.user.tutor_chat import SendMessageSchema
@@ -227,7 +228,7 @@ async def upload_image_for_chat(
 ):
     """
     Upload ảnh cho chat & OCR.
-    1. Upload lên Google Drive
+    1. Upload lên R2
     2. OCR trích xuất text
     3. Trả về metadata để client gửi kèm message
     """
@@ -257,6 +258,13 @@ async def send_message(
     - Trả về cả user message và assistant response
     """
     user: User = await auth.get_current_user()
+    if body.stream:
+        async def work(on_delta):
+            return await service.send_message(
+                user_id=user.id, lesson_id=lesson_id, message=body.message,
+                thread_id=body.thread_id, images=body.images, on_delta=on_delta,
+            )
+        return chat_stream_response(work)
     return await service.send_message(
         user_id=user.id,
         lesson_id=lesson_id,

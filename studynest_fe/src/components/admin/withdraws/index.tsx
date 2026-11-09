@@ -2,7 +2,7 @@
 
 import ContextMenu from "@/components/shared/context-menu";
 import api from "@/lib/utils/fetcher/client/axios";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import { showToast } from "@/lib/utils/helpers/toast";
 import type {
   AdminLecturerOption,
@@ -256,7 +256,7 @@ export default function AdminWithdraws() {
                         >
                           {lecturer.avatar ? (
                             <img
-                              src={getGoogleDriveImageUrl(lecturer.avatar)}
+                              src={getImageUrl(lecturer.avatar)}
                               alt={lecturer.fullname}
                               className="w-10 h-10 rounded-full object-cover shrink-0"
                             />
@@ -510,7 +510,7 @@ export default function AdminWithdraws() {
                           <div className="flex items-center gap-3">
                             {item.avatar && (
                               <img
-                                src={getGoogleDriveImageUrl(item.avatar)}
+                                src={getImageUrl(item.avatar)}
                                 alt={item.fullname}
                                 className="w-10 h-10 rounded-full object-cover shrink-0"
                               />

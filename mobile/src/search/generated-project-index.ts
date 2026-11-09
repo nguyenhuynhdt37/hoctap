@@ -3,6 +3,22 @@ import type { GlobalSearchItem } from './types'
 
 export const SCANNED_PROJECT_SEARCH_ITEMS: GlobalSearchItem[] = [
   {
+    "id": "feature:ai-chat",
+    "title": "Ai Chat",
+    "description": "Feature module components/features/ai-chat",
+    "type": "feature",
+    "route": "/(app)/(tabs)",
+    "icon": "zap",
+    "keywords": [
+      "feature",
+      "chức năng",
+      "ai-chat",
+      "ai",
+      "chat"
+    ],
+    "alias": []
+  },
+  {
     "id": "feature:auth",
     "title": "Auth",
     "description": "Feature module components/features/auth",
@@ -61,6 +77,21 @@ export const SCANNED_PROJECT_SEARCH_ITEMS: GlobalSearchItem[] = [
       "course-preview",
       "course",
       "preview"
+    ],
+    "alias": []
+  },
+  {
+    "id": "feature:gamification",
+    "title": "Gamification",
+    "description": "Feature module components/features/gamification",
+    "type": "feature",
+    "route": "/(app)/(tabs)",
+    "icon": "zap",
+    "keywords": [
+      "feature",
+      "chức năng",
+      "gamification",
+      "gamification"
     ],
     "alias": []
   },
@@ -167,23 +198,9 @@ export const SCANNED_PROJECT_SEARCH_ITEMS: GlobalSearchItem[] = [
   {
     "id": "navigation:/",
     "title": "Home",
-    "description": "Navigation target found in components/features/course-detail/EmptyCourseView.tsx",
+    "description": "Navigation target found in app/(app)/course/[slug].tsx",
     "type": "route",
     "route": "/",
-    "icon": "navigation",
-    "keywords": [
-      "navigation",
-      "menu",
-      "route"
-    ],
-    "alias": []
-  },
-  {
-    "id": "navigation:/(app)",
-    "title": "Home",
-    "description": "Navigation target found in components/features/auth/CompleteProfileFeature.tsx",
-    "type": "route",
-    "route": "/(app)",
     "icon": "navigation",
     "keywords": [
       "navigation",
@@ -319,6 +336,23 @@ export const SCANNED_PROJECT_SEARCH_ITEMS: GlobalSearchItem[] = [
     ]
   },
   {
+    "id": "navigation:/(app)/gamification",
+    "title": "Gamification",
+    "description": "Navigation target found in components/features/profile/components/ProfileActions.tsx",
+    "type": "route",
+    "route": "/(app)/gamification",
+    "icon": "navigation",
+    "keywords": [
+      "navigation",
+      "menu",
+      "route",
+      "gamification"
+    ],
+    "alias": [
+      "gamification"
+    ]
+  },
+  {
     "id": "navigation:/(app)/language",
     "title": "Language",
     "description": "Navigation target found in components/features/profile/components/ProfileActions.tsx",
@@ -354,6 +388,26 @@ export const SCANNED_PROJECT_SEARCH_ITEMS: GlobalSearchItem[] = [
       "Learning",
       "Bài học",
       "${slug}"
+    ]
+  },
+  {
+    "id": "navigation:/(app)/learning/${slug}${query}",
+    "title": "${slug}${query}",
+    "description": "Navigation target found in src/utils/notifications.ts",
+    "type": "route",
+    "route": "/(app)/learning/${slug}${query}",
+    "icon": "navigation",
+    "keywords": [
+      "navigation",
+      "menu",
+      "route",
+      "learning",
+      "${slug}${query}"
+    ],
+    "alias": [
+      "Learning",
+      "Bài học",
+      "${slug}${query}"
     ]
   },
   {
@@ -689,6 +743,23 @@ export const SCANNED_PROJECT_SEARCH_ITEMS: GlobalSearchItem[] = [
     "alias": []
   },
   {
+    "id": "route:/(app)/(tabs)/ai-chat",
+    "title": "Ai Chat",
+    "description": "Project route /(app)/(tabs)/ai-chat",
+    "type": "screen",
+    "route": "/(app)/(tabs)/ai-chat",
+    "icon": "smartphone",
+    "keywords": [
+      "route",
+      "screen",
+      "màn hình",
+      "ai-chat"
+    ],
+    "alias": [
+      "ai-chat"
+    ]
+  },
+  {
     "id": "route:/(app)/(tabs)/explore",
     "title": "Explore",
     "description": "Project route /(app)/(tabs)/explore",
@@ -859,6 +930,23 @@ export const SCANNED_PROJECT_SEARCH_ITEMS: GlobalSearchItem[] = [
     ]
   },
   {
+    "id": "route:/(app)/gamification",
+    "title": "Gamification",
+    "description": "Project route /(app)/gamification",
+    "type": "screen",
+    "route": "/(app)/gamification",
+    "icon": "smartphone",
+    "keywords": [
+      "route",
+      "screen",
+      "màn hình",
+      "gamification"
+    ],
+    "alias": [
+      "gamification"
+    ]
+  },
+  {
     "id": "route:/(app)/language",
     "title": "Language",
     "description": "Project route /(app)/language",
@@ -894,6 +982,26 @@ export const SCANNED_PROJECT_SEARCH_ITEMS: GlobalSearchItem[] = [
       "Learning",
       "Bài học",
       "slug"
+    ]
+  },
+  {
+    "id": "route:/(app)/profile/[id]",
+    "title": "Id",
+    "description": "Project route /(app)/profile/[id]",
+    "type": "tab",
+    "route": "/(app)/profile/[id]",
+    "icon": "grid",
+    "keywords": [
+      "route",
+      "screen",
+      "màn hình",
+      "profile",
+      "id"
+    ],
+    "alias": [
+      "Profile",
+      "Hồ sơ",
+      "id"
     ]
   },
   {

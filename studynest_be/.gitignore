@@ -1,4 +1,6 @@
 app/core/secret/token.json
+app/core/secret/client_secret.json
+app/core/secret/*.json
 venv/
 .venv/
 token.json

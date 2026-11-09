@@ -2,7 +2,7 @@
 
 import TiptapEditor from "@/components/shared/tiptap_editor";
 import api from "@/lib/utils/fetcher/client/axios";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import { UserProfile } from "@/types/user/profile";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -84,7 +84,7 @@ export default function ProfileEdit({
         citizenship_identity: profileData.citizenship_identity || "",
       });
       if (profileData.avatar) {
-        setAvatarPreview(getGoogleDriveImageUrl(profileData.avatar));
+        setAvatarPreview(getImageUrl(profileData.avatar));
       }
     }
   }, [profileData]);
@@ -528,7 +528,7 @@ export default function ProfileEdit({
                     src={
                       avatarPreview.startsWith("data:")
                         ? avatarPreview
-                        : getGoogleDriveImageUrl(avatarPreview)
+                        : getImageUrl(avatarPreview)
                     }
                     alt="Avatar"
                     className="w-32 h-32 rounded-full object-cover border-4 border-gray-200"

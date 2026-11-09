@@ -5,7 +5,7 @@ import {
   TopInstructorsResponse,
   InstructorDetailResponse,
 } from "@/types/admin/statistics";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import {
   HiUser,
   HiX,
@@ -81,7 +81,7 @@ export default function InstructorList() {
                 <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
                   {instructor.avatar ? (
                     <img
-                      src={getGoogleDriveImageUrl(instructor.avatar)}
+                      src={getImageUrl(instructor.avatar)}
                       alt={instructor.name}
                       className="w-full h-full object-cover"
                     />
@@ -175,7 +175,7 @@ function InstructorDetailModal({
               <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
                 {data.avatar ? (
                   <img
-                    src={getGoogleDriveImageUrl(data.avatar)}
+                    src={getImageUrl(data.avatar)}
                     alt={data.name}
                     className="w-full h-full object-cover"
                   />
@@ -276,7 +276,7 @@ function InstructorDetailModal({
                       <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0">
                         {course.thumbnail ? (
                           <img
-                            src={getGoogleDriveImageUrl(course.thumbnail)}
+                            src={getImageUrl(course.thumbnail)}
                             alt={course.title}
                             className="w-full h-full object-cover"
                           />

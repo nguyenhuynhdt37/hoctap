@@ -1,7 +1,7 @@
 "use client";
 
 import MarkdownRenderer from "@/components/shared/markdown-renderer";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import { Instructor } from "@/types/user/course_detail";
 import { HiStar } from "react-icons/hi";
 
@@ -19,7 +19,7 @@ export default function InstructorSection({
         <div className="w-16 h-16 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center flex-shrink-0">
           {instructor.avatar ? (
             <img
-              src={getGoogleDriveImageUrl(instructor.avatar)}
+              src={getImageUrl(instructor.avatar)}
               alt={instructor.fullname}
               className="w-16 h-16 rounded-full object-cover"
             />

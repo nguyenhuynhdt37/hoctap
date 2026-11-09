@@ -1,7 +1,7 @@
 "use client";
 
 import api from "@/lib/utils/fetcher/client/axios";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import {
   CourseStudentItem,
   CourseStudentsResponse,
@@ -409,7 +409,7 @@ export default function LecturerCourseStudents() {
                         <div className="flex items-center gap-3">
                           {s.avatar ? (
                             <img
-                              src={getGoogleDriveImageUrl(s.avatar)}
+                              src={getImageUrl(s.avatar)}
                               alt={s.fullname}
                               className="h-9 w-9 rounded-full object-cover"
                               onError={(e) => {

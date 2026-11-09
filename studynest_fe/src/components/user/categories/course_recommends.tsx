@@ -1,7 +1,7 @@
 "use client";
 
 import api from "@/lib/utils/fetcher/client/axios";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import useSWR from "swr";
 import { useCallback, useEffect, useState } from "react";
 import { HiChevronLeft, HiChevronRight } from "react-icons/hi";
@@ -65,7 +65,7 @@ const RecommendedCourseCard = ({
       <div className="w-full md:w-[40rem] flex-shrink-0 h-full relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent z-10" />
         <img
-          src={getGoogleDriveImageUrl(course.thumbnail || "")}
+          src={getImageUrl(course.thumbnail || "")}
           alt={course.title}
           className="w-full h-full object-cover"
           onError={(e) => {
@@ -93,7 +93,7 @@ const RecommendedCourseCard = ({
               {course.instructor.avatar && (
                 <div className="relative">
                   <img
-                    src={getGoogleDriveImageUrl(course.instructor.avatar)}
+                    src={getImageUrl(course.instructor.avatar)}
                     alt={course.instructor.name}
                     className="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover ring-4 ring-green-100 group-hover:ring-green-300 transition-all"
                     onError={(e) => {

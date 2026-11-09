@@ -1,6 +1,6 @@
 "use client";
 
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import { Course } from "@/types/user/course_detail";
 import { useRouter } from "next/navigation";
 import { HiAcademicCap, HiCheckCircle, HiClock } from "react-icons/hi";
@@ -66,7 +66,7 @@ export default function EnrollmentModal({
             <div className="p-6">
               <div className="flex items-start gap-4 mb-6">
                 <img
-                  src={getGoogleDriveImageUrl(course.thumbnail_url)}
+                  src={getImageUrl(course.thumbnail_url)}
                   alt={course.title}
                   className="w-20 h-20 rounded-lg object-cover flex-shrink-0"
                 />

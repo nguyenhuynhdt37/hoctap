@@ -53,3 +53,4 @@ studynest_be/backup_*.sql
 .codegraph/
 .agents/
 .cursor/
+.vscode/

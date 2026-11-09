@@ -1,6 +1,6 @@
 "use client";
 
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import {
   AdminRefundRequestItem,
   AdminRefundRequestsQuery,
@@ -174,13 +174,13 @@ function RefundRequestRow({
   const [instructorAvatarError, setInstructorAvatarError] = useState(false);
 
   const thumbnailSrc = item.course.thumbnail
-    ? getGoogleDriveImageUrl(item.course.thumbnail)
+    ? getImageUrl(item.course.thumbnail)
     : null;
   const studentAvatarSrc = item.student.avatar
-    ? getGoogleDriveImageUrl(item.student.avatar)
+    ? getImageUrl(item.student.avatar)
     : null;
   const instructorAvatarSrc = item.instructor.avatar
-    ? getGoogleDriveImageUrl(item.instructor.avatar)
+    ? getImageUrl(item.instructor.avatar)
     : null;
 
   const handleRowClick = () => {

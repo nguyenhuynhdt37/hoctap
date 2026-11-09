@@ -1,7 +1,7 @@
 "use client";
 
 import api from "@/lib/utils/fetcher/client/axios";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import useSWR from "swr";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -40,7 +40,7 @@ const LecturerCard = ({ item }: { item: LecturerItem }) => {
       <div className="relative mb-4 inline-block">
         <div className="w-20 h-20 rounded-full ring-4 ring-green-100 group-hover:ring-green-300 transition-all duration-300 overflow-hidden">
           <img
-            src={getGoogleDriveImageUrl(item.instructor_avatar)}
+            src={getImageUrl(item.instructor_avatar)}
             alt={item.instructor_name}
             className="w-full h-full object-cover"
             onError={(e) => {

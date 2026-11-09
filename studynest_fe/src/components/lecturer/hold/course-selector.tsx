@@ -1,7 +1,7 @@
 "use client";
 
 import api from "@/lib/utils/fetcher/client/axios";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import { HoldCourse } from "@/types/lecturer/hold";
 import Image from "next/image";
 import { useEffect, useState } from "react";
@@ -17,7 +17,7 @@ interface CourseItemProps {
 function CourseItem({ course, isSelected, onSelect }: CourseItemProps) {
   const [thumbnailError, setThumbnailError] = useState(false);
   const thumbnailSrc = course.thumbnail
-    ? getGoogleDriveImageUrl(course.thumbnail)
+    ? getImageUrl(course.thumbnail)
     : null;
 
   return (

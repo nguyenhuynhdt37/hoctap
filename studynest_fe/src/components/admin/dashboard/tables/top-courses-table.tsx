@@ -2,7 +2,7 @@
 
 import api from "@/lib/utils/fetcher/client/axios";
 import { TopCoursesResponse, TopCoursesSortBy } from "@/types/admin/statistics";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import { HiPhotograph } from "react-icons/hi";
 import { useState } from "react";
 import useSWR from "swr";
@@ -97,7 +97,7 @@ export default function TopCoursesTable() {
               <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
                 {course.thumbnail ? (
                   <img
-                    src={getGoogleDriveImageUrl(course.thumbnail)}
+                    src={getImageUrl(course.thumbnail)}
                     alt={course.title}
                     className="w-full h-full object-cover"
                   />

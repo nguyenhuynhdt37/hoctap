@@ -1,7 +1,7 @@
 "use client";
 
 import ContextMenu from "@/components/shared/context-menu";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import { RefundRequestItem } from "@/types/user/refund";
 import Image from "next/image";
 import Link from "next/link";
@@ -204,10 +204,10 @@ function RefundRequestRow({
   const [avatarError, setAvatarError] = useState(false);
 
   const thumbnailSrc = request.course.thumbnail
-    ? getGoogleDriveImageUrl(request.course.thumbnail)
+    ? getImageUrl(request.course.thumbnail)
     : null;
   const avatarSrc = request.instructor.avatar
-    ? getGoogleDriveImageUrl(request.instructor.avatar)
+    ? getImageUrl(request.instructor.avatar)
     : null;
 
   return (

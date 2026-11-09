@@ -1,7 +1,7 @@
 "use client";
 
 import api from "@/lib/utils/fetcher/client/axios";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import { AdminLecturer } from "@/types/admin/refund";
 import Image from "next/image";
 import { useEffect, useState } from "react";
@@ -21,7 +21,7 @@ function InstructorItem({
 }: InstructorItemProps) {
   const [avatarError, setAvatarError] = useState(false);
   const avatarSrc = instructor.avatar
-    ? getGoogleDriveImageUrl(instructor.avatar)
+    ? getImageUrl(instructor.avatar)
     : null;
 
   return (

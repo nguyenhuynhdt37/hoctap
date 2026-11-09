@@ -1,7 +1,7 @@
 "use client";
 
 import api from "@/lib/utils/fetcher/client/axios";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import {
   AdminTransactionItem,
   AdminTransactionsQuery,
@@ -449,7 +449,7 @@ export default function AdminTransactions() {
                             <div className="flex items-center gap-3">
                               {item.user.avatar ? (
                                 <img
-                                  src={getGoogleDriveImageUrl(item.user.avatar)}
+                                  src={getImageUrl(item.user.avatar)}
                                   alt={item.user.fullname}
                                   className="h-9 w-9 rounded-full object-cover"
                                   onError={(e) => {

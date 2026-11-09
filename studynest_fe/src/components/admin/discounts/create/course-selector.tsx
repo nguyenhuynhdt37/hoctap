@@ -1,7 +1,7 @@
 "use client";
 
 import api from "@/lib/utils/fetcher/client/axios";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import { DiscountCourse } from "@/types/admin/discount";
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -121,7 +121,7 @@ export function CourseSelector({
                   <div className="w-12 h-8 bg-gray-100 rounded overflow-hidden flex-shrink-0">
                     {course.thumbnail && (
                       <Image
-                        src={getGoogleDriveImageUrl(course.thumbnail)}
+                        src={getImageUrl(course.thumbnail)}
                         alt={course.title}
                         width={48}
                         height={32}

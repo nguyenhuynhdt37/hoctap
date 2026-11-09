@@ -1,6 +1,6 @@
 "use client";
 
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import { useRouter } from "next/navigation";
 import { HiArrowLeft, HiClock, HiCurrencyDollar } from "react-icons/hi";
 
@@ -178,7 +178,7 @@ export default function AdminTransactionDetail({
               <div className="flex items-center gap-3">
                 {user.avatar ? (
                   <img
-                    src={getGoogleDriveImageUrl(user.avatar)}
+                    src={getImageUrl(user.avatar)}
                     alt={user.fullname}
                     className="h-12 w-12 rounded-full object-cover"
                     onError={(e) => {

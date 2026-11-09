@@ -628,6 +628,7 @@ class PlatformSettings(Base):
     embedding_dim: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('3072'))
     search_top_k: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('8'))
     rag_max_chunks: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('50'))
+    llm_model: Mapped[str] = mapped_column(String(200), nullable=False, server_default=text("'auto'"))
     max_login_attempts: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('5'))
     lock_time_minutes: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('15'))
     updated_at: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=False, server_default=text('now()'))
@@ -1857,7 +1858,7 @@ class LessonVideos(Base):
     transcript: Mapped[Optional[str]] = mapped_column(Text)
     duration: Mapped[Optional[float]] = mapped_column(Double(53), server_default=text('0'))
     file_id: Mapped[Optional[str]] = mapped_column(String)
-    source_type: Mapped[Optional[str]] = mapped_column(String, server_default=text("'upload_drive'::character varying"))
+    source_type: Mapped[Optional[str]] = mapped_column(String, server_default=text("'youtube_upload'::character varying"))
     # 🧩 Auto relationship (child → parent): Lessons
     lessons: Mapped['Lessons'] = relationship(
         'Lessons', back_populates='lesson_videos', uselist=False)

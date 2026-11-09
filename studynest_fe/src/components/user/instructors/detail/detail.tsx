@@ -1,7 +1,7 @@
 "use client";
 
 import api from "@/lib/utils/fetcher/client/axios";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import MarkdownRenderer from "@/components/shared/markdown-renderer";
 import { InstructorDetailData } from "@/types/user/instructor";
 import useSWR from "swr";
@@ -48,7 +48,7 @@ const InstructorDetail = ({ instructorId }: InstructorDetailProps) => {
       <div className="flex flex-col sm:flex-row items-start gap-6">
         <div className="relative">
           <img
-            src={getGoogleDriveImageUrl(data.avatar || "")}
+            src={getImageUrl(data.avatar || "")}
             alt={data.name}
             className="w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover ring-4 ring-green-100"
             onError={(e) => {

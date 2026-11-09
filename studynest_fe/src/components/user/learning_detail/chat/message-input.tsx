@@ -11,7 +11,7 @@ import {
 import api from "@/lib/utils/fetcher/client/axios";
 import { postChatStream } from "@/lib/utils/fetcher/client/chat-stream";
 import { ScopeSelector } from "./chat-chips";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import { ImagePreviewModal } from "@/components/ui/image-preview-modal";
 
 // ========== TYPES ==========
@@ -343,7 +343,7 @@ function MessageInput({
               <img
                 src={
                   img.previewUrl ||
-                  (img.data?.url ? getGoogleDriveImageUrl(img.data.url) : "")
+                  (img.data?.url ? getImageUrl(img.data.url) : "")
                 }
                 alt=""
                 className={`w-full h-full object-cover transition-opacity cursor-zoom-in ${
@@ -353,7 +353,7 @@ function MessageInput({
                   setViewingImage(
                     img.previewUrl ||
                       (img.data?.url
-                        ? getGoogleDriveImageUrl(img.data.url)
+                        ? getImageUrl(img.data.url)
                         : "")
                   )
                 }

@@ -20,7 +20,6 @@ from starlette.datastructures import UploadFile
 # ⚙️ CONFIG
 # ======================================================
 SCOPES: list[str] = [
-    "https://www.googleapis.com/auth/drive",
     "https://www.googleapis.com/auth/youtube.upload",
 ]
 

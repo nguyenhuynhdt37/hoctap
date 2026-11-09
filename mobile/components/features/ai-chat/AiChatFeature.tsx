@@ -15,7 +15,7 @@ import * as Haptics from 'expo-haptics'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useColorScheme } from 'nativewind'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { api } from '@/src/services/api'
+import { postChatStream } from '@/src/services/chat-stream'
 import { Text } from '@/components/ui'
 import { Screen } from '@/components/layout/Screen'
 import { MarkdownRenderer } from '@/components/editor/MarkdownRenderer'
@@ -41,6 +41,8 @@ export function AiChatFeature() {
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false)
   const scrollViewRef = useRef<ScrollView>(null)
   const inputRef = useRef<TextInput>(null)
+  const streamRef = useRef<AbortController | null>(null)
+  useEffect(() => () => { streamRef.current?.abort() }, [])
   const insets = useSafeAreaInsets()
   const { colorScheme } = useColorScheme()
   const isDark = colorScheme === 'dark'
@@ -71,7 +73,7 @@ export function AiChatFeature() {
         scrollViewRef.current?.scrollToEnd({ animated: true })
       }, 150)
     }
-  }, [messages.length, loading])
+  }, [messages, loading])
 
   // Track keyboard visibility to adjust spacing dynamic
   useEffect(() => {
@@ -108,7 +110,8 @@ export function AiChatFeature() {
       // Lưu lại danh sách tin nhắn cũ trước khi thêm tin nhắn mới để truyền cho history
       const prevMessages = messages
 
-      setMessages((prev) => [...prev, userMsg])
+      const assistantId = `ai-msg-${Date.now()}`
+      setMessages((prev) => [...prev, userMsg, { id: assistantId, role: 'assistant', content: '', timestamp: new Date() }])
       setInput('')
       setLoading(true)
 
@@ -116,23 +119,17 @@ export function AiChatFeature() {
         // Lấy tối đa 10 tin nhắn trước đó làm history
         const history = prevMessages.map((m) => m.content).slice(-10)
 
-        const res = await api.post<ChatSqlResponse>('/chat-sql/complete', {
-          question: text,
-          history,
-        })
-
-        const assistantMsg: ChatSqlMessage = {
-          id: `ai-msg-${Date.now()}`,
-          role: 'assistant',
-          content: res.data.response,
-          timestamp: new Date(),
-        }
-
+        streamRef.current = new AbortController()
+        let content = ''
+        const result = await postChatStream<ChatSqlResponse>('/chat-sql/complete', {
+          question: text, history,
+        }, (delta) => {
+          content += delta
+          setMessages((prev) => prev.map((msg) => msg.id === assistantId ? { ...msg, content } : msg))
+        }, streamRef.current.signal)
         setMessages((prev) => {
-          const next = [...prev, assistantMsg]
-          AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(next)).catch((e) =>
-            console.error('Failed to save chat history', e)
-          )
+          const next = prev.map((msg) => msg.id === assistantId ? { ...msg, content: result.response } : msg)
+          AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(next)).catch(console.error)
           return next
         })
 
@@ -152,7 +149,8 @@ export function AiChatFeature() {
         }
 
         setMessages((prev) => {
-          const next = [...prev, errorMsg]
+          const next = prev.map((msg) => msg.id === assistantId
+            ? { ...msg, content: (msg.content ? msg.content + '\n\n' : '') + errorMsg.content } : msg)
           AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(next)).catch((e) =>
             console.error('Failed to save chat history', e)
           )
@@ -167,6 +165,7 @@ export function AiChatFeature() {
 
   // Xóa lịch sử chat
   const clearChat = useCallback(async () => {
+    streamRef.current?.abort()
     setMessages([])
     setInput('')
     try {

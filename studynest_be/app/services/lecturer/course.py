@@ -30,9 +30,9 @@ from app.db.sesson import AsyncSessionLocal, get_session
 from app.libs.formats.datetime import now as get_now
 from app.libs.formats.datetime import now_tzinfo, to_utc_naive
 from app.schemas.lecturer.courses import CreateCourse, UpdateCourse
-from app.services.shares.google_driver import (
-    GoogleDriveAsyncService,
-    get_google_drive_service,
+from app.services.shares.file_storage import (
+    FileStorageService,
+    get_file_storage_service,
 )
 
 
@@ -40,11 +40,11 @@ class CourseService:
     def __init__(
         self,
         db: AsyncSession = Depends(get_session),
-        google_drive: GoogleDriveAsyncService = Depends(get_google_drive_service),
+        storage: FileStorageService = Depends(get_file_storage_service),
         embedding: EmbeddingService = Depends(get_embedding_service),
     ):
         self.db = db
-        self.google_drive = google_drive
+        self.storage = storage
         self.embedding = embedding
 
     # ======================================================
@@ -176,7 +176,7 @@ class CourseService:
 
     async def upload_thumbnail_async(self, course_id: str, file: UploadFile):
         """
-        ✅ Upload ảnh thumbnail lên Google Drive, lưu URL public vào DB
+        Upload ảnh thumbnail lên kho file đã cấu hình, lưu URL vào DB
         """
         try:
             # kiểm tra course tồn tại
@@ -184,10 +184,10 @@ class CourseService:
             if not course:
                 raise HTTPException(404, "Không tìm thấy khóa học")
 
-            filename = f"{uuid4().hex}_{file.filename}"
+            filename = file.filename or "thumbnail.png"
             content = await file.read()
 
-            uploaded = await self.google_drive.upload_file(
+            uploaded = await self.storage.upload_file(
                 path_parts=["courses", str(course_id), "thumbnails"],
                 file_name=filename,
                 content=content,
@@ -195,10 +195,9 @@ class CourseService:
 
             file_id = uploaded.get("id")
             if not file_id:
-                raise HTTPException(500, "Không nhận được file_id từ Google Drive API")
+                raise HTTPException(500, "Không nhận được ID từ kho file")
 
-            links = await self.google_drive.create_share_link(file_id)
-            view_link = links["view_link"]
+            view_link = uploaded["url"]
 
             await self.db.execute(
                 update(Courses)

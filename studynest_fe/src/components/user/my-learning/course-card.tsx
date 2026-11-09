@@ -1,7 +1,7 @@
 "use client";
 
 import { formatDate, formatDuration } from "@/lib/utils/helpers/date";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import type { CoursesMeItem, CoursesMeVariant } from "@/types/user/courses-me";
 import Link from "next/link";
 import { HiOutlineStar } from "react-icons/hi";
@@ -22,7 +22,7 @@ type CourseCardProps = {
 export const CourseCard = ({ course, variant }: CourseCardProps) => {
   const progress = Math.round(course.progress_percent || 0);
   const levelLabel = LEVEL_LABELS[course.level] || "Không xác định";
-  const thumbnailSrc = getGoogleDriveImageUrl(course.thumbnail_url || FALLBACK_THUMBNAIL);
+  const thumbnailSrc = getImageUrl(course.thumbnail_url || FALLBACK_THUMBNAIL);
 
   return (
     <Link

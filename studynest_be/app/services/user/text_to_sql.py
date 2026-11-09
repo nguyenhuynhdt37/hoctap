@@ -605,6 +605,7 @@ Nếu hợp lệ, trả về SQL trong block ```sql ... ``` và giải thích ng
         data: List[Dict[str, Any]],
         row_count: int,
         language: str = "vi",
+        on_delta=None,
     ) -> str:
         """
         Dùng LLM để format kết quả thành ngôn ngữ tự nhiên.
@@ -639,14 +640,22 @@ Lưu ý:
 """
 
         try:
-            response = await self.llm_service.call_model(
-                prompt=prompt,
-                mime_type="text/plain",
-                temperature=0.7,
-                max_output_tokens=1000,
-            )
+            if on_delta is not None:
+                chunks = []
+                async for chunk in self.llm_service.stream_model(
+                    prompt, mime_type="text/plain", temperature=0.7, max_output_tokens=1000
+                ):
+                    chunks.append(chunk)
+                    await on_delta(chunk)
+                response = "".join(chunks)
+            else:
+                response = await self.llm_service.call_model(
+                    prompt=prompt, mime_type="text/plain", temperature=0.7, max_output_tokens=1000
+                )
             return response.strip() if response else "Đã thực hiện truy vấn thành công."
         except Exception:
+            if on_delta is not None:
+                raise
             # Fallback: trả về kết quả đơn giản
             if row_count == 0:
                 return "Không tìm thấy dữ liệu nào phù hợp với yêu cầu."
@@ -665,6 +674,7 @@ Lưu ý:
         user_id: str = None,
         user_role: str = "student",
         history: List[str] = None,
+        on_delta=None,
     ) -> ChatSqlFullResult:
         """
         Pipeline đầy đủ:
@@ -682,7 +692,7 @@ Lưu ý:
         if not sql_result.success:
             # Trả về message thân thiện thay vì error kỹ thuật
             friendly_msg = await self._generate_friendly_error(
-                question, sql_result.error, prep.language
+                question, sql_result.error, prep.language, on_delta
             )
             return ChatSqlFullResult(
                 success=True,  # Vẫn success vì có response
@@ -692,7 +702,7 @@ Lưu ý:
         # Check DENIED
         if sql_result.sql and sql_result.sql.upper().startswith("DENIED"):
             friendly_msg = await self._generate_friendly_error(
-                question, sql_result.sql, prep.language
+                question, sql_result.sql, prep.language, on_delta
             )
             return ChatSqlFullResult(success=True, natural_response=friendly_msg)
 
@@ -702,7 +712,7 @@ Lưu ý:
         if not exec_result.success:
             # SQL syntax error - trả về message thân thiện
             friendly_msg = await self._generate_friendly_error(
-                question, exec_result.error, prep.language
+                question, exec_result.error, prep.language, on_delta
             )
             return ChatSqlFullResult(
                 success=True,
@@ -717,6 +727,7 @@ Lưu ý:
             data=exec_result.data,
             row_count=exec_result.row_count,
             language=prep.language,
+            on_delta=on_delta,
         )
 
         return ChatSqlFullResult(
@@ -729,7 +740,7 @@ Lưu ý:
         )
 
     async def _generate_friendly_error(
-        self, question: str, error: str, language: str = "vi"
+        self, question: str, error: str, language: str = "vi", on_delta=None
     ) -> str:
         """Sinh message thân thiện khi không thể xử lý câu hỏi."""
         prompt = f"""Bạn là trợ lý AI thân thiện. Người dùng đã hỏi một câu hỏi mà hệ thống không thể xử lý.
@@ -745,16 +756,24 @@ Hãy trả lời thân thiện bằng {"tiếng Việt" if language == "vi" else
 KHÔNG đề cập technical error hay SQL.
 """
         try:
-            response = await self.llm_service.call_model(
-                prompt=prompt,
-                mime_type="text/plain",
-                temperature=0.7,
-                max_output_tokens=300,
-            )
+            if on_delta is not None:
+                chunks = []
+                async for chunk in self.llm_service.stream_model(
+                    prompt, mime_type="text/plain", temperature=0.7, max_output_tokens=300
+                ):
+                    chunks.append(chunk)
+                    await on_delta(chunk)
+                response = "".join(chunks)
+            else:
+                response = await self.llm_service.call_model(
+                    prompt=prompt, mime_type="text/plain", temperature=0.7, max_output_tokens=300
+                )
             return (
                 response.strip() if response else self._default_error_message(language)
             )
         except Exception:
+            if on_delta is not None:
+                raise
             return self._default_error_message(language)
 
     def _default_error_message(self, language: str = "vi") -> str:

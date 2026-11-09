@@ -1,6 +1,6 @@
 "use client";
 
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import { showToast } from "@/lib/utils/helpers/toast";
 import { RefundDetailData } from "@/types/user/refund";
 import Image from "next/image";
@@ -94,10 +94,10 @@ export default function RefundRequestDetail({
   const statusInfo = statusMeta[data.refund.status] || statusMeta.requested;
 
   const courseThumbnail = data.course.thumbnail
-    ? getGoogleDriveImageUrl(data.course.thumbnail)
+    ? getImageUrl(data.course.thumbnail)
     : "";
   const instructorAvatar = data.instructor.avatar
-    ? getGoogleDriveImageUrl(data.instructor.avatar)
+    ? getImageUrl(data.instructor.avatar)
     : "";
 
   const timeline = useMemo(

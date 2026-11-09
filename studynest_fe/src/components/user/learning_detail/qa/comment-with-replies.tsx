@@ -1,6 +1,6 @@
 "use client";
 
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import { memo, useCallback, useEffect, useState } from "react";
 import { HiPencil, HiTrash } from "react-icons/hi";
 import { CommentItem, CommentResponse } from "@/types/user/comment";
@@ -236,7 +236,7 @@ export default memo(function CommentWithReplies({
         <div className="flex-shrink-0">
           {comment.user_avatar ? (
             <img
-              src={getGoogleDriveImageUrl(comment.user_avatar)}
+              src={getImageUrl(comment.user_avatar)}
               alt={comment.user_name}
               className="w-10 h-10 rounded-full object-cover"
             />
@@ -385,7 +385,7 @@ export default memo(function CommentWithReplies({
                         <div className="flex-shrink-0">
                           {reply.user_avatar ? (
                             <img
-                              src={getGoogleDriveImageUrl(reply.user_avatar)}
+                              src={getImageUrl(reply.user_avatar)}
                               alt={reply.user_name}
                               className="w-8 h-8 rounded-full object-cover"
                             />
@@ -531,7 +531,7 @@ export default memo(function CommentWithReplies({
                                       <div className="flex-shrink-0">
                                         {nestedReply.user_avatar ? (
                                           <img
-                                            src={getGoogleDriveImageUrl(nestedReply.user_avatar)}
+                                            src={getImageUrl(nestedReply.user_avatar)}
                                             alt={nestedReply.user_name}
                                             className="w-7 h-7 rounded-full object-cover"
                                           />

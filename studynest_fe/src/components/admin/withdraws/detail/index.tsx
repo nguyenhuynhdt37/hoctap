@@ -1,7 +1,7 @@
 "use client";
 
 import api from "@/lib/utils/fetcher/client/axios";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import { showToast } from "@/lib/utils/helpers/toast";
 import type { AdminWithdrawDetail } from "@/types/admin/withdraw";
 import { useRouter } from "next/navigation";
@@ -235,7 +235,7 @@ export default function AdminWithdrawDetail({ data }: Props) {
               <div className="flex items-center gap-4">
                 {data.lecturer.avatar ? (
                   <img
-                    src={getGoogleDriveImageUrl(data.lecturer.avatar)}
+                    src={getImageUrl(data.lecturer.avatar)}
                     alt={data.lecturer.fullname}
                     className="rounded-full w-14 h-14 object-cover shrink-0"
                   />

@@ -1,7 +1,7 @@
 "use client";
 
 import api from "@/lib/utils/fetcher/client/axios";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import useSWR from "swr";
 import { HiBadgeCheck, HiBookOpen, HiUsers, HiStar } from "react-icons/hi";
 import { useRouter } from "next/navigation";
@@ -67,7 +67,7 @@ const InstructorsSection = () => {
                   <div className="relative mb-4 inline-block">
                     <div className="w-20 h-20 rounded-full ring-4 ring-[#E8F2FA] group-hover:ring-[#BFD7ED] transition-all duration-200 overflow-hidden bg-[#E8F2FA]">
                       <img
-                        src={getGoogleDriveImageUrl(instructor.avatar || "")}
+                        src={getImageUrl(instructor.avatar || "")}
                         alt={instructor.name}
                         className="w-full h-full object-cover"
                         onError={(e) => {

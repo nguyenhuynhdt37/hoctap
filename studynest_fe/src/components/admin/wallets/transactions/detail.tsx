@@ -1,5 +1,5 @@
 import { formatDate } from "@/lib/utils/helpers/date";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import type { PlatformWalletHistoryDetail } from "@/types/admin/platform-wallet";
 
 const currency = new Intl.NumberFormat("vi-VN", {
@@ -151,7 +151,7 @@ export default function WalletTxnDetail({
                       {c.thumbnail_url ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
-                          src={getGoogleDriveImageUrl(c.thumbnail_url)}
+                          src={getImageUrl(c.thumbnail_url)}
                           alt={c.title}
                           className="w-full h-full object-cover"
                         />

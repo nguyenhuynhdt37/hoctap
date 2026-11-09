@@ -9,10 +9,11 @@ class ChatImageSchema(BaseModel):
     file_size: int = 0
     mime_type: Optional[str] = None
     ocr_text: str = ""
-    drive_id: Optional[str] = None
+    storage_id: Optional[str] = None
 
 
 class SendMessageSchema(BaseModel):
     message: str
     thread_id: Optional[UUID] = None
     images: Optional[List[ChatImageSchema]] = None
+    stream: bool = False

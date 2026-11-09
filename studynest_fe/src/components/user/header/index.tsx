@@ -1,7 +1,7 @@
 "use client";
 
 import api from "@/lib/utils/fetcher/client/axios";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import { useRealtimeNotiStore } from "@/stores/notifications";
 import { useUserStore } from "@/stores/user";
 import { Category } from "@/types/user/category";
@@ -186,7 +186,7 @@ const Header = () => {
                       >
                         {user.avatar ? (
                           <img
-                            src={getGoogleDriveImageUrl(user.avatar)}
+                            src={getImageUrl(user.avatar)}
                             alt={user.fullname || "User Avatar"}
                             className="w-9 h-9 rounded-full object-cover border border-[#BFD7ED]"
                             onError={(e) => {
@@ -219,7 +219,7 @@ const Header = () => {
                             {user.avatar ? (
                               <div className="relative">
                                 <img
-                                  src={getGoogleDriveImageUrl(user.avatar)}
+                                  src={getImageUrl(user.avatar)}
                                   alt={user.fullname || "User Avatar"}
                                   className="w-12 h-12 rounded-full object-cover ring-2 ring-[#BFD7ED]"
                                   onError={(e) => {

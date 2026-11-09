@@ -14,6 +14,7 @@ from typing import List, Literal, Optional
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
+from app.core.chat_stream import chat_stream_response
 from app.core.deps import AuthorizationService
 from app.db.models.database import User
 from app.services.user.message_classifier import (
@@ -291,6 +292,8 @@ async def classify_question(
 
 
 class ChatCompleteRequest(BaseModel):
+    stream: bool = False
+
     """Request cho full pipeline."""
 
     question: str = Field(
@@ -307,12 +310,12 @@ class ChatCompleteResponse(BaseModel):
     response: str = Field(description="Câu trả lời bằng ngôn ngữ tự nhiên")
 
 
-@router.post("/complete", response_model=ChatCompleteResponse)
-async def chat_complete(
+async def _complete_chat(
     body: ChatCompleteRequest,
-    service: TextToSqlService = Depends(get_text_to_sql_service),
-    classifier: MessageClassifierService = Depends(get_message_classifier_service),
-    auth: AuthorizationService = Depends(AuthorizationService),
+    service: TextToSqlService,
+    classifier: MessageClassifierService,
+    user: User,
+    on_delta=None,
 ):
     """
     **Chat Bot**: Hỏi đáp về dữ liệu bằng ngôn ngữ tự nhiên.
@@ -325,7 +328,6 @@ async def chat_complete(
     - "Có bao nhiêu khóa học của tôi?" → "Bạn hiện có 5 khóa học."
     - "Xin chào" → "Xin chào! Tôi có thể giúp gì cho bạn?"
     """
-    user: User = await auth.get_current_user()
 
     # Chuẩn bị chat history cho classifier
     chat_history = None
@@ -352,6 +354,8 @@ async def chat_complete(
         else:
             message = GREETING_RESPONSES.get(lang, GREETING_RESPONSES["vi"])
 
+        if on_delta is not None:
+            await on_delta(message)
         return ChatCompleteResponse(response=message)
 
     # Determine user role
@@ -372,8 +376,25 @@ async def chat_complete(
         user_id=str(user.id),
         user_role=user_role,
         history=body.history,
+        on_delta=on_delta,
     )
 
     return ChatCompleteResponse(
         response=result.natural_response or "Xin lỗi, tôi không thể xử lý câu hỏi này."
     )
+
+
+@router.post("/complete", response_model=ChatCompleteResponse)
+async def chat_complete(
+    body: ChatCompleteRequest,
+    service: TextToSqlService = Depends(get_text_to_sql_service),
+    classifier: MessageClassifierService = Depends(get_message_classifier_service),
+    auth: AuthorizationService = Depends(AuthorizationService),
+):
+    user = await auth.get_current_user()
+    if body.stream:
+        async def work(on_delta):
+            result = await _complete_chat(body, service, classifier, user, on_delta)
+            return result.model_dump()
+        return chat_stream_response(work)
+    return await _complete_chat(body, service, classifier, user)

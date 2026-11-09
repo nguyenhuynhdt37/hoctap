@@ -2,6 +2,7 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios'
 import * as SecureStore from 'expo-secure-store'
 import { Platform } from 'react-native'
 import { queryClient } from '@/src/lib/query-client'
+import { normalizeStorageUrls } from './storage-urls'
 
 export const BASE_URL =
   process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8000/api/v1'
@@ -10,6 +11,13 @@ export const api = axios.create({
   baseURL: BASE_URL,
   headers: { 'Content-Type': 'application/json' },
   timeout: 15_000,
+})
+
+api.interceptors.response.use(response => {
+  if (String(response.headers['content-type'] ?? '').includes('application/json')) {
+    response.data = normalizeStorageUrls(response.data, BASE_URL)
+  }
+  return response
 })
 
 // ── Request: inject access_token ─────────────────────────────────────────────

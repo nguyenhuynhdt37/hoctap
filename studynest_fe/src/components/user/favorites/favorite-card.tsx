@@ -1,7 +1,7 @@
 "use client";
 
 import { formatDate } from "@/lib/utils/helpers/date";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import type { FavouriteCourseItem } from "@/types/user/favourites";
 import Link from "next/link";
 import { HiOutlineHeart, HiOutlineStar } from "react-icons/hi";
@@ -20,7 +20,7 @@ type FavoriteCardProps = {
 
 export const FavoriteCard = ({ course }: FavoriteCardProps) => {
   const levelLabel = LEVEL_LABELS[course.level] || "Không xác định";
-  const thumbnailSrc = getGoogleDriveImageUrl(course.thumbnail_url || FALLBACK_THUMBNAIL);
+  const thumbnailSrc = getImageUrl(course.thumbnail_url || FALLBACK_THUMBNAIL);
 
   return (
     <Link

@@ -23,3 +23,7 @@ class UpdateSettingsSchema(BaseModel):
     rag_max_chunks: Optional[int] = Field(None, ge=1, le=200)
     max_login_attempts: Optional[int] = Field(None, ge=1, le=50)
     lock_time_minutes: Optional[int] = Field(None, ge=1, le=600)
+
+
+class UpdateAISettingsSchema(BaseModel):
+    model: str = Field(min_length=1, max_length=200, pattern=r"^\S+$")

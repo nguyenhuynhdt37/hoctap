@@ -1,7 +1,7 @@
 "use client";
 
 import api from "@/lib/utils/fetcher/client/axios";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import { useUserStore } from "@/stores/user";
 import { RecommendedItem, RecommendedResponse } from "@/types/user/course";
 import useSWR from "swr";
@@ -42,7 +42,7 @@ const RecommendedCourseCard = ({ course }: { course: RecommendedItem }) => {
       <div className="w-full md:w-[38rem] flex-shrink-0 h-full relative overflow-hidden bg-[#E8F2FA]">
         <div className="absolute inset-0 bg-gradient-to-t from-[#3D4A5A]/25 via-transparent to-transparent z-10" />
         <img
-          src={getGoogleDriveImageUrl(course.thumbnail || "")}
+          src={getImageUrl(course.thumbnail || "")}
           alt={course.title}
           className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
           onError={(e) => {
@@ -73,7 +73,7 @@ const RecommendedCourseCard = ({ course }: { course: RecommendedItem }) => {
               {course.instructor.avatar && (
                 <div className="relative">
                   <img
-                    src={getGoogleDriveImageUrl(course.instructor.avatar)}
+                    src={getImageUrl(course.instructor.avatar)}
                     alt={course.instructor.name}
                     className="w-10 h-10 md:w-11 md:h-11 rounded-full object-cover ring-2 ring-[#E8F2FA] group-hover:ring-[#BFD7ED] transition-all"
                     onError={(e) => {

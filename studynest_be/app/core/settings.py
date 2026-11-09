@@ -1,4 +1,7 @@
 # app/core/settings.py
+from pathlib import Path
+from typing import Literal
+
 from pydantic_settings import BaseSettings
 
 
@@ -13,6 +16,27 @@ class Settings(BaseSettings):
 
     # google key
     GOOGLE_API_KEY: str = ""
+
+    # Chat provider: gemini or 9router (OpenAI-compatible API)
+    LLM_PROVIDER: str = "gemini"
+    NINEROUTER_BASE_URL: str = "https://9router.itup.io.vn/v1"
+    NINEROUTER_API_KEY: str = ""
+    NINEROUTER_MODEL: str = "gemini"
+    NINEROUTER_AUTO_MODEL: str = "mixed"
+    NINEROUTER_TIMEOUT_SECONDS: float = 120.0
+    NINEROUTER_STREAM: bool = True
+    EMBEDDING_PROVIDER: str = "gemini"
+    EMBEDDING_MODEL: str = "gemini-embedding-001"
+    EMBEDDING_DIMENSIONS: int = 1536
+
+    # Upload storage: R2 only.
+    STORAGE_PROVIDER: Literal["r2"] = "r2"
+    R2_ACCOUNT_ID: str = ""
+    R2_ACCESS_KEY_ID: str = ""
+    R2_SECRET_ACCESS_KEY: str = ""
+    R2_BUCKET_NAME: str = ""
+    R2_SIGNED_URL_TTL_SECONDS: int = 300
+    STORAGE_MAX_UPLOAD_BYTES: int = 2 * 1024 * 1024 * 1024
 
     # JWT
     SECRET_KEY: str = ""
@@ -34,8 +58,6 @@ class Settings(BaseSettings):
     CLIENT_SECRET: str = ""
     GRAPH_BASE: str = ""
 
-    GOOGLE_ROOT_FOLDER_ID: str = ""
-    GOOGLE_CREDENTIALS_PATH: str = ""
     GOOGLE_API_KEY_CHAT: str = ""
     GOOGLE_API_CLIENT_ID_LOGIN_GOOGLE: str = ""
     GOOGLE_API_SECRET_ID_LOGIN_GOOGLE: str = ""
@@ -58,7 +80,7 @@ class Settings(BaseSettings):
     PRESENCE_TTL_SECONDS: int = 90
 
     class Config:
-        env_file = ".env"
+        env_file = str(Path(__file__).resolve().parents[2] / ".env")
         extra = "ignore"  # tránh crash nếu .env có key dư
 
 

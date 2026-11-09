@@ -2,7 +2,7 @@
 
 import api from "@/lib/utils/fetcher/client/axios";
 import { RevenueByCourseResponse } from "@/types/admin/statistics";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import { HiPhotograph } from "react-icons/hi";
 import useSWR from "swr";
 
@@ -86,7 +86,7 @@ export default function RevenueByCourse() {
               <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
                 {item.thumbnail ? (
                   <img
-                    src={getGoogleDriveImageUrl(item.thumbnail)}
+                    src={getImageUrl(item.thumbnail)}
                     alt={item.title}
                     className="w-full h-full object-cover"
                   />

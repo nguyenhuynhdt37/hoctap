@@ -46,9 +46,9 @@ from app.schemas.lecturer.lesson import (
     UpdateLessonVideoSchema,
 )
 from app.services.shares.code_runner import PistonService
-from app.services.shares.google_driver import (
-    GoogleDriveAsyncService,
-    get_google_drive_service,
+from app.services.shares.file_storage import (
+    FileStorageService,
+    get_file_storage_service,
 )
 from app.services.shares.OCR_service import OCRService, get_ocr_service
 from app.services.shares.transcript_service import YoutubeTranscriptService
@@ -63,13 +63,13 @@ class LessonService:
     def __init__(
         self,
         db: AsyncSession = Depends(get_session),
-        google_drive: GoogleDriveAsyncService = Depends(get_google_drive_service),
+        storage: FileStorageService = Depends(get_file_storage_service),
         embedding: EmbeddingService = Depends(get_embedding_service),
         youtube: YouTubeAsyncService = Depends(get_youtube_service),
         piston: PistonService = Depends(PistonService),
     ):
         self.db: AsyncSession = db
-        self.google_drive: GoogleDriveAsyncService = google_drive
+        self.storage: FileStorageService = storage
         self.embedding: EmbeddingService = embedding
         self.youtube: YouTubeAsyncService = youtube
         self.piston: PistonService = piston
@@ -588,10 +588,10 @@ class LessonService:
         if files:
             for file in files:
                 content = await file.read()
-                filename = f"{uuid.uuid4().hex}_{file.filename}"
+                filename = file.filename or "resource"
                 content_type = file.content_type or "application/octet-stream"
 
-                uploaded = await self.google_drive.upload_file(
+                uploaded = await self.storage.upload_file(
                     path_parts=[
                         "courses",
                         str(lesson.course_id),
@@ -604,11 +604,7 @@ class LessonService:
                     mime_type=content_type,
                 )
 
-                file_id = uploaded.get("id")
-                web_link = (
-                    uploaded.get("webViewLink")
-                    or f"https://drive.google.com/file/d/{file_id}/view"
-                )
+                web_link = uploaded["url"]
 
                 resource = LessonResources(
                     id=uuid.uuid4(),
@@ -807,7 +803,7 @@ class LessonService:
         for file in files:
             try:
                 content = await file.read()
-                filename = f"{uuid.uuid4().hex}_{file.filename}"
+                filename = file.filename or "resource"
                 content_type = file.content_type or "application/octet-stream"
 
                 # Nhận diện loại file (zip/rar/7z)
@@ -817,7 +813,7 @@ class LessonService:
                 else:
                     resource_type = "file"
 
-                uploaded = await self.google_drive.upload_file(
+                uploaded = await self.storage.upload_file(
                     path_parts=[
                         "courses",
                         str(lesson.course_id),
@@ -830,11 +826,7 @@ class LessonService:
                     mime_type=content_type,
                 )
 
-                file_id = uploaded.get("id")
-                web_link = (
-                    uploaded.get("webViewLink")
-                    or f"https://drive.google.com/file/d/{file_id}/view"
-                )
+                web_link = uploaded["url"]
 
                 resource = LessonResources(
                     id=uuid.uuid4(),

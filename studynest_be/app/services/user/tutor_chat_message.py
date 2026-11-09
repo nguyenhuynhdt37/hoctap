@@ -6,13 +6,14 @@ TutorChatMessageService - Xử lý chat messages.
 - lesson_id: ID bài học
 - message: Nội dung tin nhắn
 
-Tạm thời chỉ nhận input và trả về response mẫu để test API.
+Truy xuất tài liệu theo phạm vi bài học và giữ lịch sử hội thoại.
 """
 
 import uuid
 from typing import Any, Dict, List, Optional
 
 from fastapi import Depends, HTTPException, UploadFile
+from loguru import logger
 from sqlalchemy import and_, desc, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -27,14 +28,15 @@ from app.db.models.database import (
 )
 from app.db.sesson import get_session
 from app.schemas.chat.user.tutor_chat import ChatImageSchema
-from app.services.shares.google_driver import (
-    GoogleDriveAsyncService,
-    get_google_drive_service,
+from app.services.shares.file_storage import (
+    FileStorageService,
+    get_file_storage_service,
 )
 from app.services.shares.OCR_service import OCRService, get_ocr_service
 from app.services.user.message_classifier import (
     MessageClassifierService,
     get_message_classifier_service,
+    is_casual_message,
 )
 from app.services.user.tutor_chat import TutorChatService, get_tutor_chat_service
 
@@ -49,14 +51,14 @@ class TutorChatMessageService:
         classifier_service: MessageClassifierService = Depends(
             get_message_classifier_service
         ),
-        drive_service: GoogleDriveAsyncService = Depends(get_google_drive_service),
-        ocr_service: OCRService = Depends(get_ocr_service),
+        storage_service: Optional[FileStorageService] = None,
+        ocr_service: Optional[OCRService] = None,
         embedding_service: EmbeddingService = Depends(get_embedding_service),
     ):
         self.db = db
         self.thread_service = thread_service
         self.classifier_service = classifier_service
-        self.drive_service = drive_service
+        self.storage_service = storage_service
         self.ocr_service = ocr_service
         self.embedding_service = embedding_service
 
@@ -70,6 +72,12 @@ class TutorChatMessageService:
         Trả về list metadata để client gửi kèm message.
         """
         results = []
+        # Plain text chat and message history do not require upload or OCR services.
+        # Resolve these services only for an actual image upload.
+        if self.storage_service is None:
+            self.storage_service = get_file_storage_service()
+        if self.ocr_service is None:
+            self.ocr_service = get_ocr_service()
         for file in files:
             # Validate
             if not file.content_type.startswith("image/"):
@@ -77,19 +85,17 @@ class TutorChatMessageService:
 
             content = await file.read()
             file_size = len(content)
-            filename = f"{uuid.uuid4()}_{file.filename}"
+            filename = file.filename or "chat-image.png"
 
-            # 1. Upload Google Drive
-            upload_res = await self.drive_service.upload_file(
+            # 1. Upload to R2
+            upload_res = await self.storage_service.upload_file(
                 path_parts=["tutor_chat", str(user_id)],
                 file_name=filename,
                 content=content,
                 mime_type=file.content_type,
             )
 
-            # Share public
-            await self.drive_service.create_share_link(upload_res["id"])
-            url = upload_res["webViewLink"]
+            url = upload_res["url"]
 
             # 2. OCR
             try:
@@ -103,7 +109,7 @@ class TutorChatMessageService:
                     "file_size": file_size,
                     "mime_type": file.content_type,
                     "ocr_text": ocr_text,
-                    "drive_id": upload_res["id"],
+                    "storage_id": upload_res["id"],
                 }
             )
         return results
@@ -115,6 +121,7 @@ class TutorChatMessageService:
         message: str,
         thread_id: Optional[uuid.UUID] = None,
         images: Optional[List[ChatImageSchema]] = None,
+        on_delta=None,
     ) -> Dict[str, Any]:
         """
         Gửi tin nhắn chat.
@@ -139,6 +146,8 @@ class TutorChatMessageService:
             thread_data = await self.thread_service.get_thread_by_id(user_id, thread_id)
             if not thread_data:
                 raise HTTPException(status_code=404, detail="Thread not found")
+            if thread_data["lesson_id"] != str(lesson_id):
+                raise HTTPException(status_code=400, detail="Thread does not belong to this lesson")
         else:
             # Lấy hoặc tạo active thread cho lesson
             result = await self.thread_service.get_or_create_active_thread(
@@ -148,13 +157,27 @@ class TutorChatMessageService:
             thread_data = result["thread"]
             thread_id = uuid.UUID(thread_data["id"])
 
-        # 1.5 Fetch last 4 messages for context (with images)
+        lesson_info = await self.thread_service.validate_lesson_access(user_id, lesson_id)
+        lesson, course = lesson_info["lesson"], lesson_info["course"]
+        lesson_context = {
+            "lesson_title": lesson.title,
+            "course_title": course.title,
+            "description": lesson.description or "",
+            "outcomes": lesson.outcomes or [],
+            "scope": thread_data.get("scope", "lesson"),
+        }
+
+        # Retain six turns, including OCR, without mixing different lesson threads.
         history_result = await self.db.execute(
             select(TutorChatMessages)
             .options(selectinload(TutorChatMessages.tutor_chat_images))
             .where(TutorChatMessages.thread_id == thread_id)
-            .order_by(desc(TutorChatMessages.created_at))
-            .limit(4)
+            .order_by(
+                desc(TutorChatMessages.created_at),
+                TutorChatMessages.role.asc(),  # Both messages can share a transaction timestamp.
+                desc(TutorChatMessages.id),
+            )
+            .limit(12)
         )
         history_messages = history_result.scalars().all()
         # Reverse to chronological order for context
@@ -187,11 +210,6 @@ class TutorChatMessageService:
                     "is_latest": is_latest,
                 }
             )
-
-        # Get latest sources from history
-        latest_sources = next(
-            (msg.sources for msg in reversed(history_messages) if msg.sources), None
-        )
 
         # 2. Save User Message to DB immediately
         user_msg = TutorChatMessages(
@@ -239,7 +257,7 @@ class TutorChatMessageService:
             full_message += f"\n\n{image_context}"
 
         # 5. Classify intent
-        has_prev_context = bool(latest_sources)  # If we have sources from previous chat
+        has_prev_context = bool(history_messages)
 
         # Format history for classifier (List[Dict])
         chat_history_dicts = [
@@ -252,31 +270,24 @@ class TutorChatMessageService:
             has_prev_context=has_prev_context,
         )
         mode = classify_result["mode"]
-        print(f"DEBUG: Mode={mode}, has_prev_context={has_prev_context}")
 
         # 6. Execute based on Mode
         sources = []
-        response_content = ""
 
-        if mode == "NO_SEARCH":
-            # Case 1: Small talk / No context needed
-            sources = []
-
-        elif mode == "REUSE":
-            # Case 2: Reuse previous context
-            sources = latest_sources or []
-
-        else:  # SEARCH
-            # Case 3: RAG Search
-            print("DEBUG: Executing RAG Search...")
-            thread_scope = thread_data.get("scope", "lesson")
+        if is_casual_message(full_message):
+            mode = "NO_SEARCH"
+        else:
+            # Stored citations contain summaries, not the original lesson text.
+            # Retrieve real passages again for follow-ups instead of reusing them.
+            search_query = self._build_search_query(full_message, context, lesson.title, mode)
+            mode = "SEARCH"
             sources = await self._rag_search(
-                query=full_message,
+                query=search_query,
                 lesson_id=lesson_id,
-                scope=thread_scope,
+                scope=lesson_context["scope"],
                 user_id=user_id,
             )
-            print(f"DEBUG: Found {len(sources)} sources")
+        logger.info("Tutor retrieval lesson={} mode={} scope={} sources={}", lesson_id, mode, lesson_context["scope"], len(sources))
 
         # Build prompt và gọi LLM
         prompt = self._build_prompt(
@@ -284,19 +295,38 @@ class TutorChatMessageService:
             context=context,
             sources=sources,
             mode=mode,
+            lesson_context=lesson_context,
         )
 
         # Gọi LLM
-        print("DEBUG: Calling LLM...")
-        llm_response = await self._call_llm(prompt)
-        print("DEBUG: LLM response received")
+        if on_delta is None:
+            llm_response = await self._call_llm(prompt)
+        else:
+            from app.core.chat_stream import partial_json_content
+            from app.core.llm import LLMService
+
+            llm_response = ""
+            visible = ""
+            async for chunk in LLMService().stream_model(
+                prompt, mime_type="application/json", temperature=0.7, max_output_tokens=4000
+            ):
+                llm_response += chunk
+                content = partial_json_content(llm_response)
+                if content.startswith(visible) and len(content) > len(visible):
+                    await on_delta(content[len(visible):])
+                    visible = content
 
         # Parse JSON response
         import json
 
+        llm_response = llm_response.strip()
+        if llm_response.startswith("```") and llm_response.endswith("```"):
+            llm_response = llm_response.split("\n", 1)[1].rsplit("```", 1)[0].strip()
         try:
             result = json.loads(llm_response)
         except json.JSONDecodeError:
+            if on_delta is not None:
+                raise ValueError("Tutor returned incomplete JSON") from None
             # Fallback nếu LLM không trả đúng JSON
             result = {
                 "title": "Câu hỏi mới",
@@ -304,10 +334,16 @@ class TutorChatMessageService:
                 "sources_used": [],
             }
 
+        if on_delta is not None and (
+            not isinstance(result, dict) or not isinstance(result.get("content"), str)
+            or not isinstance(result.get("sources_used", []), list)
+        ):
+            raise ValueError("Tutor returned an invalid response structure")
+
         # Chuẩn hóa kết quả
         bot_title = result.get("title", "Câu hỏi mới")
         bot_content = result.get("content", "")
-        sources_used = result.get("sources_used", [])
+        sources_used = self._ground_sources(result.get("sources_used", []), sources)
 
         # 5. Lưu tin nhắn của bot vào DB
         assistant_msg = TutorChatMessages(
@@ -599,7 +635,7 @@ class TutorChatMessageService:
 
         else:
             # Video/Article: Dùng embedding search như cũ
-            embedding = await self.embedding_service.embed_google_normalized(query)
+            embedding = await self.embedding_service.embed_query(query)
             embedding_str = str(embedding)
 
             stmt = text(
@@ -647,7 +683,7 @@ class TutorChatMessageService:
 
             if has_resources.scalar_one_or_none():
                 # Tìm resource chunks bằng embedding
-                embedding = await self.embedding_service.embed_google_normalized(query)
+                embedding = await self.embedding_service.embed_query(query)
                 embedding_str = str(embedding)
 
                 resource_stmt = text(
@@ -661,12 +697,12 @@ class TutorChatMessageService:
                         r.id as resource_id,
                         r.title as resource_title,
                         r.url as resource_url,
-                        1 - (rc.embedding <=> :embedding::vector) as similarity
+                        1 - (rc.embedding <=> CAST(:embedding AS vector)) as similarity
                     FROM public.resource_chunks rc
                     JOIN public.lesson_resources r ON rc.resource_id = r.id
                     JOIN public.lessons l ON rc.lesson_id = l.id
                     WHERE rc.lesson_id = :lesson_id
-                    AND 1 - (rc.embedding <=> :embedding::vector) >= 0.7
+                    AND 1 - (rc.embedding <=> CAST(:embedding AS vector)) >= 0.7
                     ORDER BY similarity DESC
                     LIMIT 2
                 """
@@ -694,12 +730,51 @@ class TutorChatMessageService:
 
         return results
 
+    @staticmethod
+    def _build_search_query(message, context, lesson_title, mode):
+        parts = [f"Bài học: {lesson_title}"]
+        if mode == "REUSE":
+            previous = [msg["content"] for msg in context
+                        if msg["role"] == "user" and not is_casual_message(msg["content"])]
+            parts.extend(previous[-2:])
+        parts.append(message)
+        return "\n".join(part[:1500] for part in parts)
+
+    @staticmethod
+    def _ground_sources(citations, sources):
+        """Only return citations that match actual retrieved passages."""
+        if not isinstance(citations, list):
+            return []
+        available = {str(src["chunk_id"]): src for src in sources if src.get("chunk_id")}
+        grounded = []
+        seen = set()
+        for citation in citations:
+            if not isinstance(citation, dict):
+                continue
+            key = str(citation.get("chunk_id") or citation.get("code_id") or citation.get("quiz_id") or "")
+            if key not in available or key in seen:
+                continue
+            seen.add(key)
+            src = available[key]
+            item = {k: v for k, v in src.items() if k != "content"}
+            item["source_type"] = "video" if src["source_type"] == "lesson" else src["source_type"]
+            item["index"] = len(grounded) + 1
+            item["summary"] = str(citation.get("summary", ""))[:600]
+            if item["source_type"] in {"code", "quiz"}:
+                item[item["source_type"] + "_id"] = key
+            timestamp = citation.get("timestamp_seconds")
+            if isinstance(timestamp, (int, float)) and timestamp >= 0:
+                item["timestamp_seconds"] = timestamp
+            grounded.append(item)
+        return grounded
+
     def _build_prompt(
         self,
         user_message: str,
         context: List[Dict[str, Any]],
         sources: List[Dict[str, Any]],
         mode: str,
+        lesson_context: Optional[Dict[str, Any]] = None,
     ) -> str:
         """
         Xây dựng prompt cho LLM dựa trên context, sources và mode.
@@ -711,7 +786,7 @@ class TutorChatMessageService:
             # NGUYÊN TẮC TRẢ LỜI
             1. **Chính xác**: Chỉ trả lời dựa trên tài liệu được cung cấp. Nếu không có thông tin, nói rõ.
             2. **Dễ hiểu**: Giải thích từng bước, sử dụng ví dụ cụ thể và minh họa khi cần.
-            3. **Thực tiễn**: Đưa ra code mẫu, bài tập thực hành khi phù hợp.
+            3. **Đúng chủ đề**: Bám sát bài học và khóa học hiện tại; không mặc định mọi môn đều là lập trình.
             4. **Khuyến khích**: Động viên học viên, gợi ý hướng đi tiếp theo.
             5. **Ngôn ngữ**: Trả lời bằng tiếng Việt, thân thiện nhưng chuyên nghiệp.
 
@@ -722,12 +797,26 @@ class TutorChatMessageService:
             - Bold/italic để nhấn mạnh điểm quan trọng.
             """
 
+        if lesson_context:
+            import json
+
+            prompt += "\n# NGỮ CẢNH BÀI HỌC HIỆN TẠI\n"
+            prompt += json.dumps(lesson_context, ensure_ascii=False)
+            prompt += """
+Đây là bài học học viên đang mở, kể cả khi họ chỉ nói 'hi'. Không hỏi lại họ đang học chủ đề gì.
+Chào hỏi: trả lời ngắn 1–2 câu, nhắc đúng bài học, không liệt kê tính năng hay tự giới thiệu dài dòng.
+Nếu đã chào trong lịch sử, chỉ đáp ngắn và tiếp nối, không bắt đầu lại buổi học.
+Tên/mô tả bài học chỉ là thông tin định hướng, không phải bằng chứng cho nội dung chi tiết của video.
+Khi người học hỏi 'ý đó', 'phần đó', hãy hiểu theo cuộc hội thoại, không đổi chủ đề.
+Nếu không có đoạn tài liệu phù hợp, nói rõ chưa tìm được; không bịa nội dung hay nguồn tham khảo.
+"""
+
         # Add context từ lịch sử chat
         if context:
             prompt += "\n---\n# LỊCH SỬ HỘI THOẠI\n"
-            for msg in context[-4:]:
+            for msg in context[-12:]:
                 role = "👤 Học viên" if msg["role"] == "user" else "🤖 Tutor AI"
-                content = msg["content"][:600]
+                content = msg["content"][:2000]
                 prompt += f"\n{role}:\n{content}\n"
 
         # Add sources từ RAG
@@ -785,7 +874,8 @@ class TutorChatMessageService:
             prompt += """
             ---
             # CHÚ Ý
-            Đây là câu hỏi chung, không cần tham khảo tài liệu cụ thể.
+            Đây là lời xã giao. Vẫn bám vào ngữ cảnh bài học hiện tại và lịch sử chat.
+            Không cần truy xuất embedding cho riêng lời chào. Trả sources_used là [].
             """
 
         # Add user message
@@ -811,8 +901,8 @@ class TutorChatMessageService:
                         "lesson_title": "Tên bài học",
                         "summary": "Tóm tắt ngắn gọn nội dung đoạn này (20-30 từ)",
                         "similarity": 1,
-                        "chunk_index": 0 | None,
-                        "timestamp_seconds": 0 | None,
+                        "chunk_index": 0,
+                        "timestamp_seconds": 0
                     }},
                     {{
                         "index": 2,
@@ -822,7 +912,7 @@ class TutorChatMessageService:
                         "resource_title": "Tên tài liệu",
                         "summary": "Tóm tắt ngắn gọn nội dung đoạn này (20-30 từ)",
                         "resource_url": "URL tài liệu",
-                        "similarity": 0.75,
+                        "similarity": 0.75
                     }},
                     {{
                         "index": 3,
@@ -832,7 +922,7 @@ class TutorChatMessageService:
                         "lesson_title": "Tên bài học",
                         "summary": "Tóm tắt ngắn gọn nội dung đoạn này (20-30 từ)",
                         "code_content": "Nội dung code",
-                        "similarity": 0.75,
+                        "similarity": 0.75
                     }},
                     {{
                         "index": 4,
@@ -844,7 +934,7 @@ class TutorChatMessageService:
                         "summary": "Tóm tắt ngắn gọn nội dung đoạn này (20-30 từ)",
                         "similarity": 0.73,
                         "quizz_option_title": "Tên option",
-                        "quizz_option_content": "Nội dung option",
+                        "quizz_option_content": "Nội dung option"
                     }}
                 ]
             }}
@@ -853,7 +943,7 @@ class TutorChatMessageService:
             Lưu ý quan trọng:
             - "title": Tiêu đề ngắn gọn, súc tích mô tả nội dung câu hỏi
             - "content": Trả lời đầy đủ, dễ hiểu, có ví dụ minh họa
-            - "sources_used": Chỉ liệt kê các tài liệu THỰC SỰ được dùng để trả lời
+            - "sources_used": Chỉ liệt kê các tài liệu THỰC SỰ được dùng để trả lời. Khi giải thích dựa trên tài liệu, phải dẫn nguồn đã dùng; không chép các ví dụ nguồn bên trên. Nếu không dùng tài liệu thì trả [].
               + "summary": Tóm tắt nội dung chính của đoạn này (ví dụ: "Giới thiệu JavaScript và lịch sử ra đời")
               + Với source_type="video": Lấy timestamp_seconds từ nội dung (ví dụ: `00:15` = 15, `01:20` = 80)
               + Với source_type="code": Không cần timestamp_seconds
@@ -889,15 +979,11 @@ def get_tutor_chat_message_service(
     classifier_service: MessageClassifierService = Depends(
         get_message_classifier_service
     ),
-    drive_service: GoogleDriveAsyncService = Depends(get_google_drive_service),
-    ocr_service: OCRService = Depends(get_ocr_service),
     embedding_service: EmbeddingService = Depends(get_embedding_service),
 ) -> TutorChatMessageService:
     return TutorChatMessageService(
         db=db,
         thread_service=thread_service,
         classifier_service=classifier_service,
-        drive_service=drive_service,
-        ocr_service=ocr_service,
         embedding_service=embedding_service,
     )

@@ -2,11 +2,9 @@
 import asyncio
 import mimetypes
 import uuid
-from email.quoprimime import unquote
 from math import exp
 from urllib.parse import unquote
 
-import google.generativeai as genai
 import httpx
 import numpy as np
 import tiktoken
@@ -26,41 +24,70 @@ class EmbeddingService:
     BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models"
 
     def __init__(self):
-        genai.configure(api_key=settings.GOOGLE_API_KEY)
         self.llm_service = LLMService()
         self._enc = tiktoken.get_encoding("cl100k_base")
         self.EMBED_MODEL = "models/gemini-embedding-001"
-        self.EMBED_DIM = 1536
+        self.EMBED_DIM = settings.EMBEDDING_DIMENSIONS
         self.API_KEY = settings.GOOGLE_API_KEY
 
     async def embed_google_normalized(self, text: str) -> list[float]:
-        """Sinh embedding Google Gemini, ép chiều và chuẩn hóa vector."""
-        if not text or not text.strip():
-            return [0.0] * self.EMBED_DIM
+        """Compatibility entry point; the configured provider performs embedding."""
+        return (await self.embed_texts([text]))[0]
 
-        def _sync_embed():
-            try:
-                resp = genai.embed_content(
-                    model=self.EMBED_MODEL,
-                    content=text.strip(),
-                    task_type="retrieval_document",
-                    output_dimensionality=self.EMBED_DIM,
-                )
-                vector = np.array(resp["embedding"], dtype=np.float32)
-                norm = np.linalg.norm(vector)
-                if norm == 0:
-                    return vector.tolist()
-                # Chuẩn hóa L2 để DB lưu đồng nhất
-                normalized = (vector / norm).tolist()
-                # Đảm bảo đúng chiều (có lib Google đôi khi trả thiếu)
-                if len(normalized) != self.EMBED_DIM:
-                    normalized += [0.0] * (self.EMBED_DIM - len(normalized))
-                return normalized
-            except Exception as e:
-                print(f"❌ Lỗi khi embedding: {e}")
-                return [0.0] * self.EMBED_DIM
+    async def embed_query(self, text: str) -> list[float]:
+        """Search queries must be paired with RETRIEVAL_DOCUMENT vectors."""
+        return (await self.embed_texts([text], task_type="RETRIEVAL_QUERY"))[0]
 
-        return await asyncio.to_thread(_sync_embed)
+    async def embed_texts(
+        self, texts: list[str], *, task_type: str = "RETRIEVAL_DOCUMENT"
+    ) -> list[list[float]]:
+        if not texts or any(not text.strip() for text in texts):
+            raise ValueError("Embedding input must contain nonempty text")
+        if settings.EMBEDDING_PROVIDER.strip().lower() != "gemini":
+            raise ValueError("Embedding uses Gemini directly; 9Router is reserved for chat")
+        if not settings.GOOGLE_API_KEY:
+            raise HTTPException(503, "Chưa cấu hình API key Gemini cho embedding.")
+        model = settings.EMBEDDING_MODEL.removeprefix("models/")
+        requests = [{
+            "model": "models/" + model,
+            "content": {"parts": [{"text": text.strip()}]},
+            "taskType": task_type,
+            "outputDimensionality": self.EMBED_DIM,
+        } for text in texts]
+        async with httpx.AsyncClient(timeout=120) as client:
+            for attempt in range(5):
+                try:
+                    response = await client.post(
+                        f"{self.BASE_URL}/{model}:batchEmbedContents",
+                        headers={"x-goog-api-key": settings.GOOGLE_API_KEY},
+                        json={"requests": requests},
+                    )
+                    response.raise_for_status()
+                    embeddings = response.json()["embeddings"]
+                    if not isinstance(embeddings, list) or len(embeddings) != len(texts):
+                        raise ValueError("Wrong Gemini embedding batch size")
+                    return [self._normalize_embedding(item["values"]) for item in embeddings]
+                except httpx.HTTPStatusError as exc:
+                    status = exc.response.status_code
+                    if status < 500 and status != 429:
+                        raise HTTPException(503, f"Gemini embedding chưa sẵn sàng (HTTP {status}). Kiểm tra API key và project Google.") from None
+                    logger.warning("Gemini embedding transient HTTP {} (attempt {})", status, attempt + 1)
+                except httpx.RequestError:
+                    pass
+                except (ValueError, KeyError, TypeError):
+                    raise HTTPException(502, "Gemini trả về vector embedding không hợp lệ.") from None
+                if attempt < 4:
+                    await asyncio.sleep(min(5 * (attempt + 1), 20))
+        raise HTTPException(503, "Không kết nối được Gemini embedding. Vui lòng thử lại.")
+
+    def _normalize_embedding(self, vector) -> list[float]:
+        vector = np.asarray(vector, dtype=np.float32)
+        if vector.shape != (self.EMBED_DIM,) or not np.isfinite(vector).all():
+            raise ValueError("Embedding dimension or values are invalid")
+        norm = np.linalg.norm(vector)
+        if norm == 0:
+            raise ValueError("Embedding provider returned a zero vector")
+        return (vector / norm).tolist()
 
     # ========== GEMINI 2.5 FLASH ==========
     async def extract_video_context_from_url(self, url_sharelink: str) -> str:
@@ -183,9 +210,7 @@ class EmbeddingService:
 
         return chunks
 
-    from typing import List
-
-    def chunk_text(self, text: str, size: int = 700, overlap: int = 100) -> List[str]:
+    def chunk_text(self, text: str, size: int = 700, overlap: int = 100) -> list[str]:
         """Tách văn bản thành các đoạn có độ dài cố định (theo token giả lập, tạm bằng từ)."""
         words = text.split()
         chunks = []
@@ -284,9 +309,9 @@ class EmbeddingService:
         history = result.all()
 
         if not history:
-            return np.zeros(3072).tolist()
+            return np.zeros(self.EMBED_DIM).tolist()
 
-        vec = np.zeros(3072)
+        vec = np.zeros(self.EMBED_DIM)
         last_time = history[0].created_at
 
         for h in history:

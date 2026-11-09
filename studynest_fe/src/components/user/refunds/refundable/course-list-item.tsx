@@ -1,6 +1,6 @@
 "use client";
 
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import { RefundableCourseItem } from "@/types/user/refund";
 import Image from "next/image";
 import { useEffect, useState } from "react";
@@ -79,10 +79,10 @@ export default function RefundableCourseListItem({
   const [avatarError, setAvatarError] = useState(false);
 
   const thumbnailSrc = item.course.thumbnail
-    ? getGoogleDriveImageUrl(item.course.thumbnail)
+    ? getImageUrl(item.course.thumbnail)
     : "";
   const instructorAvatarSrc = item.instructor.avatar
-    ? getGoogleDriveImageUrl(item.instructor.avatar)
+    ? getImageUrl(item.instructor.avatar)
     : "";
 
   useEffect(() => {

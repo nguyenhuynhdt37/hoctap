@@ -2,7 +2,7 @@
 "use client";
 
 import api from "@/lib/utils/fetcher/client/axios";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import type {
   LecturerCourseStats,
   TimelinePoint,
@@ -358,7 +358,7 @@ export default function LecturerCourseStats() {
               <div className="flex items-start gap-4">
                 {data.thumbnail_url ? (
                   <img
-                    src={getGoogleDriveImageUrl(data.thumbnail_url)}
+                    src={getImageUrl(data.thumbnail_url)}
                     alt={data.title}
                     className="w-28 h-16 rounded-xl object-cover border border-[#E7EEF7]"
                     onError={(e) => {

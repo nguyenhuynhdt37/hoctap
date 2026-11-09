@@ -18,7 +18,7 @@ interface MarkdownRendererProps {
   isHtml?: boolean;
 }
 
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 
 // ⚙️ Markdown → HTML converter (markdown-it + GFM) - giống TiptapEditor
 const parseMarkdownToHTML = (markdown: string): string => {
@@ -36,7 +36,7 @@ const parseMarkdownToHTML = (markdown: string): string => {
     .use(markdownItAttrs)
     .use(markdownItAnchor, { permalink: false });
 
-  // Custom image renderer: Convert Google Drive URLs
+  // Custom image renderer: resolve stored asset URLs
   const defaultImageRender =
     md.renderer.rules.image ||
     function (tokens, idx, options, env, self) {
@@ -49,8 +49,8 @@ const parseMarkdownToHTML = (markdown: string): string => {
 
     if (srcIndex >= 0 && token.attrs) {
       const src = token.attrs[srcIndex][1];
-      // Convert Google Drive URL using helper
-      token.attrs[srcIndex][1] = getGoogleDriveImageUrl(src);
+      // Resolve the stored image URL
+      token.attrs[srcIndex][1] = getImageUrl(src);
 
       // Thêm class cho ảnh để đẹp hơn (optional)
       const classIndex = token.attrIndex("class");

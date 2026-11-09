@@ -1,7 +1,7 @@
 "use client";
 
 import api from "@/lib/utils/fetcher/client/axios";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import { showToast } from "@/lib/utils/helpers/toast";
 import { AdminRefundDetailData } from "@/types/admin/refund";
 import Image from "next/image";
@@ -105,10 +105,10 @@ export default function AdminRefundDetail({ data }: AdminRefundDetailProps) {
     data.refund.status === "instructor_rejected";
 
   const courseThumbnail = data.course.thumbnail
-    ? getGoogleDriveImageUrl(data.course.thumbnail)
+    ? getImageUrl(data.course.thumbnail)
     : "";
   const instructorAvatar = data.instructor.avatar
-    ? getGoogleDriveImageUrl(data.instructor.avatar)
+    ? getImageUrl(data.instructor.avatar)
     : "";
 
   const timeline = useMemo(

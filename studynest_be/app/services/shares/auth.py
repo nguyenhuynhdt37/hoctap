@@ -512,12 +512,16 @@ class AuthService:
         }
 
     async def login_google_async(self, schema: GoogleLogin, res: Response, user_agent: str | None = None, ip: str | None = None):
+        client_id = settings.GOOGLE_API_CLIENT_ID_LOGIN_GOOGLE.strip()
+        if not client_id:
+            raise HTTPException(
+                503, "Đăng nhập Google chưa được cấu hình trên máy chủ."
+            )
         try:
-            print(f"DEBUG: Using Client ID: {settings.GOOGLE_API_CLIENT_ID_LOGIN_GOOGLE}")
             info = id_token.verify_oauth2_token(
                 schema.credential,
                 requests.Request(),
-                settings.GOOGLE_API_CLIENT_ID_LOGIN_GOOGLE,
+                client_id,
             )
 
             email = info.get("email")

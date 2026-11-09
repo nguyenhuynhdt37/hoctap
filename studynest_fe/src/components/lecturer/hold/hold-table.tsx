@@ -1,6 +1,6 @@
 "use client";
 
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import { HoldEarningsItem, HoldEarningsQuery } from "@/types/lecturer/hold";
 import Image from "next/image";
 import Link from "next/link";
@@ -188,10 +188,10 @@ function HoldEarningsRow({ item }: { item: HoldEarningsItem }) {
   const [avatarError, setAvatarError] = useState(false);
 
   const thumbnailSrc = item.course.thumbnail
-    ? getGoogleDriveImageUrl(item.course.thumbnail)
+    ? getImageUrl(item.course.thumbnail)
     : null;
   const avatarSrc = item.student.avatar
-    ? getGoogleDriveImageUrl(item.student.avatar)
+    ? getImageUrl(item.student.avatar)
     : null;
 
   return (

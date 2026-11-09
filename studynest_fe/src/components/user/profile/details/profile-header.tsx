@@ -1,7 +1,7 @@
 "use client";
 
 import { formatDate } from "@/lib/utils/helpers/date";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import { UserProfile } from "@/types/user/profile";
 import { HiCalendar, HiMail, HiPhotograph } from "react-icons/hi";
 
@@ -11,7 +11,7 @@ interface ProfileHeaderProps {
 
 export default function ProfileHeader({ profileData }: ProfileHeaderProps) {
   const avatarUrl = profileData.avatar
-    ? getGoogleDriveImageUrl(profileData.avatar)
+    ? getImageUrl(profileData.avatar)
     : null;
 
   return (

@@ -1,6 +1,6 @@
 "use client";
 
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import { HiStar } from "react-icons/hi";
 
 const testimonials = [
@@ -76,7 +76,7 @@ const TestimonialsSection = () => {
               <div className="flex items-center pt-4 border-t border-[#E7EEF7]/80">
                 <div className="w-11 h-11 rounded-full ring-2 ring-[#E8F2FA] overflow-hidden mr-3 bg-[#E8F2FA]">
                   <img
-                    src={getGoogleDriveImageUrl(testimonial.avatar)}
+                    src={getImageUrl(testimonial.avatar)}
                     alt={testimonial.name}
                     className="w-full h-full object-cover"
                   />

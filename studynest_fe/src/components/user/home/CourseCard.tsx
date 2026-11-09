@@ -1,7 +1,7 @@
 "use client";
 
 import api from "@/lib/utils/fetcher/client/axios";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import { CourseCardProps } from "@/types/user/course";
 import { useRouter } from "next/navigation";
 import {
@@ -134,7 +134,7 @@ const CourseCard = ({
     >
       <div className="relative overflow-hidden bg-[#E8F2FA]">
         <img
-          src={getGoogleDriveImageUrl(course.image || "")}
+          src={getImageUrl(course.image || "")}
           alt={course.title}
           className="w-full h-44 object-cover group-hover:scale-[1.03] transition-transform duration-300 ease-out"
           onError={(e) => {
@@ -168,7 +168,7 @@ const CourseCard = ({
           <div className="flex items-center gap-2 mb-3.5">
             {(course as any).instructorAvatar && (
               <img
-                src={getGoogleDriveImageUrl((course as any).instructorAvatar)}
+                src={getImageUrl((course as any).instructorAvatar)}
                 alt={course.instructor}
                 className="w-6 h-6 rounded-full object-cover ring-1 ring-[#E7EEF7]"
                 onError={(e) => {
@@ -263,7 +263,7 @@ const CourseCard = ({
               <div className="flex items-start gap-3 mb-4">
                 <div className="w-14 h-14 rounded-xl overflow-hidden bg-[#E8F2FA] flex-shrink-0 border border-[#BFD7ED]">
                   <img
-                    src={getGoogleDriveImageUrl(
+                    src={getImageUrl(
                       course.image ||
                         previewCache[course.id]?.thumbnail_url ||
                         ""
@@ -280,7 +280,7 @@ const CourseCard = ({
                     <div className="flex items-center gap-1.5 mt-1.5">
                       {(course as any).instructorAvatar && (
                         <img
-                          src={getGoogleDriveImageUrl(
+                          src={getImageUrl(
                             (course as any).instructorAvatar
                           )}
                           alt={course.instructor}

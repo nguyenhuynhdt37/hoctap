@@ -2,7 +2,7 @@ const fs = require('fs')
 const os = require('os')
 const path = require('path')
 
-const BACKEND_PORT = process.env.BACKEND_PORT || '8001'
+const BACKEND_PORT = process.env.BACKEND_PORT || '8000'
 
 function getLocalIp() {
   const interfaces = os.networkInterfaces()

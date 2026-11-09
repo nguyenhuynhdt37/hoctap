@@ -1,7 +1,7 @@
 "use client";
 
 import api from "@/lib/utils/fetcher/client/axios";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import { showToast } from "@/lib/utils/helpers/toast";
 import {
   DiscountCourse,
@@ -501,7 +501,7 @@ export default function EditDiscount() {
                             <div className="flex items-center gap-3">
                               {course.thumbnail_url && (
                                 <img
-                                  src={getGoogleDriveImageUrl(
+                                  src={getImageUrl(
                                     course.thumbnail_url
                                   )}
                                   alt={course.title}
@@ -591,7 +591,7 @@ export default function EditDiscount() {
                                       <div className="flex items-center gap-3">
                                         {course.thumbnail_url && (
                                           <img
-                                            src={getGoogleDriveImageUrl(
+                                            src={getImageUrl(
                                               course.thumbnail_url
                                             )}
                                             alt={course.title}

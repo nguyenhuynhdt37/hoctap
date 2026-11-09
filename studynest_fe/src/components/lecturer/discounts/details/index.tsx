@@ -1,7 +1,7 @@
 "use client";
 
 import api from "@/lib/utils/fetcher/client/axios";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import {
   DiscountDetail,
   DiscountDetailsProps,
@@ -321,7 +321,7 @@ export default function DiscountDetails({ discountId }: DiscountDetailsProps) {
                         <div className="flex items-center gap-3">
                           {usage.avatar ? (
                             <img
-                              src={getGoogleDriveImageUrl(usage.avatar)}
+                              src={getImageUrl(usage.avatar)}
                               alt={usage.user_name}
                               className="h-10 w-10 rounded-full"
                             />

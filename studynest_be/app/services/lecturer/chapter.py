@@ -14,9 +14,9 @@ from app.schemas.lecturer.chapter import (
     ReorderSectionsSchema,
     UpdateCourseSection,
 )
-from app.services.shares.google_driver import (
-    GoogleDriveAsyncService,
-    get_google_drive_service,
+from app.services.shares.file_storage import (
+    FileStorageService,
+    get_file_storage_service,
 )
 
 
@@ -24,11 +24,11 @@ class ChapterService:
     def __init__(
         self,
         db: AsyncSession = Depends(get_session),
-        google_drive: GoogleDriveAsyncService = Depends(get_google_drive_service),
+        storage: FileStorageService = Depends(get_file_storage_service),
         embedding: EmbeddingService = Depends(get_embedding_service),
     ):
         self.db = db
-        self.google_drive = google_drive
+        self.storage = storage
         self.embedding = embedding
 
     async def get_course_structure(self, course_id: uuid.UUID, lecturer_id: uuid.UUID):

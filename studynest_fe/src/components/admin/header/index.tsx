@@ -2,7 +2,7 @@
 
 import ContextMenu from "@/components/shared/context-menu";
 import api from "@/lib/utils/fetcher/client/axios";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import { useRealtimeNotiStore } from "@/stores/notifications";
 import { useUserStore } from "@/stores/user";
 import { useRouter } from "next/navigation";
@@ -120,7 +120,7 @@ export default function Header({ isCollapsed }: HeaderProps) {
             >
               {user?.avatar ? (
                 <img
-                  src={getGoogleDriveImageUrl(user.avatar)}
+                  src={getImageUrl(user.avatar)}
                   alt={user.fullname || "User"}
                   className="w-9 h-9 rounded-full object-cover border-2 border-green-200"
                 />
@@ -142,7 +142,7 @@ export default function Header({ isCollapsed }: HeaderProps) {
                   {user?.avatar ? (
                     <div className="relative">
                       <img
-                        src={getGoogleDriveImageUrl(user.avatar)}
+                        src={getImageUrl(user.avatar)}
                         alt={user.fullname || "User Avatar"}
                         className="w-14 h-14 rounded-full object-cover ring-2 ring-green-200"
                       />

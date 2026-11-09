@@ -2,7 +2,7 @@
 
 import api from "@/lib/utils/fetcher/client/axios";
 import { formatDate, formatDuration } from "@/lib/utils/helpers/date";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import { CoursesMeResponse } from "@/types/user/courses-me";
 import Link from "next/link";
 import { useState } from "react";
@@ -105,7 +105,7 @@ export default function ProfileCourses({
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {courses.map((course) => {
-          const thumbnailSrc = getGoogleDriveImageUrl(
+          const thumbnailSrc = getImageUrl(
             course.thumbnail_url || fallbackThumbnail
           );
           const progress = Math.round(course.progress_percent || 0);

@@ -1,6 +1,6 @@
 "use client";
 
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import { CategoryItem, Course } from "@/types/user/course_detail";
 import { HiClock, HiGlobe, HiPlay, HiStar } from "react-icons/hi";
 
@@ -122,7 +122,7 @@ export default function CourseHeader({
             >
               <div className="relative h-52 bg-[#E8F2FA]">
                 <img
-                  src={getGoogleDriveImageUrl(course.thumbnail_url)}
+                  src={getImageUrl(course.thumbnail_url)}
                   alt={course.title}
                   className="w-full h-full object-cover relative z-10"
                 />

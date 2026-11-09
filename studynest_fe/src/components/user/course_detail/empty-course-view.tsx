@@ -1,7 +1,7 @@
 "use client";
 
 import MarkdownRenderer from "@/components/shared/markdown-renderer";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import { Course } from "@/types/user/course_detail";
 import { useRouter } from "next/navigation";
 import {
@@ -57,7 +57,7 @@ export default function EmptyCourseView({
                 <div className="absolute -inset-4 bg-gradient-to-r from-teal-400 to-emerald-500 rounded-3xl opacity-20 blur-2xl group-hover:opacity-30 transition-opacity duration-500" />
                 <div className="relative rounded-3xl overflow-hidden shadow-2xl border-8 border-white/80 backdrop-blur">
                   <img
-                    src={getGoogleDriveImageUrl(course.thumbnail_url)}
+                    src={getImageUrl(course.thumbnail_url)}
                     alt={course.title}
                     className="w-full aspect-square object-cover transform group-hover:scale-105 transition-transform duration-700"
                   />
@@ -76,7 +76,7 @@ export default function EmptyCourseView({
                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center shadow-md">
                           {course.instructor.avatar ? (
                             <img
-                              src={getGoogleDriveImageUrl(
+                              src={getImageUrl(
                                 course.instructor.avatar
                               )}
                               alt={course.instructor.fullname}

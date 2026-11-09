@@ -1169,7 +1169,7 @@ CREATE TABLE public.lesson_videos (
     transcript text,
     duration double precision DEFAULT 0,
     file_id character varying,
-    source_type character varying DEFAULT 'upload_drive'::character varying
+    source_type character varying DEFAULT 'youtube_upload'::character varying
 );
 
 

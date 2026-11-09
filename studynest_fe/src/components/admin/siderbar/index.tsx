@@ -1,7 +1,7 @@
 "use client";
 
 import api from "@/lib/utils/fetcher/client/axios";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import { useRealtimeNotiStore } from "@/stores/notifications";
 import { useUserStore } from "@/stores/user";
 import Link from "next/link";
@@ -290,7 +290,7 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
             {user?.avatar ? (
               <div className="relative flex-shrink-0">
                 <img
-                  src={getGoogleDriveImageUrl(user.avatar)}
+                  src={getImageUrl(user.avatar)}
                   alt={user.fullname || "User"}
                   className="w-8 h-8 rounded-full object-cover ring-2 ring-[#E8F2FA]"
                 />

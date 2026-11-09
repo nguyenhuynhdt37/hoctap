@@ -14,6 +14,7 @@ import { ChatBubble } from './ChatBubble'
 import { ChatInput } from './ChatInput'
 import { ChatChips } from './ChatChips'
 import { api } from '@/src/services/api'
+import { postChatStream } from '@/src/services/chat-stream'
 
 const { height: SCREEN_H } = Dimensions.get('window')
 
@@ -59,6 +60,8 @@ export function TutorChat({
   const [isTyping, setIsTyping] = useState(false)
   const scrollViewRef = useRef<ScrollView>(null)
   const inputRef = useRef<TextInput>(null)
+  const streamRef = useRef<AbortController | null>(null)
+  useEffect(() => () => { streamRef.current?.abort() }, [lessonId, isOpen])
 
   // Fetch active thread and history when chat opens
   useEffect(() => {
@@ -106,7 +109,7 @@ export function TutorChat({
         scrollViewRef.current?.scrollToEnd({ animated: true })
       }, 100)
     }
-  }, [messages.length])
+  }, [messages])
 
   // Focus input when chat opens
   useEffect(() => {
@@ -129,7 +132,10 @@ export function TutorChat({
       status: 'sent',
     }
 
-    setMessages(prev => [...prev, userMessage])
+    const assistantId = `ai-msg-${Date.now()}`
+    setMessages(prev => [...prev, userMessage, {
+      id: assistantId, role: 'assistant', content: '', created_at: new Date().toISOString(), status: 'streaming',
+    }])
     if (!textOverride) {
       setInputText('')
     }
@@ -137,26 +143,18 @@ export function TutorChat({
     setIsTyping(true)
 
     try {
-      const res = await api.post<{ id: string; content: string; thread_id: string; created_at: string }>(
-        `/tutor-chat/lessons/${lessonId}/chat`,
-        {
-          message: text,
-          thread_id: threadId,
-        }
+      streamRef.current = new AbortController()
+      let content = ''
+      const result = await postChatStream<{ id: string; content: string; thread_id: string; created_at: string }>(
+        `/tutor-chat/lessons/${lessonId}/chat`, { message: text, thread_id: threadId },
+        (delta) => {
+          content += delta
+          setMessages(prev => prev.map(msg => msg.id === assistantId ? { ...msg, content } : msg))
+        }, streamRef.current.signal,
       )
-
-      const aiMessage: ChatMessage = {
-        id: res.data.id || `ai-msg-${Date.now()}`,
-        role: 'assistant',
-        content: res.data.content,
-        created_at: res.data.created_at || new Date().toISOString(),
-        status: 'sent',
-      }
-
-      setMessages(prev => [...prev, aiMessage])
-      if (!threadId && res.data.thread_id) {
-        setThreadId(res.data.thread_id)
-      }
+      setMessages(prev => prev.map(msg => msg.id === assistantId
+        ? { ...msg, id: result.id, content: result.content, created_at: result.created_at, status: 'sent' } : msg))
+      if (!threadId && result.thread_id) setThreadId(result.thread_id)
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
     } catch (err: any) {
       console.error('Send failed in tutor chat:', err)
@@ -167,7 +165,8 @@ export function TutorChat({
         created_at: new Date().toISOString(),
         status: 'error',
       }
-      setMessages(prev => [...prev, errorMsg])
+      setMessages(prev => prev.map(msg => msg.id === assistantId
+        ? { ...msg, status: 'error', content: (msg.content ? msg.content + '\n\n' : '') + errorMsg.content } : msg))
     } finally {
       setIsTyping(false)
     }

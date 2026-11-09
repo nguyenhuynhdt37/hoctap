@@ -5,7 +5,7 @@ import {
   TopInstructorsResponse,
   TopInstructorsSortBy,
 } from "@/types/admin/statistics";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import { HiUser } from "react-icons/hi";
 import { useState } from "react";
 import useSWR from "swr";
@@ -100,7 +100,7 @@ export default function TopInstructors() {
               <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-100 flex-shrink-0">
                 {instructor.avatar ? (
                   <img
-                    src={getGoogleDriveImageUrl(instructor.avatar)}
+                    src={getImageUrl(instructor.avatar)}
                     alt={instructor.name}
                     className="w-full h-full object-cover"
                   />

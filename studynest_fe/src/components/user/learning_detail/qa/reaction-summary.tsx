@@ -1,6 +1,6 @@
 "use client";
 
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import api from "@/lib/utils/fetcher/client/axios";
@@ -114,7 +114,7 @@ export default memo(function ReactionSummary({
                       <div className="w-8 h-8 rounded-full bg-[#356FA7] flex items-center justify-center text-white font-semibold text-xs flex-shrink-0">
                         {reactionUser.user_avatar ? (
                           <img
-                            src={getGoogleDriveImageUrl(reactionUser.user_avatar)}
+                            src={getImageUrl(reactionUser.user_avatar)}
                             alt={reactionUser.user_name}
                             className="w-full h-full rounded-full object-cover"
                           />

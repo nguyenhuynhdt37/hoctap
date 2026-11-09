@@ -14,6 +14,7 @@ from app.api.v1.admin import category as admin_category
 from app.api.v1.admin import discounts as admin_discounts
 from app.api.v1.admin import lecturer as admin_lecturer
 from app.api.v1.admin import platform_wallet_service, role
+from app.api.v1.admin import platform_settings as admin_platform_settings
 from app.api.v1.admin import refunds as admin_refunds
 from app.api.v1.admin import statistics as admin_statistics
 from app.api.v1.admin import topic as admin_topic
@@ -40,6 +41,7 @@ from app.api.v1.lecturer import withdraw as lecturer_withdraw
 
 # share
 from app.api.v1.shares import auth, location, notification, profile, upload
+from app.api.v1.shares import storage as file_storage
 from app.api.v1.user import category, favorites, learning, user_preferences, wallets
 from app.api.v1.user import chat_sql as user_chat_sql
 from app.api.v1.user import course_enroll as course_enroll
@@ -173,6 +175,7 @@ app.include_router(location.router, prefix=prefix)
 app.include_router(wallets.router, prefix=prefix)
 app.include_router(notification.router, prefix=prefix)
 app.include_router(upload.router, prefix=prefix)
+app.include_router(file_storage.router, prefix=prefix)
 app.include_router(profile.router, prefix=prefix)
 
 # --- USER ROUTES ---
@@ -209,6 +212,7 @@ app.include_router(lecturer_statistics.router, prefix=prefix)
 
 # --- ADMIN ROUTES ---
 app.include_router(admin_user.router, prefix=prefix)
+app.include_router(admin_platform_settings.router, prefix=prefix)
 app.include_router(admin_lecturer.router, prefix=prefix)
 app.include_router(admin_category.router, prefix=prefix)
 app.include_router(admin_topic.router, prefix=prefix)
@@ -238,4 +242,4 @@ async def hello_world():
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True, log_level="info")
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True, log_level="info")

@@ -54,7 +54,9 @@ class ProfileService:
             Mục tiêu của tôi là trở thành lập trình viên giỏi và có thể đóng góp vào các sản phẩm ý nghĩa cho cộng đồng.
             """
 
-            result = await self.llm_service.call_model(prompt, temperature=0.7)
+            result = await self.llm_service.call_model(
+                prompt, mime_type="text/plain", temperature=0.7
+            )
             return result.strip()
 
         except Exception as e:

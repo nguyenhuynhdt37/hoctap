@@ -1,7 +1,7 @@
 "use client";
 
 import api from "@/lib/utils/fetcher/client/axios";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import { HoldStudent } from "@/types/lecturer/hold";
 import Image from "next/image";
 import { useEffect, useState } from "react";
@@ -17,7 +17,7 @@ interface StudentItemProps {
 function StudentItem({ student, isSelected, onSelect }: StudentItemProps) {
   const [avatarError, setAvatarError] = useState(false);
   const avatarSrc = student.avatar
-    ? getGoogleDriveImageUrl(student.avatar)
+    ? getImageUrl(student.avatar)
     : null;
 
   return (

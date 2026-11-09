@@ -219,6 +219,12 @@ AMBIGUOUS_SHORT: List[str] = [
 AMBIGUOUS_SHORT_SET = set(AMBIGUOUS_SHORT)
 
 
+def is_casual_message(message: str) -> bool:
+    # Match the entire utterance: "hi, giải thích hợp âm" needs retrieval.
+    normalized = normalize_text(message).strip(" ?!")
+    return bool(normalized) and normalized in SMALL_TALK
+
+
 # =========================
 # TEXT NORMALIZATION
 # =========================
@@ -300,7 +306,7 @@ def rule_decide(message: str, has_prev_context: bool) -> Optional[Mode]:
     sea_s = 0  # SEARCH score
 
     # 1) giao tiếp: câu rất ngắn + từ xã giao
-    if len(m) <= 25 and contains_any(m, SMALL_TALK):
+    if is_casual_message(message):
         no_s += 4
 
     # 2) dấu hiệu "hỏi tiếp"
@@ -429,7 +435,7 @@ Chi tra ve dung 1 nhan (NO_SEARCH hoac REUSE hoac SEARCH). KHONG giai thich.
 """.strip()
 
     try:
-        result = await llm_service.generate_text(prompt)
+        result = await llm_service.call_model(prompt, mime_type="text/plain", temperature=0, max_output_tokens=32)
         out = (result or "").strip().upper()
 
         if out in ("NO_SEARCH", "REUSE", "SEARCH"):

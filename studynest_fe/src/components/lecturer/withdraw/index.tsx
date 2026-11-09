@@ -1,7 +1,7 @@
 "use client";
 
 import api from "@/lib/utils/fetcher/client/axios";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -231,7 +231,7 @@ export default function WithdrawPage() {
                             <img
                               src={
                                 item.avatar
-                                  ? getGoogleDriveImageUrl(item.avatar)
+                                  ? getImageUrl(item.avatar)
                                   : "https://ui-avatars.com/api/?name=" +
                                     encodeURIComponent(item.fullname) +
                                     "&background=E8F2FA&color=356FA7"

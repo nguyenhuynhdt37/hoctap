@@ -1,7 +1,7 @@
 "use client";
 
 import api from "@/lib/utils/fetcher/client/axios";
-import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
+import { getImageUrl } from "@/lib/utils/helpers/image";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
 import HorizontalRule from "@tiptap/extension-horizontal-rule";
 import Image from "@tiptap/extension-image";
@@ -287,8 +287,8 @@ export default function TiptapEditor({
 
     try {
       const imageUrl = await uploadImage(file);
-      // Convert Google Drive URL to embeddable format
-      const embeddableUrl = getGoogleDriveImageUrl(imageUrl);
+      // Resolve the stored image URL
+      const embeddableUrl = getImageUrl(imageUrl);
       editorInstance.chain().focus().setImage({ src: embeddableUrl }).run();
       setUploadPreview(null);
     } catch (error: any) {
@@ -446,11 +446,11 @@ export default function TiptapEditor({
       // Parse markdown thành HTML (đã có justify trong HTML)
       let htmlContent = parseMarkdownToHTML(value);
       if (htmlContent && htmlContent.trim()) {
-        // Convert Google Drive URLs in img tags to embeddable format
+        // Resolve image URLs in HTML
         htmlContent = htmlContent.replace(
           /<img[^>]+src=["']([^"']+)["'][^>]*>/gi,
           (match, src) => {
-            const embeddableUrl = getGoogleDriveImageUrl(src);
+            const embeddableUrl = getImageUrl(src);
             return match.replace(src, embeddableUrl);
           }
         );
@@ -472,12 +472,12 @@ export default function TiptapEditor({
         lastSyncedValueRef.current = value;
       }
     } else {
-      // Nếu là HTML, convert Google Drive URLs trước khi set
+      // Resolve image URLs before setting HTML
       let htmlContent = value;
       htmlContent = htmlContent.replace(
         /<img[^>]+src=["']([^"']+)["'][^>]*>/gi,
         (match, src) => {
-          const embeddableUrl = getGoogleDriveImageUrl(src);
+          const embeddableUrl = getImageUrl(src);
           return match.replace(src, embeddableUrl);
         }
       );

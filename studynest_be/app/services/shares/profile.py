@@ -7,9 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.models.database import User
 from app.db.sesson import get_session
 from app.schemas.user.profile import ProfileUpdate
-from app.services.shares.google_driver import (
-    GoogleDriveAsyncService,
-    get_google_drive_service,
+from app.services.shares.file_storage import (
+    FileStorageService,
+    get_file_storage_service,
 )
 
 
@@ -17,12 +17,12 @@ class ProfileService:
     def __init__(
         self,
         db: AsyncSession = Depends(get_session),
-        google_drive_service: GoogleDriveAsyncService = Depends(
-            get_google_drive_service
+        storage_service: FileStorageService = Depends(
+            get_file_storage_service
         ),
     ):
         self.db = db
-        self.google_drive_service = google_drive_service
+        self.storage_service = storage_service
 
     async def get_profile_by_user_id(self, user_id: uuid.UUID, is_me: bool = False):
         try:
@@ -66,13 +66,13 @@ class ProfileService:
             if not user:
                 raise HTTPException(status_code=404, detail="Không tìm thấy người dùng")
 
-            file_url = await self.google_drive_service.upload_file(
+            file_url = await self.storage_service.upload_file(
                 ["avatars", str(user_id)],
-                file.filename or f"avatar_{user_id}_{uuid.uuid4()}.png",
+                file.filename or "avatar.png",
                 await file.read(),
                 file.content_type,
             )
-            user.avatar = file_url.get("webViewLink", None)
+            user.avatar = file_url["url"]
             await self.db.commit()
             return {
                 "id": user.id,
