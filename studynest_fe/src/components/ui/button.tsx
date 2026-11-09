@@ -6,10 +6,10 @@ import { cn } from "@/lib/utils";
 export type ButtonVariant =
   | "primary"
   | "secondary"
+  | "pastel"
   | "outline"
   | "ghost"
-  | "destructive"
-  | "pastel";
+  | "destructive";
 
 export type ButtonSize = "sm" | "md" | "lg" | "icon";
 
@@ -17,31 +17,31 @@ export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: ButtonSize;
-  loading?: boolean;
+  isLoading?: boolean;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
 }
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    "bg-[#356FA7] text-white hover:bg-[#285C90] active:bg-[#214B75] shadow-sm border border-transparent",
+    "bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary-active shadow-xs border border-transparent",
   secondary:
-    "bg-[#FCE8EF] text-[#3D4A5A] hover:bg-[#F7C9D9] active:bg-[#F0ACC4] border border-[#F7C9D9]/60",
+    "bg-secondary text-foreground hover:bg-secondary-hover active:bg-secondary-active border border-secondary-pastel/60",
   pastel:
-    "bg-[#E8F2FA] text-[#356FA7] hover:bg-[#BFD7ED] active:bg-[#9BC2E6] border border-[#BFD7ED]/60",
+    "bg-primary-light text-primary hover:bg-primary-pastel/70 active:bg-primary-pastel border border-primary-pastel/60",
   outline:
-    "bg-white text-[#356FA7] border border-[#BFD7ED] hover:bg-[#E8F2FA] hover:border-[#356FA7]/40 active:bg-[#BFD7ED]/40",
+    "bg-surface text-foreground border border-border hover:bg-background hover:border-primary-pastel active:bg-primary-light/60",
   ghost:
-    "bg-transparent text-[#3D4A5A] hover:bg-[#E8F2FA] hover:text-[#356FA7] active:bg-[#BFD7ED]/40 border border-transparent",
+    "bg-transparent text-foreground hover:bg-primary-light/70 hover:text-primary active:bg-primary-light",
   destructive:
-    "bg-[#FCE8E8] text-[#A23C46] hover:bg-[#A23C46] hover:text-white active:bg-[#872F38] border border-[#F5C2C7]",
+    "bg-destructive-bg text-destructive-foreground hover:bg-destructive-border/70 active:bg-destructive-border border border-destructive-border",
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: "h-9 px-3.5 text-xs rounded-lg gap-1.5",
-  md: "h-10 px-4 py-2.5 text-sm rounded-xl gap-2",
-  lg: "h-12 px-6 py-3 text-base rounded-xl gap-2.5",
-  icon: "h-10 w-10 p-2 rounded-xl",
+  sm: "h-9 px-3.5 text-sm rounded-xl gap-1.5",
+  md: "h-11 px-5 text-sm rounded-xl gap-2",
+  lg: "h-12 px-6 text-base rounded-xl gap-2.5",
+  icon: "h-10 w-10 rounded-xl p-0",
 };
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
@@ -50,44 +50,56 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       className,
       variant = "primary",
       size = "md",
-      loading = false,
+      isLoading = false,
       disabled,
       leftIcon,
       rightIcon,
       children,
-      type = "button",
       ...props
     },
     ref
   ) => {
-    const isDisabled = disabled || loading;
-
     return (
       <button
         ref={ref}
-        type={type}
-        disabled={isDisabled}
-        aria-busy={loading}
+        disabled={disabled || isLoading}
         className={cn(
-          "inline-flex items-center justify-center font-semibold transition-all duration-200 cursor-pointer select-none",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#356FA7] focus-visible:ring-offset-2",
-          "disabled:opacity-55 disabled:pointer-events-none disabled:cursor-not-allowed",
+          "inline-flex items-center justify-center font-medium transition-all duration-200 cursor-pointer select-none",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+          "disabled:pointer-events-none disabled:opacity-55",
           variantClasses[variant],
           sizeClasses[size],
           className
         )}
         {...props}
       >
-        {loading ? (
-          <span
-            className="h-4 w-4 rounded-full border-2 border-current border-t-transparent animate-spin shrink-0"
+        {isLoading ? (
+          <svg
+            className="animate-spin h-4 w-4 text-current shrink-0"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
             aria-hidden="true"
-          />
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="3"
+            />
+            <path
+              className="opacity-85"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+            />
+          </svg>
         ) : (
-          leftIcon && <span className="shrink-0">{leftIcon}</span>
+          leftIcon
         )}
-        {children && <span>{children}</span>}
-        {!loading && rightIcon && <span className="shrink-0">{rightIcon}</span>}
+        {children}
+        {!isLoading && rightIcon}
       </button>
     );
   }

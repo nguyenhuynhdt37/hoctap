@@ -22,7 +22,7 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <body
-        className="font-sans bg-background text-foreground antialiased selection:bg-[#BFD7ED]/60 selection:text-[#3D4A5A]"
+        className="font-sans bg-background text-foreground antialiased selection:bg-primary-pastel/60 selection:text-foreground"
         suppressHydrationWarning
       >
         <HydrationFix />

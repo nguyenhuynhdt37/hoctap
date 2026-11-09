@@ -10,10 +10,11 @@ export interface AlertProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 const alertVariants = {
-  info: "bg-[#E8F2FA] text-[#3D4A5A] border-[#BFD7ED]",
-  success: "bg-[#E4F3E9] text-[#276749] border-[#C3E4CE]",
-  warning: "bg-[#FFF1D9] text-[#875415] border-[#F5D9A6]",
-  destructive: "bg-[#FCE8E8] text-[#A23C46] border-[#F5C2C7]",
+  info: "bg-info-bg text-info-foreground border-info-border",
+  success: "bg-success-bg text-success-foreground border-success-border",
+  warning: "bg-warning-bg text-warning-foreground border-warning-border",
+  destructive:
+    "bg-destructive-bg text-destructive-foreground border-destructive-border",
 };
 
 export const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
@@ -47,7 +48,7 @@ export function Skeleton({
   return (
     <div
       className={cn(
-        "animate-pulse rounded-xl bg-[#E8F2FA]/80",
+        "animate-pulse rounded-xl bg-primary-light/80",
         className
       )}
       {...props}
@@ -73,18 +74,18 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center rounded-2xl border border-[#E7EEF7] bg-white p-10 text-center shadow-sm",
+        "flex flex-col items-center justify-center rounded-2xl border border-border bg-surface p-10 text-center shadow-sm",
         className
       )}
     >
       {icon && (
-        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#E8F2FA] text-[#356FA7]">
+        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-light text-primary">
           {icon}
         </div>
       )}
-      <h3 className="text-lg font-semibold text-[#3D4A5A] mb-1.5">{title}</h3>
+      <h3 className="text-lg font-semibold text-foreground mb-1.5">{title}</h3>
       {description && (
-        <p className="max-w-md text-sm text-[#6F7C8C] leading-relaxed mb-6">
+        <p className="max-w-md text-sm text-muted-foreground leading-relaxed mb-6">
           {description}
         </p>
       )}

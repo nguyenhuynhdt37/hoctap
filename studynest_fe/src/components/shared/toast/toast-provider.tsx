@@ -9,41 +9,40 @@ export function ToastProvider() {
       toastOptions={{
         duration: 4000,
         style: {
-          background: "#FFFFFF",
-          color: "#3D4A5A",
+          background: "var(--color-surface)",
+          color: "var(--color-foreground)",
           borderRadius: "1rem",
           padding: "0.875rem 1rem",
-          boxShadow:
-            "0 12px 28px -6px rgba(53, 111, 167, 0.10), 0 4px 10px -2px rgba(61, 74, 90, 0.04)",
-          border: "1px solid #E7EEF7",
+          boxShadow: "var(--shadow-ambient-md)",
+          border: "1px solid var(--color-border)",
           maxWidth: "400px",
           fontSize: "0.875rem",
         },
         success: {
           iconTheme: {
-            primary: "#276749",
-            secondary: "#E4F3E9",
+            primary: "var(--color-success-foreground)",
+            secondary: "var(--color-success-bg)",
           },
           style: {
-            borderLeft: "4px solid #276749",
+            borderLeft: "4px solid var(--color-success-foreground)",
           },
         },
         error: {
           iconTheme: {
-            primary: "#A23C46",
-            secondary: "#FCE8E8",
+            primary: "var(--color-destructive-foreground)",
+            secondary: "var(--color-destructive-bg)",
           },
           style: {
-            borderLeft: "4px solid #A23C46",
+            borderLeft: "4px solid var(--color-destructive-foreground)",
           },
         },
         loading: {
           iconTheme: {
-            primary: "#356FA7",
-            secondary: "#E8F2FA",
+            primary: "var(--color-primary)",
+            secondary: "var(--color-primary-light)",
           },
           style: {
-            borderLeft: "4px solid #356FA7",
+            borderLeft: "4px solid var(--color-primary)",
           },
         },
       }}
