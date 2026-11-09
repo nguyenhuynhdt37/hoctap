@@ -56,7 +56,7 @@ const InstructorDetail = ({ instructorId }: InstructorDetailProps) => {
                 e.target as HTMLImageElement
               ).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
                 data.name
-              )}&background=00bba7&color=fff&size=128`;
+              )}&background=E8F2FA&color=356FA7&size=128`;
             }}
           />
         </div>

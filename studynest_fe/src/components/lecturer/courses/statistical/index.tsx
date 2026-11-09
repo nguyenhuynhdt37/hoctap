@@ -169,8 +169,9 @@ export default function LecturerCourseStats() {
       datasets: [
         {
           data: [data.free_students || 0, data.paid_students || 0],
-          backgroundColor: ["rgba(209,213,219,0.85)", "rgba(16,185,129,0.9)"],
-          borderWidth: 0,
+          backgroundColor: ["#BFD7ED", "#356FA7"],
+          borderColor: "#ffffff",
+          borderWidth: 2,
           hoverOffset: 6,
         },
       ],
@@ -187,8 +188,8 @@ export default function LecturerCourseStats() {
         {
           label: "Số học viên",
           data: [completed, inProgress],
-          backgroundColor: ["rgba(34,197,94,0.35)", "rgba(107,114,128,0.25)"],
-          borderColor: ["rgba(34,197,94,0.8)", "rgba(107,114,128,0.6)"],
+          backgroundColor: ["rgba(53, 111, 167, 0.75)", "rgba(191, 215, 237, 0.75)"],
+          borderColor: ["#356FA7", "#7BAFD4"],
           borderWidth: 1,
           borderRadius: 8,
         },
@@ -202,9 +203,9 @@ export default function LecturerCourseStats() {
     plugins: {
       legend: {
         position: "bottom",
-        labels: { boxWidth: 10, color: "#374151" },
+        labels: { boxWidth: 10, color: "#3D4A5A" },
       },
-      tooltip: { enabled: true, backgroundColor: "rgba(17,24,39,0.9)" },
+      tooltip: { enabled: true, backgroundColor: "#3D4A5A" },
     },
   };
 
@@ -212,17 +213,17 @@ export default function LecturerCourseStats() {
     responsive: true,
     plugins: {
       legend: { display: false },
-      tooltip: { enabled: true, backgroundColor: "rgba(17,24,39,0.9)" },
+      tooltip: { enabled: true, backgroundColor: "#3D4A5A" },
     },
     scales: {
       x: {
         grid: { display: false },
-        ticks: { color: "#6B7280" },
+        ticks: { color: "#6F7C8C" },
       },
       y: {
         beginAtZero: true,
-        grid: { color: "rgba(107,114,128,0.15)" },
-        ticks: { color: "#6B7280", precision: 0 },
+        grid: { color: "#E7EEF7" },
+        ticks: { color: "#6F7C8C", precision: 0 },
       },
     },
   };
@@ -231,62 +232,20 @@ export default function LecturerCourseStats() {
     responsive: true,
     plugins: {
       legend: { display: false },
-      tooltip: { enabled: true, backgroundColor: "rgba(17,24,39,0.9)" },
+      tooltip: { enabled: true, backgroundColor: "#3D4A5A" },
     },
     scales: {
       x: {
-        grid: { color: "rgba(107,114,128,0.15)", borderDash: [4, 6] },
-        ticks: { color: "#6B7280" },
+        grid: { color: "#E7EEF7", borderDash: [4, 6] },
+        ticks: { color: "#6F7C8C" },
       },
       y: {
         beginAtZero: true,
-        grid: { color: "rgba(107,114,128,0.15)" },
-        ticks: { color: "#6B7280", precision: 0 },
+        grid: { color: "#E7EEF7" },
+        ticks: { color: "#6F7C8C", precision: 0 },
       },
     },
   };
-
-  const enrollLineData = useMemo(() => {
-    if (!timeline) return null;
-    const labels = timeline.enroll_timeline.map((i) => i.time);
-    const series = timeline.enroll_timeline.map((i) => i.count);
-    return {
-      labels,
-      datasets: [
-        {
-          label: "Đăng ký",
-          data: series,
-          borderColor: "rgba(16,185,129,0.9)",
-          backgroundColor: "rgba(16,185,129,0.18)",
-          fill: true,
-          tension: 0.4,
-          borderWidth: 2,
-          pointRadius: 0,
-        },
-      ],
-    };
-  }, [timeline]);
-
-  const activityLineData = useMemo(() => {
-    if (!timeline) return null;
-    const labels = timeline.activity_timeline.map((i) => i.time);
-    const series = timeline.activity_timeline.map((i) => i.count);
-    return {
-      labels,
-      datasets: [
-        {
-          label: "Hoạt động",
-          data: series,
-          borderColor: "rgba(45,212,191,0.9)",
-          backgroundColor: "rgba(45,212,191,0.18)",
-          fill: true,
-          tension: 0.4,
-          borderWidth: 2,
-          pointRadius: 0,
-        },
-      ],
-    };
-  }, [timeline]);
 
   // Combined flow line (enroll + activity) with soft gradient fills
   const combinedLineData = useMemo(() => {
@@ -305,21 +264,20 @@ export default function LecturerCourseStats() {
     );
     const enrollSeries = labels.map((t) => enrollMap.get(t) || 0);
     const activitySeries = labels.map((t) => activityMap.get(t) || 0);
-    // Use scriptable bg for gradient
     const enrollBg = (ctx: any) => {
       const { ctx: c, chartArea } = ctx.chart;
-      if (!chartArea) return "rgba(16,185,129,0.12)";
+      if (!chartArea) return "rgba(53, 111, 167, 0.12)";
       const g = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-      g.addColorStop(0, "rgba(16,185,129,0.35)");
-      g.addColorStop(1, "rgba(16,185,129,0.03)");
+      g.addColorStop(0, "rgba(53, 111, 167, 0.30)");
+      g.addColorStop(1, "rgba(53, 111, 167, 0.03)");
       return g;
     };
     const activityBg = (ctx: any) => {
       const { ctx: c, chartArea } = ctx.chart;
-      if (!chartArea) return "rgba(45,212,191,0.12)";
+      if (!chartArea) return "rgba(247, 201, 217, 0.20)";
       const g = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-      g.addColorStop(0, "rgba(45,212,191,0.35)");
-      g.addColorStop(1, "rgba(45,212,191,0.03)");
+      g.addColorStop(0, "rgba(247, 201, 217, 0.45)");
+      g.addColorStop(1, "rgba(247, 201, 217, 0.05)");
       return g;
     };
     return {
@@ -328,26 +286,26 @@ export default function LecturerCourseStats() {
         {
           label: "Đăng ký",
           data: enrollSeries,
-          borderColor: "rgba(16,185,129,1)",
+          borderColor: "#356FA7",
           backgroundColor: enrollBg,
           fill: false,
-          tension: 0,
-          borderWidth: 3,
+          tension: 0.3,
+          borderWidth: 2.5,
           pointRadius: 4,
-          pointBackgroundColor: "rgba(16,185,129,1)",
+          pointBackgroundColor: "#356FA7",
           pointBorderColor: "#ffffff",
           pointBorderWidth: 2,
         },
         {
           label: "Hoạt động",
           data: activitySeries,
-          borderColor: "rgba(45,212,191,1)",
+          borderColor: "#D9829F",
           backgroundColor: activityBg,
           fill: false,
-          tension: 0,
-          borderWidth: 3,
+          tension: 0.3,
+          borderWidth: 2.5,
           pointRadius: 4,
-          pointBackgroundColor: "rgba(45,212,191,1)",
+          pointBackgroundColor: "#D9829F",
           pointBorderColor: "#ffffff",
           pointBorderWidth: 2,
         },
@@ -356,14 +314,14 @@ export default function LecturerCourseStats() {
   }, [timeline]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
+    <div className="min-h-screen bg-[#F6FAFF]">
       <div className="max-w-screen-2xl mx-auto px-2 md:px-4 lg:px-6 py-6 md:py-10">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-gray-900">
+          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-[#3D4A5A]">
             Thống kê học viên
           </h1>
-          <p className="text-gray-500">
+          <p className="text-[#6F7C8C]">
             {data?.title
               ? `Khóa học: ${data.title}`
               : "Tổng quan tình trạng học"}
@@ -376,10 +334,10 @@ export default function LecturerCourseStats() {
             {[...Array(4)].map((_, i) => (
               <div
                 key={i}
-                className="rounded-2xl border border-gray-100 bg-white/60 backdrop-blur-sm shadow-sm p-5 animate-pulse"
+                className="rounded-2xl border border-[#E7EEF7] bg-white shadow-xs p-5 animate-pulse"
               >
-                <div className="h-4 w-32 bg-gray-200 rounded mb-3" />
-                <div className="h-8 w-24 bg-gray-200 rounded" />
+                <div className="h-4 w-32 bg-[#E8F2FA] rounded mb-3" />
+                <div className="h-8 w-24 bg-[#E8F2FA] rounded" />
               </div>
             ))}
           </div>
@@ -387,7 +345,7 @@ export default function LecturerCourseStats() {
 
         {/* Error */}
         {error && !isLoading && (
-          <div className="rounded-2xl border border-yellow-200 bg-yellow-50 p-5 text-yellow-800">
+          <div className="rounded-2xl border border-[#F8E9C9] bg-[#FFF1D9] p-5 text-[#875415]">
             {error}
           </div>
         )}
@@ -396,23 +354,23 @@ export default function LecturerCourseStats() {
         {data && !isLoading && !error && (
           <div className="space-y-6">
             {/* Course meta overview */}
-            <div className="rounded-3xl border border-gray-100 bg-white/70 backdrop-blur-md shadow-sm p-6">
+            <div className="rounded-[24px] border border-[#E7EEF7] bg-white shadow-xs p-6">
               <div className="flex items-start gap-4">
                 {data.thumbnail_url ? (
                   <img
                     src={getGoogleDriveImageUrl(data.thumbnail_url)}
                     alt={data.title}
-                    className="w-28 h-16 rounded-lg object-cover border border-gray-200"
+                    className="w-28 h-16 rounded-xl object-cover border border-[#E7EEF7]"
                     onError={(e) => {
                       (e.target as HTMLImageElement).style.display = "none";
                     }}
                   />
                 ) : null}
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-gray-900">
+                  <h3 className="text-lg font-semibold text-[#3D4A5A]">
                     {data.title}
                   </h3>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-[#6F7C8C]">
                     Tạo: {formatDateTime(data.created_at)} • Cập nhật:{" "}
                     {formatDateTime(data.updated_at)} • Duyệt:{" "}
                     {data.approved_at ? formatDateTime(data.approved_at) : "—"}
@@ -420,88 +378,88 @@ export default function LecturerCourseStats() {
                 </div>
               </div>
               <div className="mt-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-                <div className="rounded-xl border border-gray-100 bg-white/60 p-3">
-                  <div className="text-xs text-gray-500 mb-1">Giá gốc</div>
-                  <div className="font-semibold text-gray-900">
+                <div className="rounded-xl border border-[#E7EEF7] bg-[#F6FAFF]/60 p-3">
+                  <div className="text-xs text-[#6F7C8C] mb-1">Giá gốc</div>
+                  <div className="font-semibold text-[#3D4A5A]">
                     {formatCurrency(data.base_price || 0)}
                   </div>
                 </div>
-                <div className="rounded-xl border border-gray-100 bg-white/60 p-3">
-                  <div className="text-xs text-gray-500 mb-1">Lượt xem</div>
-                  <div className="font-semibold text-gray-900">
+                <div className="rounded-xl border border-[#E7EEF7] bg-[#F6FAFF]/60 p-3">
+                  <div className="text-xs text-[#6F7C8C] mb-1">Lượt xem</div>
+                  <div className="font-semibold text-[#3D4A5A]">
                     {formatNumber(data.views || 0)}
                   </div>
                 </div>
-                <div className="rounded-xl border border-gray-100 bg-white/60 p-3">
-                  <div className="text-xs text-gray-500 mb-1">Đánh giá TB</div>
-                  <div className="font-semibold text-gray-900">
+                <div className="rounded-xl border border-[#E7EEF7] bg-[#F6FAFF]/60 p-3">
+                  <div className="text-xs text-[#6F7C8C] mb-1">Đánh giá TB</div>
+                  <div className="font-semibold text-[#3D4A5A]">
                     {Number(data.rating_avg || 0).toFixed(1)} (
                     {formatNumber(data.total_reviews || 0)})
                   </div>
                 </div>
-                <div className="rounded-xl border border-gray-100 bg-white/60 p-3">
-                  <div className="text-xs text-gray-500 mb-1">Chương / Bài</div>
-                  <div className="font-semibold text-gray-900">
+                <div className="rounded-xl border border-[#E7EEF7] bg-[#F6FAFF]/60 p-3">
+                  <div className="text-xs text-[#6F7C8C] mb-1">Chương / Bài</div>
+                  <div className="font-semibold text-[#3D4A5A]">
                     {data.sections_count} / {data.lessons_count}
                   </div>
                 </div>
-                <div className="rounded-xl border border-gray-100 bg-white/60 p-3">
-                  <div className="text-xs text-gray-500 mb-1">
+                <div className="rounded-xl border border-[#E7EEF7] bg-[#F6FAFF]/60 p-3">
+                  <div className="text-xs text-[#6F7C8C] mb-1">
                     Tổng thời lượng
                   </div>
-                  <div className="font-semibold text-gray-900">
+                  <div className="font-semibold text-[#3D4A5A]">
                     {formatDuration(data.total_length_seconds)}
                   </div>
                 </div>
-                <div className="rounded-xl border border-gray-100 bg-white/60 p-3">
-                  <div className="text-xs text-gray-500 mb-1">
+                <div className="rounded-xl border border-[#E7EEF7] bg-[#F6FAFF]/60 p-3">
+                  <div className="text-xs text-[#6F7C8C] mb-1">
                     Trạng thái duyệt
                   </div>
-                  <div className="font-semibold text-gray-900 capitalize">
+                  <div className="font-semibold text-[#3D4A5A] capitalize">
                     {data.approval_status} · vòng {data.review_round}
                   </div>
                 </div>
-                <div className="rounded-xl border border-gray-100 bg-white/60 p-3">
-                  <div className="text-xs text-gray-500 mb-1">
+                <div className="rounded-xl border border-[#E7EEF7] bg-[#F6FAFF]/60 p-3">
+                  <div className="text-xs text-[#6F7C8C] mb-1">
                     Tổng học viên
                   </div>
-                  <div className="font-semibold text-gray-900">
+                  <div className="font-semibold text-[#3D4A5A]">
                     {formatNumber(data.total_students || 0)}
                   </div>
                 </div>
-                <div className="rounded-xl border border-gray-100 bg-white/60 p-3">
-                  <div className="text-xs text-gray-500 mb-1">
+                <div className="rounded-xl border border-[#E7EEF7] bg-[#F6FAFF]/60 p-3">
+                  <div className="text-xs text-[#6F7C8C] mb-1">
                     Học viên trả phí
                   </div>
-                  <div className="font-semibold text-gray-900">
+                  <div className="font-semibold text-[#3D4A5A]">
                     {formatNumber(data.paid_students || 0)}
                   </div>
                 </div>
-                <div className="rounded-xl border border-gray-100 bg-white/60 p-3">
-                  <div className="text-xs text-gray-500 mb-1">
+                <div className="rounded-xl border border-[#E7EEF7] bg-[#F6FAFF]/60 p-3">
+                  <div className="text-xs text-[#6F7C8C] mb-1">
                     Học viên miễn phí
                   </div>
-                  <div className="font-semibold text-gray-900">
+                  <div className="font-semibold text-[#3D4A5A]">
                     {formatNumber(data.free_students || 0)}
                   </div>
                 </div>
-                <div className="rounded-xl border border-gray-100 bg-white/60 p-3">
-                  <div className="text-xs text-gray-500 mb-1">Hoàn thành</div>
-                  <div className="font-semibold text-gray-900">
+                <div className="rounded-xl border border-[#E7EEF7] bg-[#F6FAFF]/60 p-3">
+                  <div className="text-xs text-[#6F7C8C] mb-1">Hoàn thành</div>
+                  <div className="font-semibold text-[#3D4A5A]">
                     {formatNumber(data.completed_students || 0)}
                   </div>
                 </div>
-                <div className="rounded-xl border border-gray-100 bg-white/60 p-3">
-                  <div className="text-xs text-gray-500 mb-1">
+                <div className="rounded-xl border border-[#E7EEF7] bg-[#F6FAFF]/60 p-3">
+                  <div className="text-xs text-[#6F7C8C] mb-1">
                     Tỉ lệ hoàn thành
                   </div>
-                  <div className="font-semibold text-gray-900">
+                  <div className="font-semibold text-[#3D4A5A]">
                     {Number(data.completion_rate || 0).toFixed(2)}%
                   </div>
                 </div>
-                <div className="rounded-xl border border-gray-100 bg-white/60 p-3">
-                  <div className="text-xs text-gray-500 mb-1">Doanh thu</div>
-                  <div className="font-semibold text-green-600">
+                <div className="rounded-xl border border-[#E7EEF7] bg-[#F6FAFF]/60 p-3">
+                  <div className="text-xs text-[#6F7C8C] mb-1">Doanh thu</div>
+                  <div className="font-semibold text-[#356FA7]">
                     {formatCurrency(data.total_revenue || 0)}
                   </div>
                 </div>
@@ -509,20 +467,20 @@ export default function LecturerCourseStats() {
             </div>
             {/* Stat cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="rounded-2xl border border-gray-100 bg-white/60 backdrop-blur-sm shadow-sm p-5">
-                <div className="text-sm text-gray-500 mb-1">Tổng học viên</div>
-                <div className="text-3xl font-semibold text-gray-900">
+              <div className="rounded-[20px] border border-[#E7EEF7] bg-white shadow-xs p-5">
+                <div className="text-sm text-[#6F7C8C] mb-1">Tổng học viên</div>
+                <div className="text-3xl font-semibold text-[#3D4A5A]">
                   {data.total_students}
                 </div>
               </div>
-              <div className="rounded-2xl border border-gray-100 bg-white/60 backdrop-blur-sm shadow-sm p-5">
-                <div className="text-sm text-gray-500 mb-1">
+              <div className="rounded-[20px] border border-[#E7EEF7] bg-white shadow-xs p-5">
+                <div className="text-sm text-[#6F7C8C] mb-1">
                   Tiến độ trung bình
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-full max-w-[220px] h-2 bg-gray-100/80 rounded-full overflow-hidden">
+                  <div className="w-full max-w-[220px] h-2.5 bg-[#E8F2FA] rounded-full overflow-hidden">
                     <div
-                      className="h-2 bg-gradient-to-r from-emerald-400 to-green-500"
+                      className="h-2.5 bg-[#356FA7] rounded-full"
                       style={{
                         width: `${Math.min(
                           100,
@@ -531,13 +489,13 @@ export default function LecturerCourseStats() {
                       }}
                     />
                   </div>
-                  <span className="text-xl font-semibold text-gray-900">
+                  <span className="text-xl font-semibold text-[#3D4A5A]">
                     {data.avg_progress.toFixed(2)}%
                   </span>
                 </div>
               </div>
-              <div className="rounded-2xl border border-gray-100 bg-white/60 backdrop-blur-sm shadow-sm p-5">
-                <div className="text-sm text-gray-500 mb-1">Doanh thu</div>
+              <div className="rounded-[20px] border border-[#E7EEF7] bg-white shadow-xs p-5">
+                <div className="text-sm text-[#6F7C8C] mb-1">Doanh thu</div>
                 {(() => {
                   const total =
                     (data.revenue_paid || 0) +
@@ -547,25 +505,25 @@ export default function LecturerCourseStats() {
                     0;
                   return (
                     <>
-                      <div className="text-3xl font-semibold text-green-600">
+                      <div className="text-3xl font-semibold text-[#356FA7]">
                         {formatCurrency(total)}
                       </div>
-                      <div className="mt-2 grid grid-cols-3 gap-2 text-xs text-gray-600">
-                        <div className="rounded-lg bg-green-50 border border-green-100 p-2">
+                      <div className="mt-2 grid grid-cols-3 gap-2 text-xs text-[#6F7C8C]">
+                        <div className="rounded-lg bg-[#E4F3E9] border border-[#BFE3CC] p-2">
                           <div>Đã thanh toán</div>
-                          <div className="font-semibold text-green-700">
+                          <div className="font-semibold text-[#276749]">
                             {formatCurrency(data.revenue_paid || 0)}
                           </div>
                         </div>
-                        <div className="rounded-lg bg-emerald-50 border border-emerald-100 p-2">
+                        <div className="rounded-lg bg-[#E8F2FA] border border-[#BFD7ED] p-2">
                           <div>Đang giữ</div>
-                          <div className="font-semibold text-emerald-700">
+                          <div className="font-semibold text-[#356FA7]">
                             {formatCurrency(data.revenue_holding || 0)}
                           </div>
                         </div>
-                        <div className="rounded-lg bg-yellow-50 border border-yellow-100 p-2">
+                        <div className="rounded-lg bg-[#FFF1D9] border border-[#F8E9C9] p-2">
                           <div>Chờ xử lý</div>
-                          <div className="font-semibold text-yellow-700">
+                          <div className="font-semibold text-[#875415]">
                             {formatCurrency(data.revenue_pending || 0)}
                           </div>
                         </div>
@@ -576,14 +534,14 @@ export default function LecturerCourseStats() {
               </div>
             </div>
 
-            {/* Status distribution (minimal, Apple-like) */}
-            <div className="rounded-3xl border border-gray-100 bg-white/60 backdrop-blur-md shadow-sm p-6">
+            {/* Status distribution */}
+            <div className="rounded-[24px] border border-[#E7EEF7] bg-white shadow-xs p-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">
+                  <h2 className="text-lg font-semibold text-[#3D4A5A]">
                     Phân bố trạng thái học
                   </h2>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-[#6F7C8C]">
                     Tổng quan các nhóm tiến độ
                   </p>
                 </div>
@@ -597,7 +555,7 @@ export default function LecturerCourseStats() {
                     </div>
                   ) : null}
                 </div>
-                <div className="rounded-2xl border border-gray-100 bg-white/40 p-4">
+                <div className="rounded-2xl border border-[#E7EEF7] bg-[#F6FAFF]/50 p-4">
                   {barData ? (
                     <div className="w-full">
                       {/* @ts-ignore */}
@@ -609,13 +567,13 @@ export default function LecturerCourseStats() {
             </div>
 
             {/* Timeline (Flow line) */}
-            <div className="rounded-3xl border border-gray-100 bg-white/60 backdrop-blur-md shadow-sm p-6">
+            <div className="rounded-[24px] border border-[#E7EEF7] bg-white shadow-xs p-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">
+                  <h2 className="text-lg font-semibold text-[#3D4A5A]">
                     Timeline học viên
                   </h2>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-[#6F7C8C]">
                     Theo dõi theo thời gian
                   </p>
                 </div>
@@ -631,7 +589,7 @@ export default function LecturerCourseStats() {
                           | "year") || "day"
                       )
                     }
-                    className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm text-gray-700 focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400"
+                    className="px-3 py-2 rounded-xl border border-[#E7EEF7] bg-white text-sm text-[#3D4A5A] focus:outline-none focus:ring-2 focus:ring-[#356FA7]/25 focus:border-[#356FA7]"
                   >
                     <option value="day">Theo ngày</option>
                     <option value="month">Theo tháng</option>
@@ -640,14 +598,14 @@ export default function LecturerCourseStats() {
                   </select>
                 </div>
               </div>
-              <div className="rounded-2xl border border-gray-100 bg-white/40 p-4">
+              <div className="rounded-2xl border border-[#E7EEF7] bg-[#F6FAFF]/50 p-4">
                 {combinedLineData ? (
                   <div className="w-full h-[320px]">
                     {/* @ts-ignore */}
                     <Line data={combinedLineData} options={lineOptions} />
                   </div>
                 ) : (
-                  <div className="h-40 flex items-center justify-center text-gray-400">
+                  <div className="h-40 flex items-center justify-center text-[#8190A3]">
                     Không có dữ liệu
                   </div>
                 )}

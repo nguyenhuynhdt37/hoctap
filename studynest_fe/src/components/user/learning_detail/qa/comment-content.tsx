@@ -27,7 +27,7 @@ export default memo(function CommentContent({
       {shouldTruncate && (
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="mt-2 text-sm text-[#00bba7] hover:text-[#00a896] font-medium"
+          className="mt-2 text-sm text-[#356FA7] hover:text-[#285C90] font-medium cursor-pointer"
         >
           {isExpanded ? "Ẩn bớt" : "Xem thêm"}
         </button>
@@ -35,4 +35,3 @@ export default memo(function CommentContent({
     </div>
   );
 });
-

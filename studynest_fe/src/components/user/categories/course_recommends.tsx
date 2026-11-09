@@ -71,7 +71,7 @@ const RecommendedCourseCard = ({
           onError={(e) => {
             (
               e.target as HTMLImageElement
-            ).src = `https://via.placeholder.com/400x300/00bba7/ffffff?text=${encodeURIComponent(
+            ).src = `https://via.placeholder.com/400x300/E8F2FA/356FA7?text=${encodeURIComponent(
               course.title
             )}`;
           }}
@@ -101,7 +101,7 @@ const RecommendedCourseCard = ({
                         e.target as HTMLImageElement
                       ).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
                         course.instructor.name
-                      )}&background=00bba7&color=fff&size=48`;
+                      )}&background=E8F2FA&color=356FA7&size=48`;
                     }}
                   />
                   <div className="absolute inset-0 rounded-full bg-gradient-to-br from-green-400/20 to-emerald-400/20 opacity-0 group-hover:opacity-100 transition-opacity" />

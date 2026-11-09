@@ -81,14 +81,14 @@ export default function RevenueLineChart() {
       {
         label: "Doanh thu",
         data: (data?.data || []).map((d) => parseFloat(String(d.amount)) || 0),
-        borderColor: "#00a73d",
-        backgroundColor: "rgba(0, 167, 61, 0.1)",
+        borderColor: "#356FA7",
+        backgroundColor: "rgba(191, 215, 237, 0.35)",
         fill: true,
         tension: 0.4,
         pointRadius: 4,
         pointHoverRadius: 6,
-        pointBackgroundColor: "#00a73d",
-        pointBorderColor: "#fff",
+        pointBackgroundColor: "#356FA7",
+        pointBorderColor: "#ffffff",
         pointBorderWidth: 2,
       },
     ],
@@ -100,22 +100,22 @@ export default function RevenueLineChart() {
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor: "#1f2937",
-        titleColor: "#fff",
-        bodyColor: "#fff",
+        backgroundColor: "#3D4A5A",
+        titleColor: "#ffffff",
+        bodyColor: "#ffffff",
         padding: 12,
-        borderRadius: 8,
+        borderRadius: 10,
         callbacks: {
           label: (ctx: { raw: number }) => formatCurrency(ctx.raw),
         },
       },
     },
     scales: {
-      x: { grid: { display: false }, ticks: { color: "#6b7280" } },
+      x: { grid: { display: false }, ticks: { color: "#6F7C8C" } },
       y: {
-        grid: { color: "#f3f4f6" },
+        grid: { color: "#E7EEF7" },
         ticks: {
-          color: "#6b7280",
+          color: "#6F7C8C",
           callback: (value: number) => formatCurrency(value),
         },
       },
@@ -125,24 +125,24 @@ export default function RevenueLineChart() {
   if (!mounted) return null;
 
   return (
-    <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/30 p-6">
+    <div className="bg-white rounded-[20px] shadow-xs border border-[#E7EEF7] p-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
         <div>
-          <h3 className="text-xl font-bold text-gray-900">Biểu đồ doanh thu</h3>
-          <p className="text-gray-500 text-sm mt-1">
+          <h3 className="text-lg font-semibold text-[#3D4A5A]">Biểu đồ doanh thu</h3>
+          <p className="text-[#6F7C8C] text-sm mt-1">
             Tổng: {formatCurrency(data?.total)}
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex gap-2">
+          <div className="flex gap-1.5 bg-[#F6FAFF] p-1 rounded-xl border border-[#E7EEF7]">
             {(["day", "week", "month", "year"] as RevenuePeriod[]).map((p) => (
               <button
                 key={p}
                 onClick={() => setPeriod(p)}
-                className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all ${
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                   period === p
-                    ? "bg-green-600 text-white"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    ? "bg-[#356FA7] text-white shadow-2xs"
+                    : "text-[#6F7C8C] hover:text-[#3D4A5A]"
                 }`}
               >
                 {p === "day"
@@ -157,7 +157,7 @@ export default function RevenueLineChart() {
           </div>
           <Link
             href="/admin/revenue"
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-green-600 border border-green-200 rounded-lg hover:bg-green-50 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-[#356FA7] border border-[#BFD7ED] rounded-xl hover:bg-[#E8F2FA] transition-colors"
           >
             <HiExternalLink className="w-4 h-4" />
             Chi tiết
@@ -166,22 +166,22 @@ export default function RevenueLineChart() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="bg-green-50 rounded-xl p-4">
-          <p className="text-green-600 text-sm font-medium">Thu nền tảng</p>
-          <p className="text-green-800 text-lg font-bold mt-1">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div className="bg-[#E8F2FA]/70 border border-[#BFD7ED]/60 rounded-xl p-4">
+          <p className="text-[#356FA7] text-xs font-semibold uppercase tracking-wider">Thu nền tảng</p>
+          <p className="text-[#3D4A5A] text-lg font-bold mt-1">
             {formatCurrency(data?.platform_income)}
           </p>
         </div>
-        <div className="bg-emerald-50 rounded-xl p-4">
-          <p className="text-emerald-600 text-sm font-medium">Chi giảng viên</p>
-          <p className="text-emerald-800 text-lg font-bold mt-1">
+        <div className="bg-[#FCE8EF]/70 border border-[#F7C9D9]/60 rounded-xl p-4">
+          <p className="text-[#8A3B58] text-xs font-semibold uppercase tracking-wider">Chi giảng viên</p>
+          <p className="text-[#3D4A5A] text-lg font-bold mt-1">
             {formatCurrency(data?.instructor_payout)}
           </p>
         </div>
-        <div className="bg-teal-50 rounded-xl p-4">
-          <p className="text-teal-600 text-sm font-medium">Số giao dịch</p>
-          <p className="text-teal-800 text-lg font-bold mt-1">
+        <div className="bg-[#E3D5F5]/40 border border-[#E3D5F5] rounded-xl p-4">
+          <p className="text-[#593E7A] text-xs font-semibold uppercase tracking-wider">Số giao dịch</p>
+          <p className="text-[#3D4A5A] text-lg font-bold mt-1">
             {(data?.data || [])
               .reduce((sum, d) => sum + (d.count || 0), 0)
               .toLocaleString("vi-VN")}
@@ -193,7 +193,7 @@ export default function RevenueLineChart() {
       <div className="h-64 relative">
         {isLoading ? (
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-4 border-[#356FA7] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
           <Line data={chartData} options={options as any} />

@@ -48,7 +48,7 @@ const LecturerCard = ({ item }: { item: LecturerItem }) => {
                 e.target as HTMLImageElement
               ).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
                 item.instructor_name
-              )}&background=00bba7&color=fff&size=80`;
+              )}&background=E8F2FA&color=356FA7&size=80`;
             }}
           />
         </div>

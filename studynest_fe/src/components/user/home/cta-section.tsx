@@ -1,6 +1,7 @@
 "use client";
 
 import { useUserStore } from "@/stores/user";
+import Link from "next/link";
 import { HiGift } from "react-icons/hi";
 
 const CTASection = () => {
@@ -9,32 +10,44 @@ const CTASection = () => {
   if (user) return null;
 
   return (
-    <section className="py-20 bg-gradient-to-br from-green-600 via-emerald-600 to-teal-600 text-white relative overflow-hidden">
-      <div className="absolute top-0 left-0 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
-      <div className="absolute bottom-0 right-0 w-80 h-80 bg-white/10 rounded-full blur-3xl" />
+    <section className="py-20 bg-white relative overflow-hidden">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="rounded-[32px] bg-gradient-to-br from-[#E8F2FA] via-[#F6FAFF] to-[#FCE8EF]/60 border border-[#E7EEF7] px-6 py-14 sm:px-12 sm:py-16 text-center relative overflow-hidden shadow-xs">
+          <div className="pointer-events-none absolute -top-20 -left-20 w-64 h-64 bg-[#BFD7ED]/30 rounded-full blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-20 -right-20 w-72 h-72 bg-[#F7C9D9]/25 rounded-full blur-3xl" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-        <div className="inline-flex items-center px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 mb-6">
-          <span className="w-2 h-2 bg-white rounded-full mr-3 animate-pulse" />
-          <span className="text-sm font-semibold">Bắt đầu ngay hôm nay</span>
-        </div>
+          <div className="relative z-10 max-w-2xl mx-auto">
+            <div className="inline-flex items-center px-3.5 py-1.5 rounded-full bg-white/90 border border-[#BFD7ED] text-[#356FA7] mb-6">
+              <span className="w-2 h-2 bg-[#356FA7] rounded-full mr-2.5" />
+              <span className="text-xs font-semibold uppercase tracking-wider">
+                Bắt đầu ngay hôm nay
+              </span>
+            </div>
 
-        <h2 className="text-4xl md:text-5xl font-black mb-4">
-          Sẵn sàng bắt đầu hành trình học tập?
-        </h2>
-        <p className="text-green-100 text-lg mb-10 max-w-2xl mx-auto">
-          Tham gia cùng hàng trăm nghìn học viên đang phát triển kỹ năng và
-          thăng tiến trong sự nghiệp với StudyNest
-        </p>
+            <h2 className="font-display text-3xl sm:text-4xl font-bold text-[#3D4A5A] tracking-tight mb-4">
+              Sẵn sàng bắt đầu hành trình học tập?
+            </h2>
+            <p className="text-[#6F7C8C] text-base sm:text-lg mb-8 leading-relaxed">
+              Tham gia cùng hàng trăm nghìn học viên đang phát triển kỹ năng và
+              thăng tiến trong sự nghiệp với StudyNest
+            </p>
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <button className="group bg-white hover:bg-gray-50 text-green-600 px-8 py-4 rounded-xl font-bold text-lg transition-all duration-300 flex items-center justify-center shadow-xl hover:shadow-2xl hover:scale-105 cursor-pointer">
-            <HiGift className="mr-3 h-6 w-6 group-hover:scale-110 transition-transform" />
-            Đăng ký miễn phí ngay
-          </button>
-          <button className="border-2 border-white hover:bg-white hover:text-green-600 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all duration-300 backdrop-blur-sm hover:scale-105 cursor-pointer">
-            Tìm hiểu thêm
-          </button>
+            <div className="flex flex-col sm:flex-row gap-3.5 justify-center">
+              <Link
+                href="/register"
+                className="group bg-[#356FA7] hover:bg-[#285C90] text-white px-7 py-3.5 rounded-xl font-semibold text-base transition-all duration-200 flex items-center justify-center shadow-xs hover:shadow-sm cursor-pointer"
+              >
+                <HiGift className="mr-2.5 h-5 w-5" />
+                Đăng ký miễn phí ngay
+              </Link>
+              <Link
+                href="/courses"
+                className="bg-white hover:bg-[#F6FAFF] border border-[#BFD7ED] text-[#356FA7] px-7 py-3.5 rounded-xl font-semibold text-base transition-all duration-200 flex items-center justify-center cursor-pointer"
+              >
+                Tìm hiểu thêm
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     </section>

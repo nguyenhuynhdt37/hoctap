@@ -1,25 +1,484 @@
 @import "tailwindcss";
-/* :root {
-  --background: #ffffff;
-  --foreground: #171717;
+
+/* ==========================================================================
+   CLOUDY BLUE DESIGN SYSTEM — KOREAN PASTEL MINIMALISM
+   Target: High School Online Learning Platform (Grades 10–12)
+   Aesthetic: Soft, Airy, Premium, Editorial, Calm, Friendly, Elegant
+   ========================================================================== */
+
+:root {
+  /* ------------------------------------------------------------------------
+     1. CORE PALETTE PRIMITIVES (Cloudy Blue Foundation)
+     ------------------------------------------------------------------------ */
+  --cb-pastel-blue: #BFD7ED;
+  --cb-primary-light: #E8F2FA;
+  --cb-primary-action: #356FA7;
+  --cb-primary-action-hover: #285C90;
+  --cb-pastel-pink: #F7C9D9;
+  --cb-secondary-light: #FCE8EF;
+  --cb-lavender: #E3D5F5;
+  --cb-vanilla: #F8E9C9;
+  --cb-bg: #F6FAFF;
+  --cb-surface: #FFFFFF;
+  --cb-surface-alt: #FFF9F6;
+  --cb-text-primary: #3D4A5A;
+  --cb-text-secondary: #6F7C8C;
+  --cb-text-subtle: #8190A3;
+  --cb-border: #E7EEF7;
+  --cb-ring: #356FA7;
+
+  /* ------------------------------------------------------------------------
+     2. SEMANTIC COLOR TOKENS (Stage 2 Specification)
+     ------------------------------------------------------------------------ */
+  --color-background: #F6FAFF;
+  --color-foreground: #3D4A5A;
+  --color-surface: #FFFFFF;
+  --color-surface-muted: #FFF9F6;
+
+  /* Primary: Action CTA uses high-contrast #356FA7 (WCAG AA > 5.3:1 with white);
+     Pastel surfaces use --color-primary-pastel (#BFD7ED) & --color-primary-light (#E8F2FA) */
+  --color-primary: #356FA7;
+  --color-primary-foreground: #FFFFFF;
+  --color-primary-hover: #285C90;
+  --color-primary-pastel: #BFD7ED;
+  --color-primary-light: #E8F2FA;
+
+  /* Secondary: Soft Pastel Pink */
+  --color-secondary: #F7C9D9;
+  --color-secondary-light: #FCE8EF;
+  --color-secondary-foreground: #3D4A5A;
+
+  /* Accents: Lavender & Vanilla */
+  --color-accent: #E3D5F5;
+  --color-accent-foreground: #3D4A5A;
+  --color-accent-vanilla: #F8E9C9;
+
+  /* Muted & Neutral Text Hierarchy */
+  --color-muted: #E8F2FA;
+  --color-muted-foreground: #6F7C8C;
+  --color-subtle-foreground: #8190A3;
+
+  /* Borders, Inputs & Focus Ring */
+  --color-border: #E7EEF7;
+  --color-border-strong: #BFD7ED;
+  --color-input: #E7EEF7;
+  --color-ring: #356FA7;
+
+  /* Semantic Status Colors (Pastel BG + High Contrast Foreground) */
+  --color-success: #276749;
+  --color-success-bg: #E4F3E9;
+  --color-success-border: #C3E4CE;
+
+  --color-warning: #875415;
+  --color-warning-bg: #FFF1D9;
+  --color-warning-border: #F5D9A6;
+
+  --color-destructive: #A23C46;
+  --color-destructive-bg: #FCE8E8;
+  --color-destructive-border: #F5C2C7;
+
+  /* Semantic Chart Palette */
+  --color-chart-1: #356FA7;
+  --color-chart-2: #7BAFD4;
+  --color-chart-3: #E89BB5;
+  --color-chart-4: #B99CE0;
+  --color-chart-5: #E6C27A;
+
+  /* ------------------------------------------------------------------------
+     3. TYPOGRAPHY TOKENS (Stage 3 Specification)
+     ------------------------------------------------------------------------ */
+  --font-sans: var(--font-be-vietnam), "Be Vietnam Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-display: var(--font-lora), "Lora", Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-mono: "JetBrains Mono", "Fira Code", Consolas, Monaco, monospace;
+
+  /* Type Scale Sizes & Line Heights */
+  --text-display-size: clamp(2.25rem, 4vw + 1rem, 3.5rem);
+  --text-display-lh: 1.18;
+  --text-display-ls: -0.02em;
+
+  --text-h1-size: clamp(1.875rem, 2.5vw + 0.75rem, 2.5rem);
+  --text-h1-lh: 1.22;
+  --text-h1-ls: -0.015em;
+
+  --text-h2-size: clamp(1.5rem, 1.8vw + 0.5rem, 2rem);
+  --text-h2-lh: 1.28;
+  --text-h2-ls: -0.01em;
+
+  --text-h3-size: clamp(1.25rem, 1.2vw + 0.4rem, 1.5rem);
+  --text-h3-lh: 1.32;
+
+  --text-h4-size: 1.125rem;
+  --text-h4-lh: 1.35;
+
+  --text-body-lg-size: 1.125rem;
+  --text-body-lg-lh: 1.65;
+
+  --text-body-size: 1rem;
+  --text-body-lh: 1.6;
+
+  --text-body-sm-size: 0.875rem;
+  --text-body-sm-lh: 1.55;
+
+  --text-caption-size: 0.75rem;
+  --text-caption-lh: 1.45;
+
+  --text-overline-size: 0.75rem;
+  --text-overline-lh: 1.4;
+  --text-overline-ls: 0.08em;
+
+  /* ------------------------------------------------------------------------
+     4. DESIGN FOUNDATIONS: SPACING, RADIUS, SHADOWS, MOTION (Stage 4)
+     ------------------------------------------------------------------------ */
+  --space-1: 0.25rem;  /* 4px */
+  --space-2: 0.5rem;   /* 8px */
+  --space-3: 0.75rem;  /* 12px */
+  --space-4: 1rem;     /* 16px */
+  --space-6: 1.5rem;   /* 24px */
+  --space-8: 2rem;     /* 32px */
+  --space-12: 3rem;    /* 48px */
+  --space-16: 4rem;    /* 64px */
+
+  /* Consistent Border Radius Scale */
+  --radius-control: 0.5rem;   /* 8px for small controls/badges */
+  --radius-input: 0.75rem;    /* 12px for inputs & buttons */
+  --radius-card: 1.125rem;    /* 18px (16–20px) for cards */
+  --radius-card-lg: 1.25rem;  /* 20px for larger cards/modals */
+  --radius-section: 1.5rem;   /* 24px for large sections */
+  --radius-hero: 2rem;        /* 32px for hero/feature containers */
+  --radius-pill: 9999px;      /* full for pills & avatars */
+
+  /* Soft Ambient Shadows (Never harsh or thick) */
+  --shadow-ambient-xs: 0 1px 2px rgba(61, 74, 90, 0.03);
+  --shadow-ambient-sm: 0 2px 10px -2px rgba(53, 111, 167, 0.05), 0 1px 4px -1px rgba(61, 74, 90, 0.03);
+  --shadow-ambient-md: 0 8px 24px -6px rgba(53, 111, 167, 0.08), 0 2px 8px -2px rgba(61, 74, 90, 0.04);
+  --shadow-ambient-lg: 0 16px 36px -8px rgba(53, 111, 167, 0.10), 0 4px 12px -2px rgba(61, 74, 90, 0.04);
+
+  /* Subtle Motion */
+  --duration-fast: 150ms;
+  --duration-normal: 200ms;
+  --duration-slow: 250ms;
+  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Semantic Color Utilities */
+  --color-background: var(--color-background);
+  --color-foreground: var(--color-foreground);
+  --color-surface: var(--color-surface);
+  --color-surface-muted: var(--color-surface-muted);
+  --color-primary: var(--color-primary);
+  --color-primary-foreground: var(--color-primary-foreground);
+  --color-primary-hover: var(--color-primary-hover);
+  --color-primary-pastel: var(--color-primary-pastel);
+  --color-primary-light: var(--color-primary-light);
+  --color-secondary: var(--color-secondary);
+  --color-secondary-light: var(--color-secondary-light);
+  --color-secondary-foreground: var(--color-secondary-foreground);
+  --color-accent: var(--color-accent);
+  --color-accent-foreground: var(--color-accent-foreground);
+  --color-accent-vanilla: var(--color-accent-vanilla);
+  --color-muted: var(--color-muted);
+  --color-muted-foreground: var(--color-muted-foreground);
+  --color-subtle: var(--color-subtle-foreground);
+  --color-border: var(--color-border);
+  --color-input: var(--color-input);
+  --color-ring: var(--color-ring);
+  --color-success: var(--color-success);
+  --color-success-bg: var(--color-success-bg);
+  --color-warning: var(--color-warning);
+  --color-warning-bg: var(--color-warning-bg);
+  --color-destructive: var(--color-destructive);
+  --color-destructive-bg: var(--color-destructive-bg);
+  --color-chart-1: var(--color-chart-1);
+  --color-chart-2: var(--color-chart-2);
+  --color-chart-3: var(--color-chart-3);
+  --color-chart-4: var(--color-chart-4);
+  --color-chart-5: var(--color-chart-5);
+
+  /* Fonts */
+  --font-sans: var(--font-sans);
+  --font-display: var(--font-display);
+  --font-serif: var(--font-display);
+  --font-mono: var(--font-mono);
+
+  /* Harmonize Tailwind Scales to Cloudy Blue System */
+  /* Neutral Slate-Blue Scale (replaces cold/harsh grays) */
+  --color-gray-50: #F6FAFF;
+  --color-gray-100: #EDF4FC;
+  --color-gray-200: #E7EEF7;
+  --color-gray-300: #D3E1F0;
+  --color-gray-400: #8190A3;
+  --color-gray-500: #6F7C8C;
+  --color-gray-600: #5B6878;
+  --color-gray-700: #4A5768;
+  --color-gray-800: #3D4A5A;
+  --color-gray-900: #3D4A5A;
+  --color-gray-950: #2C3744;
+
+  --color-slate-50: #F6FAFF;
+  --color-slate-100: #EDF4FC;
+  --color-slate-200: #E7EEF7;
+  --color-slate-300: #D3E1F0;
+  --color-slate-400: #8190A3;
+  --color-slate-500: #6F7C8C;
+  --color-slate-600: #5B6878;
+  --color-slate-700: #4A5768;
+  --color-slate-800: #3D4A5A;
+  --color-slate-900: #3D4A5A;
+
+  /* Map legacy green/emerald/teal scales to Cloudy Blue tokens so every single
+     utility across all 300+ views adheres to the Cloudy Blue palette */
+  --color-green-50: #E8F2FA;
+  --color-green-100: #DCEBFA;
+  --color-green-200: #BFD7ED;
+  --color-green-300: #9BC2E6;
+  --color-green-400: #6FA5D8;
+  --color-green-500: #4A85BF;
+  --color-green-600: #356FA7;
+  --color-green-700: #285C90;
+  --color-green-800: #214B75;
+  --color-green-900: #1B3D5E;
+
+  --color-emerald-50: #F6FAFF;
+  --color-emerald-100: #E8F2FA;
+  --color-emerald-200: #BFD7ED;
+  --color-emerald-300: #9BC2E6;
+  --color-emerald-400: #6FA5D8;
+  --color-emerald-500: #4A85BF;
+  --color-emerald-600: #356FA7;
+  --color-emerald-700: #285C90;
+  --color-emerald-800: #214B75;
+  --color-emerald-900: #1B3D5E;
+
+  --color-teal-50: #E8F2FA;
+  --color-teal-100: #DCEBFA;
+  --color-teal-200: #BFD7ED;
+  --color-teal-300: #9BC2E6;
+  --color-teal-400: #6FA5D8;
+  --color-teal-500: #4A85BF;
+  --color-teal-600: #356FA7;
+  --color-teal-700: #285C90;
+  --color-teal-800: #214B75;
+  --color-teal-900: #1B3D5E;
+
+  --color-blue-50: #E8F2FA;
+  --color-blue-100: #DCEBFA;
+  --color-blue-200: #BFD7ED;
+  --color-blue-300: #9BC2E6;
+  --color-blue-400: #6FA5D8;
+  --color-blue-500: #4A85BF;
+  --color-blue-600: #356FA7;
+  --color-blue-700: #285C90;
+  --color-blue-800: #214B75;
+  --color-blue-900: #1B3D5E;
+
+  /* Soft Pastel Pink & Rose */
+  --color-pink-50: #FCE8EF;
+  --color-pink-100: #FADCE7;
+  --color-pink-200: #F7C9D9;
+  --color-pink-300: #F0ACC4;
+  --color-pink-500: #D47496;
+  --color-pink-600: #B85678;
+  --color-pink-700: #96405E;
+
+  /* Soft Lavender / Purple */
+  --color-purple-50: #F5EFFC;
+  --color-purple-100: #EDE3FA;
+  --color-purple-200: #E3D5F5;
+  --color-purple-500: #8D6BB8;
+  --color-purple-600: #73519E;
+  --color-purple-700: #5B3E80;
+
+  /* Soft Vanilla / Warning Amber-Yellow */
+  --color-yellow-50: #FFF1D9;
+  --color-yellow-100: #F8E9C9;
+  --color-yellow-200: #F2D8A7;
+  --color-yellow-400: #E0A84B;
+  --color-yellow-500: #C98A2C;
+  --color-yellow-600: #875415;
+  --color-yellow-700: #875415;
+  --color-yellow-800: #6E430E;
+
+  --color-amber-50: #FFF1D9;
+  --color-amber-100: #F8E9C9;
+  --color-amber-200: #F2D8A7;
+  --color-amber-500: #C98A2C;
+  --color-amber-600: #875415;
+  --color-amber-700: #875415;
+  --color-amber-800: #6E430E;
+
+  --color-orange-50: #FFF1D9;
+  --color-orange-100: #F8E9C9;
+  --color-orange-200: #F2D8A7;
+  --color-orange-300: #E8C284;
+  --color-orange-400: #D9A152;
+  --color-orange-500: #C07D28;
+  --color-orange-600: #875415;
+  --color-orange-700: #6E430E;
+
+  /* Soft Destructive / Danger Red */
+  --color-red-50: #FCE8E8;
+  --color-red-100: #F9D5D7;
+  --color-red-200: #F3B7BC;
+  --color-red-300: #E8929A;
+  --color-red-400: #D46670;
+  --color-red-500: #BA4A55;
+  --color-red-600: #A23C46;
+  --color-red-700: #872F38;
+  --color-red-800: #6E242C;
+
+  /* Soft Ambient Shadows */
+  --shadow-sm: 0 2px 8px -2px rgba(53, 111, 167, 0.05), 0 1px 3px -1px rgba(61, 74, 90, 0.03);
+  --shadow-md: 0 6px 20px -4px rgba(53, 111, 167, 0.07), 0 2px 6px -1px rgba(61, 74, 90, 0.04);
+  --shadow-lg: 0 12px 28px -6px rgba(53, 111, 167, 0.08), 0 4px 10px -2px rgba(61, 74, 90, 0.04);
+  --shadow-xl: 0 16px 36px -8px rgba(53, 111, 167, 0.10), 0 6px 14px -3px rgba(61, 74, 90, 0.04);
+  --shadow-2xl: 0 20px 44px -10px rgba(53, 111, 167, 0.12), 0 8px 18px -4px rgba(61, 74, 90, 0.05);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ==========================================================================
+   BASE ELEMENT STYLES & TYPOGRAPHY HIERARCHY
+   ========================================================================== */
+
+html {
+  font-family: var(--font-sans);
+  color: var(--color-foreground);
+  background-color: var(--color-background);
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-} */
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-lh);
+  overflow-x: hidden;
+}
+
+/* Editorial Display Font Helper */
+.font-display,
+.font-editorial {
+  font-family: var(--font-display);
+}
+
+/* Semantic Type Scale Classes */
+.type-display {
+  font-family: var(--font-display);
+  font-size: var(--text-display-size);
+  line-height: var(--text-display-lh);
+  letter-spacing: var(--text-display-ls);
+  font-weight: 600;
+  color: var(--color-foreground);
+}
+
+.type-h1 {
+  font-size: var(--text-h1-size);
+  line-height: var(--text-h1-lh);
+  letter-spacing: var(--text-h1-ls);
+  font-weight: 700;
+  color: var(--color-foreground);
+}
+
+.type-h2 {
+  font-size: var(--text-h2-size);
+  line-height: var(--text-h2-lh);
+  letter-spacing: var(--text-h2-ls);
+  font-weight: 700;
+  color: var(--color-foreground);
+}
+
+.type-h3 {
+  font-size: var(--text-h3-size);
+  line-height: var(--text-h3-lh);
+  font-weight: 600;
+  color: var(--color-foreground);
+}
+
+.type-h4 {
+  font-size: var(--text-h4-size);
+  line-height: var(--text-h4-lh);
+  font-weight: 600;
+  color: var(--color-foreground);
+}
+
+.type-body-lg {
+  font-size: var(--text-body-lg-size);
+  line-height: var(--text-body-lg-lh);
+  font-weight: 400;
+}
+
+.type-body {
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-lh);
+  font-weight: 400;
+}
+
+.type-body-sm {
+  font-size: var(--text-body-sm-size);
+  line-height: var(--text-body-sm-lh);
+  font-weight: 400;
+}
+
+.type-caption {
+  font-size: var(--text-caption-size);
+  line-height: var(--text-caption-lh);
+  color: var(--color-muted-foreground);
+}
+
+.type-overline {
+  font-size: var(--text-overline-size);
+  line-height: var(--text-overline-lh);
+  letter-spacing: var(--text-overline-ls);
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+/* ==========================================================================
+   ACCESSIBILITY: FOCUS VISIBLE & REDUCED MOTION (Stage 7)
+   ========================================================================== */
+
+:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  transition-timing-function: var(--ease-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Custom Subtle Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-primary-pastel);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary);
+}

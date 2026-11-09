@@ -25,7 +25,7 @@ export default function Pagination({
   pageSizeOptions = [5, 10, 20, 50],
   className = "",
 }: PaginationProps) {
-  const startItem = (currentPage - 1) * pageSize + 1;
+  const startItem = totalItems === 0 ? 0 : (currentPage - 1) * pageSize + 1;
   const endItem = Math.min(currentPage * pageSize, totalItems);
 
   const getVisiblePages = () => {
@@ -58,25 +58,25 @@ export default function Pagination({
     return rangeWithDots;
   };
 
-  // Luôn hiển thị pagination, ngay cả khi chỉ có 1 trang
-
   return (
     <div
-      className={`px-6 py-4 border-t border-gray-200 bg-gray-50/50 ${className}`}
+      className={`px-6 py-4 border-t border-[#E7EEF7] bg-[#F6FAFF]/60 ${className}`}
     >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <div className="text-sm text-gray-700">
-            Hiển thị {startItem} đến {endItem} trong tổng số {totalItems} mục
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="text-sm text-[#6F7C8C]">
+            Hiển thị <span className="font-medium text-[#3D4A5A]">{startItem}</span> đến{" "}
+            <span className="font-medium text-[#3D4A5A]">{endItem}</span> trong tổng số{" "}
+            <span className="font-medium text-[#3D4A5A]">{totalItems}</span> mục
           </div>
 
           {showPageSizeSelector && onPageSizeChange && (
             <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-700">Hiển thị:</span>
+              <span className="text-sm text-[#6F7C8C]">Hiển thị:</span>
               <select
                 value={pageSize}
                 onChange={(e) => onPageSizeChange(Number(e.target.value))}
-                className="px-3 py-1 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500/50 transition-all duration-300"
+                className="px-3 py-1.5 text-sm bg-white text-[#3D4A5A] border border-[#E7EEF7] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#356FA7]/25 focus:border-[#356FA7] transition-all duration-200"
               >
                 {pageSizeOptions.map((size) => (
                   <option key={size} value={size}>
@@ -88,11 +88,11 @@ export default function Pagination({
           )}
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1.5">
           <button
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage === 1 || totalPages <= 1}
-            className="flex items-center space-x-1 px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-300"
+            className="flex items-center space-x-1 px-3 py-2 text-sm font-medium text-[#3D4A5A] bg-white border border-[#E7EEF7] rounded-xl hover:bg-[#F6FAFF] hover:border-[#BFD7ED] disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 cursor-pointer"
           >
             <HiChevronLeft className="w-4 h-4" />
             <span>Trước</span>
@@ -105,7 +105,7 @@ export default function Pagination({
                   return (
                     <span
                       key={`dots-${index}`}
-                      className="px-3 py-2 text-sm text-gray-500"
+                      className="px-3 py-2 text-sm text-[#8190A3]"
                     >
                       ...
                     </span>
@@ -116,10 +116,10 @@ export default function Pagination({
                   <button
                     key={page}
                     onClick={() => onPageChange(page as number)}
-                    className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-300 ${
+                    className={`px-3.5 py-2 text-sm font-semibold rounded-xl transition-colors duration-200 cursor-pointer ${
                       page === currentPage
-                        ? "bg-teal-600 text-white"
-                        : "text-gray-700 bg-white border border-gray-300 hover:bg-gray-50"
+                        ? "bg-[#356FA7] text-white shadow-2xs"
+                        : "text-[#3D4A5A] bg-white border border-[#E7EEF7] hover:bg-[#F6FAFF] hover:border-[#BFD7ED]"
                     }`}
                   >
                     {page}
@@ -127,7 +127,7 @@ export default function Pagination({
                 );
               })
             ) : (
-              <div className="px-3 py-2 text-sm font-medium text-gray-500 bg-gray-100 rounded-lg">
+              <div className="px-3.5 py-2 text-sm font-medium text-[#6F7C8C] bg-white border border-[#E7EEF7] rounded-xl">
                 Trang 1
               </div>
             )}
@@ -136,7 +136,7 @@ export default function Pagination({
           <button
             onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage === totalPages || totalPages <= 1}
-            className="flex items-center space-x-1 px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-300"
+            className="flex items-center space-x-1 px-3 py-2 text-sm font-medium text-[#3D4A5A] bg-white border border-[#E7EEF7] rounded-xl hover:bg-[#F6FAFF] hover:border-[#BFD7ED] disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 cursor-pointer"
           >
             <span>Sau</span>
             <HiChevronRight className="w-4 h-4" />

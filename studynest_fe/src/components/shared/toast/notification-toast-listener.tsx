@@ -41,21 +41,21 @@ export function NotificationToastListener() {
         (t) => (
           <div className="flex items-start gap-3">
             <div className="flex-shrink-0 mt-0.5">
-              <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center">
-                <Bell className="w-4 h-4 text-teal-600" />
+              <div className="w-8 h-8 rounded-full bg-[#E8F2FA] flex items-center justify-center">
+                <Bell className="w-4 h-4 text-[#356FA7]" />
               </div>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-gray-900 text-sm mb-1">
+              <p className="font-semibold text-[#3D4A5A] text-sm mb-1">
                 {noti.title}
               </p>
-              <p className="text-gray-600 text-sm line-clamp-2">
+              <p className="text-[#6F7C8C] text-sm line-clamp-2">
                 {noti.content}
               </p>
             </div>
             <button
               onClick={() => toast.dismiss(t.id)}
-              className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
+              className="flex-shrink-0 text-[#8190A3] hover:text-[#3D4A5A] transition-colors"
               aria-label="Đóng thông báo"
             >
               <svg
@@ -77,14 +77,14 @@ export function NotificationToastListener() {
         {
           duration: 5000,
           style: {
-            background: "#fff",
-            color: "#1f2937",
-            borderRadius: "0.75rem",
+            background: "#FFFFFF",
+            color: "#3D4A5A",
+            borderRadius: "1rem",
             padding: "1rem",
             boxShadow:
-              "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
-            border: "1px solid #e5e7eb",
-            borderLeft: "4px solid #00bba7",
+              "0 12px 28px -6px rgba(53, 111, 167, 0.10), 0 4px 10px -2px rgba(61, 74, 90, 0.04)",
+            border: "1px solid #E7EEF7",
+            borderLeft: "4px solid #356FA7",
             maxWidth: "420px",
             fontSize: "0.875rem",
           },
@@ -95,4 +95,3 @@ export function NotificationToastListener() {
 
   return null;
 }
-

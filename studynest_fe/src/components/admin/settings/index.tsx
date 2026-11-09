@@ -6,6 +6,7 @@ import { showToast } from "@/lib/utils/helpers/toast";
 import { useEffect, useState } from "react";
 import { HiCheckCircle, HiSave, HiX } from "react-icons/hi";
 import useSWR from "swr";
+import AISettingsPanel from "./ai-settings";
 
 interface PlatformSettings {
   id: string;
@@ -186,6 +187,8 @@ const Settings = () => {
           </span>
         </div>
       )}
+
+      <AISettingsPanel />
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Phí và Thanh toán */}

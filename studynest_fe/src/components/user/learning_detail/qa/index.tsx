@@ -968,7 +968,7 @@ export default function QASection({
       >
         <div>
           <h2 className="text-2xl font-bold text-gray-900 mb-1 flex items-center gap-2">
-            <HiChat className="w-6 h-6 text-[#00bba7]" />
+            <HiChat className="w-6 h-6 text-[#356FA7]" />
             Hỏi đáp
           </h2>
           <p className="text-sm text-gray-600">
@@ -1089,7 +1089,7 @@ export default function QASection({
               <div className="p-4 text-center border-t border-gray-200">
                 <button
                   onClick={loadMoreRoot}
-                  className="text-sm text-[#00bba7] hover:text-[#00a896] font-semibold transition-colors"
+                  className="text-sm text-[#356FA7] hover:text-[#285C90] font-semibold transition-colors"
                 >
                   Xem thêm bình luận
                 </button>

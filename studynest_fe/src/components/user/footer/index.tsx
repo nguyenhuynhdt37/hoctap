@@ -1,67 +1,61 @@
 const Footer = () => {
   return (
-    <footer className="bg-gradient-to-b from-gray-50 to-gray-100 border-t-2 border-green-100">
+    <footer className="bg-[#F6FAFF] border-t border-[#E7EEF7]">
       {/* Main Footer Content */}
-      <div className="max-w-full mx-auto px-4 lg:px-12 xl:px-16 2xl:px-24 py-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
           {/* Khóa học phổ biến */}
           <div>
-            <h4 className="font-bold text-gray-900 mb-6 text-base border-l-4 border-green-500 pl-3">
+            <h4 className="font-semibold text-[#3D4A5A] mb-5 text-sm tracking-wide uppercase">
               Khóa học phổ biến
             </h4>
             <ul className="space-y-3">
               <li>
                 <a
                   href="#"
-                  className="text-gray-600 hover:text-green-600 transition-colors duration-200 text-sm leading-relaxed group flex items-center"
+                  className="text-[#6F7C8C] hover:text-[#356FA7] transition-colors duration-200 text-sm leading-relaxed flex items-center"
                 >
-                  <span className="w-1 h-1 bg-green-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                   Lập trình Web với React
                 </a>
               </li>
               <li>
                 <a
                   href="#"
-                  className="text-gray-600 hover:text-green-600 transition-colors duration-200 text-sm leading-relaxed group flex items-center"
+                  className="text-[#6F7C8C] hover:text-[#356FA7] transition-colors duration-200 text-sm leading-relaxed flex items-center"
                 >
-                  <span className="w-1 h-1 bg-green-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                   JavaScript từ cơ bản đến nâng cao
                 </a>
               </li>
               <li>
                 <a
                   href="#"
-                  className="text-gray-600 hover:text-green-600 transition-colors duration-200 text-sm leading-relaxed group flex items-center"
+                  className="text-[#6F7C8C] hover:text-[#356FA7] transition-colors duration-200 text-sm leading-relaxed flex items-center"
                 >
-                  <span className="w-1 h-1 bg-green-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                   Python cho Data Science
                 </a>
               </li>
               <li>
                 <a
                   href="#"
-                  className="text-gray-600 hover:text-green-600 transition-colors duration-200 text-sm leading-relaxed group flex items-center"
+                  className="text-[#6F7C8C] hover:text-[#356FA7] transition-colors duration-200 text-sm leading-relaxed flex items-center"
                 >
-                  <span className="w-1 h-1 bg-green-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                   UI/UX Design
                 </a>
               </li>
               <li>
                 <a
                   href="#"
-                  className="text-gray-600 hover:text-green-600 transition-colors duration-200 text-sm leading-relaxed group flex items-center"
+                  className="text-[#6F7C8C] hover:text-[#356FA7] transition-colors duration-200 text-sm leading-relaxed flex items-center"
                 >
-                  <span className="w-1 h-1 bg-green-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                   Digital Marketing
                 </a>
               </li>
               <li>
                 <a
                   href="#"
-                  className="text-gray-900 hover:text-green-600 transition-colors duration-200 text-sm leading-relaxed group flex items-center font-semibold"
+                  className="text-[#356FA7] hover:text-[#285C90] transition-colors duration-200 text-sm leading-relaxed flex items-center font-semibold pt-1"
                 >
-                  <span className="w-1 h-1 bg-green-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                  Xem tất cả khóa học
+                  Xem tất cả khóa học →
                 </a>
               </li>
             </ul>
@@ -69,52 +63,47 @@ const Footer = () => {
 
           {/* Công nghệ */}
           <div>
-            <h4 className="font-bold text-gray-900 mb-6 text-base border-l-4 border-emerald-500 pl-3">
+            <h4 className="font-semibold text-[#3D4A5A] mb-5 text-sm tracking-wide uppercase">
               Công nghệ
             </h4>
             <ul className="space-y-3">
               <li>
                 <a
                   href="#"
-                  className="text-gray-600 hover:text-green-600 transition-colors duration-200 text-sm leading-relaxed group flex items-center"
+                  className="text-[#6F7C8C] hover:text-[#356FA7] transition-colors duration-200 text-sm leading-relaxed flex items-center"
                 >
-                  <span className="w-1 h-1 bg-green-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                   Phát triển Web
                 </a>
               </li>
               <li>
                 <a
                   href="#"
-                  className="text-gray-600 hover:text-green-600 transition-colors duration-200 text-sm leading-relaxed group flex items-center"
+                  className="text-[#6F7C8C] hover:text-[#356FA7] transition-colors duration-200 text-sm leading-relaxed flex items-center"
                 >
-                  <span className="w-1 h-1 bg-green-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                   Mobile App Development
                 </a>
               </li>
               <li>
                 <a
                   href="#"
-                  className="text-gray-600 hover:text-green-600 transition-colors duration-200 text-sm leading-relaxed group flex items-center"
+                  className="text-[#6F7C8C] hover:text-[#356FA7] transition-colors duration-200 text-sm leading-relaxed flex items-center"
                 >
-                  <span className="w-1 h-1 bg-green-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                   Cloud Computing
                 </a>
               </li>
               <li>
                 <a
                   href="#"
-                  className="text-gray-600 hover:text-green-600 transition-colors duration-200 text-sm leading-relaxed group flex items-center"
+                  className="text-[#6F7C8C] hover:text-[#356FA7] transition-colors duration-200 text-sm leading-relaxed flex items-center"
                 >
-                  <span className="w-1 h-1 bg-green-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                   Machine Learning
                 </a>
               </li>
               <li>
                 <a
                   href="#"
-                  className="text-gray-600 hover:text-green-600 transition-colors duration-200 text-sm leading-relaxed group flex items-center"
+                  className="text-[#6F7C8C] hover:text-[#356FA7] transition-colors duration-200 text-sm leading-relaxed flex items-center"
                 >
-                  <span className="w-1 h-1 bg-green-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                   Blockchain
                 </a>
               </li>
@@ -123,52 +112,47 @@ const Footer = () => {
 
           {/* Về StudyNest */}
           <div>
-            <h4 className="font-bold text-gray-900 mb-6 text-base border-l-4 border-teal-500 pl-3">
+            <h4 className="font-semibold text-[#3D4A5A] mb-5 text-sm tracking-wide uppercase">
               Về StudyNest
             </h4>
             <ul className="space-y-3">
               <li>
                 <a
                   href="/help/about"
-                  className="text-gray-600 hover:text-green-600 transition-colors duration-200 text-sm leading-relaxed group flex items-center"
+                  className="text-[#6F7C8C] hover:text-[#356FA7] transition-colors duration-200 text-sm leading-relaxed flex items-center"
                 >
-                  <span className="w-1 h-1 bg-green-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                   Giới thiệu
                 </a>
               </li>
               <li>
                 <a
                   href="/help/instructors"
-                  className="text-gray-600 hover:text-green-600 transition-colors duration-200 text-sm leading-relaxed group flex items-center"
+                  className="text-[#6F7C8C] hover:text-[#356FA7] transition-colors duration-200 text-sm leading-relaxed flex items-center"
                 >
-                  <span className="w-1 h-1 bg-green-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                   Giảng viên
                 </a>
               </li>
               <li>
                 <a
                   href="/help/contact"
-                  className="text-gray-600 hover:text-green-600 transition-colors duration-200 text-sm leading-relaxed group flex items-center"
+                  className="text-[#6F7C8C] hover:text-[#356FA7] transition-colors duration-200 text-sm leading-relaxed flex items-center"
                 >
-                  <span className="w-1 h-1 bg-green-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                   Liên hệ
                 </a>
               </li>
               <li>
                 <a
                   href="/help/support"
-                  className="text-gray-600 hover:text-green-600 transition-colors duration-200 text-sm leading-relaxed group flex items-center"
+                  className="text-[#6F7C8C] hover:text-[#356FA7] transition-colors duration-200 text-sm leading-relaxed flex items-center"
                 >
-                  <span className="w-1 h-1 bg-green-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                   Hỗ trợ
                 </a>
               </li>
               <li>
                 <a
                   href="/help/blog"
-                  className="text-gray-600 hover:text-green-600 transition-colors duration-200 text-sm leading-relaxed group flex items-center"
+                  className="text-[#6F7C8C] hover:text-[#356FA7] transition-colors duration-200 text-sm leading-relaxed flex items-center"
                 >
-                  <span className="w-1 h-1 bg-green-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                   Blog
                 </a>
               </li>
@@ -177,52 +161,47 @@ const Footer = () => {
 
           {/* Hỗ trợ */}
           <div>
-            <h4 className="font-bold text-gray-900 mb-6 text-base border-l-4 border-green-600 pl-3">
+            <h4 className="font-semibold text-[#3D4A5A] mb-5 text-sm tracking-wide uppercase">
               Hỗ trợ
             </h4>
             <ul className="space-y-3">
               <li>
                 <a
                   href="/help"
-                  className="text-gray-600 hover:text-green-600 transition-colors duration-200 text-sm leading-relaxed group flex items-center"
+                  className="text-[#6F7C8C] hover:text-[#356FA7] transition-colors duration-200 text-sm leading-relaxed flex items-center"
                 >
-                  <span className="w-1 h-1 bg-green-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                   Trung tâm trợ giúp
                 </a>
               </li>
               <li>
                 <a
                   href="/help/terms"
-                  className="text-gray-600 hover:text-green-600 transition-colors duration-200 text-sm leading-relaxed group flex items-center"
+                  className="text-[#6F7C8C] hover:text-[#356FA7] transition-colors duration-200 text-sm leading-relaxed flex items-center"
                 >
-                  <span className="w-1 h-1 bg-green-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                   Điều khoản sử dụng
                 </a>
               </li>
               <li>
                 <a
                   href="/help/privacy-policy"
-                  className="text-gray-600 hover:text-green-600 transition-colors duration-200 text-sm leading-relaxed group flex items-center"
+                  className="text-[#6F7C8C] hover:text-[#356FA7] transition-colors duration-200 text-sm leading-relaxed flex items-center"
                 >
-                  <span className="w-1 h-1 bg-green-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                   Chính sách bảo mật
                 </a>
               </li>
               <li>
                 <a
                   href="/help/privacy"
-                  className="text-gray-600 hover:text-green-600 transition-colors duration-200 text-sm leading-relaxed group flex items-center"
+                  className="text-[#6F7C8C] hover:text-[#356FA7] transition-colors duration-200 text-sm leading-relaxed flex items-center"
                 >
-                  <span className="w-1 h-1 bg-green-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                   Quyền riêng tư
                 </a>
               </li>
               <li>
                 <a
                   href="/help/faq"
-                  className="text-gray-600 hover:text-green-600 transition-colors duration-200 text-sm leading-relaxed group flex items-center"
+                  className="text-[#6F7C8C] hover:text-[#356FA7] transition-colors duration-200 text-sm leading-relaxed flex items-center"
                 >
-                  <span className="w-1 h-1 bg-green-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                   FAQ
                 </a>
               </li>
@@ -232,17 +211,15 @@ const Footer = () => {
       </div>
 
       {/* Bottom Bar */}
-      <div className="border-t border-green-200 bg-white">
-        <div className="max-w-full mx-auto px-4 lg:px-12 xl:px-16 2xl:px-24 py-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+      <div className="border-t border-[#E7EEF7] bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <span className="text-2xl font-black bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent tracking-wide">
-                  STUDY
-                </span>
-                <span className="text-2xl font-black text-green-500">NEST</span>
+              <div className="flex items-center">
+                <span className="text-xl font-bold text-[#3D4A5A]">Study</span>
+                <span className="text-xl font-bold text-[#356FA7]">Nest</span>
               </div>
-              <span className="text-gray-500 text-sm">
+              <span className="text-[#6F7C8C] text-sm">
                 © 2025 StudyNest, Inc.
               </span>
             </div>
@@ -251,7 +228,8 @@ const Footer = () => {
               <div className="flex items-center space-x-4">
                 <a
                   href="#"
-                  className="text-gray-400 hover:text-green-600 transition-colors duration-200 transform hover:scale-110"
+                  aria-label="Twitter"
+                  className="text-[#6F7C8C] hover:text-[#356FA7] transition-colors duration-200"
                 >
                   <svg
                     className="w-5 h-5"
@@ -263,19 +241,8 @@ const Footer = () => {
                 </a>
                 <a
                   href="#"
-                  className="text-gray-400 hover:text-green-600 transition-colors duration-200 transform hover:scale-110"
-                >
-                  <svg
-                    className="w-5 h-5"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M22.46 6c-.77.35-1.6.58-2.46.69.88-.53 1.56-1.37 1.88-2.38-.83.5-1.75.85-2.72 1.05C18.37 4.5 17.26 4 16 4c-2.35 0-4.27 1.92-4.27 4.29 0 .34.04.67.11.98C8.28 9.09 5.11 7.38 3 4.79c-.37.63-.58 1.37-.58 2.15 0 1.49.75 2.81 1.91 3.56-.71 0-1.37-.2-1.95-.5v.03c0 2.08 1.48 3.82 3.44 4.21a4.22 4.22 0 0 1-1.93.07 4.28 4.28 0 0 0 4 2.98 8.521 8.521 0 0 1-5.33 1.84c-.34 0-.68-.02-1.02-.06C3.44 20.29 5.7 21 8.12 21 16 21 20.33 14.46 20.33 8.79c0-.19 0-.37-.01-.56.84-.6 1.56-1.36 2.14-2.23z" />
-                  </svg>
-                </a>
-                <a
-                  href="#"
-                  className="text-gray-400 hover:text-green-600 transition-colors duration-200 transform hover:scale-110"
+                  aria-label="Pinterest"
+                  className="text-[#6F7C8C] hover:text-[#356FA7] transition-colors duration-200"
                 >
                   <svg
                     className="w-5 h-5"
@@ -287,9 +254,9 @@ const Footer = () => {
                 </a>
               </div>
 
-              <div className="h-6 border-l border-gray-300"></div>
+              <div className="h-5 border-l border-[#E7EEF7]"></div>
 
-              <button className="flex items-center space-x-2 text-gray-500 hover:text-green-600 transition-colors duration-200 text-sm">
+              <button className="flex items-center space-x-2 text-[#6F7C8C] hover:text-[#356FA7] transition-colors duration-200 text-sm">
                 <svg
                   className="w-4 h-4"
                   fill="currentColor"

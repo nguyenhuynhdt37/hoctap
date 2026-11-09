@@ -5,7 +5,7 @@ import UserLoader from "@/components/shared/user-loader";
 import { getServerCookie } from "@/lib/utils/fetcher/server/cookieStore";
 import { QueryProvider } from "@/provider/QueryProvider";
 import { cookies } from "next/headers";
-import { jakarta } from "./fonts";
+import { beVietnamPro, lora } from "./fonts";
 import "./globals.css";
 
 export default async function RootLayout({
@@ -18,11 +18,13 @@ export default async function RootLayout({
   return (
     <html
       lang="vi"
-      className={jakarta.variable}
-      style={{ fontFamily: "var(--font-jakarta), sans-serif" }}
+      className={`${beVietnamPro.variable} ${lora.variable}`}
       suppressHydrationWarning
     >
-      <body className="font-sans" suppressHydrationWarning>
+      <body
+        className="font-sans bg-background text-foreground antialiased selection:bg-[#BFD7ED]/60 selection:text-[#3D4A5A]"
+        suppressHydrationWarning
+      >
         <HydrationFix />
         <QueryProvider>
           <ToastProvider />

@@ -309,7 +309,7 @@ export default function QuizLesson({
           className={`flex items-center gap-2 px-4 py-2 rounded-full shadow-lg transition-colors ${
             infoTab === "qa"
               ? "bg-gray-200 text-gray-500 cursor-default"
-              : "bg-[#00bba7] text-white hover:bg-[#009b8a]"
+              : "bg-[#356FA7] text-white hover:bg-[#285C90]"
           }`}
         >
           <HiChatAlt2 className="w-5 h-5" />

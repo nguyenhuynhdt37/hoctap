@@ -9,6 +9,7 @@ import {
   MessageResponse,
 } from "@/types/user/tutor-chat";
 import api from "@/lib/utils/fetcher/client/axios";
+import { postChatStream } from "@/lib/utils/fetcher/client/chat-stream";
 import { ScopeSelector } from "./chat-chips";
 import { getGoogleDriveImageUrl } from "@/lib/utils/helpers/image";
 import { ImagePreviewModal } from "@/components/ui/image-preview-modal";
@@ -29,6 +30,7 @@ interface MessageInputProps {
     newThreadId?: string
   ) => void;
   onUpdateMessage: (messageId: string, updates: Partial<TutorMessage>) => void;
+  onThreadCreated: (threadId: string) => void;
 }
 
 interface LocalImage {
@@ -50,6 +52,7 @@ function MessageInput({
   onLoadingChange,
   onNewMessages,
   onUpdateMessage,
+  onThreadCreated,
 }: MessageInputProps) {
   // State
   const [localImages, setLocalImages] = useState<LocalImage[]>([]);
@@ -62,6 +65,8 @@ function MessageInput({
   // Refs
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const streamRef = useRef<AbortController | null>(null);
+  useEffect(() => () => { streamRef.current?.abort(); }, [lessonId, threadId]);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -180,7 +185,9 @@ function MessageInput({
 
       try {
         // 5. Gọi API
-        const res = await api.post<MessageResponse>(
+        streamRef.current = new AbortController();
+        let streamedContent = "";
+        const response = await postChatStream<MessageResponse>(
           `/tutor-chat/lessons/${lessonId}/chat`,
           {
             message: text,
@@ -191,35 +198,24 @@ function MessageInput({
               mime_type: img.mime_type,
               ocr_text: img.ocr_text,
             })),
-          }
+          },
+          (delta) => {
+            streamedContent += delta;
+            onUpdateMessage(assistantMsgId, { content: streamedContent, isStreaming: true });
+          },
+          streamRef.current.signal
         );
 
         // 6. Cập nhật assistant message
         onUpdateMessage(assistantMsgId, {
-          id: res.data.id,
-          content: res.data.content,
-          sources: res.data.sources,
+          id: response.id,
+          content: response.content,
+          sources: response.sources,
           isStreaming: false,
         });
 
-        // 7. Truyền thread_id mới nếu có
-        if (!threadId && res.data.thread_id) {
-          // Note: new thread ID handling handled by parent mostly via setThreadId
-          // But we call onNewMessages to potentially trigger side effects if needed (though duplicated logic?)
-          // No, onNewMessages only appends. We don't want to append again.
-          // Parent `index.tsx` handles `setThreadId`.
-          // Here we just used `onNewMessages` to show OPTIMISTIC message.
-          // We need to notify parent about new thread ID?
-          // Passed as 3rd arg in onNewMessages... wait.
-          // Step 849: handleNewMessages(userMsg, assistantMsg, newThreadId)
-          // So we should call it again? No, duplicate append!
-          // We should have a separate callback `onThreadCreated`?
-          // Or just pass it in the first call? First call didn't have it.
-          // Actually, `handleNewMessages` logic:
-          // if (newThreadId && !threadId) setThreadId(newThreadId);
-          // So calling it again with SAME messages + newThreadId is tricky because duplicate prevention logic WILL block duplicates.
-          // So it is SAFE to call again! (Because deduplicate logic).
-          onNewMessages(userMessage, assistantMessage, res.data.thread_id);
+        if (!threadId && response.thread_id) {
+          onThreadCreated(response.thread_id);
         }
       } catch (err) {
         console.error("Send failed:", err);
@@ -239,6 +235,7 @@ function MessageInput({
       threadId,
       onNewMessages,
       onUpdateMessage,
+      onThreadCreated,
       onLoadingChange,
     ]
   );

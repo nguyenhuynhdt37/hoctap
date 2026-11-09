@@ -10,14 +10,14 @@ import useSWR from "swr";
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 const COLORS = [
-  "#00a73d",
-  "#10b981",
-  "#14b8a6",
-  "#059669",
-  "#047857",
-  "#0d9488",
-  "#22c55e",
-  "#34d399",
+  "#356FA7",
+  "#7BAFD4",
+  "#F7C9D9",
+  "#E3D5F5",
+  "#F8E9C9",
+  "#BFD7ED",
+  "#598EC2",
+  "#D9A7BC",
 ];
 
 const formatCurrency = (value: number | null | undefined) => {
@@ -53,7 +53,7 @@ export default function CategoryPieChart() {
       {
         data: data.map((d) => parseFloat(String(d.revenue)) || 0),
         backgroundColor: COLORS.slice(0, data.length),
-        borderColor: "#fff",
+        borderColor: "#ffffff",
         borderWidth: 3,
         hoverOffset: 8,
       },
@@ -67,11 +67,11 @@ export default function CategoryPieChart() {
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor: "#1f2937",
-        titleColor: "#fff",
-        bodyColor: "#fff",
+        backgroundColor: "#3D4A5A",
+        titleColor: "#ffffff",
+        bodyColor: "#ffffff",
         padding: 12,
-        borderRadius: 8,
+        borderRadius: 10,
         callbacks: {
           label: (ctx: { raw: number; label: string }) =>
             `${ctx.label}: ${formatCurrency(ctx.raw)}`,
@@ -88,17 +88,17 @@ export default function CategoryPieChart() {
   if (!mounted) return null;
 
   return (
-    <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/30 p-6 h-full">
-      <h3 className="text-xl font-bold text-gray-900 mb-6">
+    <div className="bg-white rounded-[20px] shadow-xs border border-[#E7EEF7] p-6 h-full">
+      <h3 className="text-lg font-semibold text-[#3D4A5A] mb-6">
         Doanh thu theo danh mục
       </h3>
 
       {isLoading ? (
         <div className="h-64 flex items-center justify-center">
-          <div className="w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-4 border-[#356FA7] border-t-transparent rounded-full animate-spin" />
         </div>
       ) : data.length === 0 ? (
-        <div className="h-64 flex items-center justify-center text-gray-500">
+        <div className="h-64 flex items-center justify-center text-[#6F7C8C]">
           Không có dữ liệu
         </div>
       ) : (
@@ -108,8 +108,8 @@ export default function CategoryPieChart() {
             <Doughnut data={chartData} options={options as any} />
             {/* Center text */}
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-gray-500 text-xs">Tổng</span>
-              <span className="text-gray-900 font-bold text-sm">
+              <span className="text-[#6F7C8C] text-xs">Tổng</span>
+              <span className="text-[#3D4A5A] font-bold text-sm">
                 {formatCurrency(totalRevenue)}
               </span>
             </div>
@@ -127,12 +127,12 @@ export default function CategoryPieChart() {
                     className="w-3 h-3 rounded-full flex-shrink-0"
                     style={{ backgroundColor: COLORS[idx % COLORS.length] }}
                   />
-                  <span className="text-sm text-gray-700 truncate max-w-[120px]">
+                  <span className="text-sm text-[#6F7C8C] truncate max-w-[120px]">
                     {item.category_name}
                   </span>
                 </div>
                 <div className="text-right">
-                  <span className="text-sm font-medium text-gray-900">
+                  <span className="text-sm font-medium text-[#3D4A5A]">
                     {(parseFloat(String(item.percentage)) || 0).toFixed(1)}%
                   </span>
                 </div>

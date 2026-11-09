@@ -234,7 +234,7 @@ export default function WithdrawPage() {
                                   ? getGoogleDriveImageUrl(item.avatar)
                                   : "https://ui-avatars.com/api/?name=" +
                                     encodeURIComponent(item.fullname) +
-                                    "&background=00bba7&color=fff"
+                                    "&background=E8F2FA&color=356FA7"
                               }
                               alt={item.fullname}
                               className="w-10 h-10 rounded-full object-cover"

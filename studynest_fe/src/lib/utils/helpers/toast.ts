@@ -10,7 +10,7 @@ export const showToast = {
     return toast.success(message, {
       duration: options?.duration || 4000,
       style: {
-        borderLeft: "4px solid #00a73d",
+        borderLeft: "4px solid #276749",
       },
     });
   },
@@ -19,7 +19,7 @@ export const showToast = {
     return toast.error(message, {
       duration: options?.duration || 4000,
       style: {
-        borderLeft: "4px solid #ef4444",
+        borderLeft: "4px solid #A23C46",
       },
     });
   },
@@ -28,7 +28,7 @@ export const showToast = {
     return toast.loading(message, {
       duration: options?.duration || 4000,
       style: {
-        borderLeft: "4px solid #00a73d",
+        borderLeft: "4px solid #356FA7",
       },
     });
   },

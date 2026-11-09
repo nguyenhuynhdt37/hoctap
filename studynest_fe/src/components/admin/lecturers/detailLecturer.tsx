@@ -224,7 +224,7 @@ export default function DetailLecturer({ lecturerId }: { lecturerId: string }) {
           </h2>
           <button
             onClick={() => router.push("/admin/lecturers")}
-            className="px-4 py-2 bg-[#00bba7] text-white rounded-lg hover:bg-[#00a896] transition-colors"
+            className="px-4 py-2 bg-[#356FA7] text-white rounded-lg hover:bg-[#285C90] transition-colors"
           >
             Quay lại danh sách
           </button>
@@ -257,7 +257,7 @@ export default function DetailLecturer({ lecturerId }: { lecturerId: string }) {
               <HiArrowLeft className="w-6 h-6 text-gray-600" />
             </button>
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-[#00bba7] to-emerald-600 bg-clip-text text-transparent">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-[#356FA7] to-emerald-600 bg-clip-text text-transparent">
                 Chi tiết giảng viên
               </h1>
               <p className="text-gray-600 mt-1">{data.fullname}</p>
@@ -268,7 +268,7 @@ export default function DetailLecturer({ lecturerId }: { lecturerId: string }) {
               <button
                 onClick={handleUnban}
                 disabled={isSubmitting}
-                className="px-4 py-2 bg-[#00bba7] text-white rounded-lg hover:bg-[#00a896] disabled:opacity-50 flex items-center gap-2 transition-colors"
+                className="px-4 py-2 bg-[#356FA7] text-white rounded-lg hover:bg-[#285C90] disabled:opacity-50 flex items-center gap-2 transition-colors"
               >
                 <HiBan className="w-4 h-4" />
                 Mở chặn
@@ -293,7 +293,7 @@ export default function DetailLecturer({ lecturerId }: { lecturerId: string }) {
             </button>
             <button
               onClick={() => router.push(`/admin/lecturers/${lecturerId}/edit`)}
-              className="px-4 py-2 bg-[#00bba7] text-white rounded-lg hover:bg-[#00a896] flex items-center gap-2 transition-colors"
+              className="px-4 py-2 bg-[#356FA7] text-white rounded-lg hover:bg-[#285C90] flex items-center gap-2 transition-colors"
             >
               <HiPencil className="w-4 h-4" />
               Chỉnh sửa
@@ -310,7 +310,7 @@ export default function DetailLecturer({ lecturerId }: { lecturerId: string }) {
         </div>
 
         {/* Profile Header Card */}
-        <div className="bg-gradient-to-r from-[#00bba7] to-emerald-600 rounded-xl shadow-lg p-6 mb-6 text-white">
+        <div className="bg-gradient-to-r from-[#356FA7] to-emerald-600 rounded-xl shadow-lg p-6 mb-6 text-white">
           <div className="flex items-center gap-6 flex-wrap">
             <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-3xl font-bold">
               {data.fullname.charAt(0).toUpperCase()}
@@ -363,7 +363,7 @@ export default function DetailLecturer({ lecturerId }: { lecturerId: string }) {
           {/* Personal Info */}
           <div className="bg-white rounded-xl shadow-sm border border-green-200 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <HiUser className="w-5 h-5 text-[#00bba7]" />
+              <HiUser className="w-5 h-5 text-[#356FA7]" />
               Thông tin cá nhân
             </h3>
             <div className="space-y-3">
@@ -388,7 +388,7 @@ export default function DetailLecturer({ lecturerId }: { lecturerId: string }) {
           {/* Wallet Info */}
           <div className="bg-white rounded-xl shadow-sm border border-green-200 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <HiCurrencyDollar className="w-5 h-5 text-[#00bba7]" />
+              <HiCurrencyDollar className="w-5 h-5 text-[#356FA7]" />
               Thông tin ví
             </h3>
             <div className="space-y-3">
@@ -415,7 +415,7 @@ export default function DetailLecturer({ lecturerId }: { lecturerId: string }) {
           {/* Upgrade Payment */}
           <div className="bg-white rounded-xl shadow-sm border border-green-200 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <HiCheckCircle className="w-5 h-5 text-[#00bba7]" />
+              <HiCheckCircle className="w-5 h-5 text-[#356FA7]" />
               Nâng cấp giảng viên
             </h3>
             <div className="space-y-3">
@@ -446,7 +446,7 @@ export default function DetailLecturer({ lecturerId }: { lecturerId: string }) {
           <div className="bg-white rounded-xl shadow-sm border border-green-200 p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                <HiAcademicCap className="w-5 h-5 text-[#00bba7]" />
+                <HiAcademicCap className="w-5 h-5 text-[#356FA7]" />
                 Khóa học
               </h3>
               <span className="text-sm text-gray-600">
@@ -461,7 +461,7 @@ export default function DetailLecturer({ lecturerId }: { lecturerId: string }) {
                   setCoursesSortBy(e.target.value);
                   setCoursesPage(1);
                 }}
-                className="flex-1 px-3 py-2 text-sm border-2 border-green-200 rounded-lg focus:border-[#00bba7] focus:outline-none focus:ring-2 focus:ring-green-500/20"
+                className="flex-1 px-3 py-2 text-sm border-2 border-green-200 rounded-lg focus:border-[#356FA7] focus:outline-none focus:ring-2 focus:ring-green-500/20"
               >
                 <option value="created_at">Ngày tạo</option>
                 <option value="title">Tên</option>
@@ -474,7 +474,7 @@ export default function DetailLecturer({ lecturerId }: { lecturerId: string }) {
                   setCoursesOrder(e.target.value as "asc" | "desc");
                   setCoursesPage(1);
                 }}
-                className="px-3 py-2 text-sm border-2 border-green-200 rounded-lg focus:border-[#00bba7] focus:outline-none focus:ring-2 focus:ring-green-500/20"
+                className="px-3 py-2 text-sm border-2 border-green-200 rounded-lg focus:border-[#356FA7] focus:outline-none focus:ring-2 focus:ring-green-500/20"
               >
                 <option value="desc">Giảm dần</option>
                 <option value="asc">Tăng dần</option>
@@ -513,7 +513,7 @@ export default function DetailLecturer({ lecturerId }: { lecturerId: string }) {
                       </h4>
                       <div className="flex items-center justify-between text-xs text-gray-600">
                         <span>{course.total_enrolls} học viên</span>
-                        <span className="font-bold text-[#00bba7]">
+                        <span className="font-bold text-[#356FA7]">
                           {formatCurrency(course.price)}
                         </span>
                       </div>
@@ -545,7 +545,7 @@ export default function DetailLecturer({ lecturerId }: { lecturerId: string }) {
           <div className="bg-white rounded-xl shadow-sm border border-green-200 p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                <HiCurrencyDollar className="w-5 h-5 text-[#00bba7]" />
+                <HiCurrencyDollar className="w-5 h-5 text-[#356FA7]" />
                 Giao dịch
               </h3>
               <span className="text-sm text-gray-600">
@@ -572,7 +572,7 @@ export default function DetailLecturer({ lecturerId }: { lecturerId: string }) {
                       <div className="text-right ml-4">
                         <p
                           className={`text-sm font-semibold ${
-                            txn.amount > 0 ? "text-[#00bba7]" : "text-red-600"
+                            txn.amount > 0 ? "text-[#356FA7]" : "text-red-600"
                           }`}
                         >
                           {txn.amount > 0 ? "+" : ""}
@@ -671,7 +671,7 @@ function StatCard({
           <p className="text-2xl font-bold text-gray-900">{value}</p>
         </div>
         <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-          <Icon className="w-6 h-6 text-[#00bba7]" />
+          <Icon className="w-6 h-6 text-[#356FA7]" />
         </div>
       </div>
     </div>
@@ -693,7 +693,7 @@ function InfoRow({
       <p
         className={`text-sm ${
           highlight
-            ? "font-bold text-[#00bba7] text-lg"
+            ? "font-bold text-[#356FA7] text-lg"
             : "text-gray-900 font-mono"
         }`}
       >
@@ -783,7 +783,7 @@ function BanModal({
             <textarea
               value={banReason}
               onChange={(e) => setBanReason(e.target.value)}
-              className="w-full px-3 py-2 border-2 border-green-200 rounded-lg focus:border-[#00bba7] focus:outline-none focus:ring-2 focus:ring-green-500/20"
+              className="w-full px-3 py-2 border-2 border-green-200 rounded-lg focus:border-[#356FA7] focus:outline-none focus:ring-2 focus:ring-green-500/20"
               rows={3}
               placeholder="Nhập lý do cấm..."
             />
@@ -800,7 +800,7 @@ function BanModal({
                   value={banUntilDate}
                   onChange={(e) => setBanUntilDate(e.target.value)}
                   min={new Date().toISOString().split("T")[0]}
-                  className="w-full px-3 py-2 border-2 border-green-200 rounded-lg focus:border-[#00bba7] focus:outline-none focus:ring-2 focus:ring-green-500/20"
+                  className="w-full px-3 py-2 border-2 border-green-200 rounded-lg focus:border-[#356FA7] focus:outline-none focus:ring-2 focus:ring-green-500/20"
                 />
               </div>
               <div>
@@ -811,7 +811,7 @@ function BanModal({
                   type="time"
                   value={banUntilTime}
                   onChange={(e) => setBanUntilTime(e.target.value)}
-                  className="w-full px-3 py-2 border-2 border-green-200 rounded-lg focus:border-[#00bba7] focus:outline-none focus:ring-2 focus:ring-green-500/20"
+                  className="w-full px-3 py-2 border-2 border-green-200 rounded-lg focus:border-[#356FA7] focus:outline-none focus:ring-2 focus:ring-green-500/20"
                 />
               </div>
             </div>
@@ -880,7 +880,7 @@ function DeleteModal({
             <textarea
               value={deleteReason}
               onChange={(e) => setDeleteReason(e.target.value)}
-              className="w-full px-3 py-2 border-2 border-green-200 rounded-lg focus:border-[#00bba7] focus:outline-none focus:ring-2 focus:ring-green-500/20"
+              className="w-full px-3 py-2 border-2 border-green-200 rounded-lg focus:border-[#356FA7] focus:outline-none focus:ring-2 focus:ring-green-500/20"
               rows={3}
               placeholder="Nhập lý do xóa..."
             />
@@ -967,7 +967,7 @@ function CourseModal({
             <div className="md:col-span-2 space-y-2">
               <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
                 <span className="text-sm text-gray-600">Giá</span>
-                <span className="font-bold text-[#00bba7]">
+                <span className="font-bold text-[#356FA7]">
                   {formatCurrency(course.price)}
                 </span>
               </div>
@@ -1021,7 +1021,7 @@ function CourseModal({
                           key={lesson.id || lidx}
                           className="flex items-center gap-3 p-2 bg-gray-50 rounded"
                         >
-                          <div className="w-6 h-6 bg-[#00bba7] text-white rounded-full flex items-center justify-center text-xs font-bold">
+                          <div className="w-6 h-6 bg-[#356FA7] text-white rounded-full flex items-center justify-center text-xs font-bold">
                             {lidx + 1}
                           </div>
                           <div className="flex-1">
@@ -1046,7 +1046,7 @@ function CourseModal({
         <div className="p-6 border-t border-gray-200 flex justify-end">
           <button
             onClick={onClose}
-            className="px-6 py-2 bg-[#00bba7] text-white rounded-lg hover:bg-[#00a896] transition-colors"
+            className="px-6 py-2 bg-[#356FA7] text-white rounded-lg hover:bg-[#285C90] transition-colors"
           >
             Đóng
           </button>

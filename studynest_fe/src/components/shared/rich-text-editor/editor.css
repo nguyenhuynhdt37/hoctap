@@ -2,14 +2,14 @@
 
 /* Base editor styles */
 .rich-text-editor {
-  font-family: Arial, sans-serif;
+  font-family: var(--font-sans);
 }
 
 .rich-text-editor .editor {
   min-height: 400px;
   max-height: 600px;
   overflow-y: auto;
-  font-family: Arial, sans-serif;
+  font-family: var(--font-sans);
   font-size: 16px;
   line-height: 1.6;
   direction: ltr;
@@ -31,10 +31,10 @@
 .rich-text-editor .editor h6 {
   display: block !important;
   font-weight: bold !important;
-  color: #065f46 !important;
+  color: #3D4A5A !important;
   margin: 1em 0 0.5em 0 !important;
   line-height: 1.2 !important;
-  font-family: Arial, sans-serif !important;
+  font-family: var(--font-sans) !important;
 }
 
 .rich-text-editor .editor h1 {
@@ -64,10 +64,10 @@
 /* Paragraphs */
 .rich-text-editor .editor p {
   display: block !important;
-  color: #374151 !important;
+  color: #3D4A5A !important;
   margin: 0.5em 0 !important;
   line-height: 1.6 !important;
-  font-family: Arial, sans-serif !important;
+  font-family: var(--font-sans) !important;
 }
 
 /* Lists */
@@ -76,9 +76,9 @@
   display: block !important;
   margin: 0.5em 0 !important;
   padding-left: 2em !important;
-  color: #374151 !important;
+  color: #3D4A5A !important;
   list-style-position: outside !important;
-  font-family: Arial, sans-serif !important;
+  font-family: var(--font-sans) !important;
 }
 
 .rich-text-editor .editor ul {
@@ -91,9 +91,9 @@
 
 .rich-text-editor .editor li {
   display: list-item !important;
-  color: #374151 !important;
+  color: #3D4A5A !important;
   margin: 0.25em 0 !important;
-  font-family: Arial, sans-serif !important;
+  font-family: var(--font-sans) !important;
 }
 
 /* Blockquotes */
@@ -101,10 +101,10 @@
   display: block !important;
   margin: 1em 0 !important;
   padding: 0.5em 1em !important;
-  border-left: 4px solid #10b981 !important;
-  background: rgba(16, 185, 129, 0.1) !important;
-  color: #374151 !important;
-  font-family: Arial, sans-serif !important;
+  border-left: 4px solid #356FA7 !important;
+  background: rgba(232, 242, 250, 0.7) !important;
+  color: #3D4A5A !important;
+  font-family: var(--font-sans) !important;
 }
 
 /* Code blocks */
@@ -112,12 +112,12 @@
   display: block !important;
   margin: 1em 0 !important;
   padding: 1em !important;
-  background: #f3f4f6 !important;
+  background: #E8F2FA !important;
   border-radius: 8px !important;
-  color: #374151 !important;
+  color: #3D4A5A !important;
   font-family: "Fira Code", "Consolas", "Monaco", "Courier New", monospace !important;
   overflow-x: auto !important;
-  border: 1px solid #d1d5db !important;
+  border: 1px solid #BFD7ED !important;
   white-space: pre-wrap !important;
   word-wrap: break-word !important;
 }
@@ -132,41 +132,41 @@
 
 /* Inline code */
 .rich-text-editor .editor code {
-  background: #f3f4f6 !important;
-  color: #065f46 !important;
+  background: #E8F2FA !important;
+  color: #3D4A5A !important;
   padding: 0.2em 0.4em !important;
   border-radius: 4px !important;
   font-family: "Fira Code", "Consolas", "Monaco", "Courier New", monospace !important;
   font-size: 0.9em !important;
-  border: 1px solid #d1d5db !important;
+  border: 1px solid #BFD7ED !important;
 }
 
 /* Links */
 .rich-text-editor .editor a {
-  color: #059669 !important;
+  color: #356FA7 !important;
   text-decoration: underline !important;
 }
 
 .rich-text-editor .editor a:hover {
-  color: #10b981 !important;
+  color: #356FA7 !important;
 }
 
 /* Text formatting */
 .rich-text-editor .editor strong,
 .rich-text-editor .editor b {
   font-weight: bold !important;
-  color: #065f46 !important;
+  color: #3D4A5A !important;
 }
 
 .rich-text-editor .editor em,
 .rich-text-editor .editor i {
   font-style: italic !important;
-  color: #374151 !important;
+  color: #3D4A5A !important;
 }
 
 .rich-text-editor .editor u {
   text-decoration: underline !important;
-  color: #374151 !important;
+  color: #3D4A5A !important;
 }
 
 /* Images */
@@ -198,8 +198,8 @@
 
 /* Toolbar styles */
 .rich-text-editor .toolbar {
-  background: #f9fafb !important;
-  border: 1px solid #e5e7eb !important;
+  background: #F6FAFF !important;
+  border: 1px solid #E7EEF7 !important;
   border-bottom: none !important;
   border-radius: 0.75rem 0.75rem 0 0 !important;
   padding: 0.75rem !important;
@@ -210,7 +210,7 @@
 
 .rich-text-editor .toolbar button {
   padding: 0.5rem !important;
-  color: #374151 !important;
+  color: #3D4A5A !important;
   background: transparent !important;
   border: none !important;
   border-radius: 0.5rem !important;
@@ -222,12 +222,12 @@
 }
 
 .rich-text-editor .toolbar button:hover {
-  background: #e5e7eb !important;
-  color: #065f46 !important;
+  background: #E7EEF7 !important;
+  color: #3D4A5A !important;
 }
 
 .rich-text-editor .toolbar button.active {
-  background: #10b981 !important;
+  background: #356FA7 !important;
   color: #ffffff !important;
 }
 
@@ -239,11 +239,11 @@
 /* Editor container */
 .rich-text-editor .editor {
   background: #ffffff !important;
-  border: 1px solid #e5e7eb !important;
+  border: 1px solid #E7EEF7 !important;
   border-top: none !important;
   border-radius: 0 0 0.75rem 0.75rem !important;
   padding: 1rem !important;
-  color: #374151 !important;
+  color: #3D4A5A !important;
   min-height: 400px !important;
   max-height: 600px !important;
   overflow-y: auto !important;
@@ -252,15 +252,15 @@
 }
 
 .rich-text-editor .editor:focus {
-  border-color: #10b981 !important;
-  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2) !important;
+  border-color: #356FA7 !important;
+  box-shadow: 0 0 0 2px rgba(53, 111, 167, 0.18) !important;
 }
 
 /* Drag and drop states */
 .rich-text-editor .editor.drag-over {
-  border-color: #10b981 !important;
-  background: rgba(16, 185, 129, 0.1) !important;
-  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2) !important;
+  border-color: #356FA7 !important;
+  background: rgba(232, 242, 250, 0.7) !important;
+  box-shadow: 0 0 0 2px rgba(53, 111, 167, 0.18) !important;
 }
 
 /* Upload overlay */
@@ -343,17 +343,17 @@
 }
 
 .rich-text-editor .editor::-webkit-scrollbar-track {
-  background: #f3f4f6;
+  background: #E8F2FA;
   border-radius: 4px;
 }
 
 .rich-text-editor .editor::-webkit-scrollbar-thumb {
-  background: #10b981;
+  background: #356FA7;
   border-radius: 4px;
 }
 
 .rich-text-editor .editor::-webkit-scrollbar-thumb:hover {
-  background: #059669;
+  background: #356FA7;
 }
 
 /* Print styles */

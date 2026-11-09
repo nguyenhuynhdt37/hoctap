@@ -42,32 +42,34 @@ export default function DataTable<T extends Record<string, any>>({
 
   return (
     <div
-      className={`bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg shadow-black/5 border border-white/30 overflow-hidden ${className}`}
+      className={`bg-white rounded-[20px] shadow-xs border border-[#E7EEF7] overflow-hidden ${className}`}
     >
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-gradient-to-r from-teal-50 to-blue-50">
+          <thead className="bg-[#F6FAFF] border-b border-[#E7EEF7]">
             <tr>
               {columns.map((column) => (
                 <th
                   key={column.key}
-                  className={`px-6 py-4 text-left ${column.className || ""}`}
+                  className={`px-6 py-4 text-left text-xs uppercase tracking-wider ${
+                    column.className || ""
+                  }`}
                 >
                   {column.sortable ? (
                     <button
                       onClick={() => handleSort(column)}
-                      className="flex items-center space-x-2 font-semibold text-gray-700 hover:text-teal-600 transition-colors duration-300"
+                      className="flex items-center space-x-1.5 font-semibold text-[#6F7C8C] hover:text-[#356FA7] transition-colors duration-200 cursor-pointer"
                     >
                       <span>{column.title}</span>
                       {sortBy === column.key &&
                         (order === "asc" ? (
-                          <HiChevronUp className="w-4 h-4" />
+                          <HiChevronUp className="w-4 h-4 text-[#356FA7]" />
                         ) : (
-                          <HiChevronDown className="w-4 h-4" />
+                          <HiChevronDown className="w-4 h-4 text-[#356FA7]" />
                         ))}
                     </button>
                   ) : (
-                    <span className="font-semibold text-gray-700">
+                    <span className="font-semibold text-[#6F7C8C]">
                       {column.title}
                     </span>
                   )}
@@ -75,13 +77,13 @@ export default function DataTable<T extends Record<string, any>>({
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="divide-y divide-[#E7EEF7]">
             {loading ? (
               <tr>
                 <td colSpan={columns.length} className="px-6 py-12 text-center">
                   <div className="flex items-center justify-center space-x-2">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-teal-600"></div>
-                    <span className="text-gray-600">Đang tải...</span>
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-[#356FA7] border-t-transparent"></div>
+                    <span className="text-sm text-[#6F7C8C]">Đang tải...</span>
                   </div>
                 </td>
               </tr>
@@ -89,7 +91,7 @@ export default function DataTable<T extends Record<string, any>>({
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="px-6 py-12 text-center text-gray-500"
+                  className="px-6 py-12 text-center text-sm text-[#6F7C8C]"
                 >
                   {emptyMessage}
                 </td>
@@ -98,12 +100,12 @@ export default function DataTable<T extends Record<string, any>>({
               data.map((record, index) => (
                 <tr
                   key={record.id || index}
-                  className={`hover:bg-gray-50/50 transition-colors duration-300 ${
+                  className={`hover:bg-[#F6FAFF]/70 transition-colors duration-150 ${
                     rowClassName ? rowClassName(record, index) : ""
                   }`}
                 >
                   {columns.map((column) => (
-                    <td key={column.key} className="px-6 py-4">
+                    <td key={column.key} className="px-6 py-4 text-sm text-[#3D4A5A]">
                       {column.render
                         ? column.render(record[column.key], record)
                         : record[column.key]}

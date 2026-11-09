@@ -119,7 +119,7 @@ export default function Notifications() {
                 <button
                   onClick={() => markAll.mutate()}
                   disabled={markAll.isPending}
-                  className="px-4 py-2 bg-[#00bba7] text-white text-sm font-semibold rounded-lg hover:bg-[#00a896] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="px-4 py-2 bg-[#356FA7] text-white text-sm font-semibold rounded-lg hover:bg-[#285C90] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   {markAll.isPending ? (
                     <>

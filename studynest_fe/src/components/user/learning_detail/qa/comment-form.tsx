@@ -165,7 +165,7 @@ export default memo(function CommentForm({
         <button
           onClick={handleSubmit}
           disabled={!localContent.trim() || isSubmitting}
-          className="px-4 py-1.5 bg-[#00bba7] text-white text-sm font-semibold rounded-lg hover:bg-[#00a896] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="px-4 py-1.5 bg-[#356FA7] text-white text-sm font-semibold rounded-lg hover:bg-[#285C90] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {isSubmitting
             ? "Đang gửi..."

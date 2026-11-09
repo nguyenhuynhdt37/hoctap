@@ -37,10 +37,9 @@ export const BecomeLecturerAction = () => {
     <>
       <button
         onClick={() => setIsModalOpen(true)}
-        className="group relative px-8 py-4 bg-[#00a73d] text-white rounded-xl font-bold text-lg shadow-lg shadow-[#00a73d]/20 hover:shadow-xl hover:shadow-[#00a73d]/30 hover:-translate-y-0.5 transition-all duration-300 flex items-center overflow-hidden"
+        className="group relative px-7 py-3.5 bg-[#356FA7] hover:bg-[#285C90] text-white rounded-xl font-semibold text-base shadow-xs hover:shadow-sm transition-all duration-200 flex items-center overflow-hidden cursor-pointer"
       >
-        <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-        <GraduationCap className="mr-2 h-6 w-6 relative z-10" />
+        <GraduationCap className="mr-2 h-5 w-5 relative z-10" />
         <span className="relative z-10">Đăng ký ngay</span>
       </button>
 
@@ -52,39 +51,34 @@ export const BecomeLecturerAction = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => !isLoading && setIsModalOpen(false)}
-              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              className="absolute inset-0 bg-[#3D4A5A]/30 backdrop-blur-xs"
             />
 
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              initial={{ opacity: 0, scale: 0.96, y: 12 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              transition={{
-                duration: 0.2,
-                type: "spring",
-                damping: 25,
-                stiffness: 300,
-              }}
-              className="relative z-10 w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100"
+              exit={{ opacity: 0, scale: 0.96, y: 12 }}
+              transition={{ duration: 0.2 }}
+              className="relative z-10 w-full max-w-lg bg-white rounded-[24px] shadow-lg overflow-hidden border border-[#E7EEF7]"
             >
               {/* Header */}
               <div className="px-8 pt-8 pb-6 text-center relative">
                 <button
                   onClick={() => setIsModalOpen(false)}
                   disabled={isLoading}
-                  className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all disabled:opacity-50"
+                  className="absolute top-4 right-4 p-2 text-[#6F7C8C] hover:text-[#3D4A5A] hover:bg-[#F6FAFF] rounded-full transition-all disabled:opacity-50 cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
 
-                <div className="w-20 h-20 bg-[#00a73d]/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <GraduationCap className="w-10 h-10 text-[#00a73d]" />
+                <div className="w-16 h-16 bg-[#E8F2FA] rounded-full flex items-center justify-center mx-auto mb-5 border border-[#BFD7ED]">
+                  <GraduationCap className="w-8 h-8 text-[#356FA7]" />
                 </div>
 
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                <h2 className="font-display text-2xl font-bold text-[#3D4A5A] mb-2">
                   Trở thành Giảng viên
                 </h2>
-                <p className="text-gray-500">
+                <p className="text-sm text-[#6F7C8C]">
                   Mở khóa tiềm năng giảng dạy và kiếm thu nhập từ kiến thức của
                   bạn
                 </p>
@@ -94,29 +88,29 @@ export const BecomeLecturerAction = () => {
               <div className="px-8 pb-8 space-y-6">
                 {/* Benefits */}
                 <div className="space-y-3">
-                  <div className="flex items-start gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors">
-                    <div className="p-2 bg-[#00a73d]/10 rounded-lg shrink-0">
-                      <MonitorPlay className="w-5 h-5 text-[#00a73d]" />
+                  <div className="flex items-start gap-3 p-3 rounded-xl hover:bg-[#F6FAFF] transition-colors">
+                    <div className="p-2 bg-[#E8F2FA] rounded-lg shrink-0">
+                      <MonitorPlay className="w-5 h-5 text-[#356FA7]" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-gray-900">
+                      <h3 className="font-semibold text-[#3D4A5A] text-sm">
                         Tạo khóa học không giới hạn
                       </h3>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-xs text-[#6F7C8C]">
                         Tự do sáng tạo nội dung và lộ trình học tập
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors">
-                    <div className="p-2 bg-[#00a73d]/10 rounded-lg shrink-0">
-                      <Wallet className="w-5 h-5 text-[#00a73d]" />
+                  <div className="flex items-start gap-3 p-3 rounded-xl hover:bg-[#F6FAFF] transition-colors">
+                    <div className="p-2 bg-[#FCE8EF] rounded-lg shrink-0">
+                      <Wallet className="w-5 h-5 text-[#8A3B58]" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-gray-900">
+                      <h3 className="font-semibold text-[#3D4A5A] text-sm">
                         Thu nhập hấp dẫn
                       </h3>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-xs text-[#6F7C8C]">
                         Nhận hoa hồng cao và rút tiền về tài khoản
                       </p>
                     </div>
@@ -124,16 +118,16 @@ export const BecomeLecturerAction = () => {
                 </div>
 
                 {/* Fee Info */}
-                <div className="bg-gray-50 rounded-2xl p-5 border border-gray-100">
+                <div className="bg-[#F6FAFF] rounded-2xl p-5 border border-[#E7EEF7]">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-gray-600 font-medium">
+                    <span className="text-[#6F7C8C] text-sm font-medium">
                       Phí đăng ký
                     </span>
-                    <span className="text-2xl font-bold text-[#00a73d]">
+                    <span className="text-2xl font-bold text-[#356FA7]">
                       {formatPrice(INSTRUCTOR_FEE)}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-400 text-center">
+                  <p className="text-xs text-[#8190A3] text-center">
                     Phí sẽ được trừ trực tiếp vào ví của bạn
                   </p>
                 </div>
@@ -142,7 +136,7 @@ export const BecomeLecturerAction = () => {
                 <button
                   onClick={handleConfirm}
                   disabled={isLoading}
-                  className="w-full bg-[#00bba7] hover:bg-[#009235] text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg shadow-[#00bba7]/25 hover:shadow-xl hover:shadow-[#00bba7]/35 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 active:scale-[0.98]"
+                  className="w-full bg-[#356FA7] hover:bg-[#285C90] text-white font-semibold py-3.5 px-6 rounded-xl transition-all shadow-xs hover:shadow-sm disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
                 >
                   {isLoading ? (
                     <>

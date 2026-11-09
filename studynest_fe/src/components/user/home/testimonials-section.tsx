@@ -41,14 +41,13 @@ const testimonials = [
 
 const TestimonialsSection = () => {
   return (
-    <section className="py-16 bg-white">
+    <section className="py-16 bg-white border-b border-[#E7EEF7]/60">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold bg-gradient-to-r from-green-700 to-emerald-700 bg-clip-text text-transparent mb-3">
+          <h2 className="font-display text-2xl sm:text-3xl font-bold text-[#3D4A5A] tracking-tight mb-2">
             Học viên nói gì về StudyNest
           </h2>
-          <p className="text-emerald-600 font-medium flex items-center justify-center gap-2">
-            <span className="text-green-500">💬</span>
+          <p className="text-[#6F7C8C] text-sm font-medium">
             Những chia sẻ chân thực từ cộng đồng học viên
           </p>
         </div>
@@ -57,23 +56,25 @@ const TestimonialsSection = () => {
           {testimonials.map((testimonial) => (
             <div
               key={testimonial.id}
-              className="group bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 border-2 border-green-100 hover:border-green-300 hover:shadow-2xl hover:shadow-green-100/50 transition-all duration-300 hover:-translate-y-1"
+              className="group bg-[#FFF9F6] rounded-[20px] p-6 border border-[#E7EEF7] hover:border-[#BFD7ED] hover:shadow-sm transition-all duration-200 flex flex-col justify-between"
             >
-              <div className="flex items-center mb-4">
-                {[...Array(testimonial.rating)].map((_, i) => (
-                  <HiStar
-                    key={i}
-                    className="h-5 w-5 text-yellow-500 fill-current"
-                  />
-                ))}
+              <div>
+                <div className="flex items-center gap-0.5 mb-4">
+                  {[...Array(testimonial.rating)].map((_, i) => (
+                    <HiStar
+                      key={i}
+                      className="h-4 w-4 text-[#D99B26] fill-current"
+                    />
+                  ))}
+                </div>
+
+                <p className="text-[#3D4A5A] mb-6 text-sm leading-relaxed">
+                  &ldquo;{testimonial.content}&rdquo;
+                </p>
               </div>
 
-              <p className="text-gray-700 mb-6 text-sm leading-relaxed italic">
-                "{testimonial.content}"
-              </p>
-
-              <div className="flex items-center">
-                <div className="w-12 h-12 rounded-full ring-2 ring-green-200 overflow-hidden mr-3">
+              <div className="flex items-center pt-4 border-t border-[#E7EEF7]/80">
+                <div className="w-11 h-11 rounded-full ring-2 ring-[#E8F2FA] overflow-hidden mr-3 bg-[#E8F2FA]">
                   <img
                     src={getGoogleDriveImageUrl(testimonial.avatar)}
                     alt={testimonial.name}
@@ -81,10 +82,10 @@ const TestimonialsSection = () => {
                   />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-gray-900 group-hover:text-green-600 transition-colors">
+                  <h4 className="text-sm font-semibold text-[#3D4A5A]">
                     {testimonial.name}
                   </h4>
-                  <p className="text-xs text-emerald-600 font-medium">
+                  <p className="text-xs text-[#6F7C8C] font-medium">
                     {testimonial.role} tại {testimonial.company}
                   </p>
                 </div>
@@ -98,4 +99,3 @@ const TestimonialsSection = () => {
 };
 
 export default TestimonialsSection;
-

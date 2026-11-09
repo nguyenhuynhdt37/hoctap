@@ -345,6 +345,7 @@ function TutorChatPanel({
           onLoadingChange={setIsLoading}
           onNewMessages={handleNewMessages}
           onUpdateMessage={handleUpdateMessage}
+          onThreadCreated={setThreadId}
         />
       </div>
     </div>

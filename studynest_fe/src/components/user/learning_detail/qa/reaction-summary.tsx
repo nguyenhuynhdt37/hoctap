@@ -111,7 +111,7 @@ export default memo(function ReactionSummary({
                       href={`/users/${reactionUser.user_id}`}
                       className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
                     >
-                      <div className="w-8 h-8 rounded-full bg-[#00bba7] flex items-center justify-center text-white font-semibold text-xs flex-shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-[#356FA7] flex items-center justify-center text-white font-semibold text-xs flex-shrink-0">
                         {reactionUser.user_avatar ? (
                           <img
                             src={getGoogleDriveImageUrl(reactionUser.user_avatar)}
@@ -123,10 +123,10 @@ export default memo(function ReactionSummary({
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium text-gray-900 truncate hover:text-[#00bba7] transition-colors">
+                        <div className="text-sm font-medium text-gray-900 truncate hover:text-[#356FA7] transition-colors">
                           {reactionUser.user_name}
                           {isCurrentUser && (
-                            <span className="ml-1 text-xs text-[#00bba7]">
+                            <span className="ml-1 text-xs text-[#356FA7]">
                               (Bạn)
                             </span>
                           )}

@@ -7,8 +7,8 @@ import confetti from "canvas-confetti";
 
 // Confetti configuration
 export const confettiConfig = {
-  // Colors matching StudyNest brand
-  colors: ["#14b8a6", "#10b981", "#059669", "#047857", "#065f46"],
+  // Colors matching StudyNest Cloudy Blue pastel palette
+  colors: ["#356FA7", "#BFD7ED", "#F7C9D9", "#E3D5F5", "#F8E9C9"],
 
   // Particle settings
   particleCount: 100,

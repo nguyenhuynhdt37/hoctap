@@ -18,18 +18,17 @@ export default memo(function ReactionButton({
   return (
     <button
       onClick={() => onReaction(comment.id)}
-      className={`flex items-center gap-1.5 px-2 py-1 rounded-lg transition-all ${
+      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
         isActive
-          ? "bg-red-50 text-red-600"
-          : "text-gray-600 hover:bg-gray-100 hover:text-[#00bba7]"
+          ? "bg-[#FCE8EF] text-[#8A3B58]"
+          : "text-[#6F7C8C] hover:bg-[#F6FAFF] hover:text-[#356FA7]"
       }`}
       title={isActive ? "Bỏ thích" : "Thích"}
     >
-      <HiHeart className={`w-4 h-4 ${isActive ? "text-red-600" : ""}`} />
+      <HiHeart className={`w-4 h-4 ${isActive ? "text-[#8A3B58]" : ""}`} />
       <span className="text-sm font-medium">
         {isActive ? "Đã thích" : "Thích"}
       </span>
     </button>
   );
 });
-

@@ -198,7 +198,7 @@ export default function CodeLesson({
           particleCount: 150,
           spread: 120,
           origin: { y: 0.6 },
-          colors: ["#10b981", "#059669", "#34d399", "#6ee7b7", "#a7f3d0"],
+          colors: ["#356FA7", "#BFD7ED", "#F7C9D9", "#E3D5F5", "#F8E9C9"],
           shapes: ["star", "circle"],
           scalar: 1.2,
         });
@@ -470,7 +470,7 @@ export default function CodeLesson({
           className={`flex items-center gap-2 px-4 py-2 rounded-full shadow-lg transition-colors ${
             infoTab === "qa"
               ? "bg-gray-200 text-gray-500 cursor-default"
-              : "bg-[#00bba7] text-white hover:bg-[#009b8a]"
+              : "bg-[#356FA7] text-white hover:bg-[#285C90]"
           }`}
         >
           <HiChatAlt2 className="w-5 h-5" />

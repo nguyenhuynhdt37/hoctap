@@ -21,13 +21,13 @@ import {
 } from "react-icons/hi";
 import EnrollmentModal from "./enrollment-modal";
 
-// Discount Effect Component - đơn giản hóa
+// Discount Effect Component - tinh tế theo Cloudy Blue
 const DiscountEffect = ({ active = false }: { active?: boolean }) => {
   if (!active) return null;
 
   return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-lg z-0">
-      <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-orange-400/40 via-red-400/30 to-transparent" />
+    <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-[20px] z-0">
+      <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-[#FCE8EF]/50 via-[#FFF9F6]/30 to-transparent" />
     </div>
   );
 };
@@ -568,31 +568,27 @@ export default function CourseSidebar({
   return (
     <div className="sticky top-20 space-y-6">
       <div
-        className={`rounded-lg shadow-sm border-2 p-6 relative overflow-hidden transition-all duration-300 ${
+        className={`rounded-[20px] shadow-xs border p-6 relative overflow-hidden transition-all duration-200 ${
           !isInstructorOwner && isDiscountApplied && discountInfo
-            ? "bg-gradient-to-b from-red-50 via-orange-50 to-red-100 border-red-500 shadow-red-300 shadow-lg"
-            : "bg-white border-gray-200"
+            ? "bg-[#FFF9F6] border-[#F7C9D9] shadow-sm"
+            : "bg-white border-[#E7EEF7]"
         }`}
       >
         <DiscountEffect active={isFireActive} />
-        {/* Discount Border */}
-        {!isInstructorOwner && isDiscountApplied && discountInfo && (
-          <div className="absolute inset-0 rounded-lg border-2 border-orange-400 pointer-events-none" />
-        )}
 
         {/* Discount Banner */}
         {!isInstructorOwner && isDiscountApplied && discountInfo && (
-          <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-orange-500 to-red-500 text-white py-2 px-4 rounded-t-lg shadow-md z-10">
+          <div className="absolute top-0 left-0 right-0 bg-[#FCE8EF] text-[#8A3B58] border-b border-[#F7C9D9] py-2 px-4 rounded-t-[20px] z-10">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold">
-                  🔥 Khuyến mãi đặc biệt
+                <span className="text-xs font-semibold">
+                  Ưu đãi đặc biệt đang áp dụng
                 </span>
               </div>
               {timeRemaining && (
-                <div className="flex items-center gap-1 bg-white/20 rounded px-2 py-1">
+                <div className="flex items-center gap-1 bg-white/80 border border-[#F7C9D9] rounded-full px-2.5 py-0.5">
                   <span className="text-xs font-medium">⏰</span>
-                  <span className="text-xs font-bold font-mono">
+                  <span className="text-xs font-bold font-mono text-[#8A3B58]">
                     {timeRemaining}
                   </span>
                 </div>
@@ -603,32 +599,32 @@ export default function CourseSidebar({
 
         <div
           className={`text-center mb-6 ${
-            isDiscountApplied && discountInfo ? "mt-12" : ""
+            isDiscountApplied && discountInfo ? "mt-10" : ""
           }`}
         >
           {!isInstructorOwner &&
             (hasPrice ? (
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {discountAmount > 0 && isDiscountApplied ? (
                   <>
-                    <div className="text-lg text-gray-500 line-through">
+                    <div className="text-base text-[#8190A3] line-through">
                       {formatPrice(course.base_price, course.currency)}
                     </div>
-                    <div className="text-3xl font-bold text-green-600">
+                    <div className="text-3xl font-bold text-[#356FA7]">
                       {formatPrice(displayPrice, course.currency)}
                     </div>
-                    <div className="text-sm text-green-600 font-medium">
+                    <div className="inline-block text-xs text-[#276749] bg-[#E4F3E9] px-3 py-1 rounded-full font-semibold">
                       Tiết kiệm {formatPrice(discountAmount, course.currency)}
                     </div>
                   </>
                 ) : (
-                  <div className="text-3xl font-bold text-gray-900">
+                  <div className="text-3xl font-bold text-[#3D4A5A]">
                     {formatPrice(course.base_price, course.currency)}
                   </div>
                 )}
               </div>
             ) : (
-              <div className="text-3xl font-bold text-gray-900 mb-2">
+              <div className="text-3xl font-bold text-[#276749] mb-2">
                 {formatPrice(course.base_price, course.currency)}
               </div>
             ))}
@@ -636,14 +632,14 @@ export default function CourseSidebar({
 
         {/* Instructor owner: Direct access button */}
         {isInstructorOwner && (
-          <div className="mb-4 pb-4 border-b border-gray-200">
+          <div className="mb-4 pb-4 border-b border-[#E7EEF7]">
             <button
               onClick={() => void handleEnroll()}
               disabled={!courseSlug || isEnrolling}
-              className={`w-full py-3 px-4 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
+              className={`w-full py-3 px-4 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
                 courseSlug
-                  ? "bg-teal-600 text-white hover:bg-teal-700"
-                  : "bg-gray-400 text-gray-200 cursor-not-allowed"
+                  ? "bg-[#356FA7] text-white hover:bg-[#285C90]"
+                  : "bg-[#E7EEF7] text-[#8190A3] cursor-not-allowed"
               }`}
             >
               {isEnrolling ? (
@@ -660,8 +656,8 @@ export default function CourseSidebar({
 
         {/* Discount Input - chỉ hiện khi có phí */}
         {!isInstructorOwner && hasPrice && (
-          <div className="mb-4 pb-4 border-b border-gray-200">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+          <div className="mb-4 pb-4 border-b border-[#E7EEF7]">
+            <label className="block text-sm font-semibold text-[#3D4A5A] mb-2">
               🎟️ Mã giảm giá
             </label>
             <div className="flex gap-2">
@@ -675,7 +671,6 @@ export default function CourseSidebar({
                   }}
                   onFocus={() => setShowDiscountDropdown(true)}
                   onBlur={() => {
-                    // Delay để cho phép click vào dropdown item
                     setTimeout(() => setShowDiscountDropdown(false), 200);
                   }}
                   onKeyDown={(e) => {
@@ -685,17 +680,17 @@ export default function CourseSidebar({
                   }}
                   placeholder="Nhập mã giảm giá hoặc chọn từ danh sách"
                   disabled={isApplyingDiscount}
-                  className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 focus:bg-white transition-all duration-200 text-sm"
+                  className="w-full px-3.5 py-2.5 bg-[#F6FAFF] border border-[#E7EEF7] rounded-xl text-[#3D4A5A] placeholder:text-[#8190A3] focus:outline-none focus:ring-2 focus:ring-[#356FA7]/25 focus:border-[#356FA7] focus:bg-white transition-all duration-200 text-sm"
                 />
                 {isLoadingDiscounts && (
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                    <div className="w-4 h-4 border-2 border-[#356FA7] border-t-transparent rounded-full animate-spin" />
                   </div>
                 )}
                 {availableDiscounts.length > 0 &&
                   showDiscountDropdown &&
                   discountInput.trim() === "" && (
-                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    <div className="absolute z-10 w-full mt-1.5 bg-white border border-[#E7EEF7] rounded-xl shadow-md max-h-60 overflow-y-auto">
                       {availableDiscounts.map((discount) => (
                         <button
                           key={discount.id}
@@ -704,12 +699,12 @@ export default function CourseSidebar({
                             setDiscountInput(discount.discount_code);
                             setShowDiscountDropdown(false);
                           }}
-                          className="w-full text-left px-4 py-2 hover:bg-green-50 transition-colors text-sm"
+                          className="w-full text-left px-4 py-2.5 hover:bg-[#F6FAFF] transition-colors text-sm border-b border-[#E7EEF7]/60 last:border-b-0"
                         >
-                          <div className="font-medium text-gray-900">
+                          <div className="font-semibold text-[#356FA7]">
                             {discount.discount_code}
                           </div>
-                          <div className="text-xs text-gray-600">
+                          <div className="text-xs text-[#6F7C8C]">
                             {discount.name}
                             {discount.discount_type === "percent"
                               ? ` - ${discount.percent_value}%`
@@ -727,14 +722,14 @@ export default function CourseSidebar({
                 type="button"
                 onClick={handleApplyDiscount}
                 disabled={!discountInput.trim() || isApplyingDiscount}
-                className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 whitespace-nowrap ${
+                className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 whitespace-nowrap ${
                   discountInput.trim() && !isApplyingDiscount
-                    ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-md hover:shadow-lg"
-                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    ? "bg-[#E8F2FA] text-[#356FA7] hover:bg-[#356FA7] hover:text-white border border-[#BFD7ED] cursor-pointer"
+                    : "bg-[#F6FAFF] text-[#8190A3] border border-[#E7EEF7] cursor-not-allowed"
                 }`}
               >
                 {isApplyingDiscount ? (
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-[#356FA7] border-t-transparent rounded-full animate-spin" />
                 ) : (
                   "Áp dụng"
                 )}
@@ -748,7 +743,7 @@ export default function CourseSidebar({
                   setPricingResult(null);
                   setDiscountInfo(null);
                 }}
-                className="text-xs text-gray-500 hover:text-gray-700 mt-2 flex items-center gap-1"
+                className="text-xs text-[#6F7C8C] hover:text-[#3D4A5A] mt-2 flex items-center gap-1 cursor-pointer"
               >
                 ✕ Xóa mã giảm giá
               </button>
@@ -758,18 +753,16 @@ export default function CourseSidebar({
               <button
                 onClick={() => {
                   if (course.base_price === 0) {
-                    // Khóa học free: gọi enroll trực tiếp
                     void handleEnroll();
                   } else {
-                    // Khóa có phí: mở modal checkout
                     setIsEnrollModalOpen(true);
                   }
                 }}
                 disabled={!courseSlug}
-                className={`w-full py-3 px-4 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
+                className={`w-full py-3.5 px-4 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs ${
                   courseSlug
-                    ? "bg-teal-600 text-white hover:bg-teal-700"
-                    : "bg-gray-400 text-gray-200 cursor-not-allowed"
+                    ? "bg-[#356FA7] text-white hover:bg-[#285C90]"
+                    : "bg-[#E7EEF7] text-[#8190A3] cursor-not-allowed"
                 }`}
               >
                 {!courseSlug ? (
@@ -799,10 +792,10 @@ export default function CourseSidebar({
                 <button
                   onClick={onToggleFavourite}
                   disabled={isTogglingFavourite}
-                  className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                  className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
                     isFavourite
-                      ? "bg-red-50 border-red-300 border text-red-600 hover:bg-red-100"
-                      : "border border-gray-300  text-gray-700 hover:border-teal-300 hover:text-teal-600"
+                      ? "bg-[#FCE8EF] border-[#F7C9D9] border text-[#8A3B58] hover:bg-[#F7C9D9]/50"
+                      : "border border-[#E7EEF7] text-[#3D4A5A] hover:border-[#BFD7ED] hover:bg-[#F6FAFF]"
                   }`}
                 >
                   <HiHeart
@@ -814,7 +807,7 @@ export default function CourseSidebar({
                     ? "Đã yêu thích"
                     : "Yêu thích"}
                 </button>
-                <button className="flex-1 border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:border-gray-400 hover:text-gray-800 transition-colors flex items-center justify-center gap-2 cursor-pointer">
+                <button className="flex-1 border border-[#E7EEF7] text-[#3D4A5A] py-2.5 px-4 rounded-xl text-sm font-medium hover:border-[#BFD7ED] hover:bg-[#F6FAFF] transition-colors flex items-center justify-center gap-2 cursor-pointer">
                   <HiShare className="h-4 w-4" />
                   Chia sẻ
                 </button>
@@ -822,15 +815,15 @@ export default function CourseSidebar({
             </div>
             {/* Discount Info - chỉ hiện khi có discount applied */}
             {isDiscountApplied && discountInfo && (
-              <div className="mt-4 p-4 bg-orange-50 border-2 border-orange-300 rounded-lg">
+              <div className="mt-4 p-4 bg-white border border-[#F7C9D9] rounded-xl">
                 <div className="grid grid-cols-2 gap-3">
                   {/* Countdown Timer */}
                   {discountInfo.end_at && timeRemaining && (
-                    <div className="bg-white border border-orange-200 rounded-lg p-3">
-                      <div className="text-xs font-medium text-gray-700 mb-1">
+                    <div className="bg-[#FFF9F6] border border-[#F8E9C9] rounded-xl p-3">
+                      <div className="text-xs font-medium text-[#6F7C8C] mb-1">
                         ⏰ Thời gian còn lại
                       </div>
-                      <div className="text-lg font-bold text-orange-600 font-mono">
+                      <div className="text-sm font-bold text-[#875415] font-mono">
                         {timeRemaining}
                       </div>
                     </div>
@@ -839,11 +832,11 @@ export default function CourseSidebar({
                   {/* Usage Count - Số lượng mã còn lại */}
                   {discountInfo.user_remaining_uses !== undefined &&
                     discountInfo.user_remaining_uses !== null && (
-                      <div className="bg-white border border-green-200 rounded-lg p-3">
-                        <div className="text-xs font-medium text-gray-700 mb-1">
+                      <div className="bg-[#E8F2FA]/60 border border-[#BFD7ED] rounded-xl p-3">
+                        <div className="text-xs font-medium text-[#6F7C8C] mb-1">
                           🎫 Mã còn lại
                         </div>
-                        <div className="text-lg font-bold text-green-600">
+                        <div className="text-sm font-bold text-[#356FA7]">
                           {discountInfo.user_remaining_uses}
                         </div>
                       </div>
@@ -853,29 +846,29 @@ export default function CourseSidebar({
                 {/* Thông tin chi tiết mã giảm giá */}
                 <div className="mt-3 space-y-2">
                   {discountInfo.discount_name && (
-                    <div className="bg-white rounded p-2 border border-orange-200">
-                      <div className="text-xs text-gray-600 mb-1">Tên mã</div>
-                      <div className="text-sm font-semibold text-gray-900">
+                    <div className="bg-[#F6FAFF] rounded-lg p-2.5 border border-[#E7EEF7]">
+                      <div className="text-xs text-[#6F7C8C] mb-0.5">Tên mã</div>
+                      <div className="text-sm font-semibold text-[#3D4A5A]">
                         {discountInfo.discount_name}
                       </div>
                     </div>
                   )}
 
                   {discountInfo.discount_code && (
-                    <div className="bg-white rounded p-2 border border-orange-200">
-                      <div className="text-xs text-gray-600 mb-1">
+                    <div className="bg-[#F6FAFF] rounded-lg p-2.5 border border-[#E7EEF7]">
+                      <div className="text-xs text-[#6F7C8C] mb-0.5">
                         Mã giảm giá
                       </div>
-                      <div className="text-sm font-mono font-bold text-orange-600">
+                      <div className="text-sm font-mono font-bold text-[#356FA7]">
                         {discountInfo.discount_code}
                       </div>
                     </div>
                   )}
 
                   {discountInfo.discount_description && (
-                    <div className="bg-white rounded p-2 border border-orange-200">
-                      <div className="text-xs text-gray-600 mb-1">Mô tả</div>
-                      <div className="text-sm text-gray-700">
+                    <div className="bg-[#F6FAFF] rounded-lg p-2.5 border border-[#E7EEF7]">
+                      <div className="text-xs text-[#6F7C8C] mb-0.5">Mô tả</div>
+                      <div className="text-sm text-[#3D4A5A]">
                         {discountInfo.discount_description}
                       </div>
                     </div>
@@ -885,20 +878,20 @@ export default function CourseSidebar({
                   {(discountInfo.discount_type ||
                     discountInfo.discount_percent_value !== null ||
                     discountInfo.discount_fixed_value !== null) && (
-                    <div className="bg-white rounded p-2 border border-orange-200">
-                      <div className="text-xs text-gray-600 mb-1">
+                    <div className="bg-[#F6FAFF] rounded-lg p-2.5 border border-[#E7EEF7]">
+                      <div className="text-xs text-[#6F7C8C] mb-0.5">
                         Giá trị giảm
                       </div>
-                      <div className="text-sm text-gray-700">
+                      <div className="text-sm text-[#3D4A5A]">
                         {discountInfo.discount_type === "percent" &&
                         discountInfo.discount_percent_value !== null ? (
-                          <span className="font-bold text-orange-600">
+                          <span className="font-bold text-[#356FA7]">
                             {discountInfo.discount_percent_value}%
                           </span>
                         ) : discountInfo.discount_type === "fixed" &&
                           discountInfo.discount_fixed_value !== null &&
                           discountInfo.discount_fixed_value !== undefined ? (
-                          <span className="font-bold text-orange-600">
+                          <span className="font-bold text-[#356FA7]">
                             {formatPrice(
                               discountInfo.discount_fixed_value,
                               course.currency
@@ -916,14 +909,14 @@ export default function CourseSidebar({
 
         {/* Nút đăng ký cho khóa học miễn phí (luôn hiển thị) */}
         {!isInstructorOwner && !hasPrice && (
-          <div className="mb-4 pb-4 border-b border-gray-200">
+          <div className="mb-4 pb-4 border-b border-[#E7EEF7]">
             <button
               onClick={() => void handleEnroll()}
               disabled={!courseSlug || isEnrolling}
-              className={`w-full py-3 px-4 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
+              className={`w-full py-3.5 px-4 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
                 courseSlug
-                  ? "bg-teal-600 text-white hover:bg-teal-700"
-                  : "bg-gray-400 text-gray-200 cursor-not-allowed"
+                  ? "bg-[#356FA7] text-white hover:bg-[#285C90]"
+                  : "bg-[#E7EEF7] text-[#8190A3] cursor-not-allowed"
               }`}
             >
               {isEnrolling ? (
@@ -938,29 +931,29 @@ export default function CourseSidebar({
           </div>
         )}
 
-        <div className="text-center text-sm text-gray-600 mb-6">
+        <div className="text-center text-xs text-[#6F7C8C] mb-6">
           Đảm bảo hoàn tiền trong 3 ngày
         </div>
 
         <div className="space-y-3 text-sm">
-          <div className="flex justify-between items-center py-2 border-b border-gray-100">
-            <span className="text-gray-600">Thời lượng:</span>
-            <span className="font-medium text-gray-900">
+          <div className="flex justify-between items-center py-2 border-b border-[#E7EEF7]">
+            <span className="text-[#6F7C8C]">Thời lượng:</span>
+            <span className="font-semibold text-[#3D4A5A]">
               {formatSecondsToHms(totalDurationSeconds)}
             </span>
           </div>
-          <div className="flex justify-between items-center py-2 border-b border-gray-100">
-            <span className="text-gray-600">Bài học:</span>
-            <span className="font-medium text-gray-900">
+          <div className="flex justify-between items-center py-2 border-b border-[#E7EEF7]">
+            <span className="text-[#6F7C8C]">Bài học:</span>
+            <span className="font-semibold text-[#3D4A5A]">
               {course.sections.reduce(
                 (total, section) => total + section.lessons.length,
                 0
               )}
             </span>
           </div>
-          <div className="flex justify-between items-center py-2 border-b border-gray-100">
-            <span className="text-gray-600">Cấp độ:</span>
-            <span className="font-medium text-gray-900">
+          <div className="flex justify-between items-center py-2 border-b border-[#E7EEF7]">
+            <span className="text-[#6F7C8C]">Cấp độ:</span>
+            <span className="font-semibold text-[#3D4A5A]">
               {course.level === "beginner"
                 ? "Cơ bản"
                 : course.level === "intermediate"
@@ -971,8 +964,8 @@ export default function CourseSidebar({
             </span>
           </div>
           <div className="flex justify-between items-center py-2">
-            <span className="text-gray-600">Ngôn ngữ:</span>
-            <span className="font-medium text-gray-900">
+            <span className="text-[#6F7C8C]">Ngôn ngữ:</span>
+            <span className="font-semibold text-[#3D4A5A]">
               {(course.language || "").toUpperCase()}
             </span>
           </div>

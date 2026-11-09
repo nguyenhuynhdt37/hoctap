@@ -1,14 +1,16 @@
 const SkeletonCard = () => (
-  <div className="bg-white border border-green-100 rounded-xl overflow-hidden shadow-sm animate-pulse">
-    <div className="w-full h-40 bg-gradient-to-r from-green-100 via-emerald-100 to-teal-100" />
-    <div className="p-4 space-y-3">
-      <div className="h-4 bg-gradient-to-r from-green-100 to-emerald-100 rounded w-3/4" />
-      <div className="h-3 bg-gradient-to-r from-emerald-100 to-teal-100 rounded w-1/2" />
-      <div className="flex items-center space-x-2">
-        <div className="h-4 bg-gradient-to-r from-green-100 to-emerald-100 rounded w-10" />
-        <div className="h-3 bg-gradient-to-r from-emerald-100 to-teal-100 rounded w-16" />
+  <div className="bg-white border border-[#E7EEF7] rounded-[20px] overflow-hidden shadow-xs animate-pulse">
+    <div className="w-full h-44 bg-[#E8F2FA]" />
+    <div className="p-5 space-y-3">
+      <div className="h-4 bg-[#E8F2FA] rounded-lg w-3/4" />
+      <div className="h-3 bg-[#E8F2FA]/70 rounded-lg w-1/2" />
+      <div className="flex items-center space-x-2 pt-1">
+        <div className="h-6 w-6 bg-[#E8F2FA] rounded-full" />
+        <div className="h-3 bg-[#E8F2FA]/70 rounded-lg w-24" />
       </div>
-      <div className="h-5 bg-gradient-to-r from-green-100 via-emerald-100 to-teal-100 rounded w-24" />
+      <div className="pt-2 border-t border-[#E7EEF7]">
+        <div className="h-5 bg-[#E8F2FA] rounded-lg w-24" />
+      </div>
     </div>
   </div>
 );

@@ -13,10 +13,7 @@ import {
   Legend,
 } from "chart.js";
 import { Line } from "react-chartjs-2";
-import {
-  InstructorGrowthResponse,
-  RevenuePeriod,
-} from "@/types/admin/statistics";
+import { InstructorGrowthResponse } from "@/types/admin/statistics";
 import { useState, useEffect } from "react";
 import useSWR from "swr";
 import { HiTrendingUp } from "react-icons/hi";
@@ -57,8 +54,8 @@ export default function InstructorGrowth() {
       {
         label: "Giảng viên mới",
         data: growthData.map((d) => d.new_instructors),
-        borderColor: "#00a73d",
-        backgroundColor: "rgba(0, 167, 61, 0.1)",
+        borderColor: "#356FA7",
+        backgroundColor: "rgba(191, 215, 237, 0.35)",
         fill: true,
         tension: 0.4,
         yAxisID: "y",
@@ -66,8 +63,8 @@ export default function InstructorGrowth() {
       {
         label: "Tổng cộng dồn",
         data: growthData.map((d) => d.total_instructors),
-        borderColor: "#10b981",
-        backgroundColor: "#10b981",
+        borderColor: "#7BAFD4",
+        backgroundColor: "#7BAFD4",
         tension: 0.4,
         borderDash: [5, 5],
         yAxisID: "y1",
@@ -80,24 +77,27 @@ export default function InstructorGrowth() {
     maintainAspectRatio: false,
     interaction: { mode: "index" as const, intersect: false },
     plugins: {
-      legend: { position: "top" as const, labels: { usePointStyle: true } },
-      tooltip: { backgroundColor: "#1f2937", padding: 12, borderRadius: 8 },
+      legend: {
+        position: "top" as const,
+        labels: { usePointStyle: true, color: "#3D4A5A" },
+      },
+      tooltip: { backgroundColor: "#3D4A5A", padding: 12, borderRadius: 10 },
     },
     scales: {
-      x: { grid: { display: false }, ticks: { color: "#6b7280" } },
+      x: { grid: { display: false }, ticks: { color: "#6F7C8C" } },
       y: {
         type: "linear" as const,
         display: true,
         position: "left" as const,
-        grid: { color: "#f3f4f6" },
-        ticks: { color: "#6b7280" },
+        grid: { color: "#E7EEF7" },
+        ticks: { color: "#6F7C8C" },
       },
       y1: {
         type: "linear" as const,
         display: true,
         position: "right" as const,
         grid: { drawOnChartArea: false },
-        ticks: { color: "#10b981" },
+        ticks: { color: "#356FA7" },
       },
     },
   };
@@ -105,20 +105,20 @@ export default function InstructorGrowth() {
   if (!mounted) return null;
 
   return (
-    <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/30 p-6">
+    <div className="bg-white rounded-[20px] shadow-xs border border-[#E7EEF7] p-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
-        <h3 className="text-xl font-bold text-gray-900">
+        <h3 className="text-lg font-semibold text-[#3D4A5A]">
           Tăng trưởng giảng viên
         </h3>
-        <div className="flex gap-2">
+        <div className="flex gap-1.5 bg-[#F6FAFF] p-1 rounded-xl border border-[#E7EEF7]">
           {(["day", "month"] as const).map((p) => (
             <button
               key={p}
               onClick={() => setPeriod(p)}
-              className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all ${
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                 period === p
-                  ? "bg-green-600 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  ? "bg-[#356FA7] text-white shadow-2xs"
+                  : "text-[#6F7C8C] hover:text-[#3D4A5A]"
               }`}
             >
               {p === "day" ? "30 ngày" : "12 tháng"}
@@ -129,20 +129,20 @@ export default function InstructorGrowth() {
 
       {/* Summary Stats */}
       <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="bg-green-50 rounded-xl p-4">
+        <div className="bg-[#E8F2FA]/70 border border-[#BFD7ED]/60 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-1">
-            <HiTrendingUp className="w-4 h-4 text-green-600" />
-            <p className="text-green-600 text-sm font-medium">Mới trong kỳ</p>
+            <HiTrendingUp className="w-4 h-4 text-[#356FA7]" />
+            <p className="text-[#356FA7] text-xs font-semibold uppercase tracking-wider">Mới trong kỳ</p>
           </div>
-          <p className="text-2xl font-bold text-green-800">
+          <p className="text-2xl font-bold text-[#3D4A5A]">
             {data?.total_new_this_period ?? 0}
           </p>
         </div>
-        <div className="bg-emerald-50 rounded-xl p-4">
-          <p className="text-emerald-600 text-sm font-medium mb-1">
+        <div className="bg-[#FCE8EF]/70 border border-[#F7C9D9]/60 rounded-xl p-4">
+          <p className="text-[#8A3B58] text-xs font-semibold uppercase tracking-wider mb-1">
             Tăng trưởng
           </p>
-          <p className="text-2xl font-bold text-emerald-800">
+          <p className="text-2xl font-bold text-[#3D4A5A]">
             {(data?.growth_rate ?? 0).toFixed(1)}%
           </p>
         </div>
@@ -152,7 +152,7 @@ export default function InstructorGrowth() {
       <div className="h-56 relative">
         {isLoading ? (
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-4 border-[#356FA7] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
           <Line data={chartData} options={options as any} />

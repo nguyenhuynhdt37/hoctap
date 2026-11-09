@@ -1,5 +1,6 @@
 "use client";
 
+import GoogleSignInButton from "@/components/shared/google-sign-in-button";
 import api from "@/lib/utils/fetcher/client/axios";
 import {
   calculateRemainingMs,
@@ -10,23 +11,8 @@ import {
 } from "@/types/shared/auth";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { FaGoogle } from "react-icons/fa";
+import { useCallback, useEffect, useState } from "react";
 import { HiEye, HiEyeOff } from "react-icons/hi";
-
-declare global {
-  interface Window {
-    google?: {
-      accounts: {
-        id: {
-          initialize: (config: any) => void;
-          renderButton: (element: HTMLElement, config: any) => void;
-          prompt: () => void;
-        };
-      };
-    };
-  }
-}
 
 // ============================================
 // VALIDATION FUNCTIONS
@@ -174,9 +160,6 @@ const Login = () => {
     password: false,
   });
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [isGoogleLoaded, setIsGoogleLoaded] = useState(false);
-  const googleButtonRef = useRef<HTMLDivElement>(null);
-  const googleLoginUrl = process.env.NEXT_PUBLIC_URL_GOOGLE_LOGIN;
 
   // Dialog state
   const [dialogState, setDialogState] = useState<{
@@ -197,19 +180,6 @@ const Login = () => {
   // GOOGLE LOGIN
   // ============================================
 
-  useEffect(() => {
-    if (typeof window !== "undefined" && !window.google) {
-      const script = document.createElement("script");
-      script.src = "https://accounts.google.com/gsi/client";
-      script.async = true;
-      script.defer = true;
-      script.onload = () => setIsGoogleLoaded(true);
-      document.head.appendChild(script);
-    } else if (window.google) {
-      setIsGoogleLoaded(true);
-    }
-  }, []);
-
   const handleGoogleCredentialResponse = useCallback(
     async (response: any) => {
       if (!response.credential) return;
@@ -229,27 +199,7 @@ const Login = () => {
     [router, redirectUrl]
   );
 
-  useEffect(() => {
-    if (
-      isGoogleLoaded &&
-      window.google &&
-      googleLoginUrl &&
-      googleButtonRef.current
-    ) {
-      window.google.accounts.id.initialize({
-        client_id: googleLoginUrl,
-        callback: handleGoogleCredentialResponse,
-      });
-      googleButtonRef.current.innerHTML = "";
-      window.google.accounts.id.renderButton(googleButtonRef.current, {
-        type: "standard",
-        theme: "outline",
-        size: "large",
-        text: "signin_with",
-        width: googleButtonRef.current.offsetWidth || 300,
-      });
-    }
-  }, [isGoogleLoaded, googleLoginUrl, handleGoogleCredentialResponse]);
+
 
   // ============================================
   // FORM HANDLERS
@@ -510,58 +460,49 @@ const Login = () => {
 
   return (
     <>
-      <div className="min-h-screen bg-white flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
+      <div className="min-h-screen bg-[#F6FAFF] flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
         <div className="w-full max-w-md">
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 sm:p-10 space-y-8">
+          <div className="bg-white rounded-[24px] shadow-md border border-[#E7EEF7] p-8 sm:p-10 space-y-7">
             {/* Header */}
             <div className="text-center space-y-2">
               <div className="flex justify-center mb-4">
-                <div className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg">
+                <div className="w-16 h-16 rounded-2xl bg-[#E8F2FA] border border-[#BFD7ED]/60 flex items-center justify-center shadow-2xs">
                   <Image
                     src="/logo/studynest-logo.svg"
                     alt="StudyNest Logo"
-                    width={64}
-                    height={64}
-                    className="w-16 h-16"
+                    width={48}
+                    height={48}
+                    className="w-12 h-12"
                   />
                 </div>
               </div>
-              <h1 className="text-3xl font-bold text-gray-900">Đăng nhập</h1>
-              <p className="text-gray-600 text-sm">
+              <h1 className="font-display text-3xl font-bold text-[#3D4A5A]">
+                Đăng nhập
+              </h1>
+              <p className="text-[#6F7C8C] text-sm">
                 Chào mừng trở lại! Vui lòng đăng nhập vào tài khoản của bạn
               </p>
             </div>
 
             {/* Google Login */}
-            {isGoogleLoaded && googleLoginUrl ? (
-              <div
-                ref={googleButtonRef}
-                className="w-full flex justify-center"
-              />
-            ) : (
-              <button
-                type="button"
-                disabled
-                className="w-full flex items-center justify-center gap-3 px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-50 text-sm font-medium text-gray-500 cursor-not-allowed"
-              >
-                <FaGoogle className="w-5 h-5 text-red-500" />
-                {isGoogleLoading ? "Đang xử lý..." : "Đang tải..."}
-              </button>
-            )}
+            <GoogleSignInButton
+              onCredential={handleGoogleCredentialResponse}
+              busy={isGoogleLoading}
+            />
 
             {/* Divider */}
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
+                <div className="w-full border-t border-[#E7EEF7]" />
               </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-white text-gray-500">hoặc</span>
+              <div className="relative flex justify-center text-xs uppercase tracking-wider">
+                <span className="px-4 bg-white text-[#8190A3]">hoặc</span>
               </div>
             </div>
 
             {/* Error Message */}
             {errors.general && (
-              <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700">
+              <div className="bg-[#FCE8E8] border border-[#F5C2C7] rounded-xl p-4 text-sm text-[#A23C46]">
                 {errors.general}
               </div>
             )}
@@ -571,7 +512,7 @@ const Login = () => {
               <div>
                 <label
                   htmlFor="email"
-                  className="block text-sm font-semibold text-gray-700 mb-2"
+                  className="block text-sm font-semibold text-[#3D4A5A] mb-2"
                 >
                   Email
                 </label>
@@ -584,15 +525,15 @@ const Login = () => {
                   value={email}
                   onChange={(e) => handleEmailChange(e.target.value)}
                   onBlur={() => handleBlur("email")}
-                  className={`block w-full px-4 py-3 border-2 rounded-xl text-sm transition-all focus:outline-none focus:ring-2 ${
+                  className={`block w-full px-4 py-3 border rounded-xl text-sm text-[#3D4A5A] placeholder:text-[#8190A3] transition-all focus:outline-none focus:ring-2 ${
                     errors.email && touched.email
-                      ? "border-red-300 focus:border-red-500 focus:ring-red-200"
-                      : "border-gray-300 focus:border-green-500 focus:ring-green-200"
+                      ? "border-[#A23C46] focus:border-[#A23C46] focus:ring-[#A23C46]/20"
+                      : "border-[#E7EEF7] bg-[#F6FAFF]/50 focus:bg-white focus:border-[#356FA7] focus:ring-[#356FA7]/20"
                   }`}
                   placeholder="you@example.com"
                 />
                 {errors.email && touched.email && (
-                  <div className="text-red-600 text-xs mt-1.5">
+                  <div className="text-[#A23C46] text-xs mt-1.5">
                     {errors.email}
                   </div>
                 )}
@@ -602,13 +543,13 @@ const Login = () => {
                 <div className="flex items-center justify-between mb-2">
                   <label
                     htmlFor="password"
-                    className="block text-sm font-semibold text-gray-700"
+                    className="block text-sm font-semibold text-[#3D4A5A]"
                   >
                     Mật khẩu
                   </label>
                   <a
-                    href="#"
-                    className="text-xs text-green-600 hover:text-green-700 font-medium"
+                    href="/forgot-password"
+                    className="text-xs text-[#356FA7] hover:text-[#285C90] font-medium"
                   >
                     Quên mật khẩu?
                   </a>
@@ -623,29 +564,29 @@ const Login = () => {
                     value={password}
                     onChange={(e) => handlePasswordChange(e.target.value)}
                     onBlur={() => handleBlur("password")}
-                    className={`block w-full px-4 py-3 pr-12 border-2 rounded-xl text-sm transition-all focus:outline-none focus:ring-2 ${
+                    className={`block w-full px-4 py-3 pr-12 border rounded-xl text-sm text-[#3D4A5A] placeholder:text-[#8190A3] transition-all focus:outline-none focus:ring-2 ${
                       errors.password && touched.password
-                        ? "border-red-300 focus:border-red-500 focus:ring-red-200"
-                        : "border-gray-300 focus:border-green-500 focus:ring-green-200"
+                        ? "border-[#A23C46] focus:border-[#A23C46] focus:ring-[#A23C46]/20"
+                        : "border-[#E7EEF7] bg-[#F6FAFF]/50 focus:bg-white focus:border-[#356FA7] focus:ring-[#356FA7]/20"
                     }`}
                     placeholder="••••••••"
                   />
                   <button
                     type="button"
-                    className="absolute inset-y-0 right-0 pr-4 flex items-center"
+                    className="absolute inset-y-0 right-0 pr-4 flex items-center cursor-pointer"
                     onClick={() => setShowPassword(!showPassword)}
                     tabIndex={-1}
                     aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
                   >
                     {showPassword ? (
-                      <HiEyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                      <HiEyeOff className="h-5 w-5 text-[#8190A3] hover:text-[#3D4A5A]" />
                     ) : (
-                      <HiEye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                      <HiEye className="h-5 w-5 text-[#8190A3] hover:text-[#3D4A5A]" />
                     )}
                   </button>
                 </div>
                 {errors.password && touched.password && (
-                  <div className="text-red-600 text-xs mt-1.5">
+                  <div className="text-[#A23C46] text-xs mt-1.5">
                     {errors.password}
                   </div>
                 )}
@@ -654,18 +595,18 @@ const Login = () => {
               <button
                 type="submit"
                 disabled={isLoading || isGoogleLoading || !email || !password}
-                className="w-full py-3.5 px-4 text-sm font-bold rounded-xl text-white bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl"
+                className="w-full py-3.5 px-4 text-sm font-semibold rounded-xl text-white bg-[#356FA7] hover:bg-[#285C90] focus:outline-none focus:ring-2 focus:ring-[#356FA7]/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-xs cursor-pointer"
               >
                 {isLoading ? "Đang đăng nhập..." : "Đăng nhập"}
               </button>
             </form>
 
             {/* Footer Link */}
-            <div className="text-center text-sm text-gray-600">
+            <div className="text-center text-sm text-[#6F7C8C]">
               Chưa có tài khoản?{" "}
               <a
                 href="/register"
-                className="text-green-600 hover:text-green-700 font-bold"
+                className="text-[#356FA7] hover:text-[#285C90] font-semibold"
               >
                 Đăng ký ngay
               </a>

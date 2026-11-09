@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback, memo } from "react";
 import { HiChat, HiPaperAirplane, HiTrash, HiSparkles } from "react-icons/hi";
 import { ChatSqlMessage, ChatSqlResponse } from "@/types/user/chat-sql";
 import MarkdownRenderer from "@/components/shared/markdown-renderer";
-import api from "@/lib/utils/fetcher/client/axios";
+import { postChatStream } from "@/lib/utils/fetcher/client/chat-stream";
 
 // Gợi ý câu hỏi mẫu
 const SAMPLE_QUESTIONS = [
@@ -20,6 +20,8 @@ function ChatSql() {
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const streamRef = useRef<AbortController | null>(null);
+  useEffect(() => () => { streamRef.current?.abort(); }, []);
 
   // Load history from localStorage
   useEffect(() => {
@@ -68,11 +70,10 @@ function ChatSql() {
         timestamp: new Date(),
       };
 
-      // Cập nhật state ngay lập tức để hiển thị
-      setMessages((prev) => {
-        const newMessages = [...prev, userMsg];
-        return newMessages;
-      });
+      const assistantId = crypto.randomUUID();
+      setMessages((prev) => [...prev, userMsg, {
+        id: assistantId, role: "assistant", content: "", timestamp: new Date(),
+      }]);
       setInput("");
       setLoading(true);
 
@@ -87,20 +88,15 @@ function ChatSql() {
 
         const history = messages.map((m) => m.content).slice(-10);
 
-        const res = await api.post<ChatSqlResponse>("/chat-sql/complete", {
-          question: text,
-          history,
-        });
-
-        const assistantMsg: ChatSqlMessage = {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          content: res.data.response,
-          timestamp: new Date(),
-        };
-
-        setMessages((prev) => [...prev, assistantMsg]);
-        // useEffect sẽ tự save vào localStorage
+        streamRef.current = new AbortController();
+        let content = "";
+        const result = await postChatStream<ChatSqlResponse>("/chat-sql/complete", {
+          question: text, history,
+        }, (delta) => {
+          content += delta;
+          setMessages((prev) => prev.map((msg) => msg.id === assistantId ? { ...msg, content } : msg));
+        }, streamRef.current.signal);
+        setMessages((prev) => prev.map((msg) => msg.id === assistantId ? { ...msg, content: result.response } : msg));
       } catch (error: any) {
         const errorContent =
           error.response?.status === 401
@@ -113,7 +109,8 @@ function ChatSql() {
           content: errorContent,
           timestamp: new Date(),
         };
-        setMessages((prev) => [...prev, errorMsg]);
+        setMessages((prev) => prev.map((msg) => msg.id === assistantId
+          ? { ...msg, content: (msg.content ? msg.content + "\n\n" : "") + errorMsg.content } : msg));
       } finally {
         setLoading(false);
         inputRef.current?.focus();
@@ -124,6 +121,7 @@ function ChatSql() {
 
   // Xóa lịch sử chat
   const clearChat = useCallback(() => {
+    streamRef.current?.abort();
     setMessages([]);
     setInput("");
     localStorage.removeItem("chat_sql_history");

@@ -1,8 +1,19 @@
-// app/fonts.ts
-import { Plus_Jakarta_Sans } from 'next/font/google';
+import { Be_Vietnam_Pro, Lora } from "next/font/google";
 
-export const jakarta = Plus_Jakarta_Sans({
-  subsets: ['vietnamese'],
-  weight: ['400', '600', '700'],
-  variable: '--font-jakarta'
+export const beVietnamPro = Be_Vietnam_Pro({
+  subsets: ["vietnamese", "latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+  variable: "--font-be-vietnam",
 });
+
+export const lora = Lora({
+  subsets: ["vietnamese", "latin"],
+  weight: ["400", "500", "600", "700"],
+  style: ["normal", "italic"],
+  display: "swap",
+  variable: "--font-lora",
+});
+
+// Backward-compatible alias so any existing import continues to work
+export const jakarta = beVietnamPro;

@@ -36,8 +36,8 @@ export default function CourseStatusChart() {
               data.by_status?.archived ?? 0,
             ]
           : [0, 0, 0],
-        backgroundColor: ["#00a73d", "#fbbf24", "#9ca3af"],
-        borderColor: "#fff",
+        backgroundColor: ["#356FA7", "#F8E9C9", "#BFD7ED"],
+        borderColor: "#ffffff",
         borderWidth: 3,
         hoverOffset: 6,
       },
@@ -56,8 +56,8 @@ export default function CourseStatusChart() {
               data.by_level?.all ?? 0,
             ]
           : [0, 0, 0, 0],
-        backgroundColor: ["#10b981", "#00a73d", "#047857", "#134e4a"],
-        borderColor: "#fff",
+        backgroundColor: ["#7BAFD4", "#356FA7", "#F7C9D9", "#E3D5F5"],
+        borderColor: "#ffffff",
         borderWidth: 3,
         hoverOffset: 6,
       },
@@ -69,35 +69,35 @@ export default function CourseStatusChart() {
     maintainAspectRatio: false,
     plugins: {
       legend: { display: false },
-      tooltip: { backgroundColor: "#1f2937", padding: 12, borderRadius: 8 },
+      tooltip: { backgroundColor: "#3D4A5A", padding: 12, borderRadius: 10 },
     },
   };
 
   if (!mounted) return null;
 
   return (
-    <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/30 p-6">
+    <div className="bg-white rounded-[20px] shadow-xs border border-[#E7EEF7] p-6">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-xl font-bold text-gray-900">Thống kê khóa học</h3>
+        <h3 className="text-lg font-semibold text-[#3D4A5A]">Thống kê khóa học</h3>
         {data && (
           <div className="text-right">
-            <p className="text-2xl font-bold text-green-600">
+            <p className="text-2xl font-bold text-[#356FA7]">
               {data.total ?? 0}
             </p>
-            <p className="text-gray-500 text-sm">Tổng khóa học</p>
+            <p className="text-[#6F7C8C] text-sm">Tổng khóa học</p>
           </div>
         )}
       </div>
 
       {isLoading ? (
         <div className="h-48 flex items-center justify-center">
-          <div className="w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-4 border-[#356FA7] border-t-transparent rounded-full animate-spin" />
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-6">
           {/* Status Pie */}
           <div>
-            <p className="text-sm font-medium text-gray-600 mb-3 text-center">
+            <p className="text-sm font-medium text-[#6F7C8C] mb-3 text-center">
               Theo trạng thái
             </p>
             <div className="h-32 relative">
@@ -105,29 +105,29 @@ export default function CourseStatusChart() {
             </div>
             <div className="mt-3 space-y-1">
               <div className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-green-600" />
+                <span className="flex items-center gap-1.5 text-[#6F7C8C]">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#356FA7]" />
                   Xuất bản
                 </span>
-                <span className="font-medium">
+                <span className="font-medium text-[#3D4A5A]">
                   {data?.by_status?.published ?? 0}
                 </span>
               </div>
               <div className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-yellow-400" />
+                <span className="flex items-center gap-1.5 text-[#6F7C8C]">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#F8E9C9] border border-[#E6B84D]" />
                   Bản nháp
                 </span>
-                <span className="font-medium">
+                <span className="font-medium text-[#3D4A5A]">
                   {data?.by_status?.draft ?? 0}
                 </span>
               </div>
               <div className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-gray-400" />
+                <span className="flex items-center gap-1.5 text-[#6F7C8C]">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#BFD7ED]" />
                   Lưu trữ
                 </span>
-                <span className="font-medium">
+                <span className="font-medium text-[#3D4A5A]">
                   {data?.by_status?.archived ?? 0}
                 </span>
               </div>
@@ -136,7 +136,7 @@ export default function CourseStatusChart() {
 
           {/* Level Pie */}
           <div>
-            <p className="text-sm font-medium text-gray-600 mb-3 text-center">
+            <p className="text-sm font-medium text-[#6F7C8C] mb-3 text-center">
               Theo cấp độ
             </p>
             <div className="h-32 relative">
@@ -144,29 +144,29 @@ export default function CourseStatusChart() {
             </div>
             <div className="mt-3 space-y-1">
               <div className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span className="flex items-center gap-1.5 text-[#6F7C8C]">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#7BAFD4]" />
                   Cơ bản
                 </span>
-                <span className="font-medium">
+                <span className="font-medium text-[#3D4A5A]">
                   {data?.by_level?.beginner ?? 0}
                 </span>
               </div>
               <div className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-green-600" />
+                <span className="flex items-center gap-1.5 text-[#6F7C8C]">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#356FA7]" />
                   Trung cấp
                 </span>
-                <span className="font-medium">
+                <span className="font-medium text-[#3D4A5A]">
                   {data?.by_level?.intermediate ?? 0}
                 </span>
               </div>
               <div className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-green-800" />
+                <span className="flex items-center gap-1.5 text-[#6F7C8C]">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#F7C9D9]" />
                   Nâng cao
                 </span>
-                <span className="font-medium">
+                <span className="font-medium text-[#3D4A5A]">
                   {data?.by_level?.advanced ?? 0}
                 </span>
               </div>
@@ -177,19 +177,19 @@ export default function CourseStatusChart() {
 
       {/* Extra Stats */}
       {data && (
-        <div className="mt-6 pt-4 border-t border-gray-100 grid grid-cols-2 gap-4">
+        <div className="mt-6 pt-4 border-t border-[#E7EEF7] grid grid-cols-2 gap-4">
           <div className="text-center">
-            <p className="text-2xl font-bold text-green-600">
+            <p className="text-2xl font-bold text-[#356FA7]">
               {(data.avg_rating ?? 0).toFixed(1)}
-              <span className="text-yellow-500 ml-1">★</span>
+              <span className="text-[#D99B26] ml-1">★</span>
             </p>
-            <p className="text-gray-500 text-xs">Đánh giá TB</p>
+            <p className="text-[#6F7C8C] text-xs">Đánh giá TB</p>
           </div>
           <div className="text-center">
-            <p className="text-2xl font-bold text-emerald-600">
+            <p className="text-2xl font-bold text-[#356FA7]">
               {(data.total_enrollments ?? 0).toLocaleString("vi-VN")}
             </p>
-            <p className="text-gray-500 text-xs">Lượt đăng ký</p>
+            <p className="text-[#6F7C8C] text-xs">Lượt đăng ký</p>
           </div>
         </div>
       )}

@@ -212,9 +212,9 @@ export default function ChatMarkdown({
         .chat-md blockquote {
           margin: 0.5em 0 !important;
           padding: 0.5em 1em !important;
-          border-left: 3px solid #10b981 !important;
-          background: #f0fdf4 !important;
-          color: #166534 !important;
+          border-left: 3px solid #356FA7 !important;
+          background: #E8F2FA !important;
+          color: #3D4A5A !important;
           display: block !important;
         }
 
@@ -224,7 +224,7 @@ export default function ChatMarkdown({
 
         /* Links */
         .chat-md a {
-          color: #059669 !important;
+          color: #356FA7 !important;
           text-decoration: none !important;
         }
 
