@@ -5,8 +5,8 @@ import mimetypes
 import re
 import unicodedata
 from datetime import UTC, datetime
-from pathlib import PurePosixPath
 from functools import lru_cache
+from pathlib import PurePosixPath
 from urllib.parse import quote
 from uuid import uuid4
 

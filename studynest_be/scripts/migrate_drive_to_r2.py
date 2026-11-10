@@ -22,7 +22,14 @@ from sqlalchemy import select, text
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.core.settings import settings
-from app.db.models.database import Courses, LessonNotes, LessonResources, Lessons, TutorChatImages, User
+from app.db.models.database import (
+    Courses,
+    LessonNotes,
+    LessonResources,
+    Lessons,
+    TutorChatImages,
+    User,
+)
 from app.db.sesson import AsyncSessionLocal
 from app.services.shares.file_storage import FileStorageService
 
@@ -145,7 +152,7 @@ async def main(root, apply):
             asset_id = hashlib.sha256((entry['table'] + entry['id'] + entry['column'] + entry['old_url']).encode()).hexdigest()[:32]
             key = storage.object_key(entry['purpose'], source['name'], source['mime_type'], asset_id=asset_id)
             # Upload and independently read all bytes; ETags alone are not an integrity check.
-            def upload():
+            def upload(source=source, key=key):
                 with Path(source['local_path']).open('rb') as file:
                     r2.put_object(Bucket=settings.R2_BUCKET_NAME, Key=key, Body=file,
                                   ContentType=source['mime_type'], Metadata={'sha256': source['sha256']},

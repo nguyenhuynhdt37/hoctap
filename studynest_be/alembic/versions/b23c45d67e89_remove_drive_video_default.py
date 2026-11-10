@@ -1,7 +1,8 @@
 """Remove the obsolete Drive upload source marker."""
 
-from alembic import op
 import sqlalchemy as sa
+
+from alembic import op
 
 revision = 'b23c45d67e89'
 down_revision = 'a12b34c56d78'

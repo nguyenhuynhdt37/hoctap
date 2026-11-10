@@ -133,12 +133,11 @@ chưa thay thế việc kiểm tra ứng dụng trên thiết bị hoặc simula
   nếu truy cập bằng địa chỉ đó. Không thêm đường dẫn `/login` vào origin.
   Lỗi `The given origin is not allowed for the given client ID` cần sửa tại Console;
   điền client secret vào `.env` không thay đổi danh sách origin này.
-- Upload file: hỗ trợ `STORAGE_PROVIDER=r2` hoặc `google_drive`. Xem
-  [hướng dẫn cấu hình R2](docs/r2-setup.md). File mới dùng provider đã chọn;
-  link Drive cũ được giữ nguyên. Kiểm tra R2 bằng
+- Upload file: chỉ sử dụng `STORAGE_PROVIDER=r2`. Xem
+  [hướng dẫn cấu hình R2](docs/r2-setup.md). Toàn bộ file đang dùng đã chuyển sang R2 theo cây thư mục chuẩn. Kiểm tra R2 bằng
   `.venv/bin/python scripts/check_r2.py` trong thư mục backend.
-- Drive cũ/YouTube: file OAuth `studynest_be/app/core/secret/client_secret.json`;
-  lần xác thực đầu sẽ tạo `token.json`. Cấu hình thêm `GOOGLE_ROOT_FOLDER_ID`.
+- YouTube: file OAuth `studynest_be/app/core/secret/client_secret.json`;
+  lần xác thực đầu sẽ tạo `token.json`. Chỉ yêu cầu scope YouTube.
 - PayPal sandbox: `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` của backend và
   `NEXT_PUBLIC_PAYPAL_CLIENT_ID` của web.
 
