@@ -85,7 +85,7 @@ export function PrivacyPolicySection() {
           <ul className="list-disc list-inside space-y-2 text-gray-700 ml-4">
             <li>Với các nhà cung cấp dịch vụ cần thiết để vận hành nền tảng</li>
             <li>Khi được yêu cầu bởi pháp luật hoặc cơ quan có thẩm quyền</li>
-            <li>Để bảo vệ quyền và an toàn của StudyNest và người dùng</li>
+            <li>Để bảo vệ quyền và an toàn của Mây Mây và người dùng</li>
             <li>Với sự đồng ý rõ ràng của bạn</li>
           </ul>
         </section>
@@ -117,10 +117,10 @@ export function PrivacyPolicySection() {
             Nếu bạn có câu hỏi về chính sách bảo mật này, vui lòng liên hệ với
             chúng tôi qua email:{" "}
             <a
-              href="mailto:privacy@studynest.com"
+              href="mailto:privacy@maymay.edu.vn"
               className="text-teal-600 hover:text-teal-700 font-medium"
             >
-              privacy@studynest.com
+              privacy@maymay.edu.vn
             </a>
           </p>
         </section>

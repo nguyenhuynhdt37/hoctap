@@ -5,3 +5,6 @@ export * from "./card";
 export * from "./states";
 export * from "./hover-card";
 export * from "./image-preview-modal";
+export * from "./modal";
+export * from "./tabs";
+export * from "./overlays";

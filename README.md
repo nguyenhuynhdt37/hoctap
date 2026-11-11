@@ -1,11 +1,11 @@
-# 📦 StudyNest Ecosystem Monorepo - Backend, Web Client & Mobile App
+# 📦 Mây Mây Ecosystem Monorepo - Backend, Web Client & Mobile App
 
 ![FastAPI](https://img.shields.io/badge/FastAPI-Backend-009688?style=for-the-badge&logo=fastapi&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-Web_Client-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
 ![Expo](https://img.shields.io/badge/Expo-Mobile_App-000000?style=for-the-badge&logo=expo&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
 
-Monorepo chứa toàn bộ mã nguồn của hệ sinh thái học tập **StudyNest**, bao gồm 3 dự án thành phần hợp nhất trong một kho lưu trữ duy nhất.
+Monorepo chứa toàn bộ mã nguồn của hệ sinh thái học tập **Mây Mây**, bao gồm 3 dự án thành phần hợp nhất trong một kho lưu trữ duy nhất.
 
 ---
 
@@ -63,6 +63,7 @@ cd studynest_be
 uv venv .venv --python 3.11
 uv pip install --python .venv/bin/python -r requirements.txt
 .venv/bin/python -m alembic upgrade head
+.venv/bin/python scripts/seed_catalog_v2.py
 .venv/bin/python scripts/install_piston_runtimes.py
 .venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
@@ -148,3 +149,16 @@ Khởi động lại các server sau khi đổi `.env`. Các file secret đã đ
 ## 👨‍💻 Tác Giả
 
 **Nguyễn Xuân Huỳnh** — [GitHub Profile](https://github.com/nguyenhuynhdt37)
+
+
+### Education Catalog V2
+
+Web khám phá: `/khoa-hoc`; quản trị: `/admin/catalog`; đơn vị của giảng viên: `/lecturer/providers`.
+Database mới: import dump qua Docker Compose, chạy Alembic rồi seed Catalog V2 như trên.
+Database có dữ liệu: sao lưu trước khi upgrade; không chạy lại script dọn taxonomy cũ.
+Xem [kiến trúc và migration Catalog V2](docs/architecture/education-catalog-v2.md).
+
+### Lộ trình và combo
+
+Module mới: `/lo-trinh`, `/combo`, quản trị `/admin/learning-paths` và `/admin/bundles`.
+Chạy Alembic head sau backup trước khi bật code mới. Xem [hướng dẫn triển khai và đối soát](docs/architecture/paths-bundles-guide.md).

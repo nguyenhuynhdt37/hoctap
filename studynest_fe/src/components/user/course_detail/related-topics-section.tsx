@@ -1,6 +1,7 @@
 "use client";
 
 import { CategoryItem } from "@/types/user/course_detail";
+import Link from "next/link";
 import { HiAcademicCap, HiBookOpen } from "react-icons/hi";
 
 interface RelatedTopicsSectionProps {
@@ -13,60 +14,44 @@ export default function RelatedTopicsSection({
   if (!categories || categories.length === 0) return null;
 
   return (
-    <div className="bg-emerald-50 rounded-lg shadow-sm border border-emerald-200 p-6">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center">
-          <HiAcademicCap className="h-4 w-4 text-white" />
+    <section className="bg-surface rounded-[24px] shadow-xs border border-border p-6 sm:p-8">
+      <div className="flex items-center gap-3 mb-5">
+        <div className="w-10 h-10 bg-primary-light border border-primary-pastel rounded-2xl flex items-center justify-center text-primary shrink-0">
+          <HiAcademicCap className="h-5 w-5" />
         </div>
-        <h2 className="text-2xl font-semibold text-gray-900">
-          Khám phá các chủ đề liên quan
-        </h2>
+        <div>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-primary block">
+            Chuyên đề liên kết
+          </span>
+          <h2 className="font-display text-xl sm:text-2xl font-bold text-foreground">
+            Khám phá các chủ đề liên quan
+          </h2>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {categories.map((category) => (
-          <a
+          <Link
             key={category.id}
-            href={`/category/${category.slug}`}
-            className="group bg-white rounded-lg p-3 border border-gray-200 hover:border-emerald-300 hover:shadow-sm transition-all"
+            href={`/categories/${category.slug}`}
+            className="group bg-background rounded-2xl p-4 border border-border hover:border-primary-pastel hover:bg-primary-light/40 hover:shadow-xs transition-all"
           >
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform">
-                <HiBookOpen className="h-4 w-4 text-white" />
+              <div className="w-9 h-9 bg-surface border border-primary-pastel rounded-xl flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors shrink-0">
+                <HiBookOpen className="h-4 w-4" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="font-medium text-gray-900 group-hover:text-emerald-600 transition-colors truncate text-sm">
+                <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors truncate text-sm">
                   {category.name}
                 </h3>
-                <p className="text-xs text-gray-500">Chủ đề liên quan</p>
+                <p className="text-xs text-muted-foreground">
+                  Lộ trình Mây Mây
+                </p>
               </div>
             </div>
-          </a>
+          </Link>
         ))}
       </div>
-
-      <div className="mt-4 text-center">
-        <a
-          href="/categories"
-          className="inline-flex items-center gap-1 text-emerald-600 hover:text-emerald-700 font-medium text-sm cursor-pointer"
-        >
-          Xem tất cả chủ đề
-          <svg
-            className="w-3 h-3"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 5l7 7-7 7"
-            />
-          </svg>
-        </a>
-      </div>
-    </div>
+    </section>
   );
 }
-

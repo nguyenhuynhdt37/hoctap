@@ -1,40 +1,28 @@
-<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-        <linearGradient id="bookGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#BFD7ED" />
-            <stop offset="100%" stopColor="#356FA7" />
-        </linearGradient>
-    </defs>
-    <!-- Open Book Shape -->
-    <path
-        d="M8 12 L20 10 L32 12 L32 30 L20 28 L8 30 Z"
-        fill="url(#bookGradient)"
-        opacity="0.92"
-    />
-    <!-- Book Pages - Left -->
-    <path
-        d="M8 12 L20 10 L20 28 L8 30 Z"
-        fill="white"
-        opacity="0.96"
-        stroke="#356FA7"
-        strokeWidth="1.2"
-    />
-    <!-- Book Pages - Right -->
-    <path
-        d="M20 10 L32 12 L32 30 L20 28 Z"
-        fill="white"
-        opacity="0.96"
-        stroke="#356FA7"
-        strokeWidth="1.2"
-    />
-    <!-- Center Binding -->
-    <line x1="20" y1="10" x2="20" y2="28" stroke="#356FA7" strokeWidth="2" />
-    <!-- Page Lines - Left -->
-    <line x1="10" y1="16" x2="18" y2="15.5" stroke="#356FA7" strokeWidth="0.6" opacity="0.6" />
-    <line x1="10" y1="19" x2="18" y2="18.5" stroke="#356FA7" strokeWidth="0.6" opacity="0.6" />
-    <line x1="10" y1="22" x2="18" y2="21.5" stroke="#356FA7" strokeWidth="0.6" opacity="0.6" />
-    <!-- Page Lines - Right -->
-    <line x1="22" y1="15.5" x2="30" y2="16" stroke="#356FA7" strokeWidth="0.6" opacity="0.6" />
-    <line x1="22" y1="18.5" x2="30" y2="19" stroke="#356FA7" strokeWidth="0.6" opacity="0.6" />
-    <line x1="22" y1="21.5" x2="30" y2="22" stroke="#356FA7" strokeWidth="0.6" opacity="0.6" />
+<svg width="40" height="40" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="sn-logo-cloud" x1="18" y1="14" x2="50" y2="54" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#A9D0EA" />
+      <stop offset="48%" stop-color="#4E86BC" />
+      <stop offset="100%" stop-color="#2C6196" />
+    </linearGradient>
+    <linearGradient id="sn-logo-spark" x1="48" y1="10" x2="60" y2="22" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFE8F0" />
+      <stop offset="100%" stop-color="#F0B4C8" />
+    </linearGradient>
+    <clipPath id="sn-logo-clip">
+      <circle cx="22" cy="38" r="13" />
+      <circle cx="36" cy="32" r="16" />
+      <circle cx="48" cy="40" r="10" />
+      <rect x="16" y="36" width="36" height="16" rx="8" />
+    </clipPath>
+  </defs>
+  <g clip-path="url(#sn-logo-clip)">
+    <rect x="8" y="14" width="52" height="40" fill="url(#sn-logo-cloud)" />
+    <ellipse cx="30" cy="29" rx="15" ry="8" fill="#FFFFFF" opacity="0.34" />
+  </g>
+  <path
+    d="M54 11.2L55.15 14.55L58.5 15.7L55.15 16.85L54 20.2L52.85 16.85L49.5 15.7L52.85 14.55L54 11.2Z"
+    fill="url(#sn-logo-spark)"
+  />
+  <circle cx="46.2" cy="13.4" r="1.25" fill="#F7C9D9" />
 </svg>

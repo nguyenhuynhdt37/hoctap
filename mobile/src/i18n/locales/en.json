@@ -43,7 +43,7 @@
     "otp_invalid": "Invalid or expired OTP code",
     "otp_expires_in": "Code expires in",
     "verify_success": "Verification successful!",
-    "verify_welcome": "Welcome to StudyNest.",
+    "verify_welcome": "Welcome to Mây Mây.",
     "onboarding": {
       "badge": "AI LEARNING PLATFORM",
       "title": "Learn Smarter with AI",
@@ -145,7 +145,7 @@
     "collapse_all": "Collapse All",
     "select_level": "Select Level",
     "share": "Share",
-    "share_message": "Explore the course \"{{title}}\" on StudyNest!\n{{url}}",
+    "share_message": "Explore the course \"{{title}}\" on Mây Mây!\n{{url}}",
     "processing": "Processing...",
     "favourited": "Favourited",
     "time": {
@@ -343,7 +343,7 @@
     "title": "Lecturer Area",
     "subtitle": "Manage courses, students, revenue and teaching operations on mobile.",
     "home": {
-      "badge": "STUDYNEST CREATOR",
+      "badge": "MÂY MÂY CREATOR",
       "heading": "Teaching Studio",
       "description": "A dedicated lecturer experience optimized for fast phone workflows."
     },
@@ -601,7 +601,7 @@
     "apply_discount_placeholder": "Enter discount code",
     "checkout": {
       "confirm_title": "Confirm Enrollment",
-      "confirm_subtitle": "Ready to level up with StudyNest?",
+      "confirm_subtitle": "Ready to level up with Mây Mây?",
       "benefits_title": "Your benefits:",
       "processing": "Processing...",
       "success_title": "Enrollment Successful!",

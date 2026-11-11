@@ -69,7 +69,7 @@ export default memo(function ReactionSummary({
   return (
     <div className="relative inline-block">
       <button
-        className="flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
         onMouseEnter={() => {
           if (reactions.total > 0) {
             setShowTooltip(true);
@@ -85,18 +85,18 @@ export default memo(function ReactionSummary({
       {showTooltip && (
         <div
           ref={tooltipRef}
-          className="absolute bottom-full left-0 mb-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-80 overflow-y-auto"
+          className="absolute bottom-full left-0 mb-2 w-64 bg-surface rounded-xl shadow-xl border border-border z-50 max-h-80 overflow-y-auto"
           onMouseEnter={() => setShowTooltip(true)}
           onMouseLeave={() => setShowTooltip(false)}
         >
-          <div className="p-3 border-b border-gray-200">
-            <h3 className="font-semibold text-sm text-gray-900">
+          <div className="p-3 border-b border-border">
+            <h3 className="font-semibold text-sm text-foreground">
               {reactions.total} lượt thích
             </h3>
           </div>
           <div className="p-2">
             {isLoadingReactions ? (
-              <div className="text-center py-4 text-sm text-gray-500">
+              <div className="text-center py-4 text-sm text-muted-foreground">
                 Đang tải...
               </div>
             ) : reactionUsers.length > 0 ? (
@@ -109,9 +109,9 @@ export default memo(function ReactionSummary({
                     <Link
                       key={reactionUser.id}
                       href={`/users/${reactionUser.user_id}`}
-                      className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                      className="flex items-center gap-2 p-2 rounded-lg hover:bg-background transition-colors cursor-pointer"
                     >
-                      <div className="w-8 h-8 rounded-full bg-[#356FA7] flex items-center justify-center text-white font-semibold text-xs flex-shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-semibold text-xs flex-shrink-0">
                         {reactionUser.user_avatar ? (
                           <img
                             src={getImageUrl(reactionUser.user_avatar)}
@@ -123,10 +123,10 @@ export default memo(function ReactionSummary({
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium text-gray-900 truncate hover:text-[#356FA7] transition-colors">
+                        <div className="text-sm font-medium text-foreground truncate hover:text-primary transition-colors">
                           {reactionUser.user_name}
                           {isCurrentUser && (
-                            <span className="ml-1 text-xs text-[#356FA7]">
+                            <span className="ml-1 text-xs text-primary">
                               (Bạn)
                             </span>
                           )}
@@ -137,7 +137,7 @@ export default memo(function ReactionSummary({
                 })}
               </div>
             ) : (
-              <div className="text-center py-4 text-sm text-gray-500">
+              <div className="text-center py-4 text-sm text-muted-foreground">
                 Không có dữ liệu
               </div>
             )}

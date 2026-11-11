@@ -6,7 +6,6 @@ import uuid
 from uuid import uuid4
 
 from fastapi import BackgroundTasks, Depends, HTTPException, UploadFile
-from slugify import slugify
 from sqlalchemy import asc, case, delete, desc, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -30,6 +29,9 @@ from app.db.sesson import AsyncSessionLocal, get_session
 from app.libs.formats.datetime import now as get_now
 from app.libs.formats.datetime import now_tzinfo, to_utc_naive
 from app.schemas.lecturer.courses import CreateCourse, UpdateCourse
+from app.schemas.catalog import CourseTaxonomy
+from app.services.catalog import CatalogService
+from app.services.catalog_slugs import create_slugged
 from app.services.shares.file_storage import (
     FileStorageService,
     get_file_storage_service,
@@ -90,24 +92,16 @@ class CourseService:
             if schema.base_price is not None and schema.base_price < 0:
                 raise HTTPException(400, "⚠️ Giá không hợp lệ (phải >= 0)")
 
-            base_slug = slugify(schema.title)
-            slug = base_slug
-            i = 1
-            while await self.db.scalar(select(Courses.id).where(Courses.slug == slug)):
-                slug = f"{base_slug}-{i}"
-                i += 1
-
-            new_course = Courses(
-                **schema.model_dump(exclude={"thumbnail_file"}),
+            new_course = await create_slugged(
+                self.db, Courses, schema.title,
+                **schema.model_dump(exclude={"thumbnail_file", "education"}),
                 instructor_id=lecturer.id,
-                slug=slug,
                 created_at=await to_utc_naive(get_now()),
                 updated_at=await to_utc_naive(get_now()),
             )
 
-            # 6️⃣ Lưu DB ngay để có course_id
-            self.db.add(new_course)
-            await self.db.flush()
+            if schema.education is not None:
+                await CatalogService(self.db).assign(new_course, schema.education, lecturer.id, commit=False)
 
             # ✅ CẬP NHẬT USER.COURSE_COUNT CHO GIẢNG VIÊN
             lecturer.course_count = (lecturer.course_count or 0) + 1
@@ -174,18 +168,23 @@ class CourseService:
                 await db.rollback()
                 print(f"❌ Lỗi xử lý nền cho khóa học {course_id}: {e}")
 
-    async def upload_thumbnail_async(self, course_id: str, file: UploadFile):
+    async def upload_thumbnail_async(self, course_id: str, file: UploadFile, lecturer_id: uuid.UUID):
         """
         Upload ảnh thumbnail lên kho file đã cấu hình, lưu URL vào DB
         """
         try:
             # kiểm tra course tồn tại
-            course = await self.db.get(Courses, course_id)
+            course = await self.db.scalar(select(Courses).where(Courses.id == course_id, Courses.instructor_id == lecturer_id))
             if not course:
                 raise HTTPException(404, "Không tìm thấy khóa học")
 
-            filename = file.filename or "thumbnail.png"
-            content = await file.read()
+            from pathlib import Path
+            filename = file.filename or 'thumbnail.png'
+            if Path(filename).suffix.lower() not in {'.png', '.jpg', '.jpeg', '.webp'} or file.content_type not in {'image/png','image/jpeg','image/webp'}:
+                raise HTTPException(422, 'Thumbnail chỉ hỗ trợ PNG, JPEG hoặc WebP')
+            content = await file.read(10 * 1024 * 1024 + 1)
+            if len(content) > 10 * 1024 * 1024:
+                raise HTTPException(413, 'Ảnh vượt quá 10 MB')
 
             uploaded = await self.storage.upload_file(
                 path_parts=["courses", str(course_id), "thumbnails"],
@@ -211,6 +210,9 @@ class CourseService:
                 "thumbnail_url": view_link,
             }
 
+        except HTTPException:
+            await self.db.rollback()
+            raise
         except Exception as e:
             await self.db.rollback()
             raise HTTPException(500, f"❌ Lỗi upload thumbnail: {e}")
@@ -398,6 +400,7 @@ class CourseService:
             "is_lock_lesson": course.is_lock_lesson,
             "approval_status": course.approval_status,
             "approval_note": course.approval_note,
+            "education": await CatalogService(self.db).course_taxonomy(course.id),
             "review_round": course.review_round,
             "base_price": float(course.base_price or 0),
             "currency": course.currency,
@@ -475,7 +478,22 @@ class CourseService:
         )
 
         # 6️⃣ Cập nhật thông tin
-        update_data = schema.model_dump(exclude_unset=True)
+        update_data = schema.model_dump(exclude_unset=True, exclude={'education'})
+        catalog = CatalogService(self.db)
+        publishing = schema.is_published if "is_published" in schema.model_fields_set else bool(course.is_published)
+        if schema.education is not None:
+            # Validate against the requested publication state, within the same transaction.
+            await catalog.validate_assignment(schema.education, lecturer_id, publishing=publishing)
+            course.is_published = publishing
+            await catalog.assign(course, schema.education, lecturer_id, commit=False)
+        elif course.provider_id and publishing:
+            current = await catalog.course_taxonomy(course.id)
+            await catalog.validate_assignment(CourseTaxonomy(
+                provider_id=course.provider_id, subject_id=course.subject_id,
+                grade_ids=[r['id'] for r in current['grades']],
+                learning_goal_ids=[r['id'] for r in current['learning_goals']],
+                exam_ids=[r['id'] for r in current['exams']],
+            ), lecturer_id, publishing=True)
         update_data["updated_at"] = await to_utc_naive(get_now())
 
         await self.db.execute(
@@ -501,6 +519,7 @@ class CourseService:
         )
 
         return {
+            "education": await CatalogService(self.db).course_taxonomy(updated.id),
             "id": str(updated.id),
             "title": updated.title,
             "slug": updated.slug,
@@ -596,6 +615,17 @@ class CourseService:
                 status_code=400,
                 detail="❌ Khóa học đã có học viên đăng ký, không thể xóa.",
             )
+
+        from sqlalchemy import exists
+        from app.db.models.learning_paths import StageOption, BundleItem, BundleOrderLine, CourseProficiency
+        referenced = await self.db.scalar(select(or_(
+            exists(select(StageOption.id).where(StageOption.course_id == course_id)),
+            exists(select(BundleItem.id).where(BundleItem.course_id == course_id)),
+            exists(select(BundleOrderLine.id).where(BundleOrderLine.course_id == course_id)),
+            exists(select(CourseProficiency.id).where(CourseProficiency.course_id == course_id)),
+        )))
+        if referenced:
+            raise HTTPException(409, 'Khóa học đang được lộ trình, combo hoặc hồ sơ học thuật sử dụng. Hãy ngừng mở bán thay vì xóa lịch sử.')
 
         # 3️⃣ Cho phép xóa + CẬP NHẬT THỐNG KÊ
         # ✅ GIẢM COURSE_COUNT CHO LECTURER

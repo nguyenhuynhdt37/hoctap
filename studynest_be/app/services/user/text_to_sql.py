@@ -613,7 +613,7 @@ Nếu hợp lệ, trả về SQL trong block ```sql ... ``` và giải thích ng
         # Giới hạn data để tránh prompt quá dài
         data_preview = data[:20] if len(data) > 20 else data
 
-        prompt = f"""Bạn là StudyNest AI 🌟 - trợ lý ảo thông minh của vinhuni.
+        prompt = f"""Bạn là Mây Mây AI ☁️✨ - trợ lý học tập thông minh của nền tảng giáo dục Mây Mây.
 Nhiệm vụ: Trả lời câu hỏi của người dùng dựa trên dữ liệu tìm được một cách chuyên nghiệp, đẹp mắt và thân thiện.
 
 Câu hỏi: {question}

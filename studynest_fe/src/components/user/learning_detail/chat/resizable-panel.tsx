@@ -99,7 +99,7 @@ export default function ResizablePanel({
 
       <div
         ref={panelRef}
-        className="relative flex-shrink-0 bg-white border-l border-gray-200"
+        className="relative flex-shrink-0 bg-surface border-l border-border"
         style={{ width }}
       >
         {/* Resize handle */}
@@ -107,12 +107,12 @@ export default function ResizablePanel({
           onMouseDown={startResize}
           className="absolute left-0 top-0 bottom-0 w-4 -ml-2 cursor-ew-resize z-50 flex items-center justify-center group"
         >
-          <div className="absolute inset-0 group-hover:bg-green-500/10" />
+          <div className="absolute inset-0 group-hover:bg-primary/10" />
           <div
             className={`w-1 h-8 rounded-full transition-colors ${
               isResizing
-                ? "bg-green-500"
-                : "bg-gray-300 group-hover:bg-green-500"
+                ? "bg-primary"
+                : "bg-border group-hover:bg-primary"
             }`}
           />
         </div>

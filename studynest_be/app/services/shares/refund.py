@@ -369,6 +369,20 @@ class RefundService:
         - chưa từng có refund_request nào cho purchase_item đó
         """
 
+        from app.db.models.learning_paths import BundleOrderLine
+        from app.services.bundle_settlement import BundleSettlement
+        bundle_line = await self.db.scalar(select(BundleOrderLine).where(BundleOrderLine.purchase_item_id == purchase_item_id))
+        if bundle_line:
+            return await BundleSettlement(self.db).request(bundle_line, user_id, reason)
+
+        # Legacy bulk transactions lack a reliable line-to-earning FK. Never guess.
+        legacy_tx = await self.db.scalar(select(PurchaseItems.transaction_id).where(PurchaseItems.id == purchase_item_id, PurchaseItems.user_id == user_id))
+        if legacy_tx:
+            legacy_items = await self.db.scalar(select(func.count()).select_from(PurchaseItems).where(PurchaseItems.transaction_id == legacy_tx))
+            legacy_earnings = await self.db.scalar(select(func.count()).select_from(InstructorEarnings).where(InstructorEarnings.transaction_id == legacy_tx))
+            if legacy_items != 1 or legacy_earnings != 1:
+                raise HTTPException(409, 'Đơn mua cũ cần đối soát theo từng khóa trước khi hoàn tiền; vui lòng liên hệ quản trị viên.')
+
         try:
             now = get_now()
 
@@ -539,7 +553,7 @@ class RefundService:
             # ============================
             # Chỉ hoàn lại phần giảng viên nhận (không hoàn 30% platform fee)
             if earnings and earnings.amount_instructor is not None:
-                refund_amount_real = float(earnings.amount_instructor)
+                refund_amount_real = float(refund.refund_amount)
             else:
                 refund_amount_real = float(refund.refund_amount)  # fallback
 
@@ -611,6 +625,21 @@ class RefundService:
         reason: str | None = None,
         notification_service=None,
     ):
+        from app.db.models.learning_paths import BundleOrderLine
+        from app.services.bundle_settlement import BundleSettlement
+        purchase_id = await self.db.scalar(select(RefundRequests.purchase_item_id).where(RefundRequests.id == refund_id))
+        bundle_line = await self.db.scalar(select(BundleOrderLine).where(BundleOrderLine.purchase_item_id == purchase_id))
+        if bundle_line:
+            return await BundleSettlement(self.db).review(bundle_line, refund_id, reviewer_id, role, action, reason)
+
+        if action == 'approve' and purchase_id:
+            legacy_tx = await self.db.scalar(select(PurchaseItems.transaction_id).where(PurchaseItems.id == purchase_id))
+            if legacy_tx:
+                legacy_items = await self.db.scalar(select(func.count()).select_from(PurchaseItems).where(PurchaseItems.transaction_id == legacy_tx))
+                legacy_earnings = await self.db.scalar(select(func.count()).select_from(InstructorEarnings).where(InstructorEarnings.transaction_id == legacy_tx))
+                if legacy_items != 1 or legacy_earnings != 1:
+                    raise HTTPException(409, 'Khoản hoàn của đơn cũ cần đối soát, không thể tự chọn doanh thu để hoàn.')
+
         try:
             now = get_now()
 

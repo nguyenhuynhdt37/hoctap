@@ -107,7 +107,7 @@ export default function HelpCenter({ activeSection }: HelpCenterProps) {
                 <div className="absolute inset-0 bg-gradient-to-br from-teal-400 to-emerald-500 rounded-xl opacity-20 group-hover:opacity-30 transition-opacity blur-lg" />
                 <img
                   src="/logo/studynest-logo.svg"
-                  alt="StudyNest Logo"
+                  alt="Mây Mây Logo"
                   width={40}
                   height={40}
                   className="w-10 h-10 relative z-10 group-hover:scale-110 transition-transform duration-300"
@@ -115,15 +115,15 @@ export default function HelpCenter({ activeSection }: HelpCenterProps) {
               </div>
               <div className="flex flex-col">
                 <div className="flex items-center">
-                  <span className="text-xl font-black text-gray-900 tracking-wide">
-                    STUDY
+                  <span className="text-xl font-black text-gray-900 tracking-wide font-display">
+                    MÂY
                   </span>
-                  <span className="text-xl font-black text-teal-500 ml-0.5">
-                    NEST
+                  <span className="text-xl font-black text-primary ml-1 font-display">
+                    MÂY
                   </span>
                 </div>
                 <span className="text-xs font-medium text-gray-500 tracking-widest uppercase -mt-1">
-                  Spreading Knowledge
+                  Học viện trên mây
                 </span>
               </div>
             </Link>

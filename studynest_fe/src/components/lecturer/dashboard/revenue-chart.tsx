@@ -112,21 +112,21 @@ export default function RevenueChart() {
   };
 
   return (
-    <div className="bg-white rounded-[20px] p-6 border border-[#E7EEF7] shadow-xs h-full">
+    <div className="bg-white rounded-[20px] p-6 border border-border shadow-xs h-full">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
         <div>
-          <h3 className="text-lg font-semibold text-[#3D4A5A]">Biểu Đồ Doanh Thu</h3>
-          <p className="text-sm text-[#6F7C8C]">
+          <h3 className="text-lg font-semibold text-foreground">Biểu Đồ Doanh Thu</h3>
+          <p className="text-sm text-muted-foreground">
             Theo dõi doanh thu theo thời gian thực
           </p>
         </div>
-        <div className="flex bg-[#F6FAFF] p-1 rounded-xl border border-[#E7EEF7] self-start sm:self-auto">
+        <div className="flex bg-background p-1 rounded-xl border border-border self-start sm:self-auto">
           <button
             onClick={() => setPeriod("month")}
             className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
               period === "month"
-                ? "bg-[#356FA7] text-white shadow-2xs"
-                : "text-[#6F7C8C] hover:text-[#3D4A5A]"
+                ? "bg-primary text-white shadow-2xs"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             30 Ngày
@@ -135,8 +135,8 @@ export default function RevenueChart() {
             onClick={() => setPeriod("year")}
             className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
               period === "year"
-                ? "bg-[#356FA7] text-white shadow-2xs"
-                : "text-[#6F7C8C] hover:text-[#3D4A5A]"
+                ? "bg-primary text-white shadow-2xs"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             12 Tháng
@@ -146,8 +146,8 @@ export default function RevenueChart() {
 
       <div className="h-[300px] w-full">
         {isLoading ? (
-          <div className="w-full h-full flex items-center justify-center bg-[#F6FAFF] rounded-xl">
-            <div className="w-6 h-6 border-2 border-[#356FA7] border-t-transparent rounded-full animate-spin" />
+          <div className="w-full h-full flex items-center justify-center bg-background rounded-xl">
+            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
           <Line data={chartData} options={options} />

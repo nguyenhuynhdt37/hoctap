@@ -742,13 +742,15 @@ class StatisticsService:
             )
         ) or Decimal(0)
 
-        # Recent Students (Simplified: 0 for now)
-        recent_students = 0
+        recent_students = await self.db.scalar(
+            select(func.count(func.distinct(CourseEnrollments.user_id)))
+            .join(Courses, Courses.id == CourseEnrollments.course_id)
+            .where(Courses.instructor_id == instructor_id,
+                   func.date(CourseEnrollments.enrolled_at) >= today - timedelta(days=30),
+                   CourseEnrollments.status == "active")
+        ) or 0
 
-        # Top 5 Courses by Revenue (Simplified logic)
-        # Using correct Course revenue calculation if available, or just mocking logic
-        # Since strict correctness requires complex joins here, we'll fetch basic course info first
-
+        # Rank course enrollments from stored records.
         courses_stmt = (
             select(
                 Courses.id,

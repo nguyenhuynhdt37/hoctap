@@ -116,23 +116,15 @@ const CoursesSlider = ({
   }, [emblaApi, courses.length, onSelect]);
 
   const navBtnClass =
-    "absolute top-1/2 -translate-y-1/2 z-30 w-10 h-10 md:w-12 md:h-12 bg-white hover:bg-gradient-to-r hover:from-green-500 hover:to-emerald-500 text-green-600 hover:text-white rounded-full flex items-center justify-center transition-all border border-green-200 hover:border-green-500 shadow-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed";
+    "absolute top-1/2 z-30 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-primary-pastel bg-surface text-primary shadow-sm transition-colors hover:bg-primary hover:text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40";
 
   return (
-    <section className="py-16 bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 relative overflow-hidden">
-      <div className="absolute top-10 right-10 w-32 h-32 bg-green-200/20 rounded-full blur-3xl" />
-      <div className="absolute bottom-10 left-10 w-40 h-40 bg-emerald-200/20 rounded-full blur-3xl" />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <section className="bg-background py-12 sm:py-16">
+      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <h2 className="text-3xl font-bold bg-gradient-to-r from-green-700 to-emerald-700 bg-clip-text text-transparent mb-2">
-            {title}
-          </h2>
+          <h2 className="font-display text-3xl text-foreground">{title}</h2>
           {subtitle && (
-            <p className="text-emerald-600 font-medium flex items-center gap-2">
-              <span className="text-green-500">✨</span>
-              {subtitle}
-            </p>
+            <p className="mt-2 text-sm text-muted-foreground">{subtitle}</p>
           )}
         </div>
 
@@ -143,11 +135,11 @@ const CoursesSlider = ({
             ))}
           </div>
         ) : courses.length > 0 ? (
-          <div className="relative">
+          <div className="relative px-12">
             <button
               onClick={scrollPrev}
               disabled={prevBtnDisabled}
-              className={`${navBtnClass} -left-4 sm:-left-6 lg:-left-8`}
+              className={`${navBtnClass} left-0`}
               aria-label="Slide trước"
             >
               <HiChevronLeft className="h-5 w-5 md:h-6 md:w-6" />
@@ -176,7 +168,7 @@ const CoursesSlider = ({
             <button
               onClick={scrollNext}
               disabled={nextBtnDisabled}
-              className={`${navBtnClass} -right-4 sm:-right-6 lg:-right-8`}
+              className={`${navBtnClass} right-0`}
               aria-label="Slide tiếp theo"
             >
               <HiChevronRight className="h-5 w-5 md:h-6 md:w-6" />
@@ -184,7 +176,7 @@ const CoursesSlider = ({
           </div>
         ) : (
           <div className="text-center py-12">
-            <p className="text-gray-500">Chưa có thông tin</p>
+            <p className="text-sm text-muted-foreground">Chưa có khóa học trong mục này.</p>
           </div>
         )}
       </div>

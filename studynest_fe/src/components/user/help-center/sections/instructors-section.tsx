@@ -12,7 +12,7 @@ export function InstructorsSection() {
 
       <section>
         <h4 className="font-semibold text-gray-900 mb-3">
-          Tại sao trở thành giảng viên tại StudyNest?
+          Tại sao trở thành giảng viên tại Mây Mây?
         </h4>
         <div className="grid gap-4 md:grid-cols-2">
           <div className="p-5 bg-teal-50 rounded-lg border border-teal-200">

@@ -147,7 +147,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   bypassLogin: async () => {
     const mockUser: User = {
       id: 'dev-user-id',
-      email: 'dev@studynest.com',
+      email: 'dev@maymay.edu.vn',
       fullname: 'Developer User',
       avatar: null,
       bio: null,

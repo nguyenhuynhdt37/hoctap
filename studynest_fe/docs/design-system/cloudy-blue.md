@@ -1,4 +1,4 @@
-# Cloudy Blue Design System V2 — StudyNest Frontend Guide (`studynest_fe`)
+# Cloudy Blue Design System V2 — Mây Mây Frontend Guide (`studynest_fe`)
 
 > Tài liệu đầy đủ được đồng bộ tại [`docs/design-system/cloudy-blue.md`](file:///Users/huynh/codes/hoctap/docs/design-system/cloudy-blue.md).
 
@@ -7,7 +7,8 @@
 - **Primitive & Semantic Tokens**: [`src/app/globals.css`](file:///Users/huynh/codes/hoctap/studynest_fe/src/app/globals.css)
 - **Cấu hình Font (`Be Vietnam Pro` & `Lora`)**: [`src/app/fonts.ts`](file:///Users/huynh/codes/hoctap/studynest_fe/src/app/fonts.ts)
 - **Root Layout**: [`src/app/layout.tsx`](file:///Users/huynh/codes/hoctap/studynest_fe/src/app/layout.tsx)
-- **Shared UI Primitives**: [`src/components/ui/index.ts`](file:///Users/huynh/codes/hoctap/studynest_fe/src/components/ui/index.ts) (`Button`, `Badge`, `Input`, `Textarea`, `Select`, `Card`, `Alert`, `Skeleton`, `EmptyState`, `HoverCard`)
+- **Shared UI Primitives**: [`src/components/ui/index.ts`](file:///Users/huynh/codes/hoctap/studynest_fe/src/components/ui/index.ts) (`Button`, `Badge`, `Input`, `Textarea`, `Select`, `Checkbox`, `Switch`, `Card`, `Alert`, `Skeleton`, `EmptyState`, `Progress`, `Divider`, `HoverCard`, `Modal` / `Dialog`, `Tabs`, `Tooltip`, `Popover`, `ImagePreviewModal`)
+- **Dev UI Showcase**: [`src/app/dev/ui-showcase/page.tsx`](file:///Users/huynh/codes/hoctap/studynest_fe/src/app/dev/ui-showcase/page.tsx) (`/dev/ui-showcase` — chỉ kích hoạt ở môi trường `development`)
 
 ## 2. Nguyên tắc Kiến trúc Token (Primitive vs. Semantic)
 

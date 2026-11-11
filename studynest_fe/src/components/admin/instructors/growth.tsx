@@ -105,20 +105,20 @@ export default function InstructorGrowth() {
   if (!mounted) return null;
 
   return (
-    <div className="bg-white rounded-[20px] shadow-xs border border-[#E7EEF7] p-6">
+    <div className="bg-white rounded-[20px] shadow-xs border border-border p-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
-        <h3 className="text-lg font-semibold text-[#3D4A5A]">
+        <h3 className="text-lg font-semibold text-foreground">
           Tăng trưởng giảng viên
         </h3>
-        <div className="flex gap-1.5 bg-[#F6FAFF] p-1 rounded-xl border border-[#E7EEF7]">
+        <div className="flex gap-1.5 bg-background p-1 rounded-xl border border-border">
           {(["day", "month"] as const).map((p) => (
             <button
               key={p}
               onClick={() => setPeriod(p)}
               className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                 period === p
-                  ? "bg-[#356FA7] text-white shadow-2xs"
-                  : "text-[#6F7C8C] hover:text-[#3D4A5A]"
+                  ? "bg-primary text-white shadow-2xs"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               {p === "day" ? "30 ngày" : "12 tháng"}
@@ -129,20 +129,20 @@ export default function InstructorGrowth() {
 
       {/* Summary Stats */}
       <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="bg-[#E8F2FA]/70 border border-[#BFD7ED]/60 rounded-xl p-4">
+        <div className="bg-primary-light/70 border border-primary-pastel/60 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-1">
-            <HiTrendingUp className="w-4 h-4 text-[#356FA7]" />
-            <p className="text-[#356FA7] text-xs font-semibold uppercase tracking-wider">Mới trong kỳ</p>
+            <HiTrendingUp className="w-4 h-4 text-primary" />
+            <p className="text-primary text-xs font-semibold uppercase tracking-wider">Mới trong kỳ</p>
           </div>
-          <p className="text-2xl font-bold text-[#3D4A5A]">
+          <p className="text-2xl font-bold text-foreground">
             {data?.total_new_this_period ?? 0}
           </p>
         </div>
-        <div className="bg-[#FCE8EF]/70 border border-[#F7C9D9]/60 rounded-xl p-4">
-          <p className="text-[#8A3B58] text-xs font-semibold uppercase tracking-wider mb-1">
+        <div className="bg-secondary-light/70 border border-secondary-pastel/60 rounded-xl p-4">
+          <p className="text-secondary-foreground text-xs font-semibold uppercase tracking-wider mb-1">
             Tăng trưởng
           </p>
-          <p className="text-2xl font-bold text-[#3D4A5A]">
+          <p className="text-2xl font-bold text-foreground">
             {(data?.growth_rate ?? 0).toFixed(1)}%
           </p>
         </div>
@@ -152,7 +152,7 @@ export default function InstructorGrowth() {
       <div className="h-56 relative">
         {isLoading ? (
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-8 h-8 border-4 border-[#356FA7] border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
           <Line data={chartData} options={options as any} />

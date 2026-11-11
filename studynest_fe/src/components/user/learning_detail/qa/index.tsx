@@ -962,23 +962,23 @@ export default function QASection({
       <div
         className={
           isModal
-            ? "flex items-center justify-between mb-4 pb-4 border-b border-gray-200"
+            ? "flex items-center justify-between mb-4 pb-4 border-b border-border"
             : "mb-4"
         }
       >
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-1 flex items-center gap-2">
-            <HiChat className="w-6 h-6 text-[#356FA7]" />
+          <h2 className="text-2xl font-bold text-foreground mb-1 flex items-center gap-2">
+            <HiChat className="w-6 h-6 text-primary" />
             Hỏi đáp
           </h2>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-muted-foreground">
             Đặt câu hỏi hoặc thảo luận về bài học này
           </p>
         </div>
         {isModal && onClose && (
           <button
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 hover:text-gray-800 transition-colors"
+            className="p-2 rounded-lg hover:bg-background text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
             aria-label="Đóng"
           >
             <HiX className="w-6 h-6" />
@@ -996,7 +996,7 @@ export default function QASection({
 
       {/* WebSocket connection status */}
       {wsStatus === "reconnecting" && (
-        <div className="mb-4 px-4 py-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+        <div className="mb-4 px-4 py-2 bg-yellow-50 border border-yellow-200 rounded-xl">
           <div className="flex items-center gap-2 text-sm text-yellow-800">
             <div className="flex gap-1">
               <div
@@ -1017,19 +1017,19 @@ export default function QASection({
         </div>
       )}
       {wsStatus === "connecting" && (
-        <div className="mb-4 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg">
-          <div className="flex items-center gap-2 text-sm text-blue-800">
+        <div className="mb-4 px-4 py-2 bg-primary-pastel/50 border border-primary-light/50 rounded-xl">
+          <div className="flex items-center gap-2 text-sm text-primary">
             <div className="flex gap-1">
               <div
-                className="w-2 h-2 bg-blue-600 rounded-full animate-bounce"
+                className="w-2 h-2 bg-primary rounded-full animate-bounce"
                 style={{ animationDelay: "0ms" }}
               />
               <div
-                className="w-2 h-2 bg-blue-600 rounded-full animate-bounce"
+                className="w-2 h-2 bg-primary rounded-full animate-bounce"
                 style={{ animationDelay: "150ms" }}
               />
               <div
-                className="w-2 h-2 bg-blue-600 rounded-full animate-bounce"
+                className="w-2 h-2 bg-primary rounded-full animate-bounce"
                 style={{ animationDelay: "300ms" }}
               />
             </div>
@@ -1038,9 +1038,9 @@ export default function QASection({
         </div>
       )}
 
-      <div className="bg-white border border-gray-200 rounded-lg">
+      <div className="bg-surface border border-border rounded-2xl">
         {isLoadingRoot ? (
-          <div className="text-center py-8 text-sm text-gray-500">
+          <div className="text-center py-8 text-sm text-muted-foreground">
             Đang tải bình luận...
           </div>
         ) : rootError ? (
@@ -1048,12 +1048,12 @@ export default function QASection({
             Không thể tải bình luận. Vui lòng thử lại sau.
           </div>
         ) : !rootCommentsData || rootCommentsData.items.length === 0 ? (
-          <div className="text-center py-8 text-sm text-gray-500">
+          <div className="text-center py-8 text-sm text-muted-foreground">
             Chưa có bình luận nào. Hãy là người đầu tiên đặt câu hỏi!
           </div>
         ) : (
           <>
-            <div className="divide-y divide-gray-200">
+            <div className="divide-y divide-border">
               {rootCommentsData.items.map((comment) => (
                 <CommentWithReplies
                   key={comment.id}
@@ -1086,10 +1086,10 @@ export default function QASection({
               ))}
             </div>
             {rootCommentsData.has_next && (
-              <div className="p-4 text-center border-t border-gray-200">
+              <div className="p-4 text-center border-t border-border">
                 <button
                   onClick={loadMoreRoot}
-                  className="text-sm text-[#356FA7] hover:text-[#285C90] font-semibold transition-colors"
+                  className="text-sm text-primary hover:text-primary-hover font-semibold transition-colors cursor-pointer"
                 >
                   Xem thêm bình luận
                 </button>
@@ -1105,10 +1105,10 @@ export default function QASection({
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
         <div
-          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          className="absolute inset-0 bg-foreground/40 backdrop-blur-xs"
           onClick={onClose}
         />
-        <div className="relative w-full max-w-6xl h-[90vh] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden">
+        <div className="relative w-full max-w-6xl h-[90vh] bg-surface rounded-2xl shadow-xl border border-border flex flex-col overflow-hidden">
           <div className="flex-1 overflow-y-auto px-6 py-6">{content}</div>
         </div>
       </div>

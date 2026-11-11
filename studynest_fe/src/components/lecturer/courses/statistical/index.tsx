@@ -314,14 +314,14 @@ export default function LecturerCourseStats() {
   }, [timeline]);
 
   return (
-    <div className="min-h-screen bg-[#F6FAFF]">
+    <div className="min-h-screen bg-background">
       <div className="max-w-screen-2xl mx-auto px-2 md:px-4 lg:px-6 py-6 md:py-10">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-[#3D4A5A]">
+          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-foreground">
             Thống kê học viên
           </h1>
-          <p className="text-[#6F7C8C]">
+          <p className="text-muted-foreground">
             {data?.title
               ? `Khóa học: ${data.title}`
               : "Tổng quan tình trạng học"}
@@ -334,10 +334,10 @@ export default function LecturerCourseStats() {
             {[...Array(4)].map((_, i) => (
               <div
                 key={i}
-                className="rounded-2xl border border-[#E7EEF7] bg-white shadow-xs p-5 animate-pulse"
+                className="rounded-2xl border border-border bg-white shadow-xs p-5 animate-pulse"
               >
-                <div className="h-4 w-32 bg-[#E8F2FA] rounded mb-3" />
-                <div className="h-8 w-24 bg-[#E8F2FA] rounded" />
+                <div className="h-4 w-32 bg-primary-light rounded mb-3" />
+                <div className="h-8 w-24 bg-primary-light rounded" />
               </div>
             ))}
           </div>
@@ -345,7 +345,7 @@ export default function LecturerCourseStats() {
 
         {/* Error */}
         {error && !isLoading && (
-          <div className="rounded-2xl border border-[#F8E9C9] bg-[#FFF1D9] p-5 text-[#875415]">
+          <div className="rounded-2xl border border-accent-vanilla bg-warning-bg p-5 text-warning-foreground">
             {error}
           </div>
         )}
@@ -354,23 +354,23 @@ export default function LecturerCourseStats() {
         {data && !isLoading && !error && (
           <div className="space-y-6">
             {/* Course meta overview */}
-            <div className="rounded-[24px] border border-[#E7EEF7] bg-white shadow-xs p-6">
+            <div className="rounded-[24px] border border-border bg-white shadow-xs p-6">
               <div className="flex items-start gap-4">
                 {data.thumbnail_url ? (
                   <img
                     src={getImageUrl(data.thumbnail_url)}
                     alt={data.title}
-                    className="w-28 h-16 rounded-xl object-cover border border-[#E7EEF7]"
+                    className="w-28 h-16 rounded-xl object-cover border border-border"
                     onError={(e) => {
                       (e.target as HTMLImageElement).style.display = "none";
                     }}
                   />
                 ) : null}
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-[#3D4A5A]">
+                  <h3 className="text-lg font-semibold text-foreground">
                     {data.title}
                   </h3>
-                  <p className="text-sm text-[#6F7C8C]">
+                  <p className="text-sm text-muted-foreground">
                     Tạo: {formatDateTime(data.created_at)} • Cập nhật:{" "}
                     {formatDateTime(data.updated_at)} • Duyệt:{" "}
                     {data.approved_at ? formatDateTime(data.approved_at) : "—"}
@@ -378,88 +378,88 @@ export default function LecturerCourseStats() {
                 </div>
               </div>
               <div className="mt-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-                <div className="rounded-xl border border-[#E7EEF7] bg-[#F6FAFF]/60 p-3">
-                  <div className="text-xs text-[#6F7C8C] mb-1">Giá gốc</div>
-                  <div className="font-semibold text-[#3D4A5A]">
+                <div className="rounded-xl border border-border bg-background/60 p-3">
+                  <div className="text-xs text-muted-foreground mb-1">Giá gốc</div>
+                  <div className="font-semibold text-foreground">
                     {formatCurrency(data.base_price || 0)}
                   </div>
                 </div>
-                <div className="rounded-xl border border-[#E7EEF7] bg-[#F6FAFF]/60 p-3">
-                  <div className="text-xs text-[#6F7C8C] mb-1">Lượt xem</div>
-                  <div className="font-semibold text-[#3D4A5A]">
+                <div className="rounded-xl border border-border bg-background/60 p-3">
+                  <div className="text-xs text-muted-foreground mb-1">Lượt xem</div>
+                  <div className="font-semibold text-foreground">
                     {formatNumber(data.views || 0)}
                   </div>
                 </div>
-                <div className="rounded-xl border border-[#E7EEF7] bg-[#F6FAFF]/60 p-3">
-                  <div className="text-xs text-[#6F7C8C] mb-1">Đánh giá TB</div>
-                  <div className="font-semibold text-[#3D4A5A]">
+                <div className="rounded-xl border border-border bg-background/60 p-3">
+                  <div className="text-xs text-muted-foreground mb-1">Đánh giá TB</div>
+                  <div className="font-semibold text-foreground">
                     {Number(data.rating_avg || 0).toFixed(1)} (
                     {formatNumber(data.total_reviews || 0)})
                   </div>
                 </div>
-                <div className="rounded-xl border border-[#E7EEF7] bg-[#F6FAFF]/60 p-3">
-                  <div className="text-xs text-[#6F7C8C] mb-1">Chương / Bài</div>
-                  <div className="font-semibold text-[#3D4A5A]">
+                <div className="rounded-xl border border-border bg-background/60 p-3">
+                  <div className="text-xs text-muted-foreground mb-1">Chương / Bài</div>
+                  <div className="font-semibold text-foreground">
                     {data.sections_count} / {data.lessons_count}
                   </div>
                 </div>
-                <div className="rounded-xl border border-[#E7EEF7] bg-[#F6FAFF]/60 p-3">
-                  <div className="text-xs text-[#6F7C8C] mb-1">
+                <div className="rounded-xl border border-border bg-background/60 p-3">
+                  <div className="text-xs text-muted-foreground mb-1">
                     Tổng thời lượng
                   </div>
-                  <div className="font-semibold text-[#3D4A5A]">
+                  <div className="font-semibold text-foreground">
                     {formatDuration(data.total_length_seconds)}
                   </div>
                 </div>
-                <div className="rounded-xl border border-[#E7EEF7] bg-[#F6FAFF]/60 p-3">
-                  <div className="text-xs text-[#6F7C8C] mb-1">
+                <div className="rounded-xl border border-border bg-background/60 p-3">
+                  <div className="text-xs text-muted-foreground mb-1">
                     Trạng thái duyệt
                   </div>
-                  <div className="font-semibold text-[#3D4A5A] capitalize">
+                  <div className="font-semibold text-foreground capitalize">
                     {data.approval_status} · vòng {data.review_round}
                   </div>
                 </div>
-                <div className="rounded-xl border border-[#E7EEF7] bg-[#F6FAFF]/60 p-3">
-                  <div className="text-xs text-[#6F7C8C] mb-1">
+                <div className="rounded-xl border border-border bg-background/60 p-3">
+                  <div className="text-xs text-muted-foreground mb-1">
                     Tổng học viên
                   </div>
-                  <div className="font-semibold text-[#3D4A5A]">
+                  <div className="font-semibold text-foreground">
                     {formatNumber(data.total_students || 0)}
                   </div>
                 </div>
-                <div className="rounded-xl border border-[#E7EEF7] bg-[#F6FAFF]/60 p-3">
-                  <div className="text-xs text-[#6F7C8C] mb-1">
+                <div className="rounded-xl border border-border bg-background/60 p-3">
+                  <div className="text-xs text-muted-foreground mb-1">
                     Học viên trả phí
                   </div>
-                  <div className="font-semibold text-[#3D4A5A]">
+                  <div className="font-semibold text-foreground">
                     {formatNumber(data.paid_students || 0)}
                   </div>
                 </div>
-                <div className="rounded-xl border border-[#E7EEF7] bg-[#F6FAFF]/60 p-3">
-                  <div className="text-xs text-[#6F7C8C] mb-1">
+                <div className="rounded-xl border border-border bg-background/60 p-3">
+                  <div className="text-xs text-muted-foreground mb-1">
                     Học viên miễn phí
                   </div>
-                  <div className="font-semibold text-[#3D4A5A]">
+                  <div className="font-semibold text-foreground">
                     {formatNumber(data.free_students || 0)}
                   </div>
                 </div>
-                <div className="rounded-xl border border-[#E7EEF7] bg-[#F6FAFF]/60 p-3">
-                  <div className="text-xs text-[#6F7C8C] mb-1">Hoàn thành</div>
-                  <div className="font-semibold text-[#3D4A5A]">
+                <div className="rounded-xl border border-border bg-background/60 p-3">
+                  <div className="text-xs text-muted-foreground mb-1">Hoàn thành</div>
+                  <div className="font-semibold text-foreground">
                     {formatNumber(data.completed_students || 0)}
                   </div>
                 </div>
-                <div className="rounded-xl border border-[#E7EEF7] bg-[#F6FAFF]/60 p-3">
-                  <div className="text-xs text-[#6F7C8C] mb-1">
+                <div className="rounded-xl border border-border bg-background/60 p-3">
+                  <div className="text-xs text-muted-foreground mb-1">
                     Tỉ lệ hoàn thành
                   </div>
-                  <div className="font-semibold text-[#3D4A5A]">
+                  <div className="font-semibold text-foreground">
                     {Number(data.completion_rate || 0).toFixed(2)}%
                   </div>
                 </div>
-                <div className="rounded-xl border border-[#E7EEF7] bg-[#F6FAFF]/60 p-3">
-                  <div className="text-xs text-[#6F7C8C] mb-1">Doanh thu</div>
-                  <div className="font-semibold text-[#356FA7]">
+                <div className="rounded-xl border border-border bg-background/60 p-3">
+                  <div className="text-xs text-muted-foreground mb-1">Doanh thu</div>
+                  <div className="font-semibold text-primary">
                     {formatCurrency(data.total_revenue || 0)}
                   </div>
                 </div>
@@ -467,20 +467,20 @@ export default function LecturerCourseStats() {
             </div>
             {/* Stat cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="rounded-[20px] border border-[#E7EEF7] bg-white shadow-xs p-5">
-                <div className="text-sm text-[#6F7C8C] mb-1">Tổng học viên</div>
-                <div className="text-3xl font-semibold text-[#3D4A5A]">
+              <div className="rounded-[20px] border border-border bg-white shadow-xs p-5">
+                <div className="text-sm text-muted-foreground mb-1">Tổng học viên</div>
+                <div className="text-3xl font-semibold text-foreground">
                   {data.total_students}
                 </div>
               </div>
-              <div className="rounded-[20px] border border-[#E7EEF7] bg-white shadow-xs p-5">
-                <div className="text-sm text-[#6F7C8C] mb-1">
+              <div className="rounded-[20px] border border-border bg-white shadow-xs p-5">
+                <div className="text-sm text-muted-foreground mb-1">
                   Tiến độ trung bình
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-full max-w-[220px] h-2.5 bg-[#E8F2FA] rounded-full overflow-hidden">
+                  <div className="w-full max-w-[220px] h-2.5 bg-primary-light rounded-full overflow-hidden">
                     <div
-                      className="h-2.5 bg-[#356FA7] rounded-full"
+                      className="h-2.5 bg-primary rounded-full"
                       style={{
                         width: `${Math.min(
                           100,
@@ -489,13 +489,13 @@ export default function LecturerCourseStats() {
                       }}
                     />
                   </div>
-                  <span className="text-xl font-semibold text-[#3D4A5A]">
+                  <span className="text-xl font-semibold text-foreground">
                     {data.avg_progress.toFixed(2)}%
                   </span>
                 </div>
               </div>
-              <div className="rounded-[20px] border border-[#E7EEF7] bg-white shadow-xs p-5">
-                <div className="text-sm text-[#6F7C8C] mb-1">Doanh thu</div>
+              <div className="rounded-[20px] border border-border bg-white shadow-xs p-5">
+                <div className="text-sm text-muted-foreground mb-1">Doanh thu</div>
                 {(() => {
                   const total =
                     (data.revenue_paid || 0) +
@@ -505,25 +505,25 @@ export default function LecturerCourseStats() {
                     0;
                   return (
                     <>
-                      <div className="text-3xl font-semibold text-[#356FA7]">
+                      <div className="text-3xl font-semibold text-primary">
                         {formatCurrency(total)}
                       </div>
-                      <div className="mt-2 grid grid-cols-3 gap-2 text-xs text-[#6F7C8C]">
-                        <div className="rounded-lg bg-[#E4F3E9] border border-[#BFE3CC] p-2">
+                      <div className="mt-2 grid grid-cols-3 gap-2 text-xs text-muted-foreground">
+                        <div className="rounded-lg bg-success-bg border border-success-border p-2">
                           <div>Đã thanh toán</div>
-                          <div className="font-semibold text-[#276749]">
+                          <div className="font-semibold text-success-foreground">
                             {formatCurrency(data.revenue_paid || 0)}
                           </div>
                         </div>
-                        <div className="rounded-lg bg-[#E8F2FA] border border-[#BFD7ED] p-2">
+                        <div className="rounded-lg bg-primary-light border border-primary-pastel p-2">
                           <div>Đang giữ</div>
-                          <div className="font-semibold text-[#356FA7]">
+                          <div className="font-semibold text-primary">
                             {formatCurrency(data.revenue_holding || 0)}
                           </div>
                         </div>
-                        <div className="rounded-lg bg-[#FFF1D9] border border-[#F8E9C9] p-2">
+                        <div className="rounded-lg bg-warning-bg border border-accent-vanilla p-2">
                           <div>Chờ xử lý</div>
-                          <div className="font-semibold text-[#875415]">
+                          <div className="font-semibold text-warning-foreground">
                             {formatCurrency(data.revenue_pending || 0)}
                           </div>
                         </div>
@@ -535,13 +535,13 @@ export default function LecturerCourseStats() {
             </div>
 
             {/* Status distribution */}
-            <div className="rounded-[24px] border border-[#E7EEF7] bg-white shadow-xs p-6">
+            <div className="rounded-[24px] border border-border bg-white shadow-xs p-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h2 className="text-lg font-semibold text-[#3D4A5A]">
+                  <h2 className="text-lg font-semibold text-foreground">
                     Phân bố trạng thái học
                   </h2>
-                  <p className="text-sm text-[#6F7C8C]">
+                  <p className="text-sm text-muted-foreground">
                     Tổng quan các nhóm tiến độ
                   </p>
                 </div>
@@ -555,7 +555,7 @@ export default function LecturerCourseStats() {
                     </div>
                   ) : null}
                 </div>
-                <div className="rounded-2xl border border-[#E7EEF7] bg-[#F6FAFF]/50 p-4">
+                <div className="rounded-2xl border border-border bg-background/50 p-4">
                   {barData ? (
                     <div className="w-full">
                       {/* @ts-ignore */}
@@ -567,13 +567,13 @@ export default function LecturerCourseStats() {
             </div>
 
             {/* Timeline (Flow line) */}
-            <div className="rounded-[24px] border border-[#E7EEF7] bg-white shadow-xs p-6">
+            <div className="rounded-[24px] border border-border bg-white shadow-xs p-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h2 className="text-lg font-semibold text-[#3D4A5A]">
+                  <h2 className="text-lg font-semibold text-foreground">
                     Timeline học viên
                   </h2>
-                  <p className="text-sm text-[#6F7C8C]">
+                  <p className="text-sm text-muted-foreground">
                     Theo dõi theo thời gian
                   </p>
                 </div>
@@ -589,7 +589,7 @@ export default function LecturerCourseStats() {
                           | "year") || "day"
                       )
                     }
-                    className="px-3 py-2 rounded-xl border border-[#E7EEF7] bg-white text-sm text-[#3D4A5A] focus:outline-none focus:ring-2 focus:ring-[#356FA7]/25 focus:border-[#356FA7]"
+                    className="px-3 py-2 rounded-xl border border-border bg-white text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary"
                   >
                     <option value="day">Theo ngày</option>
                     <option value="month">Theo tháng</option>
@@ -598,14 +598,14 @@ export default function LecturerCourseStats() {
                   </select>
                 </div>
               </div>
-              <div className="rounded-2xl border border-[#E7EEF7] bg-[#F6FAFF]/50 p-4">
+              <div className="rounded-2xl border border-border bg-background/50 p-4">
                 {combinedLineData ? (
                   <div className="w-full h-[320px]">
                     {/* @ts-ignore */}
                     <Line data={combinedLineData} options={lineOptions} />
                   </div>
                 ) : (
-                  <div className="h-40 flex items-center justify-center text-[#8190A3]">
+                  <div className="h-40 flex items-center justify-center text-subtle-foreground">
                     Không có dữ liệu
                   </div>
                 )}

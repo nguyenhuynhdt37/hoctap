@@ -24,6 +24,16 @@ export const showToast = {
     });
   },
 
+  info: (message: string, options?: ToastOptions) => {
+    return toast(message, {
+      duration: options?.duration || 4000,
+      icon: "ℹ️",
+      style: {
+        borderLeft: "4px solid #356FA7",
+      },
+    });
+  },
+
   loading: (message: string, options?: ToastOptions) => {
     return toast.loading(message, {
       duration: options?.duration || 4000,

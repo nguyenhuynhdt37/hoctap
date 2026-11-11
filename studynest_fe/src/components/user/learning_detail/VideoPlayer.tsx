@@ -78,7 +78,7 @@ export default function VideoPlayer(props: VideoPlayerProps) {
           onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
-          poster="https://via.placeholder.com/1280x720/1f2937/ffffff?text=Video+Player"
+          poster="/logo/maymay-logo.svg"
           controls={false}
         >
           <source src={currentVideoSource} type="video/mp4" />
@@ -86,13 +86,13 @@ export default function VideoPlayer(props: VideoPlayerProps) {
         </video>
 
         <div className="absolute bottom-20 left-6">
-          <div className="bg-gradient-to-r from-teal-500 to-emerald-500 text-white px-4 py-2 rounded-lg shadow-lg">
+          <div className="bg-primary text-white px-4 py-2 rounded-xl shadow-lg">
             <span className="text-sm font-semibold">{instructorName}</span>
           </div>
         </div>
 
         <div className="absolute top-1/2 right-6 transform -translate-y-1/2">
-          <button className="bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-white px-6 py-3 rounded-xl flex items-center space-x-2 transition-all duration-200 shadow-lg hover:shadow-xl">
+          <button className="bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-xl flex items-center space-x-2 transition-all duration-200 shadow-lg hover:shadow-xl">
             <HiChevronRight className="h-5 w-5" />
             <span className="text-sm font-semibold">Bài tiếp theo</span>
           </button>
@@ -106,7 +106,7 @@ export default function VideoPlayer(props: VideoPlayerProps) {
               onClick={handleProgressClick}
             >
               <div
-                className="h-full bg-gradient-to-r from-teal-400 to-emerald-400 rounded-full transition-all duration-200"
+                className="h-full bg-primary-light rounded-full transition-all duration-200"
                 style={{ width: `${(currentTime / duration) * 100}%` }}
               />
               <div
@@ -120,7 +120,7 @@ export default function VideoPlayer(props: VideoPlayerProps) {
             <div className="flex items-center space-x-4">
               <button
                 onClick={togglePlay}
-                className="text-white hover:text-teal-300 transition-colors"
+                className="text-white hover:text-primary-light transition-colors"
               >
                 {isPlaying ? (
                   <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
@@ -134,14 +134,14 @@ export default function VideoPlayer(props: VideoPlayerProps) {
                 )}
               </button>
 
-              <button className="text-white hover:text-teal-300 transition-colors">
+              <button className="text-white hover:text-primary-light transition-colors">
                 <HiRefresh className="h-6 w-6" />
               </button>
 
               <div className="relative">
                 <button
                   onClick={() => setShowPlaybackMenu(!showPlaybackMenu)}
-                  className="text-white hover:text-teal-300 transition-colors text-sm font-semibold bg-white/10 px-3 py-1 rounded-lg backdrop-blur-sm"
+                  className="text-white hover:text-primary-light transition-colors text-sm font-semibold bg-white/10 px-3 py-1 rounded-lg backdrop-blur-sm"
                 >
                   {playbackRate}x
                 </button>
@@ -156,7 +156,7 @@ export default function VideoPlayer(props: VideoPlayerProps) {
                         }}
                         className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-700 transition-colors ${
                           playbackRate === rate
-                            ? "text-teal-400 font-semibold"
+                            ? "text-primary-light font-semibold"
                             : "text-white"
                         }`}
                       >
@@ -167,7 +167,7 @@ export default function VideoPlayer(props: VideoPlayerProps) {
                 )}
               </div>
 
-              <button className="text-white hover:text-teal-300 transition-colors">
+              <button className="text-white hover:text-primary-light transition-colors">
                 <HiChevronRight className="h-6 w-6" />
               </button>
 
@@ -175,7 +175,7 @@ export default function VideoPlayer(props: VideoPlayerProps) {
                 {formatTime(currentTime)} / {formatTime(duration)}
               </div>
 
-              <button className="text-white hover:text-teal-300 transition-colors">
+              <button className="text-white hover:text-primary-light transition-colors">
                 <HiPlus className="h-6 w-6" />
               </button>
             </div>
@@ -184,7 +184,7 @@ export default function VideoPlayer(props: VideoPlayerProps) {
               <div className="flex items-center space-x-3">
                 <button
                   onClick={toggleMute}
-                  className="text-white hover:text-teal-300 transition-colors"
+                  className="text-white hover:text-primary-light transition-colors"
                 >
                   {isMuted ? (
                     <HiVolumeOff className="h-6 w-6" />
@@ -194,7 +194,7 @@ export default function VideoPlayer(props: VideoPlayerProps) {
                 </button>
                 <div className="w-20 h-2 bg-gray-600 rounded-full">
                   <div
-                    className="h-full bg-gradient-to-r from-teal-400 to-emerald-400 rounded-full"
+                    className="h-full bg-primary-light rounded-full"
                     style={{ width: `100%` }}
                   />
                 </div>
@@ -203,7 +203,7 @@ export default function VideoPlayer(props: VideoPlayerProps) {
               <div className="relative">
                 <button
                   onClick={() => setShowSettingsMenu(!showSettingsMenu)}
-                  className="text-white hover:text-teal-300 transition-colors"
+                  className="text-white hover:text-primary-light transition-colors"
                 >
                   <HiAdjustments className="h-6 w-6" />
                 </button>
@@ -236,11 +236,11 @@ export default function VideoPlayer(props: VideoPlayerProps) {
                 )}
               </div>
 
-              <button className="text-white hover:text-teal-300 transition-colors">
+              <button className="text-white hover:text-primary-light transition-colors">
                 <HiArrowsExpand className="h-6 w-6" />
               </button>
 
-              <button className="text-white hover:text-teal-300 transition-colors">
+              <button className="text-white hover:text-primary-light transition-colors">
                 <HiArrowsExpand className="h-6 w-6" />
               </button>
             </div>

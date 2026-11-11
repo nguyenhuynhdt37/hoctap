@@ -11,26 +11,36 @@ const Success = () => {
   }, []);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F6FAFF] px-4">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-[24px] shadow-md border border-[#E7EEF7] p-8 text-center space-y-6">
+        <div
+          role="status"
+          aria-live="polite"
+          className="bg-surface rounded-[24px] shadow-md border border-border p-8 text-center space-y-6"
+        >
           <div className="flex justify-center">
-            <div className="w-16 h-16 bg-[#E4F3E9] border border-[#BFE3CC] rounded-full flex items-center justify-center">
-              <HiCheckCircle className="w-10 h-10 text-[#276749]" />
+            <div className="w-16 h-16 bg-success-bg border border-success-border rounded-full flex items-center justify-center">
+              <HiCheckCircle
+                className="w-10 h-10 text-success-foreground"
+                aria-hidden="true"
+              />
             </div>
           </div>
 
           <div className="space-y-2">
-            <h1 className="font-display text-2xl font-bold text-[#3D4A5A]">
+            <h1 className="font-display text-2xl font-bold text-foreground">
               Thanh toán thành công
             </h1>
-            <p className="text-[#6F7C8C] text-sm">
+            <p className="text-muted-foreground text-sm">
               Giao dịch của bạn đã được xử lý thành công
             </p>
           </div>
 
-          <div className="flex items-center justify-center gap-2 text-[#356FA7] text-sm pt-2">
-            <div className="w-4 h-4 border-2 border-[#356FA7] border-t-transparent rounded-full animate-spin"></div>
+          <div className="flex items-center justify-center gap-2 text-primary text-sm pt-2">
+            <div
+              className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"
+              aria-hidden="true"
+            />
             <span>Đang chuyển hướng...</span>
           </div>
         </div>

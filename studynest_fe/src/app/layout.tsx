@@ -1,10 +1,12 @@
 import HydrationFix from "@/components/shared/hydration-fix";
+import RouteProgressBar from "@/components/shared/route-progress-bar";
 import { NotificationToastListener } from "@/components/shared/toast/notification-toast-listener";
 import { ToastProvider } from "@/components/shared/toast/toast-provider";
 import UserLoader from "@/components/shared/user-loader";
 import { getServerCookie } from "@/lib/utils/fetcher/server/cookieStore";
 import { QueryProvider } from "@/provider/QueryProvider";
 import { cookies } from "next/headers";
+import { Suspense } from "react";
 import { beVietnamPro, lora } from "./fonts";
 import "./globals.css";
 
@@ -25,6 +27,9 @@ export default async function RootLayout({
         className="font-sans bg-background text-foreground antialiased selection:bg-primary-pastel/60 selection:text-foreground"
         suppressHydrationWarning
       >
+        <Suspense fallback={null}>
+          <RouteProgressBar />
+        </Suspense>
         <HydrationFix />
         <QueryProvider>
           <ToastProvider />

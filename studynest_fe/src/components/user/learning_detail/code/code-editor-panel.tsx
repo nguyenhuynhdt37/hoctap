@@ -41,15 +41,15 @@ export default function CodeEditorPanel({
   const activeFile = files.find((f) => f.id === activeFileId);
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col flex-1 min-h-0 overflow-hidden">
+    <div className="bg-surface rounded-2xl border border-border shadow-xs flex flex-col flex-1 min-h-0 overflow-hidden">
       {/* Header */}
-      <div className="border-b border-gray-200 bg-green-50 px-4 py-3 flex items-center justify-between flex-shrink-0">
+      <div className="border-b border-border bg-primary-pastel/40 px-4 py-3 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3">
-          <h2 className="text-lg font-bold text-gray-900">
+          <h2 className="text-lg font-bold text-foreground">
             {currentExercise?.title || "Luyện tập code"}
           </h2>
           {currentExercise?.language && (
-            <span className="text-xs bg-green-500 text-white px-2 py-0.5 rounded font-medium">
+            <span className="text-xs bg-primary text-white px-2 py-0.5 rounded font-medium">
               {currentExercise.language.name} {currentExercise.language.version}
             </span>
           )}
@@ -60,7 +60,7 @@ export default function CodeEditorPanel({
             disabled={
               isRunning || !files.length || currentExercise?.is_pass
             }
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary-hover text-white rounded-xl text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-xs cursor-pointer"
           >
             {isRunning ? (
               <>
@@ -76,7 +76,7 @@ export default function CodeEditorPanel({
           </button>
           <button
             onClick={onResetCode}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-500 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-background hover:bg-border border border-border text-foreground rounded-xl text-sm font-medium transition-colors cursor-pointer"
           >
             <HiRefresh className="w-4 h-4" />
             <span className="hidden sm:inline">Reset</span>
@@ -93,9 +93,9 @@ export default function CodeEditorPanel({
         />
 
         {/* Editor */}
-        <div className="flex-1 flex flex-col bg-white min-w-0">
-          <div className="px-4 py-2 bg-gray-50 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
-            <span className="text-xs text-gray-600 font-medium truncate">
+        <div className="flex-1 flex flex-col bg-surface min-w-0">
+          <div className="px-4 py-2 bg-background border-b border-border flex items-center justify-between flex-shrink-0">
+            <span className="text-xs text-muted-foreground font-medium truncate">
               {activeFile?.filename || "No file selected"}
             </span>
             {activeFile?.role === "starter" && (

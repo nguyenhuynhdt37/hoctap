@@ -36,6 +36,8 @@ class Settings(BaseSettings):
     R2_SECRET_ACCESS_KEY: str = ""
     R2_BUCKET_NAME: str = ""
     R2_SIGNED_URL_TTL_SECONDS: int = 300
+    R2_CA_BUNDLE: str = ""
+    R2_CACHE_DIRECTORY: str = str(Path(__file__).resolve().parents[2] / ".cache" / "r2")
     STORAGE_MAX_UPLOAD_BYTES: int = 2 * 1024 * 1024 * 1024
 
     # JWT

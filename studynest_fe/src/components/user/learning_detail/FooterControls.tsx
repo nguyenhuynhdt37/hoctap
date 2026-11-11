@@ -35,7 +35,7 @@ export default function FooterControls(props: FooterControlsProps) {
   return (
     <>
       {/* Main Footer */}
-      <div className="fixed bottom-0 left-0 right-0 h-18 bg-white border-t border-gray-200 shadow-lg z-40">
+      <div className="fixed bottom-0 left-0 right-0 h-18 bg-surface/95 backdrop-blur-md border-t border-border shadow-md z-40">
         <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             {/* Left: Previous Button */}
@@ -43,10 +43,10 @@ export default function FooterControls(props: FooterControlsProps) {
               <button
                 onClick={goPrev}
                 disabled={!hasPrev}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-200 ${
                   hasPrev
-                    ? "text-gray-700 hover:text-teal-700 hover:bg-teal-50 hover:shadow-sm"
-                    : "text-gray-400 cursor-not-allowed"
+                    ? "text-foreground hover:text-primary hover:bg-primary-pastel/50 hover:shadow-xs cursor-pointer"
+                    : "text-muted-foreground/50 cursor-not-allowed"
                 }`}
                 title="Bài trước"
               >
@@ -58,11 +58,11 @@ export default function FooterControls(props: FooterControlsProps) {
             {/* Center: Lesson Info */}
             <div className="flex-1 mx-6">
               <div className="text-center max-w-md mx-auto">
-                <p className="text-sm font-semibold text-gray-900 truncate">
+                <p className="text-sm font-semibold text-foreground truncate">
                   {currentTitle || "Chọn bài học"}
                 </p>
                 {currentDuration && (
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     {currentDuration}
                   </p>
                 )}
@@ -74,13 +74,13 @@ export default function FooterControls(props: FooterControlsProps) {
               <button
                 onClick={goNext}
                 disabled={!hasNext}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-200 ${
                   hasNext
-                    ? "bg-teal-500 text-white hover:bg-teal-600 hover:shadow-md"
-                    : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    ? "bg-primary text-white hover:bg-primary-hover hover:shadow-sm cursor-pointer"
+                    : "bg-border text-muted-foreground cursor-not-allowed"
                 } ${
                   lessonJustCompleted && hasNext
-                    ? "animate-bounce scale-110 shadow-lg"
+                    ? "animate-bounce scale-110 shadow-md"
                     : ""
                 }`}
                 title="Bài tiếp theo"
@@ -96,7 +96,7 @@ export default function FooterControls(props: FooterControlsProps) {
       {/* Sidebar Toggle - Below Footer */}
       <button
         onClick={toggleSidebar}
-        className="fixed bottom-3 right-4 w-12 h-12 bg-white hover:bg-gray-50 text-gray-700 hover:text-teal-600 rounded-full shadow-lg hover:shadow-xl border border-gray-200 hover:border-teal-300 transition-all duration-300 flex items-center justify-center z-50"
+        className="fixed bottom-3 right-4 w-12 h-12 bg-surface hover:bg-primary-pastel/40 text-foreground hover:text-primary rounded-full shadow-md hover:shadow-lg border border-border hover:border-primary-light transition-all duration-300 flex items-center justify-center z-50 cursor-pointer"
         title={sidebarOpen ? "Ẩn nội dung khóa học" : "Hiện nội dung khóa học"}
       >
         {sidebarOpen ? (

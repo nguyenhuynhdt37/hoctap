@@ -11,7 +11,7 @@ export function TermsSection() {
             1. Chấp nhận điều khoản
           </h4>
           <p className="text-gray-700 leading-relaxed">
-            Bằng việc truy cập và sử dụng nền tảng StudyNest, bạn đồng ý tuân
+            Bằng việc truy cập và sử dụng nền tảng Mây Mây, bạn đồng ý tuân
             thủ các điều khoản và điều kiện được nêu trong tài liệu này. Nếu bạn
             không đồng ý với bất kỳ điều khoản nào, vui lòng không sử dụng dịch
             vụ của chúng tôi.
@@ -40,7 +40,7 @@ export function TermsSection() {
             3. Sử dụng dịch vụ
           </h4>
           <p className="text-gray-700 leading-relaxed mb-3">
-            Bạn được phép sử dụng StudyNest cho mục đích học tập cá nhân. Bạn
+            Bạn được phép sử dụng Mây Mây cho mục đích học tập cá nhân. Bạn
             không được phép:
           </p>
           <ul className="list-disc list-inside space-y-2 text-gray-700 ml-4">
@@ -70,8 +70,8 @@ export function TermsSection() {
             5. Quyền sở hữu trí tuệ
           </h4>
           <p className="text-gray-700 leading-relaxed">
-            Tất cả nội dung trên StudyNest, bao gồm video, tài liệu, và tài
-            nguyên khác, đều thuộc quyền sở hữu của StudyNest hoặc các đối tác
+            Tất cả nội dung trên Mây Mây, bao gồm video, tài liệu, và tài
+            nguyên khác, đều thuộc quyền sở hữu của Mây Mây hoặc các đối tác
             của chúng tôi. Bạn không được phép sao chép, phân phối hoặc sử dụng
             nội dung này mà không có sự cho phép bằng văn bản.
           </p>

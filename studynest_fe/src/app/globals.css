@@ -367,7 +367,7 @@
 
   /* Temporary Legacy Brand Compatibility Mapping (teal-* -> Cloudy Blue):
      Unmigrated secondary views (e.g. learning_detail tabs, help-center, course_detail modals)
-     still reference teal-* as the legacy StudyNest brand accent (#00bba7).
+     still reference teal-* as the legacy brand accent (#00bba7).
      Keep teal-* mapped to Cloudy Blue primitives until those pages are migrated to semantic tokens. */
   --color-teal-50: var(--sn-blue-50);
   --color-teal-100: var(--sn-blue-100);

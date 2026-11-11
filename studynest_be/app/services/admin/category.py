@@ -3,12 +3,12 @@ from operator import or_
 from typing import Any
 
 from fastapi import Depends, HTTPException
-from sqlalchemy import asc, case, delete, desc, func, outerjoin, select, update
+from sqlalchemy import asc, case, delete, desc, func, outerjoin, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models.database import Categories, Courses
+from app.db.models.database import Categories, Courses, Topics, DiscountTargets
 from app.db.sesson import get_session
-from app.libs.formats.text import generate_slug
+from app.services.catalog_slugs import create_slugged
 from app.schemas.admin.category import CreateCategory, UpdateCategory
 
 
@@ -117,6 +117,7 @@ class CategoryService:
                         "parent_id": str(row.parent_id) if row.parent_id else None,
                         "order_index": row.order_index or 0,
                         "course_count": int(row.course_count or 0),
+                        "direct_course_count_all_statuses": int(row.course_count or 0),
                     }
                     for row in rows
                 ],
@@ -129,6 +130,7 @@ class CategoryService:
             }
 
         except HTTPException:
+            await self.db.rollback()
             raise
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Lỗi khi lấy danh mục: {e}")
@@ -172,9 +174,15 @@ class CategoryService:
             if not category:
                 raise HTTPException(404, "Không tìm thấy danh mục")
 
+            if 'name' in schema.model_fields_set and (schema.name is None or not schema.name.strip()):
+                raise HTTPException(422, 'Tên danh mục không được trống')
+            if 'order_index' in schema.model_fields_set and schema.order_index is None:
+                raise HTTPException(422, 'Thứ tự không được null')
             old_parent_id = category.parent_id
             old_order_index = category.order_index
-            new_parent_id = schema.parent_id
+            await self.db.execute(text('LOCK TABLE categories IN SHARE ROW EXCLUSIVE MODE'))
+            new_parent_id = schema.parent_id if 'parent_id' in schema.model_fields_set else old_parent_id
+            await self._validate_tree(category_id, new_parent_id)
             new_index = getattr(schema, "order_index", None)
 
             # 1️⃣ Kiểm tra cha hợp lệ
@@ -220,7 +228,7 @@ class CategoryService:
                             Categories.parent_id == new_parent_id
                         )
                     )
-                    new_order_index = (result or -1) + 1
+                    new_order_index = (result if result is not None else -1) + 1
             else:
                 # ✅ Cùng nhóm cũ
                 new_order_index = old_order_index
@@ -251,9 +259,9 @@ class CategoryService:
                     new_order_index = new_index
 
             # 4️⃣ Chuẩn bị dữ liệu update
-            slug = generate_slug(schema.name)
+            slug = category.slug
             update_data: dict[str, Any] = {
-                "name": schema.name.strip(),
+                "name": schema.name.strip() if schema.name is not None else category.name,
                 "slug": slug,
                 "parent_id": new_parent_id,
                 "order_index": new_order_index,
@@ -275,6 +283,7 @@ class CategoryService:
             }
 
         except HTTPException:
+            await self.db.rollback()
             raise
         except Exception as e:
             await self.db.rollback()
@@ -308,6 +317,7 @@ class CategoryService:
             return int(last_index or 0)
 
         except HTTPException:
+            await self.db.rollback()
             raise
         except Exception as e:
             raise HTTPException(
@@ -353,6 +363,11 @@ class CategoryService:
                     400, "Không thể xóa vì danh mục này có danh mục con"
                 )
 
+            used_topics = await self.db.scalar(select(func.count()).select_from(Topics).where(Topics.category_id == category_id))
+            used_discounts = await self.db.scalar(select(func.count()).select_from(DiscountTargets).where(DiscountTargets.category_id == category_id))
+            if used_topics or used_discounts:
+                raise HTTPException(409, 'Danh mục đang chứa chủ đề hoặc được chương trình giảm giá sử dụng')
+
             # 4️⃣ Xóa danh mục
             await self.db.execute(
                 delete(Categories).where(Categories.id == category_id)
@@ -373,6 +388,7 @@ class CategoryService:
             return {"message": "Đã xóa danh mục thành công"}
 
         except HTTPException:
+            await self.db.rollback()
             raise
         except Exception as e:
             await self.db.rollback()
@@ -382,24 +398,15 @@ class CategoryService:
         """
         ✅ Tạo danh mục mới:
         - Tự sinh slug từ tên.
-        - Nếu trùng slug -> không cho tạo (báo lỗi yêu cầu đổi tên).
+        - Nếu trùng slug -> thêm hậu tố UUID ngắn.
         - Nếu có parent_id -> order_index = max(order_index) + 1 trong nhóm cha.
         - Nếu không -> tính theo nhóm gốc.
         """
         try:
-            # 1️⃣ Sinh slug từ tên
-            slug = generate_slug(schema.name)
-
-            # 2️⃣ Kiểm tra slug trùng
-            slug_exists = await self.db.scalar(
-                select(Categories.id).where(Categories.slug == slug)
-            )
-            if slug_exists:
-                raise HTTPException(
-                    400,
-                    f"Tên '{schema.name}' đã được dùng, vui lòng đổi tên khác (slug '{slug}' đã tồn tại).",
-                )
-
+            await self.db.execute(text('LOCK TABLE categories IN SHARE ROW EXCLUSIVE MODE'))
+            await self._validate_tree(None, schema.parent_id)
+            if not schema.name.strip():
+                raise HTTPException(422, 'Tên danh mục không được để trống')
             # 3️⃣ Nếu có parent_id → kiểm tra hợp lệ
             if schema.parent_id:
                 parent_exists = await self.db.scalar(
@@ -414,13 +421,13 @@ class CategoryService:
                     Categories.parent_id == schema.parent_id
                 )
             )
-            order_index = (last_index or -1) + 1
+            order_index = (last_index if last_index is not None else -1) + 1
 
             # 5️⃣ Tạo danh mục mới
-            new_category = Categories(
+            new_category = await create_slugged(
+                self.db, Categories, schema.name,
                 id=uuid.uuid4(),
                 name=schema.name.strip(),
-                slug=slug,
                 parent_id=schema.parent_id,
                 order_index=order_index,
             )
@@ -440,7 +447,30 @@ class CategoryService:
             }
 
         except HTTPException:
+            await self.db.rollback()
             raise
         except Exception as e:
             await self.db.rollback()
             raise HTTPException(500, f"Lỗi khi tạo danh mục: {e}")
+
+    async def _validate_tree(self, category_id, parent_id):
+        # Snapshot under table lock prevents two concurrent moves forming a cycle.
+        rows = (await self.db.execute(select(Categories.id, Categories.parent_id))).all()
+        parents = {row.id: row.parent_id for row in rows}
+        if parent_id is not None and parent_id not in parents:
+            raise HTTPException(422, 'Danh mục cha không tồn tại')
+        node = category_id or uuid.uuid4()
+        parents[node] = parent_id
+        for start in parents:
+            visited = set()
+            current = start
+            depth = 0
+            while current is not None:
+                if current in visited:
+                    raise HTTPException(422, 'Không được tạo chu trình danh mục')
+                visited.add(current)
+                current = parents.get(current)
+                if current is not None:
+                    depth += 1
+                if depth > 2:
+                    raise HTTPException(422, 'Danh mục chỉ hỗ trợ tối đa 3 cấp (0–2)')

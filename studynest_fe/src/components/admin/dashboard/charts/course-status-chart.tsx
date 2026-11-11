@@ -76,28 +76,28 @@ export default function CourseStatusChart() {
   if (!mounted) return null;
 
   return (
-    <div className="bg-white rounded-[20px] shadow-xs border border-[#E7EEF7] p-6">
+    <div className="bg-white rounded-[20px] shadow-xs border border-border p-6">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-[#3D4A5A]">Thống kê khóa học</h3>
+        <h3 className="text-lg font-semibold text-foreground">Thống kê khóa học</h3>
         {data && (
           <div className="text-right">
-            <p className="text-2xl font-bold text-[#356FA7]">
+            <p className="text-2xl font-bold text-primary">
               {data.total ?? 0}
             </p>
-            <p className="text-[#6F7C8C] text-sm">Tổng khóa học</p>
+            <p className="text-muted-foreground text-sm">Tổng khóa học</p>
           </div>
         )}
       </div>
 
       {isLoading ? (
         <div className="h-48 flex items-center justify-center">
-          <div className="w-8 h-8 border-4 border-[#356FA7] border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-6">
           {/* Status Pie */}
           <div>
-            <p className="text-sm font-medium text-[#6F7C8C] mb-3 text-center">
+            <p className="text-sm font-medium text-muted-foreground mb-3 text-center">
               Theo trạng thái
             </p>
             <div className="h-32 relative">
@@ -105,29 +105,29 @@ export default function CourseStatusChart() {
             </div>
             <div className="mt-3 space-y-1">
               <div className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-1.5 text-[#6F7C8C]">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#356FA7]" />
+                <span className="flex items-center gap-1.5 text-muted-foreground">
+                  <span className="w-2.5 h-2.5 rounded-full bg-primary" />
                   Xuất bản
                 </span>
-                <span className="font-medium text-[#3D4A5A]">
+                <span className="font-medium text-foreground">
                   {data?.by_status?.published ?? 0}
                 </span>
               </div>
               <div className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-1.5 text-[#6F7C8C]">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#F8E9C9] border border-[#E6B84D]" />
+                <span className="flex items-center gap-1.5 text-muted-foreground">
+                  <span className="w-2.5 h-2.5 rounded-full bg-accent-vanilla border border-warning" />
                   Bản nháp
                 </span>
-                <span className="font-medium text-[#3D4A5A]">
+                <span className="font-medium text-foreground">
                   {data?.by_status?.draft ?? 0}
                 </span>
               </div>
               <div className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-1.5 text-[#6F7C8C]">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#BFD7ED]" />
+                <span className="flex items-center gap-1.5 text-muted-foreground">
+                  <span className="w-2.5 h-2.5 rounded-full bg-primary-pastel" />
                   Lưu trữ
                 </span>
-                <span className="font-medium text-[#3D4A5A]">
+                <span className="font-medium text-foreground">
                   {data?.by_status?.archived ?? 0}
                 </span>
               </div>
@@ -136,7 +136,7 @@ export default function CourseStatusChart() {
 
           {/* Level Pie */}
           <div>
-            <p className="text-sm font-medium text-[#6F7C8C] mb-3 text-center">
+            <p className="text-sm font-medium text-muted-foreground mb-3 text-center">
               Theo cấp độ
             </p>
             <div className="h-32 relative">
@@ -144,29 +144,29 @@ export default function CourseStatusChart() {
             </div>
             <div className="mt-3 space-y-1">
               <div className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-1.5 text-[#6F7C8C]">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#7BAFD4]" />
+                <span className="flex items-center gap-1.5 text-muted-foreground">
+                  <span className="w-2.5 h-2.5 rounded-full bg-chart-2" />
                   Cơ bản
                 </span>
-                <span className="font-medium text-[#3D4A5A]">
+                <span className="font-medium text-foreground">
                   {data?.by_level?.beginner ?? 0}
                 </span>
               </div>
               <div className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-1.5 text-[#6F7C8C]">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#356FA7]" />
+                <span className="flex items-center gap-1.5 text-muted-foreground">
+                  <span className="w-2.5 h-2.5 rounded-full bg-primary" />
                   Trung cấp
                 </span>
-                <span className="font-medium text-[#3D4A5A]">
+                <span className="font-medium text-foreground">
                   {data?.by_level?.intermediate ?? 0}
                 </span>
               </div>
               <div className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-1.5 text-[#6F7C8C]">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#F7C9D9]" />
+                <span className="flex items-center gap-1.5 text-muted-foreground">
+                  <span className="w-2.5 h-2.5 rounded-full bg-secondary-pastel" />
                   Nâng cao
                 </span>
-                <span className="font-medium text-[#3D4A5A]">
+                <span className="font-medium text-foreground">
                   {data?.by_level?.advanced ?? 0}
                 </span>
               </div>
@@ -177,19 +177,19 @@ export default function CourseStatusChart() {
 
       {/* Extra Stats */}
       {data && (
-        <div className="mt-6 pt-4 border-t border-[#E7EEF7] grid grid-cols-2 gap-4">
+        <div className="mt-6 pt-4 border-t border-border grid grid-cols-2 gap-4">
           <div className="text-center">
-            <p className="text-2xl font-bold text-[#356FA7]">
+            <p className="text-2xl font-bold text-primary">
               {(data.avg_rating ?? 0).toFixed(1)}
-              <span className="text-[#D99B26] ml-1">★</span>
+              <span className="text-warning ml-1">★</span>
             </p>
-            <p className="text-[#6F7C8C] text-xs">Đánh giá TB</p>
+            <p className="text-muted-foreground text-xs">Đánh giá TB</p>
           </div>
           <div className="text-center">
-            <p className="text-2xl font-bold text-[#356FA7]">
+            <p className="text-2xl font-bold text-primary">
               {(data.total_enrollments ?? 0).toLocaleString("vi-VN")}
             </p>
-            <p className="text-[#6F7C8C] text-xs">Lượt đăng ký</p>
+            <p className="text-muted-foreground text-xs">Lượt đăng ký</p>
           </div>
         </div>
       )}

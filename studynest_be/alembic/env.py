@@ -26,6 +26,7 @@ if database_url:
     config.set_main_option("sqlalchemy.url", database_url)
 
 from app.db.models.database import Base
+from app.db.models import catalog  # register additive metadata
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,

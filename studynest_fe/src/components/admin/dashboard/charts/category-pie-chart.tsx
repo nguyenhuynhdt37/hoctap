@@ -88,17 +88,17 @@ export default function CategoryPieChart() {
   if (!mounted) return null;
 
   return (
-    <div className="bg-white rounded-[20px] shadow-xs border border-[#E7EEF7] p-6 h-full">
-      <h3 className="text-lg font-semibold text-[#3D4A5A] mb-6">
+    <div className="bg-white rounded-[20px] shadow-xs border border-border p-6 h-full">
+      <h3 className="text-lg font-semibold text-foreground mb-6">
         Doanh thu theo danh mục
       </h3>
 
       {isLoading ? (
         <div className="h-64 flex items-center justify-center">
-          <div className="w-8 h-8 border-4 border-[#356FA7] border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
         </div>
       ) : data.length === 0 ? (
-        <div className="h-64 flex items-center justify-center text-[#6F7C8C]">
+        <div className="h-64 flex items-center justify-center text-muted-foreground">
           Không có dữ liệu
         </div>
       ) : (
@@ -108,8 +108,8 @@ export default function CategoryPieChart() {
             <Doughnut data={chartData} options={options as any} />
             {/* Center text */}
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-[#6F7C8C] text-xs">Tổng</span>
-              <span className="text-[#3D4A5A] font-bold text-sm">
+              <span className="text-muted-foreground text-xs">Tổng</span>
+              <span className="text-foreground font-bold text-sm">
                 {formatCurrency(totalRevenue)}
               </span>
             </div>
@@ -127,12 +127,12 @@ export default function CategoryPieChart() {
                     className="w-3 h-3 rounded-full flex-shrink-0"
                     style={{ backgroundColor: COLORS[idx % COLORS.length] }}
                   />
-                  <span className="text-sm text-[#6F7C8C] truncate max-w-[120px]">
+                  <span className="text-sm text-muted-foreground truncate max-w-[120px]">
                     {item.category_name}
                   </span>
                 </div>
                 <div className="text-right">
-                  <span className="text-sm font-medium text-[#3D4A5A]">
+                  <span className="text-sm font-medium text-foreground">
                     {(parseFloat(String(item.percentage)) || 0).toFixed(1)}%
                   </span>
                 </div>

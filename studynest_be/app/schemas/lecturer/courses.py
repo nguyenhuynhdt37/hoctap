@@ -2,6 +2,7 @@ import uuid
 from typing import List, Literal
 
 from pydantic import BaseModel, Field
+from app.schemas.catalog import CourseTaxonomy
 
 Level = Literal["all", "beginner", "intermediate", "advanced"]
 Language = Literal["vi", "en"]  # mở rộng nếu cần
@@ -12,6 +13,7 @@ class CreateCourse(BaseModel):
     title: str = Field(min_length=3, max_length=160)
     category_id: uuid.UUID
     topic_id: uuid.UUID | None = None
+    education: CourseTaxonomy | None = None
 
     subtitle: str | None = None
     description: str | None = None
@@ -32,6 +34,7 @@ class UpdateCourse(BaseModel):
     title: str = Field(min_length=3, max_length=160)
     category_id: uuid.UUID
     topic_id: uuid.UUID | None = None
+    education: CourseTaxonomy | None = None
 
     subtitle: str | None = None
     description: str | None = None

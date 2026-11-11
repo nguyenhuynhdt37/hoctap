@@ -27,7 +27,7 @@ export default memo(function CommentContent({
       {shouldTruncate && (
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="mt-2 text-sm text-[#356FA7] hover:text-[#285C90] font-medium cursor-pointer"
+          className="mt-2 text-sm text-primary hover:text-primary-hover font-medium cursor-pointer"
         >
           {isExpanded ? "Ẩn bớt" : "Xem thêm"}
         </button>

@@ -1,7 +1,9 @@
 "use client";
 
+import CourseEducationInfo from "@/components/catalog/course-education";
 import api from "@/lib/utils/fetcher/client/axios";
 import { showToast } from "@/lib/utils/helpers/toast";
+import { useUserStore } from "@/stores/user";
 import { CourseDetailData } from "@/types/user/course_detail";
 import { useParams, useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
@@ -23,7 +25,9 @@ import TargetAudienceSection from "./target-audience-section";
 const CourseDetail = () => {
   const params = useParams();
   const router = useRouter();
+  const user = useUserStore((s) => s.user);
   const slug = params?.slug as string;
+
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set()
   );
@@ -52,18 +56,25 @@ const CourseDetail = () => {
     slug ? [`/courses/${slug}/detail-info-by-slug`] : null,
     async ([url]) => {
       const response = await api.get(url);
-      console.log("API Response:", response.data);
       return response.data;
     }
   );
 
+  // Only fetch favourite status when user is authenticated to avoid 401 -> /login redirect
   const { data: favouriteData, mutate: mutateFavourite } = useSWR(
-    data?.course?.id ? `/favourites/${data.course.id}` : null,
+    user?.id && data?.course?.id ? `/favourites/${data.course.id}` : null,
     async (url) => {
       const response = await api.get(url);
       return response.data;
     }
   );
+
+  // Auto-expand the first curriculum section when course data loads
+  useEffect(() => {
+    if (data?.course?.sections && data.course.sections.length > 0) {
+      setExpandedSections(new Set([data.course.sections[0].id]));
+    }
+  }, [data?.course?.id]);
 
   const toggleSection = (sectionId: string) => {
     const newExpanded = new Set(expandedSections);
@@ -102,16 +113,20 @@ const CourseDetail = () => {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("vi-VN");
+    if (!dateString) return "Mới cập nhật";
+    const parsed = new Date(dateString);
+    if (Number.isNaN(parsed.getTime())) return "Mới cập nhật";
+    return parsed.toLocaleDateString("vi-VN");
   };
 
   const sumCourseDurationSeconds = (
     sections: CourseDetailData["course"]["sections"]
   ) => {
+    if (!Array.isArray(sections)) return 0;
     return sections.reduce((total, section) => {
       return (
         total +
-        section.lessons.reduce(
+        (section.lessons || []).reduce(
           (s, lesson) =>
             s + (typeof lesson.duration === "number" ? lesson.duration : 0),
           0
@@ -121,12 +136,12 @@ const CourseDetail = () => {
   };
 
   const formatSecondsToHms = (seconds: number) => {
-    if (!seconds || seconds <= 0) return "--";
+    if (!seconds || seconds <= 0) return "Linh hoạt";
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
     const s = Math.floor(seconds % 60);
     if (h > 0) return `${h} giờ ${m} phút`;
-    if (m > 0) return `${m} phút ${s} giây`;
+    if (m > 0) return `${m} phút ${s > 0 ? `${s} giây` : ""}`.trim();
     return `${s} giây`;
   };
 
@@ -141,7 +156,6 @@ const CourseDetail = () => {
     return `${m}:${s}`;
   };
 
-  // Reset tất cả state enrollment khi component mount hoặc slug thay đổi
   useEffect(() => {
     setIsEnrollModalOpen(false);
     setIsEnrolling(false);
@@ -158,6 +172,11 @@ const CourseDetail = () => {
 
   const toggleFavourite = async () => {
     if (!data?.course || isTogglingFavourite) return;
+    if (!user?.id) {
+      showToast.info("Vui lòng đăng nhập để lưu khóa học vào danh sách yêu thích.");
+      router.push(`/login?redirect=${encodeURIComponent(`/course/${slug}`)}`);
+      return;
+    }
 
     try {
       setIsTogglingFavourite(true);
@@ -166,8 +185,7 @@ const CourseDetail = () => {
         setIsFavourite(response.data.is_favourite);
         mutateFavourite();
       }
-    } catch (error) {
-      console.error("Error toggling favourite:", error);
+    } catch {
       setIsFavourite(!isFavourite);
     } finally {
       setIsTogglingFavourite(false);
@@ -223,14 +241,16 @@ const CourseDetail = () => {
         }
         setActivePreviewIndex(activeIndex);
         setPreviewUrl(toYoutubeEmbedUrl(list[activeIndex].video_url));
-        setPreviewTitle(list[activeIndex].title || "Xem trước khóa học");
+        setPreviewTitle(list[activeIndex].title || "Xem trước bài giảng");
       } else {
         setPreviewUrl("");
-        setPreviewTitle("Xem trước khóa học");
+        setPreviewTitle("Xem trước bài giảng");
       }
       setIsPreviewOpen(true);
-    } catch (e) {
-      // no-op
+    } catch {
+      setPreviewUrl("");
+      setPreviewTitle("Xem trước bài giảng");
+      setIsPreviewOpen(true);
     } finally {
       setIsPreviewLoading(false);
     }
@@ -244,6 +264,11 @@ const CourseDetail = () => {
 
   const handleEnroll = async () => {
     if (!data?.course || isEnrolling) return;
+    if (!user?.id) {
+      showToast.info("Vui lòng đăng nhập để đăng ký khóa học.");
+      router.push(`/login?redirect=${encodeURIComponent(`/course/${slug}`)}`);
+      return;
+    }
     if (!courseSlug) {
       showToast.error(
         "Không thể đăng ký: Thiếu thông tin khóa học. Vui lòng thử lại sau."
@@ -254,7 +279,6 @@ const CourseDetail = () => {
     try {
       setIsEnrolling(true);
 
-      // Nếu khóa học có phí, chỉ gọi API checkout (không gọi enroll)
       if (data.course.base_price > 0) {
         const checkoutPayload: {
           course_ids: string[];
@@ -279,23 +303,16 @@ const CourseDetail = () => {
 
           if (checkoutResponse.status === 200 && checkoutResponse.data) {
             const { is_free, transaction_id, message } = checkoutResponse.data;
-
-            // Hiển thị thông báo thành công
             showToast.success(message || "Thanh toán thành công! 🎉");
 
-            // Xử lý redirect dựa trên is_free và transaction_id
             if (is_free) {
-              // Free checkout: redirect trực tiếp đến learning (không có transaction)
               setTimeout(() => {
                 router.push(`/learning/${courseSlug}`);
               }, 1500);
             } else if (transaction_id) {
-              // Có transaction: redirect đến trang transaction success
               const redirectUrl = `/transaction?status=success&order_id=${transaction_id}&redirect=/learning/${courseSlug}`;
               router.push(redirectUrl);
             } else {
-              // Trường hợp không có transaction_id nhưng không phải free (không nên xảy ra)
-              console.warn("Checkout thành công nhưng không có transaction_id");
               setTimeout(() => {
                 router.push(`/learning/${courseSlug}`);
               }, 1500);
@@ -303,47 +320,23 @@ const CourseDetail = () => {
             return;
           }
         } catch (checkoutError: any) {
-          // Xử lý các lỗi cụ thể từ backend
           let errorMessage = "Không thể thanh toán. Vui lòng thử lại sau.";
-
-          if (checkoutError?.response?.status === 400) {
-            // Lỗi validation: khóa học không tồn tại, giá = 0, etc.
-            const errorDetail =
-              checkoutError?.response?.data?.detail ||
-              checkoutError?.response?.data?.message;
-            if (errorDetail) {
-              errorMessage = errorDetail;
-            } else {
-              errorMessage = "Thông tin thanh toán không hợp lệ. Vui lòng kiểm tra lại.";
-            }
-          } else if (checkoutError?.response?.status === 404) {
-            // Ví không tồn tại
-            errorMessage =
-              checkoutError?.response?.data?.detail ||
-              "Ví không tồn tại. Vui lòng liên hệ hỗ trợ.";
-          } else if (checkoutError?.response?.status === 402) {
-            // Không đủ tiền trong ví (Payment Required)
-            errorMessage =
-              checkoutError?.response?.data?.detail ||
-              "Số dư ví không đủ. Vui lòng nạp thêm tiền.";
-          } else if (checkoutError?.response?.data?.detail) {
+          if (checkoutError?.response?.data?.detail) {
             errorMessage = checkoutError.response.data.detail;
           } else if (checkoutError?.response?.data?.message) {
             errorMessage = checkoutError.response.data.message;
           }
-
           showToast.error(errorMessage);
           throw checkoutError;
         }
       } else {
-        // Nếu khóa học miễn phí, gọi API enroll
         try {
-      const response = await api.post(`/courses/${data.course.id}/enroll`);
-      if (response.status === 200) {
+          const response = await api.post(`/courses/${data.course.id}/enroll`);
+          if (response.status === 200) {
             showToast.success("Đăng ký khóa học thành công! 🎉");
-        setEnrollSuccess(true);
-        setTimeout(() => {
-          router.push(`/learning/${courseSlug}`);
+            setEnrollSuccess(true);
+            setTimeout(() => {
+              router.push(`/learning/${courseSlug}`);
             }, 1500);
           }
         } catch (enrollError: any) {
@@ -354,8 +347,7 @@ const CourseDetail = () => {
           showToast.error(errorMessage);
         }
       }
-    } catch (error) {
-      // Lỗi không mong đợi
+    } catch {
       showToast.error("Đã xảy ra lỗi không mong đợi. Vui lòng thử lại sau.");
     } finally {
       setIsEnrolling(false);
@@ -364,17 +356,34 @@ const CourseDetail = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-6xl mx-auto px-4 py-8">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-3/4 mb-4"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2 mb-8"></div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2 space-y-6">
-                <div className="h-64 bg-gray-200 rounded"></div>
-                <div className="h-32 bg-gray-200 rounded"></div>
+      <div className="min-h-screen bg-background">
+        <div className="bg-gradient-to-b from-primary-light/70 via-background to-background border-b border-border py-12">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 animate-pulse">
+            <div className="h-4 bg-primary-pastel/60 rounded-full w-48 mb-6" />
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+              <div className="lg:col-span-8 space-y-4">
+                <div className="h-10 bg-primary-pastel/60 rounded-2xl w-4/5" />
+                <div className="h-5 bg-primary-light rounded-xl w-3/5" />
+                <div className="flex gap-3 pt-2">
+                  <div className="h-8 w-28 bg-primary-light rounded-full" />
+                  <div className="h-8 w-36 bg-primary-light rounded-full" />
+                </div>
               </div>
-              <div className="h-96 bg-gray-200 rounded"></div>
+              <div className="lg:col-span-4">
+                <div className="aspect-video bg-primary-light rounded-[24px]" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 animate-pulse">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div className="lg:col-span-8 space-y-6">
+              <div className="h-52 bg-surface rounded-[24px] border border-border" />
+              <div className="h-80 bg-surface rounded-[24px] border border-border" />
+            </div>
+            <div className="lg:col-span-4">
+              <div className="h-96 bg-surface rounded-[24px] border border-border" />
             </div>
           </div>
         </div>
@@ -384,14 +393,24 @@ const CourseDetail = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <div className="max-w-md w-full text-center bg-surface rounded-[24px] border border-border p-8 shadow-sm">
+          <div className="w-14 h-14 rounded-2xl bg-primary-light text-primary flex items-center justify-center mx-auto mb-4 text-2xl font-bold">
+            ☁️
+          </div>
+          <h1 className="font-display text-2xl font-bold text-foreground mb-2">
             Không tìm thấy khóa học
           </h1>
-          <p className="text-gray-600">
-            Khóa học bạn đang tìm kiếm không tồn tại.
+          <p className="text-sm text-muted-foreground mb-6">
+            Khóa học bạn đang tìm kiếm không tồn tại hoặc đã được chuyển sang lộ trình khác trên Mây Mây.
           </p>
+          <button
+            type="button"
+            onClick={() => router.push("/")}
+            className="px-6 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary-hover transition-colors cursor-pointer"
+          >
+            Quay về Trang chủ Mây Mây
+          </button>
         </div>
       </div>
     );
@@ -416,7 +435,7 @@ const CourseDetail = () => {
   const courseSlug = course.slug;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background pb-16">
       <EnrollmentModal
         isOpen={isEnrollModalOpen}
         onClose={() => {
@@ -449,19 +468,18 @@ const CourseDetail = () => {
       <CourseHeader
         course={course}
         categoryChain={category_chain}
+        totalDurationSeconds={totalDurationSeconds}
         formatDate={formatDate}
+        formatSecondsToHms={formatSecondsToHms}
         onPreview={openPreview}
         isFireActive={isFireActive}
       />
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <div className="lg:col-span-8 space-y-8">
+            <CourseEducationInfo courseId={data.course.id} />
             <OutcomesSection outcomes={course.outcomes} />
-            <RelatedTopicsSection categories={category_chain} />
-            <DescriptionSection description={course.description} />
-            <RequirementsSection requirements={course.requirements} />
-            <TargetAudienceSection targetAudience={course.target_audience} />
             <CurriculumSection
               sections={course.sections}
               expandedSections={expandedSections}
@@ -472,13 +490,17 @@ const CourseDetail = () => {
               courseId={course.id}
               formatSecondsToMmSs={formatSecondsToMmSs}
             />
+            <DescriptionSection description={course.description} />
+            <RequirementsSection requirements={course.requirements} />
+            <TargetAudienceSection targetAudience={course.target_audience} />
+            <RelatedTopicsSection categories={category_chain} />
             <InstructorSection instructor={course.instructor} />
             {sample_reviews && sample_reviews.length > 0 && (
               <ReviewsSection reviews={sample_reviews} />
             )}
           </div>
 
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-4">
             <CourseSidebar
               course={course}
               courseSlug={courseSlug}

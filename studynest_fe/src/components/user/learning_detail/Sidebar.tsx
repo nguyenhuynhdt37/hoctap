@@ -79,20 +79,20 @@ export default function Sidebar(props: SidebarProps) {
     <>
       {sidebarOpen && (
         <div
-          className="w-[434px] flex-shrink-0 bg-white shadow-xl border-l border-teal-100 overflow-y-auto"
+          className="w-[434px] flex-shrink-0 bg-surface shadow-lg border-l border-border overflow-y-auto"
           style={{
             height: `calc(100vh - ${headerHeightPx}px - ${footerHeightPx}px)`,
             marginTop: 0,
           }}
         >
-          <div className="p-6 border-b border-teal-100 bg-gradient-to-r from-teal-50 to-emerald-50 sticky top-0 z-10">
+          <div className="p-6 border-b border-border bg-gradient-to-r from-primary-pastel/50 to-secondary-pastel/40 sticky top-0 z-10 backdrop-blur-md">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-gray-900">
+              <h2 className="text-lg font-bold text-foreground">
                 Nội dung khóa học
               </h2>
               <button
                 onClick={() => setSidebarOpen(false)}
-                className="text-gray-500 hover:text-gray-700 p-1 rounded-lg hover:bg-white/50 transition-colors cursor-pointer"
+                className="text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-surface/70 transition-colors cursor-pointer"
               >
                 <HiX className="h-5 w-5" />
               </button>
@@ -106,21 +106,21 @@ export default function Sidebar(props: SidebarProps) {
               {sections.map((section) => (
                 <div
                   key={section.id}
-                  className="border border-teal-100 rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow"
+                  className="border border-border rounded-xl overflow-hidden bg-surface shadow-xs hover:shadow-md transition-shadow"
                 >
                   <button
                     onClick={() => toggleSection(section.id)}
-                    className="w-full cursor-pointer px-4 py-4 text-left flex items-center justify-between hover:bg-teal-50 transition-colors"
+                    className="w-full cursor-pointer px-4 py-4 text-left flex items-center justify-between hover:bg-primary-pastel/30 transition-colors"
                   >
                     <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-gradient-to-r from-teal-500 to-emerald-500 rounded-lg flex items-center justify-center">
+                      <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-xs">
                         <HiBookOpen className="h-4 w-4 text-white" />
                       </div>
                       <div>
-                        <h4 className="font-semibold text-gray-900 text-sm">
+                        <h4 className="font-semibold text-foreground text-sm">
                           {section.title}
                         </h4>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-muted-foreground">
                           {formatProgress(
                             section.completed_lessons || 0,
                             section.total_lessons || 0
@@ -128,9 +128,9 @@ export default function Sidebar(props: SidebarProps) {
                           • {formatDuration(section.total_duration || 0)}
                         </p>
                         <div className="mt-1 flex items-center space-x-2">
-                          <div className="w-full bg-gray-200 rounded-full h-1">
+                          <div className="w-full bg-border rounded-full h-1.5">
                             <div
-                              className="bg-gradient-to-r from-teal-400 to-emerald-400 h-1 rounded-full transition-all duration-300"
+                              className="bg-primary h-1.5 rounded-full transition-all duration-300"
                               style={{
                                 width: `${
                                   ((section.completed_lessons || 0) /
@@ -140,7 +140,7 @@ export default function Sidebar(props: SidebarProps) {
                               }}
                             />
                           </div>
-                          <span className="text-xs text-teal-600 font-medium">
+                          <span className="text-xs text-primary font-semibold">
                             {section.completed_lessons || 0}/
                             {section.total_lessons || 0}
                           </span>
@@ -148,14 +148,14 @@ export default function Sidebar(props: SidebarProps) {
                       </div>
                     </div>
                     {expandedSections.has(section.id) ? (
-                      <HiChevronUp className="h-5 w-5 text-teal-500" />
+                      <HiChevronUp className="h-5 w-5 text-primary" />
                     ) : (
-                      <HiChevronDown className="h-5 w-5 text-teal-400" />
+                      <HiChevronDown className="h-5 w-5 text-muted-foreground" />
                     )}
                   </button>
 
                   {expandedSections.has(section.id) && (
-                    <div className="border-t border-teal-100 bg-gradient-to-r from-gray-50 to-teal-50">
+                    <div className="border-t border-border bg-background/80">
                       {section.lessons.map((lesson, index) => {
                         return (
                           <div
@@ -165,13 +165,13 @@ export default function Sidebar(props: SidebarProps) {
                                 lessonRefs.current[lesson.id] = el;
                               }
                             }}
-                            className={`px-4 py-3 hover:bg-white transition-all duration-200 ${
+                            className={`px-4 py-3 hover:bg-surface transition-all duration-200 cursor-pointer ${
                               lesson.is_completed
-                                ? "bg-gray-50 border-l-2 border-gray-400"
+                                ? "bg-background border-l-2 border-muted-foreground/40"
                                 : ""
                             } ${
                               activeLesson === lesson.id
-                                ? "bg-gradient-to-r from-teal-100 to-emerald-100 border-l-4 border-teal-500 shadow-md ring-2 ring-teal-200"
+                                ? "bg-primary-pastel/60 border-l-4 border-primary shadow-xs ring-1 ring-primary-light/60"
                                 : ""
                             }`}
                             onClick={() => {
@@ -187,10 +187,10 @@ export default function Sidebar(props: SidebarProps) {
                               <div
                                 className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 mt-0.5 ${
                                   activeLesson === lesson.id
-                                    ? "bg-teal-500 text-white shadow-lg"
+                                    ? "bg-primary text-white shadow-sm"
                                     : lesson.is_locked
-                                    ? "bg-gray-200 text-teal-400"
-                                    : "bg-teal-100 text-teal-600"
+                                    ? "bg-border text-muted-foreground"
+                                    : "bg-primary-pastel text-primary"
                                 }`}
                               >
                                 {activeLesson === lesson.id ? (
@@ -210,18 +210,18 @@ export default function Sidebar(props: SidebarProps) {
                                   <h5
                                     className={`text-sm font-semibold truncate ${
                                       activeLesson === lesson.id
-                                        ? "text-teal-700"
+                                        ? "text-primary"
                                         : lesson.is_locked
-                                        ? "text-gray-400"
+                                        ? "text-muted-foreground/60"
                                         : lesson.is_completed
-                                        ? "text-gray-500"
-                                        : "text-gray-900"
+                                        ? "text-muted-foreground"
+                                        : "text-foreground"
                                     }`}
                                   >
                                     {lesson.title}
                                   </h5>
                                   {lesson.is_locked && (
-                                    <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-teal-100 text-teal-600 border border-teal-200">
+                                    <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-primary-pastel/70 text-primary border border-primary-light/60">
                                       <HiLockClosed className="w-3 h-3" />
                                       Khóa
                                     </span>
@@ -231,8 +231,8 @@ export default function Sidebar(props: SidebarProps) {
                                   <p
                                     className={`text-xs ${
                                       lesson.is_locked
-                                        ? "text-gray-400"
-                                        : "text-gray-500"
+                                        ? "text-muted-foreground/60"
+                                        : "text-muted-foreground"
                                     }`}
                                   >
                                     {formatDuration(lesson.duration)}
@@ -253,8 +253,8 @@ export default function Sidebar(props: SidebarProps) {
                                         }
                                         className={`inline-flex items-center gap-2 px-2 py-1 rounded-lg border text-xs font-medium transition ${
                                           lesson.is_locked
-                                            ? "text-gray-400 border-gray-200 cursor-not-allowed"
-                                            : "text-teal-700 border-teal-200 hover:bg-teal-50 cursor-pointer"
+                                            ? "text-muted-foreground/50 border-border cursor-not-allowed"
+                                            : "text-primary border-primary-light/60 hover:bg-primary-pastel/50 cursor-pointer"
                                         }`}
                                       >
                                         <span>📎</span>
@@ -267,15 +267,15 @@ export default function Sidebar(props: SidebarProps) {
                               </div>
                               <div className="flex-shrink-0">
                                 {lesson.is_locked ? (
-                                  <HiLockClosed className="h-4 w-4 text-teal-400" />
+                                  <HiLockClosed className="h-4 w-4 text-muted-foreground" />
                                 ) : lesson.is_completed ? (
                                   activeLesson === lesson.id ? (
-                                    <HiPlay className="h-4 w-4 text-teal-500" />
+                                    <HiPlay className="h-4 w-4 text-primary" />
                                   ) : (
-                                    <HiCheckCircle className="h-4 w-4 text-teal-500" />
+                                    <HiCheckCircle className="h-4 w-4 text-primary" />
                                   )
                                 ) : activeLesson === lesson.id ? (
-                                  <HiPlay className="h-4 w-4 text-teal-500" />
+                                  <HiPlay className="h-4 w-4 text-primary" />
                                 ) : null}
                               </div>
                             </div>

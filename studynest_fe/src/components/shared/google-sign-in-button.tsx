@@ -81,16 +81,30 @@ export default function GoogleSignInButton({
     <div>
       <div ref={container} inert={busy} className={`w-full justify-center ${configured && status === "ready" ? "flex" : "hidden"}`} />
       {!configured ? (
-        <p role="status" className="rounded-xl border border-gray-200 bg-gray-50 p-3 text-center text-sm text-gray-600">Đăng nhập Google chưa được cấu hình. Bạn có thể đăng nhập bằng email.</p>
+        <p role="status" className="rounded-xl border border-border bg-background p-3 text-center text-sm text-muted-foreground">
+          Đăng nhập Google chưa được cấu hình. Bạn có thể đăng nhập bằng email.
+        </p>
       ) : status === "loading" ? (
-        <p role="status" className="py-3 text-center text-sm text-gray-500">Đang tải đăng nhập Google...</p>
+        <p role="status" className="py-3 text-center text-sm text-muted-foreground">
+          Đang tải đăng nhập Google...
+        </p>
       ) : status === "error" ? (
-        <div role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+        <div role="alert" className="rounded-xl border border-warning-border bg-warning-bg p-3 text-sm text-warning-foreground">
           <p>{error}</p>
-          <button type="button" onClick={() => setAttempt((value) => value + 1)} className="mt-2 font-semibold underline">Thử tải lại Google</button>
+          <button
+            type="button"
+            onClick={() => setAttempt((value) => value + 1)}
+            className="mt-2 font-semibold underline hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm cursor-pointer"
+          >
+            Thử tải lại Google
+          </button>
         </div>
       ) : null}
-      {busy && <p role="status" className="mt-2 text-center text-sm text-gray-500">Đang đăng nhập bằng Google...</p>}
+      {busy && (
+        <p role="status" className="mt-2 text-center text-sm text-muted-foreground">
+          Đang đăng nhập bằng Google...
+        </p>
+      )}
     </div>
   );
 }

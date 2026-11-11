@@ -149,12 +149,12 @@ export default function QuizLesson({
         spread: 120,
         origin: { y: 0.6 },
         colors: [
-          "#ff6b6b",
-          "#4ecdc4",
-          "#45b7d1",
-          "#96ceb4",
-          "#feca57",
-          "#ff9ff3",
+          "#356FA7",
+          "#7BAFD4",
+          "#BFD7ED",
+          "#F7C9D9",
+          "#E3D5F5",
+          "#F8E9C9",
         ],
         shapes: ["star", "circle"],
         scalar: 1.2,
@@ -211,8 +211,8 @@ export default function QuizLesson({
 
   if (quizQuestions.length === 0) {
     return (
-      <div className="w-full h-full bg-white rounded-xl shadow-lg p-8 text-center flex items-center justify-center">
-        <div className="text-gray-500">
+      <div className="w-full h-full bg-surface border border-border rounded-2xl shadow-xs p-8 text-center flex items-center justify-center">
+        <div className="text-muted-foreground">
           <p>Không có câu hỏi nào trong bài học này</p>
         </div>
       </div>
@@ -220,7 +220,7 @@ export default function QuizLesson({
   }
 
   return (
-    <div className="w-full h-full bg-gradient-to-br from-gray-50 to-green-50 overflow-y-auto">
+    <div className="w-full h-full bg-gradient-to-br from-background to-primary-pastel/30 overflow-y-auto">
       <div className="w-full h-full p-6 flex flex-col">
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-0">
           {/* Cột trái: Thông tin bài học */}
@@ -237,7 +237,7 @@ export default function QuizLesson({
           </div>
 
           {/* Cột phải: Quiz Questions */}
-          <div className="bg-white rounded-xl shadow-lg p-6 lg:p-8 flex flex-col flex-1 min-h-0 overflow-y-auto">
+          <div className="bg-surface border border-border rounded-2xl shadow-sm p-6 lg:p-8 flex flex-col flex-1 min-h-0 overflow-y-auto">
             {showResults ? (
               <QuizResults
                 scorePercentage={scorePercentage}
@@ -253,16 +253,16 @@ export default function QuizLesson({
                 {/* Quiz Header */}
                 <div className="mb-6 flex-shrink-0">
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-2xl font-black text-gray-900">
+                    <h2 className="text-2xl font-black text-foreground">
                       Luyện tập
                     </h2>
-                    <span className="text-sm text-gray-500 bg-green-50 px-3 py-1 rounded-full border border-green-200">
+                    <span className="text-sm text-primary bg-primary-pastel/60 px-3 py-1 rounded-full border border-primary-light/50 font-medium">
                       Câu {currentQuestionIndex + 1}/{quizQuestions.length}
                     </span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full bg-border rounded-full h-2">
                     <div
-                      className="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full transition-all duration-300"
+                      className="bg-primary h-2 rounded-full transition-all duration-300"
                       style={{
                         width: `${
                           ((currentQuestionIndex + 1) / quizQuestions.length) *
@@ -271,7 +271,7 @@ export default function QuizLesson({
                       }}
                     />
                   </div>
-                  <div className="mt-2 text-sm text-gray-600">
+                  <div className="mt-2 text-sm text-muted-foreground">
                     Đã trả lời đúng: {correctCount}/{quizQuestions.length}
                   </div>
                 </div>
@@ -309,7 +309,7 @@ export default function QuizLesson({
           className={`flex items-center gap-2 px-4 py-2 rounded-full shadow-lg transition-colors ${
             infoTab === "qa"
               ? "bg-gray-200 text-gray-500 cursor-default"
-              : "bg-[#356FA7] text-white hover:bg-[#285C90]"
+              : "bg-primary text-white hover:bg-primary-hover"
           }`}
         >
           <HiChatAlt2 className="w-5 h-5" />

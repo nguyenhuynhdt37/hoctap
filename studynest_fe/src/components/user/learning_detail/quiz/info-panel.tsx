@@ -40,25 +40,25 @@ export default function InfoPanel({
   }, [infoTab]);
 
   return (
-    <div className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col flex-1 min-h-0">
-      <div className="border-b border-green-100 bg-gradient-to-r from-green-50 to-emerald-50 flex-shrink-0">
+    <div className="bg-surface border border-border rounded-2xl shadow-sm overflow-hidden flex flex-col flex-1 min-h-0">
+      <div className="border-b border-border bg-gradient-to-r from-primary-pastel/40 to-secondary-pastel/30 flex-shrink-0">
         <div className="flex">
           <button
             onClick={() => setInfoTab("info")}
-            className={`flex-1 px-4 py-3 text-sm font-semibold border-b-2 transition-all duration-200 ${
+            className={`flex-1 px-4 py-3 text-sm font-semibold border-b-2 transition-all duration-200 cursor-pointer ${
               infoTab === "info"
-                ? "border-green-500 text-green-600 bg-white"
-                : "border-transparent text-gray-600 hover:text-green-600 hover:bg-white/50"
+                ? "border-primary text-primary bg-surface"
+                : "border-transparent text-muted-foreground hover:text-primary hover:bg-surface/60"
             }`}
           >
             Thông tin
           </button>
           <button
             onClick={() => setInfoTab("qa")}
-            className={`flex-1 px-4 py-3 text-sm font-semibold border-b-2 transition-all duration-200 ${
+            className={`flex-1 px-4 py-3 text-sm font-semibold border-b-2 transition-all duration-200 cursor-pointer ${
               infoTab === "qa"
-                ? "border-green-500 text-green-600 bg-white"
-                : "border-transparent text-gray-600 hover:text-green-600 hover:bg-white/50"
+                ? "border-primary text-primary bg-surface"
+                : "border-transparent text-muted-foreground hover:text-primary hover:bg-surface/60"
             }`}
           >
             Hỏi đáp
@@ -70,27 +70,27 @@ export default function InfoPanel({
         {infoTab === "info" ? (
           <div className="space-y-4">
             <div>
-              <h4 className="text-sm font-semibold text-gray-700 mb-2">
+              <h4 className="text-sm font-semibold text-muted-foreground mb-2">
                 Tiêu đề
               </h4>
-              <p className="text-gray-900 font-bold text-lg">{lesson.title}</p>
+              <p className="text-foreground font-bold text-lg">{lesson.title}</p>
             </div>
 
             <div>
-              <h4 className="text-sm font-semibold text-gray-700 mb-2">
+              <h4 className="text-sm font-semibold text-muted-foreground mb-2">
                 Tổng số câu hỏi
               </h4>
-              <p className="text-gray-900">{quizQuestionsCount} câu</p>
+              <p className="text-foreground">{quizQuestionsCount} câu</p>
             </div>
 
             <div>
-              <h4 className="text-sm font-semibold text-gray-700 mb-2">
+              <h4 className="text-sm font-semibold text-muted-foreground mb-2">
                 Tiến độ
               </h4>
               <div className="flex items-center gap-2">
-                <div className="flex-1 bg-gray-200 rounded-full h-2">
+                <div className="flex-1 bg-border rounded-full h-2">
                   <div
-                    className="bg-gradient-to-r from-teal-500 to-emerald-500 h-2 rounded-full transition-all duration-300"
+                    className="bg-primary h-2 rounded-full transition-all duration-300"
                     style={{
                       width: `${
                         (selectedAnswersCount / quizQuestionsCount) * 100
@@ -98,24 +98,24 @@ export default function InfoPanel({
                     }}
                   />
                 </div>
-                <span className="text-sm text-gray-600 font-medium">
+                <span className="text-sm text-muted-foreground font-medium">
                   {selectedAnswersCount}/{quizQuestionsCount}
                 </span>
               </div>
             </div>
 
             <div>
-              <h4 className="text-sm font-semibold text-gray-700 mb-2">
+              <h4 className="text-sm font-semibold text-muted-foreground mb-2">
                 Kết quả
               </h4>
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
-                    <HiCheckCircle className="w-5 h-5 text-emerald-600" />
+                  <div className="w-8 h-8 bg-primary-pastel rounded-lg flex items-center justify-center">
+                    <HiCheckCircle className="w-5 h-5 text-primary" />
                   </div>
-                  <span className="text-sm text-gray-700">
+                  <span className="text-sm text-foreground">
                     Đúng:{" "}
-                    <span className="font-semibold text-emerald-600">
+                    <span className="font-semibold text-primary">
                       {correctCount}
                     </span>
                   </span>
@@ -124,7 +124,7 @@ export default function InfoPanel({
                   <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
                     <HiXCircle className="w-5 h-5 text-red-600" />
                   </div>
-                  <span className="text-sm text-gray-700">
+                  <span className="text-sm text-foreground">
                     Sai:{" "}
                     <span className="font-semibold text-red-600">
                       {selectedAnswersCount - correctCount}
@@ -135,27 +135,27 @@ export default function InfoPanel({
             </div>
 
             <div>
-              <h4 className="text-sm font-semibold text-gray-700 mb-2">
+              <h4 className="text-sm font-semibold text-muted-foreground mb-2">
                 Mô tả
               </h4>
               {lesson.description ? (
-                <div className="prose prose-sm max-w-none text-gray-700">
+                <div className="prose prose-sm max-w-none text-foreground/90">
                   <MarkdownRenderer
                     content={lesson.description}
                     isHtml={false}
-                    className="prose prose-sm max-w-none text-gray-700"
+                    className="prose prose-sm max-w-none text-foreground/90"
                   />
                 </div>
               ) : (
-                <p className="text-gray-400 italic text-sm">
+                <p className="text-muted-foreground italic text-sm">
                   Chưa có mô tả cho bài học này
                 </p>
               )}
             </div>
 
             {lesson.resources && lesson.resources.length > 0 && (
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <h4 className="text-sm font-semibold text-gray-700 mb-3">
+              <div className="mt-6 pt-6 border-t border-border">
+                <h4 className="text-sm font-semibold text-muted-foreground mb-3">
                   Tài nguyên
                 </h4>
                 <div className="space-y-2">
@@ -165,17 +165,17 @@ export default function InfoPanel({
                       href={resource.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:border-teal-300 hover:bg-green-50 transition-colors"
+                      className="flex items-center justify-between p-3 rounded-xl border border-border hover:border-primary-light hover:bg-primary-pastel/30 transition-colors"
                     >
                       <div className="min-w-0 pr-3">
-                        <div className="text-sm font-semibold text-gray-900 truncate">
+                        <div className="text-sm font-semibold text-foreground truncate">
                           {resource.title || resource.url}
                         </div>
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-muted-foreground">
                           {(resource.resource_type || "file").toUpperCase()}
                         </div>
                       </div>
-                      <span className="text-sm font-medium text-green-700 flex-shrink-0">
+                      <span className="text-sm font-medium text-primary flex-shrink-0">
                         Mở
                       </span>
                     </a>
@@ -187,12 +187,12 @@ export default function InfoPanel({
         ) : (
           <div
             ref={qaSectionRef}
-            className="relative -m-6 h-full overflow-hidden rounded-xl border border-gray-200"
+            className="relative -m-6 h-full overflow-hidden rounded-2xl border border-border"
           >
             <QASection
               lessonId={lesson.id}
               accessToken={accessToken}
-              containerClassName="w-full bg-white px-4 sm:px-6 lg:px-8 py-4"
+              containerClassName="w-full bg-surface px-4 sm:px-6 lg:px-8 py-4"
             />
           </div>
         )}

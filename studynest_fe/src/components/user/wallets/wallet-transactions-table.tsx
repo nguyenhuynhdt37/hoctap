@@ -1,6 +1,7 @@
+import { Badge } from "@/components/ui";
 import { WalletTransaction } from "@/types/user/wallet";
 import Link from "next/link";
-import { HiArrowDown, HiArrowUp } from "react-icons/hi";
+import { HiArrowDown, HiArrowRight, HiArrowUp, HiRefresh } from "react-icons/hi";
 
 interface Props {
   transactions: WalletTransaction[];
@@ -30,22 +31,42 @@ const formatDateTime = (val?: string | null) => {
 
 const getTypeLabel = (type: string) => {
   const labels: Record<string, string> = {
-    deposit: "Nạp tiền",
-    purchase: "Mua khóa học",
-    withdraw: "Rút tiền",
-    refund: "Hoàn tiền",
-    income: "Thu nhập",
+    deposit: "Nạp tiền vào ví",
+    purchase: "Thanh toán khóa học",
+    withdraw: "Rút tiền về tài khoản",
+    refund: "Hoàn tiền học phí",
+    income: "Thu nhập giảng dạy",
   };
   return labels[type] || type;
 };
 
-const getStatusLabel = (status: string) => {
-  const labels: Record<string, string> = {
-    completed: "Thành công",
-    canceled: "Đã hủy",
-    pending: "Đang xử lý",
-  };
-  return labels[status] || status;
+const getStatusBadge = (status: string) => {
+  switch (status) {
+    case "completed":
+      return (
+        <Badge variant="default" size="sm">
+          Thành công
+        </Badge>
+      );
+    case "pending":
+      return (
+        <Badge variant="vanilla" size="sm">
+          Chờ xử lý
+        </Badge>
+      );
+    case "canceled":
+      return (
+        <Badge variant="destructive" size="sm">
+          Đã hủy
+        </Badge>
+      );
+    default:
+      return (
+        <Badge variant="secondary" size="sm">
+          {status}
+        </Badge>
+      );
+  }
 };
 
 const isIncome = (t: WalletTransaction) => {
@@ -60,151 +81,135 @@ export function WalletTransactionsTable({
   onRetry,
 }: Props) {
   return (
-    <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-gray-900">Giao dịch gần đây</h2>
+    <section className="rounded-[28px] border border-border bg-surface p-7 shadow-xs">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 className="font-display text-xl font-bold text-foreground">
+            Giao dịch gần đây
+          </h2>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            5 biến động số dư mới nhất trên tài khoản của bạn
+          </p>
+        </div>
         <Link
           href="/wallets/transactions"
-          className="inline-flex items-center gap-2 rounded-lg border border-green-200 bg-white px-4 py-2 text-sm font-semibold text-green-600 hover:bg-green-50"
+          className="inline-flex items-center gap-1.5 rounded-full border border-primary-pastel bg-primary-light px-4 py-2 text-xs font-semibold text-primary transition-all duration-200 hover:bg-primary hover:text-primary-foreground shadow-2xs"
         >
-          Xem tất cả
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M5 12h14M13 6l6 6-6 6"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <span>Xem tất cả</span>
+          <HiArrowRight className="h-3.5 w-3.5" />
         </Link>
       </div>
 
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
+        <table className="min-w-full divide-y divide-border">
           <thead>
-            <tr className="bg-gray-50">
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">
+            <tr className="bg-primary-light/40">
+              <th className="rounded-l-xl px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Loại giao dịch
               </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Số tiền
               </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Trạng thái
               </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">
-                Mô tả
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Nội dung chi tiết
               </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">
+              <th className="rounded-r-xl px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Thời gian
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100 bg-white">
+          <tbody className="divide-y divide-border/60 bg-surface">
             {transactions.length === 0 ? (
               <tr>
                 <td
                   colSpan={5}
-                  className="px-4 py-12 text-center text-sm text-gray-500"
+                  className="px-4 py-12 text-center text-sm text-muted-foreground"
                 >
-                  Chưa có giao dịch nào
+                  Chưa có phát sinh giao dịch nào
                 </td>
               </tr>
             ) : (
               transactions.map((t) => {
                 const income = isIncome(t);
-                const statusColors: Record<string, string> = {
-                  completed: "bg-green-100 text-green-700",
-                  canceled: "bg-red-100 text-red-700",
-                  pending: "bg-yellow-100 text-yellow-700",
-                };
 
                 return (
-                  <tr key={t.id} className="hover:bg-gray-50">
+                  <tr
+                    key={t.id}
+                    className="transition-colors hover:bg-primary-light/30"
+                  >
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-3">
                         <div
-                          className={`flex h-10 w-10 items-center justify-center rounded-full ${
+                          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border shadow-2xs ${
                             income
-                              ? "bg-green-100 text-green-600"
-                              : "bg-gray-100 text-gray-600"
+                              ? "border-primary-pastel/80 bg-primary-light text-primary"
+                              : "border-border bg-background text-muted-foreground"
                           }`}
                         >
                           {income ? (
-                            <HiArrowUp className="h-5 w-5" />
+                            <HiArrowDown className="h-4 w-4" />
                           ) : (
-                            <HiArrowDown className="h-5 w-5" />
+                            <HiArrowUp className="h-4 w-4" />
                           )}
                         </div>
                         <div>
-                          <div className="font-semibold text-gray-900">
+                          <div className="text-sm font-semibold text-foreground">
                             {getTypeLabel(t.type)}
                           </div>
                           {t.status === "pending" && (
-                            <span className="mt-1 inline-block rounded-full border border-yellow-300 bg-yellow-50 px-2 py-0.5 text-xs font-medium text-yellow-700">
-                              Chờ thanh toán
+                            <span className="mt-0.5 inline-block text-[11px] font-medium text-warning-foreground">
+                              Chờ xác nhận PayPal
                             </span>
                           )}
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-4">
+                    <td className="px-4 py-4 whitespace-nowrap">
                       <span
-                        className={`text-lg font-bold ${
-                          income ? "text-green-600" : "text-gray-900"
+                        className={`text-base font-bold ${
+                          income ? "text-primary" : "text-foreground"
                         }`}
                       >
                         {income ? "+" : "-"}
                         {formatCurrency(t.amount)}
                       </span>
                     </td>
-                    <td className="px-4 py-4">
-                      <span
-                        className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
-                          statusColors[t.status] || "bg-gray-100 text-gray-700"
-                        }`}
-                      >
-                        {getStatusLabel(t.status)}
-                      </span>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      {getStatusBadge(t.status)}
                     </td>
                     <td className="px-4 py-4">
-                      <div className="space-y-2">
-                        <p className="text-sm text-gray-700">
-                          {t.description || "Không có mô tả"}
+                      <div className="space-y-1.5 max-w-xs sm:max-w-md">
+                        <p className="text-xs leading-relaxed text-foreground truncate">
+                          {t.description || "Giao dịch ví Mây Mây"}
                         </p>
                         {t.status === "pending" && onRetry && t.order_id && (
                           <button
+                            type="button"
                             onClick={() => onRetry(t.order_id)}
                             disabled={retryOrderId === t.order_id}
-                            className="inline-flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700 hover:bg-green-100 disabled:opacity-60"
+                            className="inline-flex items-center gap-1.5 rounded-full border border-primary-pastel bg-surface px-3 py-1 text-xs font-semibold text-primary transition-colors hover:bg-primary-light disabled:opacity-60 cursor-pointer shadow-2xs"
                           >
-                            <svg
-                              width="10"
-                              height="10"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              className="text-green-700"
-                            >
-                              <path
-                                d="M20 4v6h-6M20 10a8 8 0 1 1-2.343-5.657L20 6"
-                                stroke="currentColor"
-                                strokeWidth="1.6"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                            </svg>
-                            {retryOrderId === t.order_id
-                              ? "Đang mở lại PayPal..."
-                              : "Thanh toán lại"}
+                            <HiRefresh
+                              className={`h-3.5 w-3.5 ${
+                                retryOrderId === t.order_id ? "animate-spin" : ""
+                              }`}
+                            />
+                            <span>
+                              {retryOrderId === t.order_id
+                                ? "Đang mở PayPal..."
+                                : "Thanh toán lại"}
+                            </span>
                           </button>
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-4">
-                      <div className="text-sm text-gray-600">
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <span className="text-xs text-muted-foreground">
                         {formatDateTime(t.created_at)}
-                      </div>
+                      </span>
                     </td>
                   </tr>
                 );

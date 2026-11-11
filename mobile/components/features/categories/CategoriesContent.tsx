@@ -1,3 +1,4 @@
+import CatalogExplorer from './CatalogExplorer'
 import React, { useCallback, memo, useState } from 'react'
 import {
   View,
@@ -102,6 +103,7 @@ export const CategoriesContent = memo(function CategoriesContent({ isDark = fals
 
   const ListHeader = useCallback(() => (
     <View className="px-4 pt-4 pb-2">
+      <CatalogExplorer />
       <View className="flex-row items-center justify-between mb-4">
         <Text className={cn('text-xl font-bold', isDark ? 'text-white' : 'text-gray-900')}>
           Danh mục

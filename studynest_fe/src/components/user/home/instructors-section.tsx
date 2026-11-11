@@ -1,10 +1,11 @@
 "use client";
 
+import { Badge, Button, Card, Skeleton } from "@/components/ui";
 import api from "@/lib/utils/fetcher/client/axios";
 import { getImageUrl } from "@/lib/utils/helpers/image";
-import useSWR from "swr";
-import { HiBadgeCheck, HiBookOpen, HiUsers, HiStar } from "react-icons/hi";
 import { useRouter } from "next/navigation";
+import { HiBadgeCheck, HiBookOpen, HiStar, HiUsers } from "react-icons/hi";
+import useSWR from "swr";
 
 const fetcher = (url: string) => api.get(url).then((res) => res.data);
 
@@ -31,13 +32,13 @@ const InstructorsSection = () => {
   if (!isLoading && instructors.length === 0) return null;
 
   return (
-    <section className="py-16 bg-[#F6FAFF] relative overflow-hidden border-b border-[#E7EEF7]/60">
+    <section className="py-16 bg-background relative overflow-hidden border-b border-border/60">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center mb-12">
-          <h2 className="font-display text-2xl sm:text-3xl font-bold text-[#3D4A5A] tracking-tight mb-2">
+          <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground tracking-tight mb-2">
             Giảng viên hàng đầu
           </h2>
-          <p className="text-[#6F7C8C] text-sm font-medium">
+          <p className="text-muted-foreground text-sm font-medium">
             Học từ những chuyên gia có kinh nghiệm thực tế
           </p>
         </div>
@@ -45,69 +46,72 @@ const InstructorsSection = () => {
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div
-                key={i}
-                className="bg-white border border-[#E7EEF7] rounded-[20px] p-6 text-center animate-pulse"
-              >
-                <div className="w-20 h-20 bg-[#E8F2FA] rounded-full mx-auto mb-4" />
-                <div className="h-4 bg-[#E8F2FA] rounded-lg w-3/4 mx-auto mb-2" />
-                <div className="h-3 bg-[#E8F2FA]/70 rounded-lg w-1/2 mx-auto mb-4" />
-              </div>
+              <Card key={i} className="text-center">
+                <Skeleton variant="circle" className="w-20 h-20 mx-auto mb-4" />
+                <Skeleton variant="text" className="w-3/4 mx-auto mb-2" />
+                <Skeleton variant="text" className="h-3 w-1/2 mx-auto mb-4" />
+              </Card>
             ))}
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {instructors.map((instructor) => (
-              <div
+              <Card
                 key={instructor.id}
+                interactive
                 onClick={() => router.push(`/instructors/${instructor.id}`)}
-                className="group bg-white rounded-[20px] p-6 text-center hover:shadow-md transition-all duration-200 border border-[#E7EEF7] hover:border-[#BFD7ED] hover:-translate-y-0.5 cursor-pointer flex flex-col justify-between"
+                className="group text-center flex flex-col justify-between"
               >
                 <div>
                   <div className="relative mb-4 inline-block">
-                    <div className="w-20 h-20 rounded-full ring-4 ring-[#E8F2FA] group-hover:ring-[#BFD7ED] transition-all duration-200 overflow-hidden bg-[#E8F2FA]">
+                    <div className="w-20 h-20 rounded-full ring-4 ring-primary-light group-hover:ring-primary-pastel transition-all duration-200 overflow-hidden bg-primary-light">
                       <img
                         src={getImageUrl(instructor.avatar || "")}
                         alt={instructor.name}
                         className="w-full h-full object-cover"
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                          (
+                            e.target as HTMLImageElement
+                          ).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
                             instructor.name
-                          )}&background=E8F2FA&color=356FA7&size=80`;
+                          )}&size=80`;
                         }}
                       />
                     </div>
                     <div className="absolute -bottom-1 -right-1">
-                      <div className="w-6 h-6 bg-[#356FA7] rounded-full flex items-center justify-center ring-2 ring-white">
-                        <HiBadgeCheck className="h-4 w-4 text-white" />
+                      <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center ring-2 ring-surface">
+                        <HiBadgeCheck className="h-4 w-4 text-primary-foreground" />
                       </div>
                     </div>
                   </div>
 
-                  <h3 className="text-base font-semibold text-[#3D4A5A] mb-3 group-hover:text-[#356FA7] transition-colors">
+                  <h3 className="text-base font-semibold text-foreground mb-3 group-hover:text-primary transition-colors">
                     {instructor.name}
                   </h3>
 
                   {instructor.rating_avg > 0 && (
-                    <div className="inline-flex items-center justify-center gap-1 px-2.5 py-0.5 rounded-full bg-[#FFF9F6] border border-[#F8E9C9] mb-4">
-                      <HiStar className="w-4 h-4 text-[#D99B26]" />
-                      <span className="text-xs font-semibold text-[#3D4A5A]">
+                    <div className="mb-4">
+                      <Badge
+                        variant="warning"
+                        size="sm"
+                        icon={<HiStar className="w-3.5 h-3.5" />}
+                      >
                         {instructor.rating_avg.toFixed(1)}
-                      </span>
+                      </Badge>
                     </div>
                   )}
 
-                  <div className="space-y-1.5 text-xs text-[#6F7C8C] mb-5">
+                  <div className="space-y-1.5 text-xs text-muted-foreground mb-5">
                     <div className="flex items-center justify-center gap-1.5">
-                      <HiUsers className="w-4 h-4 text-[#356FA7]" />
-                      <span className="font-semibold text-[#3D4A5A]">
+                      <HiUsers className="w-4 h-4 text-primary" />
+                      <span className="font-semibold text-foreground">
                         {instructor.student_count.toLocaleString()}
                       </span>
                       <span>học viên</span>
                     </div>
                     <div className="flex items-center justify-center gap-1.5">
-                      <HiBookOpen className="w-4 h-4 text-[#356FA7]" />
-                      <span className="font-semibold text-[#3D4A5A]">
+                      <HiBookOpen className="w-4 h-4 text-primary" />
+                      <span className="font-semibold text-foreground">
                         {instructor.course_count}
                       </span>
                       <span>khóa học</span>
@@ -115,10 +119,14 @@ const InstructorsSection = () => {
                   </div>
                 </div>
 
-                <button className="w-full bg-[#E8F2FA] group-hover:bg-[#356FA7] text-[#356FA7] group-hover:text-white py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer">
+                <Button
+                  variant="pastel"
+                  fullWidth
+                  className="group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary"
+                >
                   Xem khóa học
-                </button>
-              </div>
+                </Button>
+              </Card>
             ))}
           </div>
         )}

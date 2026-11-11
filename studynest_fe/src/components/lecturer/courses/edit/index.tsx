@@ -1,5 +1,7 @@
 "use client";
 
+import CourseTaxonomyForm from "@/components/catalog/course-taxonomy-form";
+import { emptyTaxonomy, taxonomyInput, type CourseTaxonomyInput, type CourseEducation } from "@/types/catalog";
 import TiptapEditor from "@/components/shared/tiptap_editor";
 import api from "@/lib/utils/fetcher/client/axios";
 import { getImageUrl } from "@/lib/utils/helpers/image";
@@ -30,6 +32,7 @@ interface EditCourseProps {
 
 const EditCourse = ({ courseId }: EditCourseProps) => {
   const router = useRouter();
+  const [education, setEducation] = useState<CourseTaxonomyInput>(emptyTaxonomy);
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -83,6 +86,11 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
         revalidateOnFocus: false,
       }
     );
+
+  useEffect(() => {
+    const loaded = courseData as (typeof courseData & { education?: CourseEducation });
+    if (loaded?.education) setEducation(taxonomyInput(loaded.education));
+  }, [courseData]);
 
   // Fetch categories
   const { data: categoriesData } = useSWR<CategoriesPaginatedResponse>(
@@ -570,6 +578,7 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
     try {
       // Clean up empty strings from arrays
       const payload: any = {
+        education,
         title: formData.title.trim(),
         subtitle: formData.subtitle.trim(),
         category_id: formData.category_id,
@@ -770,7 +779,8 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
         )}
 
         {/* Thumbnail Section */}
-        {currentStep === 0 && (
+        {currentStep === 0 && <CourseTaxonomyForm value={education} onChange={setEducation} />}
+          {currentStep === 0 && (
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-8 mb-6">
             <label className="block text-sm font-semibold text-gray-700 mb-3">
               <HiPhotograph className="inline h-5 w-5 text-green-600 mr-1" />

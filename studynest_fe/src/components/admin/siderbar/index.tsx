@@ -41,6 +41,24 @@ interface MenuItem {
 
 const menuItems: MenuItem[] = [
   {
+    title: "Lộ trình học tập",
+    href: "/admin/learning-paths",
+    icon: HiAcademicCap,
+    badge: null,
+  },
+  {
+    title: "Combo & ưu đãi",
+    href: "/admin/bundles",
+    icon: HiFolder,
+    badge: null,
+  },
+  {
+    title: "Danh mục & Giáo dục",
+    href: "/admin/catalog",
+    icon: HiFolder,
+    badge: null,
+  },
+  {
     title: "Bảng điều khiển",
     href: "/admin",
     icon: HiHome,
@@ -90,7 +108,7 @@ const menuItems: MenuItem[] = [
     badge: null,
   },
   {
-    title: "Giảm giá",
+    title: "Ưu đãi khóa lẻ",
     href: "/admin/discounts",
     icon: HiTag,
     badge: null,
@@ -173,7 +191,7 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
       <button
         type="button"
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        className="mobile-menu-button lg:hidden fixed top-4 left-4 z-50 p-2 rounded-xl bg-white shadow-xs border border-[#E7EEF7] hover:bg-[#F6FAFF] transition-colors text-[#3D4A5A]"
+        className="mobile-menu-button lg:hidden fixed top-4 left-4 z-50 p-2 rounded-xl bg-white shadow-xs border border-border hover:bg-background transition-colors text-foreground"
       >
         {isMobileMenuOpen ? <HiX size={20} /> : <HiMenu size={20} />}
       </button>
@@ -181,7 +199,7 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
       {/* Mobile Overlay */}
       {isMobileMenuOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-[#3D4A5A]/30 backdrop-blur-2xs z-40"
+          className="lg:hidden fixed inset-0 bg-foreground/30 backdrop-blur-2xs z-40"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
@@ -189,27 +207,27 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
       {/* Sidebar */}
       <div
         className={`
-          sidebar-container fixed top-0 left-0 h-full bg-white border-r border-[#E7EEF7]
+          sidebar-container fixed top-0 left-0 h-full bg-white border-r border-border
           transition-all duration-200 z-50 shadow-2xs flex flex-col
           ${isCollapsed ? "w-16" : "w-64"}
           ${
             isMobileMenuOpen
-              ? "translate-x-0"
-              : "-translate-x-full lg:translate-x-0"
+              ? "translate-x-0 visible"
+              : "-translate-x-full invisible lg:visible lg:translate-x-0"
           }
         `}
       >
-        <div className="flex items-center justify-between p-4 border-b border-[#E7EEF7] h-16">
+        <div className="flex items-center justify-between p-4 border-b border-border h-16">
           {!isCollapsed && (
             <div className="flex items-center relative gap-3">
-              <div className="w-8 h-8 bg-[#356FA7] rounded-xl flex items-center justify-center">
-                <span className="text-white font-bold text-xs">SN</span>
+              <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center">
+                <span className="text-white font-bold text-xs">MM</span>
               </div>
               <div>
-                <h1 className="font-bold text-base text-[#3D4A5A] leading-tight">
-                  StudyNest
+                <h1 className="font-bold text-base text-foreground leading-tight">
+                  Mây Mây
                 </h1>
-                <p className="text-[#8190A3] text-xs">Bảng quản trị</p>
+                <p className="text-subtle-foreground text-xs">Bảng quản trị</p>
               </div>
             </div>
           )}
@@ -217,12 +235,12 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
           <button
             type="button"
             onClick={onToggle}
-            className="hidden lg:block p-2 rounded-xl hover:bg-[#F6FAFF] transition-colors cursor-pointer"
+            className="hidden lg:block p-2 rounded-xl hover:bg-background transition-colors cursor-pointer"
           >
             {isCollapsed ? (
-              <HiChevronRight className="w-5 h-5 text-[#6F7C8C]" />
+              <HiChevronRight className="w-5 h-5 text-muted-foreground" />
             ) : (
-              <HiChevronLeft className="w-5 h-5 text-[#6F7C8C]" />
+              <HiChevronLeft className="w-5 h-5 text-muted-foreground" />
             )}
           </button>
         </div>
@@ -245,8 +263,8 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                     flex items-center px-3 py-2.5 rounded-xl text-sm transition-colors
                     ${
                       isActive
-                        ? "bg-[#E8F2FA] text-[#356FA7] font-semibold"
-                        : "text-[#6F7C8C] hover:text-[#3D4A5A] hover:bg-[#F6FAFF]"
+                        ? "bg-primary-light text-primary font-semibold"
+                        : "text-muted-foreground hover:text-foreground hover:bg-background"
                     }
                     ${isCollapsed ? "justify-center" : ""}
                   `}
@@ -255,14 +273,14 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                 >
                   <Icon
                     className={`w-5 h-5 flex-shrink-0 ${
-                      isActive ? "text-[#356FA7]" : "text-[#6F7C8C]"
+                      isActive ? "text-primary" : "text-muted-foreground"
                     }`}
                   />
                   {!isCollapsed && (
                     <>
                       <span className="ml-3">{item.title}</span>
                       {item.badge && (
-                        <span className="ml-auto bg-[#356FA7] text-white text-xs px-2 py-0.5 rounded-full">
+                        <span className="ml-auto bg-primary text-white text-xs px-2 py-0.5 rounded-full">
                           {item.badge}
                         </span>
                       )}
@@ -275,10 +293,10 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
         </nav>
 
         {/* User Section */}
-        <div className="p-3 border-t border-[#E7EEF7]">
+        <div className="p-3 border-t border-border">
           <div
             className={`
-            flex items-center gap-3 p-2.5 rounded-xl hover:bg-[#F6FAFF] transition-colors cursor-pointer
+            flex items-center gap-3 p-2.5 rounded-xl hover:bg-background transition-colors cursor-pointer
             ${isCollapsed ? "justify-center" : ""}
           `}
             onClick={() => {
@@ -292,12 +310,12 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                 <img
                   src={getImageUrl(user.avatar)}
                   alt={user.fullname || "User"}
-                  className="w-8 h-8 rounded-full object-cover ring-2 ring-[#E8F2FA]"
+                  className="w-8 h-8 rounded-full object-cover ring-2 ring-primary-light"
                 />
-                <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-[#276749] rounded-full border-2 border-white" />
+                <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-success-foreground rounded-full border-2 border-white" />
               </div>
             ) : (
-              <div className="w-8 h-8 bg-[#E8F2FA] text-[#356FA7] rounded-full flex items-center justify-center flex-shrink-0">
+              <div className="w-8 h-8 bg-primary-light text-primary rounded-full flex items-center justify-center flex-shrink-0">
                 <span className="font-semibold text-xs">
                   {getUserInitials()}
                 </span>
@@ -305,11 +323,11 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
             )}
             {!isCollapsed && (
               <div className="flex-1 min-w-0">
-                <p className="text-[#3D4A5A] font-semibold text-sm truncate">
+                <p className="text-foreground font-semibold text-sm truncate">
                   {user?.fullname || "Quản trị viên"}
                 </p>
-                <p className="text-[#8190A3] text-xs truncate">
-                  {user?.email || "admin@studynest.com"}
+                <p className="text-subtle-foreground text-xs truncate">
+                  {user?.email || "admin@maymay.edu.vn"}
                 </p>
               </div>
             )}
@@ -320,7 +338,7 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                   e.stopPropagation();
                   handleLogout();
                 }}
-                className="p-1.5 rounded-lg hover:bg-[#FCE8E8] text-[#6F7C8C] hover:text-[#A23C46] transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg hover:bg-destructive-bg text-muted-foreground hover:text-destructive-foreground transition-colors cursor-pointer"
                 aria-label="Đăng xuất"
               >
                 <HiLogout className="w-4 h-4" />

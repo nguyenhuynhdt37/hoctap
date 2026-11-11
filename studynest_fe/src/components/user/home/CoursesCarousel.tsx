@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui";
 import { CoursesCarouselProps } from "@/types/user/course";
 import { memo, useMemo } from "react";
 import { HiChevronLeft, HiChevronRight } from "react-icons/hi";
@@ -22,14 +23,14 @@ const CoursesCarousel = memo(
     const containerBg = useMemo(
       () =>
         section === "trending"
-          ? "bg-[#F6FAFF]"
+          ? "bg-background"
           : section === "newest"
-          ? "bg-[#FFF9F6]"
+          ? "bg-surface-muted"
           : section === "featured"
-          ? "bg-[#F6FAFF]"
+          ? "bg-background"
           : section === "recommended"
-          ? "bg-[#F6FAFF]"
-          : "bg-white",
+          ? "bg-background"
+          : "bg-surface",
       [section]
     );
 
@@ -59,67 +60,68 @@ const CoursesCarousel = memo(
     }
 
     return (
-      <section className={`py-16 ${containerBg} relative overflow-hidden border-b border-[#E7EEF7]/60`}>
+      <section
+        className={`py-16 ${containerBg} relative overflow-hidden border-b border-border/60`}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
             <div>
-              <h2 className="font-display text-2xl sm:text-3xl font-bold text-[#3D4A5A] tracking-tight mb-2">
+              <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground tracking-tight mb-2">
                 {title}
               </h2>
               {section === "trending" && (
-                <p className="text-[#6F7C8C] text-sm font-medium flex items-center gap-2">
-                  <span className="inline-block w-2 h-2 bg-[#356FA7] rounded-full" />
+                <p className="text-muted-foreground text-sm font-medium flex items-center gap-2">
+                  <span className="inline-block w-2 h-2 bg-primary rounded-full" />
                   Được nhiều học viên xem gần đây
                 </p>
               )}
               {section === "top" && (
-                <p className="text-[#6F7C8C] text-sm font-medium flex items-center gap-2">
-                  <span className="inline-block w-2 h-2 bg-[#E6B84D] rounded-full" />
+                <p className="text-muted-foreground text-sm font-medium flex items-center gap-2">
+                  <span className="inline-block w-2 h-2 bg-warning-foreground rounded-full" />
                   Được đánh giá cao bởi học viên
                 </p>
               )}
               {section === "newest" && (
-                <p className="text-[#6F7C8C] text-sm font-medium flex items-center gap-2">
-                  <span className="inline-block w-2 h-2 bg-[#7A4A9E] rounded-full" />
+                <p className="text-muted-foreground text-sm font-medium flex items-center gap-2">
+                  <span className="inline-block w-2 h-2 bg-accent-foreground rounded-full" />
                   Vừa được ra mắt gần đây
                 </p>
               )}
               {section === "featured" && (
-                <p className="text-[#6F7C8C] text-sm font-medium flex items-center gap-2">
-                  <span className="inline-block w-2 h-2 bg-[#8A3B58] rounded-full" />
+                <p className="text-muted-foreground text-sm font-medium flex items-center gap-2">
+                  <span className="inline-block w-2 h-2 bg-secondary-foreground rounded-full" />
                   Khám phá lựa chọn bán chạy
                 </p>
               )}
               {section === "recommended" && (
-                <p className="text-[#6F7C8C] text-sm font-medium flex items-center gap-2">
-                  <span className="inline-block w-2 h-2 bg-[#356FA7] rounded-full" />
+                <p className="text-muted-foreground text-sm font-medium flex items-center gap-2">
+                  <span className="inline-block w-2 h-2 bg-primary rounded-full" />
                   Dựa trên sở thích và hành vi học tập của bạn
                 </p>
               )}
             </div>
             <div className="flex items-center space-x-2.5">
-              <button
+              <Button
+                variant="secondary"
+                size="icon"
                 onClick={onPrev}
                 disabled={index === 0}
                 aria-label="Trang trước"
-                className="w-11 h-11 bg-white hover:bg-[#356FA7] disabled:bg-[#F6FAFF] disabled:text-[#8190A3] text-[#356FA7] hover:text-white rounded-full flex items-center justify-center transition-all duration-200 shadow-xs border border-[#E7EEF7] hover:border-[#356FA7] disabled:border-[#E7EEF7] cursor-pointer disabled:cursor-not-allowed"
+                className="rounded-full w-11 h-11 hover:bg-primary hover:text-primary-foreground hover:border-primary"
               >
                 <HiChevronLeft className="h-5 w-5" />
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="secondary"
+                size="icon"
                 onClick={onNext}
-                disabled={
-                  (!hasMore && index >= totalPages - 1) || isFetchingMore
-                }
+                disabled={(!hasMore && index >= totalPages - 1) || isFetchingMore}
+                isLoading={isFetchingMore}
                 aria-label="Trang tiếp theo"
-                className="w-11 h-11 bg-white hover:bg-[#356FA7] disabled:bg-[#F6FAFF] disabled:text-[#8190A3] disabled:cursor-not-allowed text-[#356FA7] hover:text-white rounded-full flex items-center justify-center transition-all duration-200 shadow-xs border border-[#E7EEF7] hover:border-[#356FA7] disabled:border-[#E7EEF7] cursor-pointer"
+                className="rounded-full w-11 h-11 hover:bg-primary hover:text-primary-foreground hover:border-primary"
               >
-                {isFetchingMore ? (
-                  <div className="w-4 h-4 border-2 border-[#356FA7] border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <HiChevronRight className="h-5 w-5" />
-                )}
-              </button>
+                <HiChevronRight className="h-5 w-5" />
+              </Button>
             </div>
           </div>
 

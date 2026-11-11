@@ -10,6 +10,7 @@ from app.db.models.database import (
     CourseReviews,
     Courses,
     InstructorEarnings,
+    LessonActive,
     PurchaseItems,
     Transactions,
     User,
@@ -264,18 +265,22 @@ class LecturerStatisticsService:
         )
         total_new = await self.db.scalar(new_students_query) or 0
 
-        # 2. Active students (giả định là tất cả học viên đang học)
+        # Count learners with an actual lesson visit during the selected period.
         total_active_query = (
-            select(func.count(distinct(CourseEnrollments.user_id)))
-            .join(Courses, Courses.id == CourseEnrollments.course_id)
-            .where(Courses.instructor_id == lecturer.id)
+            select(func.count(distinct(LessonActive.user_id)))
+            .join(Courses, Courses.id == LessonActive.course_id)
+            .join(
+                CourseEnrollments,
+                (CourseEnrollments.course_id == LessonActive.course_id)
+                & (CourseEnrollments.user_id == LessonActive.user_id),
+            )
+            .where(
+                Courses.instructor_id == lecturer.id,
+                CourseEnrollments.status == "active",
+                func.date(LessonActive.activated_at) >= start_date,
+            )
         )
         total_active = await self.db.scalar(total_active_query) or 0
-
-        # 3. Retention Rate
-        retention = 0.0
-        if total_active > 0:
-            retention = 85.5  # Fake logic hoặc implement sau
 
         # 4. Students by course
         stmt = (
@@ -299,6 +304,5 @@ class LecturerStatisticsService:
         return StudentAnalyticsResponse(
             total_new_students=total_new,
             active_students=total_active,
-            retention_rate=retention,
             students_by_course=by_course,
         )

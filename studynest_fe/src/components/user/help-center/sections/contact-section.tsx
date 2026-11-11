@@ -31,10 +31,10 @@ export function ContactSection() {
           <div className="p-5 bg-teal-50 rounded-lg border border-teal-200">
             <h4 className="font-semibold text-teal-900 mb-2">📧 Email</h4>
             <a
-              href="mailto:contact@studynest.com"
+              href="mailto:contact@maymay.edu.vn"
               className="text-teal-600 hover:text-teal-700 font-medium"
             >
-              contact@studynest.com
+              contact@maymay.edu.vn
             </a>
           </div>
 

@@ -14,16 +14,16 @@ export default function ExerciseTabs({
   onSelectExercise,
 }: ExerciseTabsProps) {
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-2 shadow-sm">
+    <div className="bg-surface rounded-xl border border-border p-2 shadow-xs">
       <div className="flex items-center gap-2 overflow-x-auto">
         {exercises.map((ex, index) => (
           <button
             key={ex.id}
             onClick={() => onSelectExercise(index)}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all flex-shrink-0 min-w-[120px] ${
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all flex-shrink-0 min-w-[120px] cursor-pointer ${
               index === currentIndex
-                ? "bg-green-500 text-white shadow-md"
-                : "bg-gray-50 text-gray-700 hover:bg-gray-100"
+                ? "bg-primary text-white shadow-sm"
+                : "bg-background text-foreground hover:bg-primary-pastel/40"
             }`}
           >
             <span className="text-xs font-semibold">Bài {index + 1}</span>

@@ -4,7 +4,7 @@ export function BlogSection() {
       <div>
         <h3 className="text-xl font-semibold text-gray-900 mb-4">Blog</h3>
         <p className="text-gray-600 mb-6">
-          Cập nhật tin tức, mẹo học tập và kiến thức mới nhất từ StudyNest
+          Cập nhật tin tức, mẹo học tập và kiến thức mới nhất từ Mây Mây
         </p>
       </div>
 

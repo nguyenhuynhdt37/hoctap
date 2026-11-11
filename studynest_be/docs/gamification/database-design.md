@@ -1,6 +1,6 @@
-# Thiết Kế Cơ Sở Dữ Liệu - Hệ Thống Gamification (StudyNest) - Phiên Bản Enterprise 2.0
+# Thiết Kế Cơ Sở Dữ Liệu - Hệ Thống Gamification (Mây Mây) - Phiên Bản Enterprise 2.0
 
-Tài liệu này đặc tả thiết kế cơ sở dữ liệu (Database Schema) và mô hình kiến trúc ở mức **Enterprise** cho hệ thống Gamification của StudyNest. Toàn bộ thiết kế được tối ưu hóa cho môi trường phân tán, tải cao, bảo mật chặt chẽ và khả năng mở rộng trọn vẹn trong nhiều năm mà không cần thay đổi schema cốt lõi.
+Tài liệu này đặc tả thiết kế cơ sở dữ liệu (Database Schema) và mô hình kiến trúc ở mức **Enterprise** cho hệ thống Gamification của Mây Mây. Toàn bộ thiết kế được tối ưu hóa cho môi trường phân tán, tải cao, bảo mật chặt chẽ và khả năng mở rộng trọn vẹn trong nhiều năm mà không cần thay đổi schema cốt lõi.
 
 ---
 
@@ -681,7 +681,7 @@ Dữ liệu ghi lại lịch sử hoạt động. Tuyệt đối chỉ chạy l�
 
 ### 4.1. Hệ Thống Quest Phi Tuyến Tính (Non-Linear Quest Tree)
 
-Hệ thống Quest của StudyNest không giới hạn ở một danh sách tuyến tính trơn tuột. Thông qua cấu trúc liên kết cây của bảng `quest_steps`, hệ thống hỗ trợ:
+Hệ thống Quest của Mây Mây không giới hạn ở một danh sách tuyến tính trơn tuột. Thông qua cấu trúc liên kết cây của bảng `quest_steps`, hệ thống hỗ trợ:
 1. **Phân nhánh (Branching / Alternative Paths)**:
    - Một chương (`quest_chapters`) có các bước với `parent_step_id` trỏ vào bước trước đó.
    - Khi có nhiều bước cùng có chung `parent_step_id` và chung một `branch_group` (ví dụ: `branch_choice_1`), học viên chỉ cần hoàn thành **một trong các bước đó** là được kích hoạt các bước tiếp theo.

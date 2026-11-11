@@ -1,4 +1,4 @@
-# Cloudflare R2 cho StudyNest
+# Cloudflare R2 cho Mây Mây
 
 ## Tạo tài khoản và bucket
 
@@ -51,10 +51,34 @@ web/mobile tải qua signed URL sau bước kiểm tra quyền.
 - Ảnh chat và ảnh trong ghi chú nằm dưới `private/users/<user_id>/`; chỉ chủ sở hữu được cấp link.
 - Database lưu đường dẫn ổn định `/api/storage/files/...`, không lưu signed URL hết hạn.
   Next.js proxy sang backend `/api/v1/storage/files/...`.
+- Web nhận dữ liệu file trực tiếp từ backend, không bị redirect sang S3. Backend lấy
+  file từ R2 và cache nội bộ; ảnh công khai hỗ trợ ETag/304, file riêng vẫn kiểm tra
+  quyền ở mỗi request và trả `Cache-Control: private, no-store`.
 - Mobile đổi đường dẫn ảnh công khai sang origin API của thiết bị. Khi tải tài liệu riêng,
   mobile dùng Bearer token gọi `/storage/urls/...` lấy signed URL trước khi tải file.
 - Link R2 trực tiếp có hiệu lực mặc định 5 phút. Ai có link đã ký có thể đọc file trong thời gian đó.
 - Backend ghi file bằng API S3 với SigV4; không tự tạo hoặc đổi quyền công khai của bucket.
+
+## Cache và mạng nội bộ
+
+Cache nằm trong `studynest_be/.cache/r2/`, không đưa lên Git hoặc phục vụ như thư mục static.
+Tên file cache là hash của object key; metadata chứa MIME, dung lượng và SHA-256.
+Upload thành công sẽ ghi cache; cache chưa có sẽ tải từ R2 qua TLS được xác minh.
+
+Nếu mạng nội bộ thay chứng chỉ TLS bằng gateway doanh nghiệp, cung cấp bundle CA
+đã được IT phê duyệt qua `R2_CA_BUNDLE=/duong/dan/ca-bundle.pem` rồi restart backend.
+Giá trị này chỉ dùng cho kết nối backend → R2; không tắt kiểm tra chứng chỉ hoặc đổi
+cấu hình tin cậy của hệ điều hành/trình duyệt. Chưa có CA hợp lệ thì đọc/ghi R2 trực
+tiếp có thể thất bại; cache đã xác minh vẫn có thể phục vụ file hiện có.
+
+Để làm ấm cache từ bản sao chuyển dữ liệu đã được kiểm tra, chạy trong thư mục backend:
+
+```sh
+.venv/bin/python scripts/warm_storage_cache.py
+```
+
+Script kiểm tra SHA-256 từng file với manifest trước khi đưa vào cache. Quyền truy cập
+vẫn được áp dụng ở route download, kể cả khi file đã có sẵn trong cache.
 
 ## Cây thư mục và phục hồi
 

@@ -2,6 +2,7 @@
 
 import { ReactNode } from "react";
 import { HiChevronDown, HiChevronUp } from "react-icons/hi";
+import { cn } from "@/lib/utils";
 
 export interface Column<T> {
   key: string;
@@ -19,6 +20,7 @@ export interface DataTableProps<T> {
   sortBy?: string;
   order?: "asc" | "desc";
   onSort?: (column: string) => void;
+  compact?: boolean;
   className?: string;
   rowClassName?: (record: T, index: number) => string;
 }
@@ -31,6 +33,7 @@ export default function DataTable<T extends Record<string, any>>({
   sortBy,
   order,
   onSort,
+  compact = false,
   className = "",
   rowClassName,
 }: DataTableProps<T>) {
@@ -40,50 +43,89 @@ export default function DataTable<T extends Record<string, any>>({
     }
   };
 
+  const cellPadding = compact ? "px-4 py-2.5" : "px-6 py-4";
+
   return (
     <div
-      className={`bg-white rounded-[20px] shadow-xs border border-[#E7EEF7] overflow-hidden ${className}`}
+      className={cn(
+        "bg-surface rounded-[20px] shadow-xs border border-border overflow-hidden",
+        className
+      )}
     >
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-[#F6FAFF] border-b border-[#E7EEF7]">
+          <thead className="bg-background border-b border-border">
             <tr>
-              {columns.map((column) => (
-                <th
-                  key={column.key}
-                  className={`px-6 py-4 text-left text-xs uppercase tracking-wider ${
-                    column.className || ""
-                  }`}
-                >
-                  {column.sortable ? (
-                    <button
-                      onClick={() => handleSort(column)}
-                      className="flex items-center space-x-1.5 font-semibold text-[#6F7C8C] hover:text-[#356FA7] transition-colors duration-200 cursor-pointer"
-                    >
-                      <span>{column.title}</span>
-                      {sortBy === column.key &&
-                        (order === "asc" ? (
-                          <HiChevronUp className="w-4 h-4 text-[#356FA7]" />
-                        ) : (
-                          <HiChevronDown className="w-4 h-4 text-[#356FA7]" />
-                        ))}
-                    </button>
-                  ) : (
-                    <span className="font-semibold text-[#6F7C8C]">
-                      {column.title}
-                    </span>
-                  )}
-                </th>
-              ))}
+              {columns.map((column) => {
+                const isSorted = sortBy === column.key;
+                const ariaSort = isSorted
+                  ? order === "asc"
+                    ? "ascending"
+                    : "descending"
+                  : column.sortable
+                  ? "none"
+                  : undefined;
+
+                return (
+                  <th
+                    key={column.key}
+                    scope="col"
+                    aria-sort={ariaSort}
+                    className={cn(
+                      cellPadding,
+                      "text-left text-xs uppercase tracking-wider",
+                      column.className
+                    )}
+                  >
+                    {column.sortable ? (
+                      <button
+                        type="button"
+                        onClick={() => handleSort(column)}
+                        className="inline-flex items-center space-x-1.5 rounded-md font-semibold text-muted-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors duration-150 cursor-pointer"
+                      >
+                        <span>{column.title}</span>
+                        {isSorted &&
+                          (order === "asc" ? (
+                            <HiChevronUp
+                              className="w-4 h-4 text-primary"
+                              aria-hidden="true"
+                            />
+                          ) : (
+                            <HiChevronDown
+                              className="w-4 h-4 text-primary"
+                              aria-hidden="true"
+                            />
+                          ))}
+                      </button>
+                    ) : (
+                      <span className="font-semibold text-muted-foreground">
+                        {column.title}
+                      </span>
+                    )}
+                  </th>
+                );
+              })}
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#E7EEF7]">
+          <tbody className="divide-y divide-border">
             {loading ? (
               <tr>
-                <td colSpan={columns.length} className="px-6 py-12 text-center">
-                  <div className="flex items-center justify-center space-x-2">
-                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-[#356FA7] border-t-transparent"></div>
-                    <span className="text-sm text-[#6F7C8C]">Đang tải...</span>
+                <td
+                  colSpan={columns.length}
+                  className="px-6 py-12 text-center"
+                >
+                  <div
+                    role="status"
+                    aria-live="polite"
+                    className="flex items-center justify-center space-x-2"
+                  >
+                    <div
+                      className="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent"
+                      aria-hidden="true"
+                    />
+                    <span className="text-sm text-muted-foreground">
+                      Đang tải...
+                    </span>
                   </div>
                 </td>
               </tr>
@@ -91,7 +133,7 @@ export default function DataTable<T extends Record<string, any>>({
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="px-6 py-12 text-center text-sm text-[#6F7C8C]"
+                  className="px-6 py-12 text-center text-sm text-muted-foreground"
                 >
                   {emptyMessage}
                 </td>
@@ -100,12 +142,16 @@ export default function DataTable<T extends Record<string, any>>({
               data.map((record, index) => (
                 <tr
                   key={record.id || index}
-                  className={`hover:bg-[#F6FAFF]/70 transition-colors duration-150 ${
+                  className={cn(
+                    "hover:bg-background/75 transition-colors duration-150",
                     rowClassName ? rowClassName(record, index) : ""
-                  }`}
+                  )}
                 >
                   {columns.map((column) => (
-                    <td key={column.key} className="px-6 py-4 text-sm text-[#3D4A5A]">
+                    <td
+                      key={column.key}
+                      className={cn(cellPadding, "text-sm text-foreground")}
+                    >
                       {column.render
                         ? column.render(record[column.key], record)
                         : record[column.key]}

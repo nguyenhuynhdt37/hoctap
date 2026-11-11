@@ -46,7 +46,7 @@
     "otp_invalid": "Mã OTP không hợp lệ hoặc đã hết hạn",
     "otp_expires_in": "Mã hết hạn sau",
     "verify_success": "Xác thực thành công!",
-    "verify_welcome": "Chào mừng bạn đến với StudyNest.",
+    "verify_welcome": "Chào mừng bạn đến với Mây Mây.",
     "onboarding": {
       "badge": "NỀN TẢNG HỌC TẬP AI",
       "title": "Học tập thông minh hơn cùng AI",
@@ -148,7 +148,7 @@
     "collapse_all": "Thu gọn tất cả",
     "select_level": "Chọn trình độ",
     "share": "Chia sẻ",
-    "share_message": "Khám phá khóa học \"{{title}}\" trên StudyNest!\n{{url}}",
+    "share_message": "Khám phá khóa học \"{{title}}\" trên Mây Mây!\n{{url}}",
     "processing": "Đang xử lý...",
     "favourited": "Đã thích",
     "time": {
@@ -349,7 +349,7 @@
     "title": "Khu giảng viên",
     "subtitle": "Quản lý khóa học, học viên, doanh thu và vận hành giảng dạy trên mobile.",
     "home": {
-      "badge": "STUDYNEST CREATOR",
+      "badge": "MÂY MÂY CREATOR",
       "heading": "Studio giảng dạy",
       "description": "Trải nghiệm riêng cho giảng viên, tối ưu thao tác nhanh trên điện thoại."
     },
@@ -607,7 +607,7 @@
     "apply_discount_placeholder": "Nhập mã giảm giá",
     "checkout": {
       "confirm_title": "Xác nhận đăng ký",
-      "confirm_subtitle": "Sẵn sàng nâng tầm kiến thức cùng StudyNest?",
+      "confirm_subtitle": "Sẵn sàng nâng tầm kiến thức cùng Mây Mây?",
       "benefits_title": "Quyền lợi của bạn:",
       "processing": "Đang xử lý...",
       "success_title": "Đăng ký thành công!",

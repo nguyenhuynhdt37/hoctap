@@ -1,4 +1,4 @@
-# Báo Cáo Triển Khai Cơ Sở Dữ Liệu - Module Gamification (StudyNest)
+# Báo Cáo Triển Khai Cơ Sở Dữ Liệu - Module Gamification (Mây Mây)
 
 Báo cáo này tổng hợp kết quả triển khai và đồng bộ hóa Cơ sở dữ liệu (Database Schema) cho module **Gamification** ở mức **Enterprise 2.0** theo đúng tài liệu thiết kế.
 
@@ -10,7 +10,7 @@ Toàn bộ 31 bảng Gamification đã được tạo thành công trong databas
 
 ### Thống Kê Tổng Quan
 - **Tổng số bảng Gamification**: 31 / 31 bảng.
-- **Tổng số bảng trong public schema**: 80 bảng (bao gồm cả các bảng cũ của StudyNest).
+- **Tổng số bảng trong public schema**: 80 bảng (bao gồm cả các bảng cũ của Mây Mây).
 - **Tổng số Foreign Keys**: 128 (đã tạo đầy đủ các ràng buộc khóa ngoại, hỗ trợ ON DELETE CASCADE/SET NULL/RESTRICT).
 - **Tổng số Indexes**: 153 (bao gồm Composite Indexes, Partial Indexes, và Covering Indexes để tối ưu hiệu năng).
 - **Tổng số Constraints (PK, Unique, Check)**: 549.

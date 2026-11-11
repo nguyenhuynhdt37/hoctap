@@ -1,4 +1,4 @@
-# Cloudy Blue Design System V2 — StudyNest UI/UX & Token Architecture Specification
+# Cloudy Blue Design System V2 — Mây Mây UI/UX & Token Architecture Specification
 
 > **Phong cách chủ đạo**: Korean Pastel Minimalism — mềm mại (soft), thoáng đãng (airy), cao cấp (premium), biên tập (editorial), tĩnh tại (calm), thân thiện (friendly) và thanh lịch (elegant).  
 > **Đối tượng mục tiêu**: Học sinh THPT lớp 10–12 (cân bằng hài hòa cho cả nam và nữ).

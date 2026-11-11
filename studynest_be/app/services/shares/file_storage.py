@@ -14,6 +14,7 @@ from fastapi import HTTPException
 from loguru import logger
 
 from app.core.settings import settings
+from app.services.shares.storage_cache import StorageCache
 
 
 class FileStorageService:
@@ -36,6 +37,7 @@ class FileStorageService:
                 "s3", endpoint_url=f"https://{settings.R2_ACCOUNT_ID}.r2.cloudflarestorage.com",
                 aws_access_key_id=settings.R2_ACCESS_KEY_ID,
                 aws_secret_access_key=settings.R2_SECRET_ACCESS_KEY, region_name="auto",
+                verify=settings.R2_CA_BUNDLE or True,
                 config=Config(signature_version="s3v4", s3={"addressing_style": "path"},
                               request_checksum_calculation="when_required",
                               response_checksum_validation="when_required",
@@ -125,7 +127,36 @@ class FileStorageService:
         except Exception as exc:
             logger.error("R2 upload failed ({})", type(exc).__name__)
             raise HTTPException(502, "Không tải được file lên R2. Vui lòng thử lại.") from None
+        try:
+            await asyncio.to_thread(StorageCache().write, key, [content], content_type)
+        except OSError:
+            logger.warning("R2 upload succeeded; local cache could not be written")
         return {"id": key, "name": file_name, "provider": "r2", "url": url, "key": key}
+
+    async def cached_download(self, key):
+        cache = StorageCache()
+        cached = await asyncio.to_thread(cache.get, key)
+        if cached is not None:
+            return cached
+
+        def fetch():
+            result = self._client().get_object(Bucket=settings.R2_BUCKET_NAME, Key=key)
+            body = result["Body"]
+            try:
+                chunks = iter(lambda: body.read(1024 * 1024), b"")
+                return cache.write(key, chunks, result.get("ContentType", "application/octet-stream"),
+                                   result.get("Metadata", {}).get("sha256"))
+            finally:
+                body.close()
+        try:
+            return await asyncio.to_thread(fetch)
+        except Exception as exc:
+            from botocore.exceptions import ClientError
+
+            if isinstance(exc, ClientError) and str(exc.response.get("Error", {}).get("Code")) in {"NoSuchKey", "404"}:
+                raise HTTPException(404, "Không tìm thấy file.") from None
+            logger.warning("R2 download unavailable ({})", type(exc).__name__)
+            raise HTTPException(502, "Chưa tải được file từ R2. Vui lòng thử lại.") from None
 
     async def signed_download_url(self, key):
         client = self._client()

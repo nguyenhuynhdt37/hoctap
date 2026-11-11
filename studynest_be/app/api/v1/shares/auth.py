@@ -1,5 +1,17 @@
-from fastapi import APIRouter, Body, Depends, Response, status, Request, Cookie, Query
 from typing import Optional
+
+from fastapi import (
+    APIRouter,
+    Body,
+    Cookie,
+    Depends,
+    HTTPException,
+    Query,
+    Request,
+    Response,
+    status,
+)
+from fastapi.responses import JSONResponse
 
 from app.core.deps import AuthorizationService
 from app.core.ws_manager import ws_manager
@@ -61,7 +73,16 @@ async def refresh(
     
     user_agent = req.headers.get("user-agent")
     ip = req.client.host if req.client else None
-    return await auth_service.refresh_token_async(token, res, user_agent=user_agent, ip=ip)
+    try:
+        return await auth_service.refresh_token_async(token, res, user_agent=user_agent, ip=ip)
+    except HTTPException as exc:
+        if exc.status_code != 401:
+            raise
+        response = JSONResponse({"detail": exc.detail}, status_code=401,
+                                headers={"Cache-Control": "no-store"})
+        response.delete_cookie("access_token", path="/")
+        response.delete_cookie("refresh_token", path="/")
+        return response
 
 
 @router.get("/sessions")

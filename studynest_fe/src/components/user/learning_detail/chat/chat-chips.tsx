@@ -37,16 +37,16 @@ export const ScopeSelector = memo(function ScopeSelector({
   disabled,
 }: ScopeSelectorProps) {
   return (
-    <div className="inline-flex items-center gap-1 p-1 bg-gray-100/80 rounded-lg">
+    <div className="inline-flex items-center gap-1 p-1 bg-background border border-border rounded-xl">
       {SCOPE_OPTIONS.map((option) => (
         <button
           key={option.value}
           onClick={() => onScopeChange(option.value)}
           disabled={disabled}
-          className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+          className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
             scope === option.value
-              ? "bg-white text-green-700 shadow-sm"
-              : "text-gray-500 hover:text-gray-900"
+              ? "bg-surface text-primary shadow-xs"
+              : "text-muted-foreground hover:text-foreground"
           } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
         >
           {option.label}
@@ -87,7 +87,7 @@ export const SourceList = memo(function SourceList({
             <HoverCardTrigger asChild>
               <button
                 onClick={() => onSourceClick(source)}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-lg hover:bg-green-50 hover:border-green-200 hover:text-green-700 transition-colors text-xs text-gray-600 max-w-full cursor-pointer"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-background border border-border rounded-lg hover:bg-primary-pastel/50 hover:border-primary-light hover:text-primary transition-colors text-xs text-muted-foreground max-w-full cursor-pointer"
               >
                 <Icon className="w-3.5 h-3.5 flex-shrink-0" />
                 <span className="truncate max-w-[200px]">{label}</span>
@@ -95,35 +95,35 @@ export const SourceList = memo(function SourceList({
             </HoverCardTrigger>
 
             <HoverCardContent
-              className="w-80 p-0 overflow-hidden rounded-xl border-gray-200 shadow-xl"
+              className="w-80 p-0 overflow-hidden rounded-xl border-border shadow-xl"
               side="top"
               align="start"
             >
-              <div className="p-4 bg-white">
+              <div className="p-4 bg-surface">
                 {/* Header */}
-                <div className="flex items-start gap-3 mb-3 pb-3 border-b border-gray-100">
-                  <div className="p-2 bg-green-50 rounded-lg shrink-0">
-                    <Icon className="w-5 h-5 text-green-600" />
+                <div className="flex items-start gap-3 mb-3 pb-3 border-b border-border">
+                  <div className="p-2 bg-primary-pastel rounded-lg shrink-0">
+                    <Icon className="w-5 h-5 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                      <span className="text-[10px] uppercase font-bold text-green-600 tracking-wider">
+                      <span className="text-[10px] uppercase font-bold text-primary tracking-wider">
                         {getSourceTypeLabel(source)}
                       </span>
                       {source.timestamp_seconds !== undefined &&
                         source.timestamp_seconds !== null && (
-                          <span className="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full font-medium">
+                          <span className="text-[10px] bg-background text-muted-foreground px-1.5 py-0.5 rounded-full font-medium">
                             {formatTime(source.timestamp_seconds)}
                           </span>
                         )}
                       {source.similarity !== undefined && (
-                        <span className="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-full font-medium">
+                        <span className="text-[10px] bg-primary-pastel text-primary px-1.5 py-0.5 rounded-full font-medium">
                           {Math.round(source.similarity * 100)}%
                         </span>
                         
                       )}
                     </div>
-                    <h4 className="text-sm font-semibold text-gray-900 leading-snug truncate">
+                    <h4 className="text-sm font-semibold text-foreground leading-snug truncate">
                       {getSourceTitle(source)}
                     </h4>
                   </div>
@@ -132,7 +132,7 @@ export const SourceList = memo(function SourceList({
                 {/* Summary */}
                 {source.summary && (
                   <div className="mb-3">
-                    <p className="text-xs text-gray-600 leading-relaxed bg-gray-50 p-2.5 rounded-lg italic">
+                    <p className="text-xs text-muted-foreground leading-relaxed bg-background p-2.5 rounded-lg italic">
                       "{source.summary}"
                     </p>
                   </div>
@@ -141,7 +141,7 @@ export const SourceList = memo(function SourceList({
                 {/* Code preview */}
                 {source.source_type === "code" && source.code_content && (
                   <div className="mb-3">
-                    <pre className="text-[11px] text-gray-700 bg-gray-900 text-gray-100 p-2.5 rounded-lg overflow-x-auto max-h-24">
+                    <pre className="text-[11px] bg-gray-900 text-gray-100 p-2.5 rounded-lg overflow-x-auto max-h-24">
                       <code>
                         {source.code_content.slice(0, 200)}
                         {source.code_content.length > 200 ? "..." : ""}
@@ -190,12 +190,12 @@ export const SourceList = memo(function SourceList({
 
                 {/* Footer */}
                 <div className="flex items-center justify-between text-[11px]">
-                  <span className="text-gray-400">
+                  <span className="text-muted-foreground">
                     {source.chunk_index !== undefined
                       ? `Chunk: ${source.chunk_index}`
                       : `#${source.index}`}
                   </span>
-                  <span className="text-green-600 font-medium hover:underline cursor-pointer flex items-center gap-1">
+                  <span className="text-primary font-medium hover:underline cursor-pointer flex items-center gap-1">
                     {getActionLabel(source, isCurrentLesson)} &rarr;
                   </span>
                 </div>

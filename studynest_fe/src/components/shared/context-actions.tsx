@@ -28,13 +28,6 @@ export function ContextActions({ actions, children }: ContextActionsProps) {
     setOpen(true);
   };
 
-  const openNearElement = (el: HTMLElement | null) => {
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    setPos({ x: rect.left + rect.width / 2, y: rect.bottom + 8 });
-    setOpen(true);
-  };
-
   const cloned = React.cloneElement(children, {
     onContextMenu: (e: React.MouseEvent) => {
       children.props?.onContextMenu?.(e);
@@ -45,13 +38,6 @@ export function ContextActions({ actions, children }: ContextActionsProps) {
   return (
     <>
       {cloned}
-      {/* Mobile trigger - place this inside your action cell if needed */}
-      {/* Example usage:
-        <ContextActions actions={...}>
-          <tr>...</tr>
-        </ContextActions>
-        <ContextActions.MobileTrigger onOpen={el => openNearElement(el)} />
-      */}
       {open && ContextMenu && (
         <ContextMenu
           x={pos.x}
@@ -61,6 +47,7 @@ export function ContextActions({ actions, children }: ContextActionsProps) {
             .filter((a) => !a.disabled)
             .map((a) => ({
               label: a.label,
+              danger: a.danger,
               onClick: () => {
                 a.onClick();
                 setOpen(false);
@@ -82,16 +69,16 @@ export function MobileTrigger({ onOpen }: MobileTriggerProps) {
     <button
       ref={btnRef}
       type="button"
-      className="p-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors sm:hidden"
-      aria-label="Mở menu"
+      className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary-light text-primary hover:bg-primary-pastel/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors sm:hidden cursor-pointer"
+      aria-label="Mở menu thao tác"
       onClick={() => onOpen(btnRef.current)}
     >
-      {/* simple 3-dot vertical icon without extra deps */}
       <svg
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 20 20"
         fill="currentColor"
         className="h-5 w-5"
+        aria-hidden="true"
       >
         <path d="M10 4a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 20a2 2 0 110-4 2 2 0 010 4z" />
       </svg>

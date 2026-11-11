@@ -175,7 +175,7 @@ export default function MarkdownRenderer({
         className={`tiptap-editor-content markdown-content ${className}`}
         style={{ minHeight: "auto", height: "auto" }}
       >
-        <p className="text-gray-400 italic">Không có nội dung</p>
+        <p className="text-subtle-foreground italic">Không có nội dung</p>
       </div>
     );
   }

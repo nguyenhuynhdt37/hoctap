@@ -1,4 +1,6 @@
+import { Button } from "@/components/ui";
 import { WalletTransactionsQuery } from "@/types/user/wallet";
+import { HiRefresh, HiSearch } from "react-icons/hi";
 
 interface Props {
   searchValue: string;
@@ -50,8 +52,9 @@ export function TransactionsFilterBar({
   onResetFilters,
 }: Props) {
   return (
-    <div className="rounded-xl border border-green-200 bg-green-50/50 p-4 shadow-sm">
+    <div className="rounded-[24px] border border-border bg-surface/90 p-5 shadow-xs backdrop-blur-md">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        {/* Form tìm kiếm */}
         <form
           className="flex w-full flex-col gap-3 sm:flex-row sm:items-center"
           onSubmit={(e) => {
@@ -60,38 +63,35 @@ export function TransactionsFilterBar({
           }}
         >
           <div className="relative flex-1">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-green-500">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm0 0m0 0 2.5-2.5m-2.5 2.5L20 20"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                  strokeLinecap="round"
-                />
-              </svg>
+            <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
+              <HiSearch className="h-4 w-4" />
             </span>
             <input
               value={searchValue}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder="Tìm theo mô tả, mã giao dịch, order ID..."
-              className="w-full rounded-lg border-2 border-green-200 bg-white pl-10 pr-4 py-2.5 text-sm outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500"
+              className="w-full rounded-2xl border border-border bg-background py-2.5 pl-11 pr-4 text-sm text-foreground placeholder:text-subtle-foreground outline-none transition-all duration-200 focus:border-primary focus:bg-surface focus:ring-2 focus:ring-primary/20"
             />
           </div>
-          <button
+          <Button
             type="submit"
-            className="inline-flex items-center justify-center rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700"
+            variant="primary"
+            size="md"
+            className="rounded-2xl font-semibold shadow-2xs"
           >
-            Tìm kiếm
-          </button>
+            <span>Tìm kiếm</span>
+          </Button>
         </form>
 
-        <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 xl:flex xl:flex-wrap xl:items-center">
+        {/* Các bộ lọc dropdown */}
+        <div className="grid w-full grid-cols-1 gap-2.5 sm:grid-cols-2 xl:flex xl:flex-wrap xl:items-center">
           <select
             value={filters.status}
             onChange={(e) =>
               onStatusChange(e.target.value as WalletTransactionsQuery["status"])
             }
-            className="rounded-lg border border-green-200 bg-white px-4 py-2.5 text-sm font-semibold text-green-600 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500"
+            aria-label="Lọc theo trạng thái"
+            className="rounded-2xl border border-border bg-background px-3.5 py-2.5 text-xs font-semibold text-foreground outline-none transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20 cursor-pointer"
           >
             {statusOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -105,7 +105,8 @@ export function TransactionsFilterBar({
             onChange={(e) =>
               onMethodChange(e.target.value as WalletTransactionsQuery["method"])
             }
-            className="rounded-lg border border-green-200 bg-white px-4 py-2.5 text-sm font-semibold text-green-600 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500"
+            aria-label="Lọc theo phương thức"
+            className="rounded-2xl border border-border bg-background px-3.5 py-2.5 text-xs font-semibold text-foreground outline-none transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20 cursor-pointer"
           >
             {methodOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -123,7 +124,8 @@ export function TransactionsFilterBar({
                 orderDir as WalletTransactionsQuery["orderDir"]
               );
             }}
-            className="rounded-lg border border-green-200 bg-white px-4 py-2.5 text-sm font-semibold text-green-600 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500"
+            aria-label="Sắp xếp theo thứ tự"
+            className="rounded-2xl border border-border bg-background px-3.5 py-2.5 text-xs font-semibold text-foreground outline-none transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20 cursor-pointer"
           >
             {orderOptions.map((opt) => (
               <option
@@ -135,14 +137,17 @@ export function TransactionsFilterBar({
             ))}
           </select>
 
-          <button
+          <Button
             type="button"
+            variant="secondary"
+            size="md"
             onClick={onResetFilters}
             disabled={isLoading}
-            className="inline-flex items-center justify-center rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-2.5 text-sm font-semibold text-yellow-600 hover:bg-yellow-100 disabled:opacity-60"
+            className="rounded-2xl text-xs font-semibold"
           >
-            Đặt lại
-          </button>
+            <HiRefresh className="h-3.5 w-3.5" />
+            <span>Đặt lại</span>
+          </Button>
         </div>
       </div>
     </div>

@@ -20,10 +20,10 @@ export function SupportSection() {
             Gửi email cho chúng tôi và chúng tôi sẽ phản hồi trong vòng 24 giờ.
           </p>
           <a
-            href="mailto:support@studynest.com"
+            href="mailto:support@maymay.edu.vn"
             className="text-teal-600 hover:text-teal-700 font-medium text-sm"
           >
-            support@studynest.com →
+            support@maymay.edu.vn →
           </a>
         </div>
 

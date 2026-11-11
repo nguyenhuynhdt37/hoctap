@@ -1,5 +1,6 @@
 "use client";
 
+import { Alert } from "@/components/ui";
 import api from "@/lib/utils/fetcher/client/axios";
 import {
   WalletSummary,
@@ -29,7 +30,10 @@ export default function WalletPage({ wallet, transactions, error }: Props) {
   const [successMsg, setSuccessMsg] = useState("");
   const [loading, setLoading] = useState(false);
   const [retryOrderId, setRetryOrderId] = useState<string | null>(null);
-  const [retryMsg, setRetryMsg] = useState("");
+  const [retryMsg, setRetryMsg] = useState<{
+    text: string;
+    variant: "destructive" | "success";
+  } | null>(null);
 
   const { data: walletData, mutate: mutateWallet } = useSWR<WalletSummary>(
     WALLET_ENDPOINT,
@@ -69,7 +73,7 @@ export default function WalletPage({ wallet, transactions, error }: Props) {
     const numAmount = Number(cleanAmount);
 
     if (!numAmount || numAmount < 50000) {
-      setErrorMsg("Số tiền tối thiểu là 50,000 VND");
+      setErrorMsg("Số tiền tối thiểu mỗi lần nạp là 50,000 VND");
       return;
     }
 
@@ -83,7 +87,7 @@ export default function WalletPage({ wallet, transactions, error }: Props) {
       });
 
       if (res.data?.approve_url) {
-        setSuccessMsg("Đã tạo giao dịch PayPal. Đang mở PayPal...");
+        setSuccessMsg("Đã khởi tạo giao dịch PayPal. Hệ thống đang chuyển đến PayPal...");
         window.open(res.data.approve_url, "_blank", "noopener,noreferrer");
       } else {
         setSuccessMsg("Đã tạo giao dịch nạp tiền thành công");
@@ -93,7 +97,7 @@ export default function WalletPage({ wallet, transactions, error }: Props) {
       await Promise.allSettled([mutateWallet(), mutateTransactions()]);
     } catch (err: any) {
       setErrorMsg(
-        err?.response?.data?.detail || "Không thể tạo giao dịch nạp tiền"
+        err?.response?.data?.detail || "Không thể tạo giao dịch nạp tiền lúc này"
       );
     } finally {
       setLoading(false);
@@ -102,11 +106,14 @@ export default function WalletPage({ wallet, transactions, error }: Props) {
 
   const handleRetry = async (orderId?: string | null) => {
     if (!orderId) {
-      setRetryMsg("Không tìm thấy mã PayPal");
+      setRetryMsg({
+        text: "Không tìm thấy mã giao dịch PayPal",
+        variant: "destructive",
+      });
       return;
     }
 
-    setRetryMsg("");
+    setRetryMsg(null);
     setRetryOrderId(orderId);
 
     try {
@@ -114,30 +121,38 @@ export default function WalletPage({ wallet, transactions, error }: Props) {
 
       if (res.data?.approve_url) {
         window.open(res.data.approve_url, "_blank", "noopener,noreferrer");
-        setRetryMsg("Đã mở lại PayPal. Hãy hoàn tất thanh toán");
+        setRetryMsg({
+          text: "Đã mở lại cổng thanh toán PayPal. Vui lòng hoàn tất giao dịch.",
+          variant: "success",
+        });
       } else {
-        setRetryMsg("Yêu cầu thanh toán lại đã được ghi nhận");
+        setRetryMsg({
+          text: "Yêu cầu thanh toán lại đã được hệ thống ghi nhận",
+          variant: "success",
+        });
       }
 
       await mutateTransactions();
     } catch (err: any) {
-      setRetryMsg(
-        err?.response?.data?.detail ||
-          "Không thể khôi phục giao dịch. Vui lòng thử lại"
-      );
+      setRetryMsg({
+        text:
+          err?.response?.data?.detail ||
+          "Không thể khôi phục giao dịch. Vui lòng thử lại sau.",
+        variant: "destructive",
+      });
     } finally {
       setRetryOrderId(null);
     }
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
+    <div className="mx-auto max-w-5xl space-y-8 px-4 py-8">
       <WalletHeader />
 
       {error && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+        <Alert variant="destructive">
           {error}
-        </div>
+        </Alert>
       )}
 
       <div className="grid gap-6 md:grid-cols-[2fr,3fr]">
@@ -159,15 +174,13 @@ export default function WalletPage({ wallet, transactions, error }: Props) {
       />
 
       {retryMsg && (
-        <div
-          className={`p-3 rounded-lg border text-sm ${
-            retryMsg.includes("Không")
-              ? "bg-red-50 border-red-200 text-red-600"
-              : "bg-green-50 border-green-200 text-green-700"
-          }`}
+        <Alert
+          variant={
+            retryMsg.variant === "destructive" ? "destructive" : "success"
+          }
         >
-          {retryMsg}
-        </div>
+          {retryMsg.text}
+        </Alert>
       )}
     </div>
   );

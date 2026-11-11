@@ -4,7 +4,7 @@ import LecturerRecommends from "./lecturer_recommends";
 
 const Categories = ({ slug }: { slug: string }) => {
   return (
-    <div>
+    <div className="min-h-screen bg-background">
       <CategoriesHeader slug={slug} />
       <CourseForYou slug={slug} />
       <LecturerRecommends slug={slug} />

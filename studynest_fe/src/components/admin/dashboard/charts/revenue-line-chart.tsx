@@ -125,24 +125,24 @@ export default function RevenueLineChart() {
   if (!mounted) return null;
 
   return (
-    <div className="bg-white rounded-[20px] shadow-xs border border-[#E7EEF7] p-6">
+    <div className="bg-white rounded-[20px] shadow-xs border border-border p-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
         <div>
-          <h3 className="text-lg font-semibold text-[#3D4A5A]">Biểu đồ doanh thu</h3>
-          <p className="text-[#6F7C8C] text-sm mt-1">
+          <h3 className="text-lg font-semibold text-foreground">Biểu đồ doanh thu</h3>
+          <p className="text-muted-foreground text-sm mt-1">
             Tổng: {formatCurrency(data?.total)}
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex gap-1.5 bg-[#F6FAFF] p-1 rounded-xl border border-[#E7EEF7]">
+          <div className="flex gap-1.5 bg-background p-1 rounded-xl border border-border">
             {(["day", "week", "month", "year"] as RevenuePeriod[]).map((p) => (
               <button
                 key={p}
                 onClick={() => setPeriod(p)}
                 className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                   period === p
-                    ? "bg-[#356FA7] text-white shadow-2xs"
-                    : "text-[#6F7C8C] hover:text-[#3D4A5A]"
+                    ? "bg-primary text-white shadow-2xs"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {p === "day"
@@ -157,7 +157,7 @@ export default function RevenueLineChart() {
           </div>
           <Link
             href="/admin/revenue"
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-[#356FA7] border border-[#BFD7ED] rounded-xl hover:bg-[#E8F2FA] transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-primary border border-primary-pastel rounded-xl hover:bg-primary-light transition-colors"
           >
             <HiExternalLink className="w-4 h-4" />
             Chi tiết
@@ -167,21 +167,21 @@ export default function RevenueLineChart() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div className="bg-[#E8F2FA]/70 border border-[#BFD7ED]/60 rounded-xl p-4">
-          <p className="text-[#356FA7] text-xs font-semibold uppercase tracking-wider">Thu nền tảng</p>
-          <p className="text-[#3D4A5A] text-lg font-bold mt-1">
+        <div className="bg-primary-light/70 border border-primary-pastel/60 rounded-xl p-4">
+          <p className="text-primary text-xs font-semibold uppercase tracking-wider">Thu nền tảng</p>
+          <p className="text-foreground text-lg font-bold mt-1">
             {formatCurrency(data?.platform_income)}
           </p>
         </div>
-        <div className="bg-[#FCE8EF]/70 border border-[#F7C9D9]/60 rounded-xl p-4">
-          <p className="text-[#8A3B58] text-xs font-semibold uppercase tracking-wider">Chi giảng viên</p>
-          <p className="text-[#3D4A5A] text-lg font-bold mt-1">
+        <div className="bg-secondary-light/70 border border-secondary-pastel/60 rounded-xl p-4">
+          <p className="text-secondary-foreground text-xs font-semibold uppercase tracking-wider">Chi giảng viên</p>
+          <p className="text-foreground text-lg font-bold mt-1">
             {formatCurrency(data?.instructor_payout)}
           </p>
         </div>
-        <div className="bg-[#E3D5F5]/40 border border-[#E3D5F5] rounded-xl p-4">
-          <p className="text-[#593E7A] text-xs font-semibold uppercase tracking-wider">Số giao dịch</p>
-          <p className="text-[#3D4A5A] text-lg font-bold mt-1">
+        <div className="bg-accent/40 border border-accent rounded-xl p-4">
+          <p className="text-accent-foreground text-xs font-semibold uppercase tracking-wider">Số giao dịch</p>
+          <p className="text-foreground text-lg font-bold mt-1">
             {(data?.data || [])
               .reduce((sum, d) => sum + (d.count || 0), 0)
               .toLocaleString("vi-VN")}
@@ -193,7 +193,7 @@ export default function RevenueLineChart() {
       <div className="h-64 relative">
         {isLoading ? (
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-8 h-8 border-4 border-[#356FA7] border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
           <Line data={chartData} options={options as any} />

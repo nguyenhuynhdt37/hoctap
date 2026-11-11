@@ -1,3 +1,5 @@
+import { HiChevronLeft, HiChevronRight } from "react-icons/hi";
+
 interface TransactionsPaginationProps {
   page: number;
   limit: number;
@@ -42,25 +44,27 @@ export function TransactionsPagination({
   };
 
   return (
-    <div className="flex flex-col gap-4 rounded-xl border border-green-200 bg-green-50/50 p-4 shadow-sm md:flex-row md:items-center md:justify-between">
-      <div className="text-sm text-gray-600">
+    <div className="flex flex-col gap-4 rounded-[24px] border border-border bg-surface/90 p-4 shadow-xs backdrop-blur-md md:flex-row md:items-center md:justify-between">
+      <div className="text-xs text-muted-foreground">
         Hiển thị{" "}
-        <span className="font-semibold text-gray-900">
-          {total === 0 ? 0 : (page - 1) * limit + 1}-
+        <span className="font-semibold text-foreground">
+          {total === 0 ? 0 : (page - 1) * limit + 1} -{" "}
           {total === 0 ? 0 : Math.min(page * limit, total)}
         </span>{" "}
-        trên tổng số{" "}
-        <span className="font-semibold text-gray-900">{total}</span> giao dịch.
+        trong tổng số{" "}
+        <span className="font-semibold text-primary">{total}</span> giao dịch
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between md:gap-4">
+        {/* Số bản ghi mỗi trang */}
         <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-600">Mỗi trang</span>
+          <span className="text-xs text-muted-foreground">Mỗi trang</span>
           <select
             value={limit}
             onChange={(event) => onLimitChange(Number(event.target.value))}
             disabled={isLoading}
-            className="rounded-lg border border-green-200 bg-white px-3 py-2 text-sm font-semibold text-green-600 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-500 disabled:cursor-not-allowed disabled:opacity-60"
+            aria-label="Số bản ghi mỗi trang"
+            className="rounded-xl border border-border bg-background px-2.5 py-1.5 text-xs font-semibold text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
           >
             {limitOptions.map((option) => (
               <option key={option} value={option}>
@@ -70,43 +74,48 @@ export function TransactionsPagination({
           </select>
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* Nút phân trang */}
+        <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={() => gotoPage(page - 1)}
             disabled={!canGoPrev || isLoading}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-green-200 bg-white text-green-600 transition hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label="Trang trước"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-border bg-surface text-muted-foreground transition hover:border-primary-pastel hover:bg-primary-light hover:text-primary disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
           >
-            ‹
+            <HiChevronLeft className="h-4 w-4" />
           </button>
 
-          {pageRange().map((pageNumber) => (
-            <button
-              key={pageNumber}
-              type="button"
-              onClick={() => gotoPage(pageNumber)}
-              disabled={isLoading}
-              className={`inline-flex h-9 w-9 items-center justify-center rounded-lg text-sm font-semibold transition ${
-                pageNumber === page
-                  ? "bg-green-600 text-white"
-                  : "border border-green-200 bg-white text-gray-700 hover:border-green-500 hover:text-green-600"
-              } disabled:cursor-not-allowed disabled:opacity-40`}
-            >
-              {pageNumber}
-            </button>
-          ))}
+          {pageRange().map((pageNumber) => {
+            const isCurrent = pageNumber === page;
+            return (
+              <button
+                key={pageNumber}
+                type="button"
+                onClick={() => gotoPage(pageNumber)}
+                disabled={isLoading}
+                className={`inline-flex h-8 w-8 items-center justify-center rounded-xl text-xs font-semibold transition cursor-pointer ${
+                  isCurrent
+                    ? "border border-primary bg-primary text-primary-foreground shadow-2xs"
+                    : "border border-border bg-surface text-foreground hover:border-primary-pastel hover:bg-primary-light hover:text-primary"
+                } disabled:cursor-not-allowed disabled:opacity-40`}
+              >
+                {pageNumber}
+              </button>
+            );
+          })}
 
           <button
             type="button"
             onClick={() => gotoPage(page + 1)}
             disabled={!canGoNext || isLoading}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-green-200 bg-white text-green-600 transition hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label="Trang tiếp theo"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-border bg-surface text-muted-foreground transition hover:border-primary-pastel hover:bg-primary-light hover:text-primary disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
           >
-            ›
+            <HiChevronRight className="h-4 w-4" />
           </button>
         </div>
       </div>
     </div>
   );
 }
-

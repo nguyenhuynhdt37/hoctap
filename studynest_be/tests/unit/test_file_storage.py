@@ -1,4 +1,5 @@
 import unittest
+from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock, patch
 from uuid import uuid4
@@ -16,13 +17,17 @@ from app.services.shares.file_storage import (
     FileStorageService,
     get_file_storage_service,
 )
+from app.services.shares.storage_cache import StorageCache
 
 
 class FileStorageTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
+        directory = TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        self.cache_dir = directory.name
         config = patch.multiple(settings, STORAGE_PROVIDER='r2', R2_ACCOUNT_ID='a' * 32,
                                 R2_ACCESS_KEY_ID='test-access', R2_SECRET_ACCESS_KEY='test-secret',
-                                R2_BUCKET_NAME='studynest', R2_SIGNED_URL_TTL_SECONDS=300)
+                                R2_BUCKET_NAME='studynest', R2_SIGNED_URL_TTL_SECONDS=300, R2_CACHE_DIRECTORY=self.cache_dir)
         config.start()
         self.addCleanup(config.stop)
         self.storage = FileStorageService()
@@ -80,7 +85,8 @@ class FileStorageTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_route_never_signs_unauthorized_file_but_public_assets_work_without_login(self):
         auth = SimpleNamespace(get_current_user=AsyncMock(side_effect=HTTPException(401, 'Login required')))
-        storage = SimpleNamespace(signed_download_url=AsyncMock(return_value='https://r2.example/signed'))
+        cached = StorageCache().write('public/avatars/user/a.png', [b'PNG bytes'], 'image/png')
+        storage = SimpleNamespace(signed_download_url=AsyncMock(return_value='https://r2.example/signed'), cached_download=AsyncMock(return_value=cached))
         app = FastAPI()
         app.include_router(router, prefix='/api/v1')
         app.dependency_overrides[AuthorizationService] = lambda: auth
@@ -91,9 +97,15 @@ class FileStorageTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(private.status_code, 401)
             storage.signed_download_url.assert_not_awaited()
             public = await client.get('/api/v1/storage/files/public/avatars/user/a.png')
-            self.assertEqual(public.status_code, 302)
-            self.assertEqual(public.headers['cache-control'], 'no-store')
-            self.assertEqual(public.headers['location'], 'https://r2.example/signed')
+            self.assertEqual(public.status_code, 200)
+            self.assertEqual(public.content, b'PNG bytes')
+            self.assertIn('public', public.headers['cache-control'])
+            self.assertNotIn('location', public.headers)
+            conditional = await client.get('/api/v1/storage/files/public/avatars/user/a.png', headers={'If-None-Match':public.headers['etag']})
+            self.assertEqual(conditional.status_code, 304)
+            denied = await client.get(f'/api/v1/storage/files/private/users/{uuid4()}/tutor-chat/2026/11/images/a.png')
+            self.assertEqual(denied.status_code, 401)
+            self.assertEqual(storage.cached_download.await_count, 2)
 
     async def test_private_chat_image_only_accessible_by_owner(self):
         owner = uuid4()

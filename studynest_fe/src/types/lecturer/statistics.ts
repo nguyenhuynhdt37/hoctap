@@ -36,6 +36,5 @@ export interface StudentsByCourseItem {
 export interface StudentAnalyticsResponse {
   total_new_students: number;
   active_students: number;
-  retention_rate: number;
   students_by_course: StudentsByCourseItem[];
 }

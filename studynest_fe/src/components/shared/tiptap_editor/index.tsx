@@ -515,7 +515,7 @@ export default function TiptapEditor({
 
   if (!editor) {
     return (
-      <div className="flex h-96 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-gray-500">
+      <div className="flex h-96 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground">
         Đang tải editor...
       </div>
     );
@@ -570,7 +570,7 @@ export default function TiptapEditor({
 
   return (
     <div
-      className="tiptap-editor-wrapper border rounded-lg overflow-hidden"
+      className="tiptap-editor-wrapper border border-border rounded-lg overflow-hidden"
       style={{
         ...(maxHeight && {
           maxHeight,
@@ -589,7 +589,7 @@ export default function TiptapEditor({
     >
       {/* Toolbar */}
       {showToolbar && (
-        <div className="tiptap-toolbar flex flex-wrap items-center gap-1 border-b border-gray-200 bg-white p-2 flex-shrink-0">
+        <div className="tiptap-toolbar flex flex-wrap items-center gap-1 border-b border-border bg-surface p-2 flex-shrink-0">
           {/* Undo/Redo */}
           <button
             type="button"
@@ -611,7 +611,7 @@ export default function TiptapEditor({
             <FaRedo />
           </button>
 
-          <div className="w-px h-6 bg-gray-300 mx-2"></div>
+          <div className="w-px h-6 bg-border mx-2"></div>
 
           {/* Text Formatting */}
           <button
@@ -647,7 +647,7 @@ export default function TiptapEditor({
             <FaStrikethrough />
           </button>
 
-          <div className="w-px h-6 bg-gray-300 mx-2"></div>
+          <div className="w-px h-6 bg-border mx-2"></div>
 
           <button
             type="button"
@@ -685,7 +685,7 @@ export default function TiptapEditor({
             H3
           </button>
 
-          <div className="w-px h-6 bg-gray-300 mx-2"></div>
+          <div className="w-px h-6 bg-border mx-2"></div>
 
           {/* Text Align */}
           <button
@@ -732,7 +732,7 @@ export default function TiptapEditor({
             <MdFormatAlignJustify />
           </button>
 
-          <div className="w-px h-6 bg-gray-300 mx-2"></div>
+          <div className="w-px h-6 bg-border mx-2"></div>
 
           {/* Lists */}
           <button
@@ -788,7 +788,7 @@ export default function TiptapEditor({
             <HiMinus />
           </button>
 
-          <div className="w-px h-6 bg-gray-300 mx-2"></div>
+          <div className="w-px h-6 bg-border mx-2"></div>
 
           {/* Markdown Mode Toggle */}
           <button
@@ -804,7 +804,7 @@ export default function TiptapEditor({
             <HiDocumentText />
           </button>
 
-          <div className="w-px h-6 bg-gray-300 mx-2"></div>
+          <div className="w-px h-6 bg-border mx-2"></div>
 
           {/* Code block + language menu */}
           <div className="relative" ref={langMenuRef}>
@@ -831,14 +831,14 @@ export default function TiptapEditor({
                 <button
                   type="button"
                   onClick={() => setShowLangMenu(!showLangMenu)}
-                  className="ml-1 rounded-md border border-gray-300 px-2 py-1 text-xs hover:bg-gray-100"
+                  className="ml-1 rounded-md border border-border px-2 py-1 text-xs hover:bg-primary-light"
                 >
                   {currentLang.toUpperCase()}
                 </button>
               )}
 
             {showLangMenu && (
-              <div className="absolute top-full left-0 z-50 mt-1 w-40 rounded-lg border border-gray-200 bg-white shadow-lg">
+              <div className="absolute top-full left-0 z-50 mt-1 w-40 rounded-lg border border-border bg-surface shadow-lg">
                 {programmingLanguages.map((lang) => (
                   <button
                     key={lang.value}
@@ -854,11 +854,11 @@ export default function TiptapEditor({
                         .run();
                       setShowLangMenu(false);
                     }}
-                    className={`block w-full px-3 py-2 text-left text-sm hover:bg-gray-100 ${
+                    className={`block w-full px-3 py-2 text-left text-sm hover:bg-primary-light ${
                       currentLang === lang.value ||
                       (currentLang === "" && lang.value === "plaintext")
-                        ? "bg-gray-100 font-semibold"
-                        : ""
+                        ? "bg-primary-light font-semibold text-primary"
+                        : "text-foreground"
                     }`}
                   >
                     {lang.label}
@@ -868,7 +868,7 @@ export default function TiptapEditor({
             )}
           </div>
 
-          <div className="w-px h-6 bg-gray-300 mx-2"></div>
+          <div className="w-px h-6 bg-border mx-2"></div>
 
           {/* Table */}
           <button
@@ -880,7 +880,7 @@ export default function TiptapEditor({
             <FaTable />
           </button>
 
-          <div className="w-px h-6 bg-gray-300 mx-2"></div>
+          <div className="w-px h-6 bg-border mx-2"></div>
 
           {/* Link */}
           {editor.isActive("link") ? (
@@ -953,7 +953,7 @@ export default function TiptapEditor({
             value={markdownValue}
             onChange={(e) => handleMarkdownChange(e.target.value)}
             placeholder={placeholder}
-            className="w-full h-full resize-none border-none outline-none font-mono text-sm leading-relaxed bg-transparent text-gray-800 whitespace-pre"
+            className="w-full h-full resize-none border-none outline-none font-mono text-sm leading-relaxed bg-transparent text-foreground whitespace-pre"
             style={{
               fontFamily:
                 '"Fira Code", "Consolas", "Monaco", "Courier New", monospace',
@@ -976,15 +976,15 @@ export default function TiptapEditor({
 
           {/* Upload Overlay */}
           {isUploading && (
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 rounded-lg">
-              <div className="bg-white rounded-xl border border-green-200 shadow-lg p-6 max-w-sm w-full mx-4">
+            <div className="absolute inset-0 bg-foreground/40 backdrop-blur-sm flex items-center justify-center z-50 rounded-lg">
+              <div className="bg-surface rounded-xl border border-border shadow-lg p-6 max-w-sm w-full mx-4">
                 <div className="text-center">
-                  <div className="inline-block h-12 w-12 border-4 border-green-600 border-t-transparent rounded-full animate-spin mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  <div className="inline-block h-12 w-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
+                  <h3 className="text-lg font-semibold text-foreground mb-2">
                     Đang tải ảnh lên...
                   </h3>
                   {uploadPreview && (
-                    <div className="mt-4 rounded-lg overflow-hidden border border-green-200">
+                    <div className="mt-4 rounded-lg overflow-hidden border border-border">
                       <img
                         src={uploadPreview}
                         alt="Preview"
@@ -992,7 +992,7 @@ export default function TiptapEditor({
                       />
                     </div>
                   )}
-                  <p className="text-sm text-gray-600 mt-4">
+                  <p className="text-sm text-muted-foreground mt-4">
                     Vui lòng đợi trong giây lát
                   </p>
                 </div>

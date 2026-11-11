@@ -1,4 +1,4 @@
-# AGENTS.md — StudyNest Repository Instructions
+# AGENTS.md — Mây Mây Repository Instructions
 
 ## Design System & UI/UX Standard ("Cloudy Blue")
 

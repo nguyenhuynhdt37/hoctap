@@ -5,7 +5,7 @@ import enum
 import uuid
 
 from pgvector.sqlalchemy.vector import VECTOR
-from sqlalchemy import ARRAY, BigInteger, Boolean, CheckConstraint, Computed, Date, DateTime, Double, Enum, ForeignKeyConstraint, Index, Integer, Numeric, PrimaryKeyConstraint, REAL, SmallInteger, String, Text, UniqueConstraint, Uuid, text
+from sqlalchemy import ARRAY, BigInteger, Boolean, CheckConstraint, Computed, Date, DateTime, Double, Enum, ForeignKey, ForeignKeyConstraint, Index, Integer, Numeric, PrimaryKeyConstraint, REAL, SmallInteger, String, Text, UniqueConstraint, Uuid, text
 from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -985,6 +985,10 @@ class Courses(Base):
     review_round: Mapped[Optional[int]] = mapped_column(Integer, server_default=text('1'))
     approval_status: Mapped[Optional[str]] = mapped_column(String, server_default=text("'pending'::character varying"))
     topic_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    subject_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey('public.subjects.id'), index=True)
+    provider_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey('public.providers.id'), index=True)
+    delivery_type: Mapped[str] = mapped_column(String(30), nullable=False, server_default=text("'recorded_video'"), default='recorded_video')
+
 
     user: Mapped[Optional['User']] = relationship('User', foreign_keys=[approved_by], back_populates='courses_approved_by')
     category: Mapped[Optional['Categories']] = relationship('Categories', back_populates='courses')
@@ -2094,3 +2098,8 @@ class TutorChatImages(Base):
 # • Đã thêm relationship() 1–1 hai chiều tự động (không trùng lặp).
 # • Field dùng snake_case (vd: lesson_videos, course_reviews, ...).
 # =========================
+
+# Register additive catalog tables in the shared metadata.
+from app.db.models import catalog as _catalog  # noqa: E402,F401
+
+from app.db.models import learning_paths as _learning_paths  # noqa: E402,F401

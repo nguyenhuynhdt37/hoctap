@@ -1,0 +1,115 @@
+import { CinematicScene } from "./types";
+
+export const VIDEO_ASSETS = {
+  desktopMp4: "/videos/studynest/mascot-journey-scrub.mp4?v=3",
+  mobileMp4: "/videos/studynest/mascot-journey-mobile.mp4?v=3",
+  fallbackMp4: "/videos/studynest/mascot-journey-original.mp4?v=3",
+  poster: "/videos/studynest/poster.jpg?v=3",
+  durationSeconds: 14.93,
+} as const;
+
+export const CINEMATIC_SCENES: CinematicScene[] = [
+  {
+    id: "scene-discover",
+    stepNumber: "01",
+    shortTitle: "Khởi đầu",
+    eyebrow: "Mây Mây • Hành trình tri thức Lớp 1 – 12",
+    headline: "Mỗi hành trình lớn đều bắt đầu từ",
+    highlightText: "một điều nhỏ bé.",
+    description:
+      "Khám phá thế giới học tập giữa tầng mây dành cho học sinh từ lớp 1 đến lớp 12 — nơi niềm tò mò được nuôi dưỡng thành nền tảng tri thức vững vàng.",
+    startProgress: 0.0,
+    endProgress: 0.24,
+    videoStartSec: 0.0,
+    videoEndSec: 3.5,
+    stillImage: "/videos/studynest/scene-clouds.jpg?v=3",
+    stillAlt: "Biển mây pastel bình minh mở đầu hành trình học tập trên Mây Mây",
+    alignment: "left",
+    pills: ["Lớp 1 – 12", "Học tập trực quan", "Lộ trình rõ ràng"],
+  },
+  {
+    id: "scene-mascot",
+    stepNumber: "02",
+    shortTitle: "Bạn nhỏ Mây",
+    eyebrow: "Người bạn đồng hành trên mây",
+    headline: "Học theo cách của",
+    highlightText: "riêng bạn.",
+    description:
+      "Cùng bạn nhỏ Mây bay qua từng tầng mây tri thức với hệ thống bài giảng sinh động, luyện tập tương tác và nhịp độ học tập phù hợp với từng học sinh.",
+    startProgress: 0.24,
+    endProgress: 0.52,
+    videoStartSec: 3.5,
+    videoEndSec: 7.8,
+    stillImage: "/videos/studynest/scene-mascot.jpg?v=3",
+    stillAlt: "Linh vật Mây mỉm cười vẫy tay dẫn đường qua tầng mây",
+    alignment: "bottom-left",
+    pills: [
+      "Bài giảng video trực quan",
+      "Trắc nghiệm & thực hành",
+      "Theo dõi tiến độ từng ngày",
+    ],
+  },
+  {
+    id: "scene-worlds",
+    stepNumber: "03",
+    shortTitle: "Ba cấp học",
+    eyebrow: "Học viện trên mây • Kết nối 3 cấp học",
+    headline: "Ba thế giới học tập",
+    highlightText: "trọn vẹn từ Lớp 1 đến Lớp 12.",
+    description:
+      "Phía sau tầng mây là Học viện Mây Mây — nơi hội tụ khoa học, ngôn ngữ, toán học và nghệ thuật với lộ trình thiết kế riêng cho từng độ tuổi.",
+    startProgress: 0.52,
+    endProgress: 0.8,
+    videoStartSec: 7.8,
+    videoEndSec: 11.9,
+    stillImage: "/videos/studynest/scene-academy.jpg?v=3",
+    stillAlt:
+      "Bạn nhỏ Mây giới thiệu Học viện Mây Mây trên đảo mây cùng sách và các biểu tượng khoa học",
+    alignment: "bottom-left",
+    gradeCards: [
+      {
+        id: "primary",
+        label: "Tiểu học",
+        grades: "Lớp 1 – 5",
+        summary: "Vui học nền tảng, nuôi dưỡng sự tự giác và trí tò mò.",
+        accentClass: "border-accent-vanilla-border bg-accent-vanilla/65",
+        badgeVariant: "vanilla",
+      },
+      {
+        id: "secondary",
+        label: "THCS",
+        grades: "Lớp 6 – 9",
+        summary: "Làm chủ kiến thức cốt lõi, phát triển tư duy khoa học.",
+        accentClass: "border-secondary-pastel bg-secondary-light/75",
+        badgeVariant: "secondary",
+      },
+      {
+        id: "highschool",
+        label: "THPT",
+        grades: "Lớp 10 – 12",
+        summary: "Chinh phục kỳ thi, bứt phá điểm số và định hướng tương lai.",
+        accentClass: "border-primary-pastel bg-primary-light/80",
+        badgeVariant: "default",
+      },
+    ],
+  },
+  {
+    id: "scene-begin",
+    stepNumber: "04",
+    shortTitle: "Bắt đầu",
+    eyebrow: "Cổng trường tri thức đã mở",
+    headline: "Sẵn sàng cho hành trình",
+    highlightText: "học tập của bạn?",
+    description:
+      "Bước vào Học viện Mây Mây để lựa chọn cấp học, khám phá môn học yêu thích và bắt đầu bài học đầu tiên ngay hôm nay.",
+    startProgress: 0.8,
+    endProgress: 1.0,
+    videoStartSec: 11.9,
+    videoEndSec: 14.93,
+    stillImage: "/videos/studynest/scene-welcome.jpg?v=3",
+    stillAlt:
+      "Toàn cảnh Học viện Mây Mây trên mây và bạn nhỏ Mây chào đón ở cổng trường",
+    alignment: "left",
+    showPrimaryCta: true,
+  },
+];

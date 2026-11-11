@@ -31,9 +31,9 @@ export default function LessonRenderer({
   const renderLesson = () => {
     if (!activeLessonData) {
       return (
-        <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-          <div className="text-gray-500">
-            <p>Không tìm thấy bài học</p>
+        <div className="bg-surface border border-border rounded-2xl shadow-xs p-8 text-center">
+          <div className="text-muted-foreground">
+            <p className="font-medium text-foreground">Không tìm thấy bài học</p>
             <p className="text-sm mt-2">Vui lòng chọn bài học khác</p>
           </div>
         </div>
@@ -96,9 +96,9 @@ export default function LessonRenderer({
 
       default:
         return (
-          <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-            <div className="text-gray-500">
-              <p>
+          <div className="bg-surface border border-border rounded-2xl shadow-xs p-8 text-center">
+            <div className="text-muted-foreground">
+              <p className="font-medium text-foreground">
                 Loại bài học không được hỗ trợ: {activeLessonData.lesson_type}
               </p>
               <p className="text-sm mt-2">

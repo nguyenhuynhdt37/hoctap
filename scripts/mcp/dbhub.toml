@@ -1,0 +1,18 @@
+# Local Mây Mây Postgres. Credentials come from studynest_be/.env
+# via scripts/mcp/postgres.sh (STUDYNEST_DSN). execute_sql is read-only.
+
+[[sources]]
+id = "studynest"
+description = "Local Mây Mây Postgres on 127.0.0.1:5433"
+dsn = "${STUDYNEST_DSN}"
+query_timeout = 15
+
+[[tools]]
+name = "execute_sql"
+source = "studynest"
+readonly = true
+max_rows = 200
+
+[[tools]]
+name = "search_objects"
+source = "studynest"

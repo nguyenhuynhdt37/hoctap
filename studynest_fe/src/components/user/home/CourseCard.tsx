@@ -1,5 +1,6 @@
 "use client";
 
+import { Badge, BadgeVariant, Card } from "@/components/ui";
 import api from "@/lib/utils/fetcher/client/axios";
 import { getImageUrl } from "@/lib/utils/helpers/image";
 import { CourseCardProps } from "@/types/user/course";
@@ -12,6 +13,7 @@ import {
   useState,
 } from "react";
 import { createPortal } from "react-dom";
+import { HiStar, HiUsers } from "react-icons/hi";
 
 const CourseCard = ({
   course,
@@ -126,30 +128,28 @@ const CourseCard = ({
   }, [hoveredId, computePreviewPosition]);
 
   return (
-    <div
-      className="group relative bg-white border border-[#E7EEF7] rounded-[20px] hover:shadow-md hover:border-[#BFD7ED] hover:-translate-y-0.5 transition-all duration-200 overflow-hidden flex flex-col h-full"
+    <Card
+      density="none"
+      className="group relative hover:shadow-md hover:border-primary-pastel hover:-translate-y-0.5 transition-all duration-200 overflow-hidden flex flex-col h-full"
       onMouseEnter={() => handleEnter(course.id)}
       onMouseLeave={handleLeave}
       ref={cardRef}
     >
-      <div className="relative overflow-hidden bg-[#E8F2FA]">
+      <div className="relative overflow-hidden bg-primary-light">
         <img
           src={getImageUrl(course.image || "")}
           alt={course.title}
           className="w-full h-44 object-cover group-hover:scale-[1.03] transition-transform duration-300 ease-out"
           onError={(e) => {
-            (
-              e.target as HTMLImageElement
-            ).src = `https://via.placeholder.com/400x300/BFD7ED/3D4A5A?text=${encodeURIComponent(
-              course.title
-            )}`;
+            e.currentTarget.onerror = null;
+            e.currentTarget.src = "/logo/maymay-logo.svg";
           }}
         />
       </div>
 
       <div className="p-5 flex flex-col flex-grow">
         <h3
-          className={`text-[15px] font-semibold text-[#3D4A5A] mb-2.5 line-clamp-2 cursor-pointer hover:text-[#356FA7] transition-colors duration-200 leading-snug ${
+          className={`text-[15px] font-semibold text-foreground mb-2.5 line-clamp-2 cursor-pointer hover:text-primary transition-colors duration-200 leading-snug ${
             isCheckingEnrollment ? "opacity-50 cursor-wait" : ""
           }`}
           onClick={() =>
@@ -158,76 +158,94 @@ const CourseCard = ({
         >
           {course.title}
           {isCheckingEnrollment && (
-            <span className="ml-2 text-xs text-[#8190A3] font-normal">
+            <span className="ml-2 text-xs text-subtle-foreground font-normal">
               Đang kiểm tra...
             </span>
           )}
         </h3>
 
         {course.instructor && (
-          <div className="flex items-center gap-2 mb-3.5">
+          <div className="flex items-center gap-2 mb-3">
             {(course as any).instructorAvatar && (
               <img
                 src={getImageUrl((course as any).instructorAvatar)}
                 alt={course.instructor}
-                className="w-6 h-6 rounded-full object-cover ring-1 ring-[#E7EEF7]"
+                className="w-6 h-6 rounded-full object-cover ring-1 ring-border"
                 onError={(e) => {
                   (
                     e.target as HTMLImageElement
                   ).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
                     course.instructor || ""
-                  )}&background=BFD7ED&color=3D4A5A&size=28`;
+                  )}&size=28`;
                 }}
               />
             )}
-            <p className="text-xs text-[#6F7C8C] font-medium truncate">
+            <p className="text-xs text-muted-foreground font-medium truncate">
               {course.instructor}
             </p>
+          </div>
+        )}
+
+        {/* Rating & Student Enrollment Meta */}
+        {((typeof course.rating === "number" && course.rating > 0) ||
+          (typeof course.students === "number" && course.students > 0)) && (
+          <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3">
+            {typeof course.rating === "number" && course.rating > 0 && (
+              <span className="inline-flex items-center gap-1 font-semibold text-warning-foreground">
+                <HiStar className="w-4 h-4 fill-current" />
+                {course.rating.toFixed(1)}
+              </span>
+            )}
+            {typeof course.students === "number" && course.students > 0 && (
+              <span className="inline-flex items-center gap-1">
+                <HiUsers className="w-3.5 h-3.5 text-primary" />
+                {course.students.toLocaleString("vi-VN")} học viên
+              </span>
+            )}
           </div>
         )}
 
         {Array.isArray((course as any).tags) &&
           (course as any).tags.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mb-4">
-              {(course as any).tags.map((tag: string, i: number) => (
-                <span
-                  key={i}
-                  className={`${
-                    tag === "bán chạy nhất"
-                      ? "bg-[#FFF1D9] text-[#875415] border border-[#F8E9C9]"
-                      : tag === "thịnh hành"
-                      ? "bg-[#FCE8EF] text-[#3D4A5A] border border-[#F7C9D9]"
-                      : tag === "được yêu thích"
-                      ? "bg-[#E3D5F5]/60 text-[#3D4A5A] border border-[#E3D5F5]"
-                      : tag === "mới ra mắt"
-                      ? "bg-[#E8F2FA] text-[#356FA7] border border-[#BFD7ED]"
-                      : "bg-[#F6FAFF] text-[#6F7C8C] border border-[#E7EEF7]"
-                  } px-2.5 py-0.5 rounded-full text-[11px] font-medium`}
-                >
-                  {tag}
-                </span>
-              ))}
+              {(course as any).tags.map((tag: string, i: number) => {
+                const variant: BadgeVariant =
+                  tag === "bán chạy nhất"
+                    ? "warning"
+                    : tag === "thịnh hành"
+                    ? "secondary"
+                    : tag === "được yêu thích"
+                    ? "lavender"
+                    : tag === "mới ra mắt"
+                    ? "default"
+                    : "neutral";
+                return (
+                  <Badge key={i} variant={variant} size="sm">
+                    {tag}
+                  </Badge>
+                );
+              })}
             </div>
           )}
 
-        <div className="flex-grow"></div>
+        <div className="flex-grow" />
 
         {/* Price */}
         {course.price !== null && course.price !== undefined && (
-          <div className="pt-3.5 border-t border-[#E7EEF7] flex items-center justify-between">
+          <div className="pt-3.5 border-t border-border flex items-center justify-between">
             <div className="flex items-baseline gap-2">
-              <span className="text-lg font-bold text-[#356FA7]">
+              <span className="text-lg font-bold text-primary">
                 {course.price === 0
                   ? "Miễn phí"
                   : `${Number(course.price).toLocaleString("en-US")}đ`}
               </span>
               {typeof (course as any).originalPrice === "number" && (
-                <span className="text-xs text-[#8190A3] line-through font-normal">
+                <span className="text-xs text-subtle-foreground line-through font-normal">
                   {(course as any).originalPrice.toLocaleString("en-US")}đ
                 </span>
               )}
             </div>
-            <span className="text-xs font-semibold text-[#356FA7] opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            <span className="text-xs font-semibold text-primary opacity-0 group-hover:opacity-100 transition-opacity duration-200">
               Xem →
             </span>
           </div>
@@ -246,22 +264,22 @@ const CourseCard = ({
             }
             onMouseLeave={handleLeave}
           >
-            <div className="relative rounded-2xl shadow-lg p-5 text-sm bg-white border border-[#BFD7ED]">
-              <div className="pointer-events-none absolute inset-x-0 -top-px h-1 rounded-t-2xl bg-[#BFD7ED]" />
+            <Card className="relative rounded-2xl shadow-lg p-5 text-sm border-primary-pastel">
+              <div className="pointer-events-none absolute inset-x-0 -top-px h-1 rounded-t-2xl bg-primary-pastel" />
               {previewPos.place === "right" ? (
                 <>
-                  <div className="absolute -left-2 top-6 w-0 h-0 border-y-8 border-y-transparent border-r-8 border-r-[#BFD7ED]" />
-                  <div className="absolute -left-[7px] top-6 w-0 h-0 border-y-8 border-y-transparent border-r-8 border-r-white" />
+                  <div className="absolute -left-2 top-6 w-0 h-0 border-y-8 border-y-transparent border-r-8 border-r-primary-pastel" />
+                  <div className="absolute -left-[7px] top-6 w-0 h-0 border-y-8 border-y-transparent border-r-8 border-r-surface" />
                 </>
               ) : (
                 <>
-                  <div className="absolute -right-2 top-6 w-0 h-0 border-y-8 border-y-transparent border-l-8 border-l-[#BFD7ED]" />
-                  <div className="absolute -right-[7px] top-6 w-0 h-0 border-y-8 border-y-transparent border-l-8 border-l-white" />
+                  <div className="absolute -right-2 top-6 w-0 h-0 border-y-8 border-y-transparent border-l-8 border-l-primary-pastel" />
+                  <div className="absolute -right-[7px] top-6 w-0 h-0 border-y-8 border-y-transparent border-l-8 border-l-surface" />
                 </>
               )}
 
               <div className="flex items-start gap-3 mb-4">
-                <div className="w-14 h-14 rounded-xl overflow-hidden bg-[#E8F2FA] flex-shrink-0 border border-[#BFD7ED]">
+                <div className="w-14 h-14 rounded-xl overflow-hidden bg-primary-light flex-shrink-0 border border-primary-pastel">
                   <img
                     src={getImageUrl(
                       course.image ||
@@ -273,16 +291,14 @@ const CourseCard = ({
                   />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="font-semibold text-[#3D4A5A] line-clamp-2 text-sm leading-snug">
+                  <div className="font-semibold text-foreground line-clamp-2 text-sm leading-snug">
                     {previewCache[course.id]?.title || course.title}
                   </div>
                   {course.instructor && (
                     <div className="flex items-center gap-1.5 mt-1.5">
                       {(course as any).instructorAvatar && (
                         <img
-                          src={getImageUrl(
-                            (course as any).instructorAvatar
-                          )}
+                          src={getImageUrl((course as any).instructorAvatar)}
                           alt={course.instructor}
                           className="w-4 h-4 rounded-full object-cover"
                           onError={(e) => {
@@ -290,11 +306,11 @@ const CourseCard = ({
                               e.target as HTMLImageElement
                             ).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
                               course.instructor || ""
-                            )}&background=BFD7ED&color=3D4A5A&size=20`;
+                            )}&size=20`;
                           }}
                         />
                       )}
-                      <div className="text-xs text-[#6F7C8C] line-clamp-1 font-medium">
+                      <div className="text-xs text-muted-foreground line-clamp-1 font-medium">
                         {course.instructor}
                       </div>
                     </div>
@@ -303,28 +319,30 @@ const CourseCard = ({
               </div>
 
               <div className="space-y-2 mb-3">
-                <div className="flex items-center justify-between text-xs text-[#6F7C8C]">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <div>
-                    <span className="font-medium text-[#3D4A5A]">Cập nhật:</span>{" "}
+                    <span className="font-medium text-foreground">
+                      Cập nhật:
+                    </span>{" "}
                     {previewCache[course.id]?.last_updated
                       ? new Date(
                           previewCache[course.id].last_updated
                         ).toLocaleDateString("vi-VN")
                       : "--"}
                   </div>
-                  <div className="font-semibold text-[#356FA7] bg-[#E8F2FA] px-2 py-0.5 rounded-full text-[11px]">
+                  <Badge variant="default" size="sm">
                     {previewCache[course.id]?.language?.toUpperCase() || "--"}
-                  </div>
+                  </Badge>
                 </div>
               </div>
 
               {Array.isArray(previewCache[course.id]?.outcomes) &&
               previewCache[course.id].outcomes.length > 0 ? (
-                <div className="bg-[#F6FAFF] rounded-xl p-3 border border-[#E7EEF7]">
-                  <div className="text-xs font-semibold text-[#3D4A5A] mb-2">
+                <div className="bg-background rounded-xl p-3 border border-border">
+                  <div className="text-xs font-semibold text-foreground mb-2">
                     Bạn sẽ học được:
                   </div>
-                  <ul className="space-y-1.5 text-[#6F7C8C]">
+                  <ul className="space-y-1.5 text-muted-foreground">
                     {previewCache[course.id].outcomes
                       .slice(0, 4)
                       .map((o: string, i: number) => (
@@ -332,7 +350,7 @@ const CourseCard = ({
                           key={i}
                           className="leading-snug text-xs flex items-start gap-2"
                         >
-                          <span className="text-[#356FA7] font-bold mt-0.5">
+                          <span className="text-primary font-bold mt-0.5">
                             ✓
                           </span>
                           <span className="flex-1">{o}</span>
@@ -341,28 +359,28 @@ const CourseCard = ({
                   </ul>
                 </div>
               ) : (
-                <div className="text-[#6F7C8C] text-xs line-clamp-3 leading-relaxed bg-[#F6FAFF] rounded-xl p-3 border border-[#E7EEF7]">
+                <div className="text-muted-foreground text-xs line-clamp-3 leading-relaxed bg-background rounded-xl p-3 border border-border">
                   {(previewCache[course.id]?.description || "")
                     .replace(/<[^>]*>/g, " ")
                     .trim() || (
-                    <div className="flex items-center gap-2 text-[#6F7C8C]">
-                      <span className="inline-block h-2 w-2 rounded-full bg-[#356FA7] animate-pulse" />
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <span className="inline-block h-2 w-2 rounded-full bg-primary animate-pulse" />
                       Đang tải thông tin...
                     </div>
                   )}
                 </div>
               )}
 
-              <div className="mt-3 pt-2.5 border-t border-[#E7EEF7] flex items-center justify-end">
-                <div className="text-xs font-semibold text-[#356FA7]">
+              <div className="mt-3 pt-2.5 border-t border-border flex items-center justify-end">
+                <div className="text-xs font-semibold text-primary">
                   Xem chi tiết →
                 </div>
               </div>
-            </div>
+            </Card>
           </div>,
           document.body
         )}
-    </div>
+    </Card>
   );
 };
 

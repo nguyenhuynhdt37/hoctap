@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 
 from app.core.deps import AuthorizationService
 from app.db.models.database import User
@@ -46,7 +46,9 @@ async def get_user_courses(
     authorization_service: AuthorizationService = Depends(AuthorizationService),
     purchase_service: CourseEnrolls = Depends(CourseEnrolls),
 ):
-    await authorization_service.get_current_user()
+    current = await authorization_service.get_current_user()
+    if current.id != user_id and 'ADMIN' not in await authorization_service.get_list_role_in_user(current):
+        raise HTTPException(403, 'Không có quyền xem khóa học của tài khoản khác')
     return await purchase_service.get_user_courses_async(
         user_id, page, size, keyword, category_id, level, language, sort_by, order
     )

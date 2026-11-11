@@ -355,20 +355,20 @@ function LearningDetail(props: LearningDetailProps) {
   if (isLoading) {
     return (
       <div
-        className="min-h-screen bg-gradient-to-br from-teal-50 to-emerald-50 flex items-center justify-center"
+        className="min-h-screen bg-gradient-to-br from-background to-primary-pastel/30 flex items-center justify-center"
         suppressHydrationWarning
       >
         <div className="text-center" suppressHydrationWarning>
           <div
-            className="w-20 h-20 bg-gradient-to-r from-teal-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse"
+            className="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse shadow-sm"
             suppressHydrationWarning
           >
             <HiBookOpen className="h-10 w-10 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">
+          <h1 className="text-2xl font-bold text-foreground mb-4">
             Đang tải nội dung khóa học...
           </h1>
-          <p className="text-gray-600">Vui lòng chờ trong giây lát.</p>
+          <p className="text-muted-foreground">Vui lòng chờ trong giây lát.</p>
         </div>
       </div>
     );
@@ -378,7 +378,7 @@ function LearningDetail(props: LearningDetailProps) {
   if (curriculumError || !curriculumData) {
     return (
       <div
-        className="min-h-screen bg-gradient-to-br from-teal-50 to-emerald-50 flex items-center justify-center"
+        className="min-h-screen bg-gradient-to-br from-background to-primary-pastel/30 flex items-center justify-center"
         suppressHydrationWarning
       >
         <div className="text-center" suppressHydrationWarning>
@@ -388,16 +388,16 @@ function LearningDetail(props: LearningDetailProps) {
           >
             <HiBookOpen className="h-10 w-10 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">
+          <h1 className="text-2xl font-bold text-foreground mb-4">
             Không thể tải nội dung khóa học
           </h1>
-          <p className="text-gray-600 mb-4">
+          <p className="text-muted-foreground mb-4">
             {curriculumError?.message ||
               "Vui lòng kiểm tra lại đường dẫn khóa học."}
           </p>
           <button
             onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors"
+            className="px-4 py-2 bg-primary text-white rounded-xl hover:bg-primary-hover transition-colors cursor-pointer"
           >
             Thử lại
           </button>
@@ -409,20 +409,20 @@ function LearningDetail(props: LearningDetailProps) {
   if (!courseData) {
     return (
       <div
-        className="min-h-screen bg-gradient-to-br from-teal-50 to-emerald-50 flex items-center justify-center"
+        className="min-h-screen bg-gradient-to-br from-background to-primary-pastel/30 flex items-center justify-center"
         suppressHydrationWarning
       >
         <div className="text-center" suppressHydrationWarning>
           <div
-            className="w-20 h-20 bg-gradient-to-r from-teal-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6"
+            className="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm"
             suppressHydrationWarning
           >
             <HiBookOpen className="h-10 w-10 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">
+          <h1 className="text-2xl font-bold text-foreground mb-4">
             Không tìm thấy khóa học
           </h1>
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             Vui lòng kiểm tra lại đường dẫn khóa học.
           </p>
         </div>
@@ -431,7 +431,7 @@ function LearningDetail(props: LearningDetailProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-teal-50">
+    <div className="min-h-screen bg-background">
       <LearningHeader
         courseTitle={curriculumData.title}
         onOpenProgress={() => setOpenProgress(true)}
@@ -542,7 +542,7 @@ function LearningDetail(props: LearningDetailProps) {
               <Suspense
                 fallback={
                   <div className="h-full flex items-center justify-center">
-                    <div className="w-8 h-8 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
+                    <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                   </div>
                 }
               >

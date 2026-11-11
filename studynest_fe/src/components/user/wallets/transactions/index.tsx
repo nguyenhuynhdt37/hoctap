@@ -1,11 +1,14 @@
 "use client";
 
+import { Alert } from "@/components/ui";
 import api from "@/lib/utils/fetcher/client/axios";
 import {
   WalletTransactionsQuery,
   WalletTransactionsResponse,
 } from "@/types/user/wallet";
+import Link from "next/link";
 import { useEffect, useState } from "react";
+import { HiArrowLeft, HiClock } from "react-icons/hi";
 import useSWR from "swr";
 import { TransactionsFilterBar } from "./filter-bar";
 import { TransactionsPagination } from "./pagination";
@@ -84,7 +87,7 @@ export default function WalletTransactions({
 
   const handleRetry = async (orderId?: string | null) => {
     if (!orderId) {
-      setError("Không tìm thấy mã PayPal");
+      setError("Không tìm thấy mã giao dịch PayPal");
       return;
     }
 
@@ -97,7 +100,7 @@ export default function WalletTransactions({
 
       if (res.data?.approve_url) {
         window.open(res.data.approve_url, "_blank", "noopener,noreferrer");
-        setSuccess("Đã mở lại PayPal. Hoàn tất thanh toán để cập nhật số dư");
+        setSuccess("Đã mở lại PayPal. Vui lòng hoàn tất thanh toán để cập nhật số dư ví");
       } else {
         setSuccess("Yêu cầu thanh toán lại đã được ghi nhận");
       }
@@ -106,7 +109,7 @@ export default function WalletTransactions({
     } catch (err: any) {
       setError(
         err?.response?.data?.detail ||
-          "Không thể khôi phục giao dịch. Vui lòng thử lại"
+          "Không thể khôi phục giao dịch. Vui lòng thử lại sau"
       );
     } finally {
       setRetryOrderId(null);
@@ -116,14 +119,31 @@ export default function WalletTransactions({
   const transactionsData = data ?? initialData;
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-8 space-y-6">
-      <header>
-        <h1 className="text-3xl font-bold text-gray-900">Lịch sử giao dịch</h1>
-        <p className="text-sm text-gray-600 mt-1">
-          Theo dõi tất cả giao dịch ví của bạn. Lọc và tìm kiếm dễ dàng, hỗ trợ
-          thanh toán lại đối với giao dịch đang chờ.
-        </p>
-      </header>
+    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-8">
+      {/* Header */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
+            <HiClock className="h-4 w-4" />
+            <span>Sổ cái tài chính</span>
+          </div>
+          <h1 className="font-display text-3xl font-bold text-foreground sm:text-4xl mt-1">
+            Lịch sử giao dịch
+          </h1>
+          <p className="mt-1 max-w-2xl text-xs leading-relaxed text-muted-foreground sm:text-sm">
+            Theo dõi chi tiết mọi biến động số dư, lọc theo trạng thái và hỗ trợ thanh toán lại
+            cho các giao dịch PayPal đang chờ xử lý.
+          </p>
+        </div>
+
+        <Link
+          href="/wallets"
+          className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-2 text-xs font-semibold text-foreground transition-all duration-200 hover:border-primary-pastel hover:bg-primary-light hover:text-primary shadow-2xs"
+        >
+          <HiArrowLeft className="h-4 w-4" />
+          <span>Quay lại Ví</span>
+        </Link>
+      </div>
 
       <TransactionsFilterBar
         searchValue={searchValue}
@@ -145,17 +165,8 @@ export default function WalletTransactions({
         }}
       />
 
-      {error && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
-          {error}
-        </div>
-      )}
-
-      {success && (
-        <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
-          {success}
-        </div>
-      )}
+      {error && <Alert variant="destructive">{error}</Alert>}
+      {success && <Alert variant="success">{success}</Alert>}
 
       <TransactionsTable
         transactions={transactionsData.transactions}

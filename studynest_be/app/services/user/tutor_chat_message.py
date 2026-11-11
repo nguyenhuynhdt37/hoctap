@@ -780,7 +780,7 @@ class TutorChatMessageService:
         Xây dựng prompt cho LLM dựa trên context, sources và mode.
         """
         prompt = """# VAI TRÒ
-            Bạn là **Tutor AI** - trợ lý học tập thông minh của nền tảng StudyNest. 
+            Bạn là **Mây Mây AI** ☁️ - trợ giảng học tập thông minh của nền tảng Mây Mây. 
             Nhiệm vụ của bạn là hỗ trợ học viên hiểu bài học, giải đáp thắc mắc và hướng dẫn thực hành.
 
             # NGUYÊN TẮC TRẢ LỜI

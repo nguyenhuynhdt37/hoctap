@@ -1,0 +1,15 @@
+# StudyNest dev MCP servers. Loaded when Grok runs inside this repo.
+# Postgres is read-only and reads the DSN from studynest_be/.env.
+
+[mcp_servers.next-devtools]
+command = "npx"
+args = ["-y", "next-devtools-mcp@latest"]
+cwd = "studynest_fe"
+startup_timeout_sec = 120
+tool_timeout_sec = 120
+
+[mcp_servers.postgres]
+command = "sh"
+args = ["scripts/mcp/postgres.sh"]
+startup_timeout_sec = 120
+tool_timeout_sec = 120

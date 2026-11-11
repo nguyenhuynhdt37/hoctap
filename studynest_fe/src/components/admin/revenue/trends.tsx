@@ -118,18 +118,18 @@ export default function RevenueTrends() {
   if (!mounted) return null;
 
   return (
-    <div className="bg-white rounded-[20px] shadow-xs border border-[#E7EEF7] p-6">
+    <div className="bg-white rounded-[20px] shadow-xs border border-border p-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
-        <h3 className="text-lg font-semibold text-[#3D4A5A]">Xu hướng doanh thu</h3>
-        <div className="flex gap-1.5 bg-[#F6FAFF] p-1 rounded-xl border border-[#E7EEF7]">
+        <h3 className="text-lg font-semibold text-foreground">Xu hướng doanh thu</h3>
+        <div className="flex gap-1.5 bg-background p-1 rounded-xl border border-border">
           {[6, 12, 24].map((m) => (
             <button
               key={m}
               onClick={() => setMonths(m)}
               className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                 months === m
-                  ? "bg-[#356FA7] text-white shadow-2xs"
-                  : "text-[#6F7C8C] hover:text-[#3D4A5A]"
+                  ? "bg-primary text-white shadow-2xs"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               {m} tháng
@@ -140,31 +140,31 @@ export default function RevenueTrends() {
 
       {/* Summary Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="bg-[#E8F2FA]/70 border border-[#BFD7ED]/60 rounded-xl p-4">
+        <div className="bg-primary-light/70 border border-primary-pastel/60 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-1">
-            <HiTrendingUp className="w-4 h-4 text-[#356FA7]" />
-            <p className="text-[#356FA7] text-xs font-semibold uppercase tracking-wider">TB hàng tháng</p>
+            <HiTrendingUp className="w-4 h-4 text-primary" />
+            <p className="text-primary text-xs font-semibold uppercase tracking-wider">TB hàng tháng</p>
           </div>
-          <p className="text-xl font-bold text-[#3D4A5A]">
+          <p className="text-xl font-bold text-foreground">
             {formatCurrency(data?.avg_monthly_revenue)}
           </p>
         </div>
-        <div className="bg-[#FCE8EF]/70 border border-[#F7C9D9]/60 rounded-xl p-4">
-          <p className="text-[#8A3B58] text-xs font-semibold uppercase tracking-wider mb-1">
+        <div className="bg-secondary-light/70 border border-secondary-pastel/60 rounded-xl p-4">
+          <p className="text-secondary-foreground text-xs font-semibold uppercase tracking-wider mb-1">
             TB tăng trưởng
           </p>
-          <p className="text-xl font-bold text-[#3D4A5A]">
+          <p className="text-xl font-bold text-foreground">
             {(data?.avg_growth_rate ?? 0).toFixed(1)}%
           </p>
         </div>
-        <div className="bg-[#FFF9F6] border border-[#F8E9C9] rounded-xl p-4 col-span-2">
+        <div className="bg-surface-muted border border-accent-vanilla rounded-xl p-4 col-span-2">
           <div className="flex items-center gap-2 mb-1">
-            <HiStar className="w-4 h-4 text-[#D99B26]" />
-            <p className="text-[#875415] text-xs font-semibold uppercase tracking-wider">
+            <HiStar className="w-4 h-4 text-warning" />
+            <p className="text-warning-foreground text-xs font-semibold uppercase tracking-wider">
               Tháng tốt nhất
             </p>
           </div>
-          <p className="text-xl font-bold text-[#3D4A5A]">
+          <p className="text-xl font-bold text-foreground">
             {data?.best_month || "N/A"} -{" "}
             {formatCurrency(data?.best_month_revenue)}
           </p>
@@ -175,7 +175,7 @@ export default function RevenueTrends() {
       <div className="h-72 relative">
         {isLoading ? (
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-8 h-8 border-4 border-[#356FA7] border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
           <Line data={chartData} options={options as any} />

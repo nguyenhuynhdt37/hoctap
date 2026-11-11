@@ -1,5 +1,6 @@
 "use client";
 
+import { isSessionExpired, refreshSession } from "@/lib/utils/fetcher/client/refresh-session";
 import { connectWebSocket } from "@/hooks/websocket/connectWebSocket";
 import { useRealtimeNotiStore } from "@/stores/notifications";
 import { useUserStore } from "@/stores/user";
@@ -27,6 +28,7 @@ export function NotificationWS({
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const attempts = useRef(0);
+  const lastAuthRecovery = useRef(0);
   const isClosing = useRef(false);
   const mountedRef = useRef(true);
 
@@ -106,10 +108,17 @@ export function NotificationWS({
           if (isClosing.current || !mountedRef.current) return;
           if (event.code === 1000) return;
 
-          // Nếu session hết hạn/invalid (code 1008) -> dừng reconnect và logout
           if (event.code === 1008) {
-            console.log("🔒 [WS] Session expired or invalid (code 1008). Logging out...");
-            clearUser();
+            if (Date.now() - lastAuthRecovery.current < 5000) return;
+            lastAuthRecovery.current = Date.now();
+            refreshSession(true).then(() => {
+              if (mountedRef.current && !isClosing.current) connect();
+            }).catch(error => {
+              if (isSessionExpired(error)) clearUser();
+              else reconnectTimer.current = setTimeout(() => {
+                if (mountedRef.current && !isClosing.current) connect();
+              }, 5000);
+            });
             return;
           }
 

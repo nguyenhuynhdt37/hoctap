@@ -42,7 +42,7 @@ function MessageBubble({ message, onSourceClick, currentLessonId }: Props) {
 
           {/* Text */}
           {message.content && (
-            <div className="bg-green-600 text-white rounded-2xl rounded-br-sm px-4 py-2.5 shadow-sm">
+            <div className="bg-primary text-primary-foreground rounded-2xl rounded-br-sm px-4 py-2.5 shadow-2xs">
               <p className="text-sm whitespace-pre-wrap leading-relaxed">
                 {message.content}
               </p>
@@ -71,12 +71,12 @@ function MessageBubble({ message, onSourceClick, currentLessonId }: Props) {
             {[0, 150, 300].map((delay) => (
               <div
                 key={delay}
-                className="w-1.5 h-1.5 bg-green-500 rounded-full animate-bounce"
+                className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce"
                 style={{ animationDelay: `${delay}ms` }}
               />
             ))}
           </div>
-          <span className="text-xs text-gray-500">Thinking...</span>
+          <span className="text-xs text-muted-foreground">Mây Mây đang suy nghĩ...</span>
         </div>
       )}
 

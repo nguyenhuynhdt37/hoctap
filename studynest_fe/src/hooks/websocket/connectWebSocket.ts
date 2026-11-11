@@ -1,3 +1,5 @@
+import { getLatestAccessToken } from "@/lib/utils/fetcher/client/refresh-session";
+
 export async function connectWebSocket(
   endpoint: string, // ví dụ: "/api/v1/learning/ws/comments/abc123"
   token?: string, // JWT hoặc null nếu public
@@ -6,6 +8,8 @@ export async function connectWebSocket(
   onClose?: (event: CloseEvent) => void
 ): Promise<WebSocket> {
   const base = process.env.NEXT_PUBLIC_URL_BACKEND_WS || "ws://127.0.0.1:8000";
+
+  if (token) token = getLatestAccessToken(token) || token;
 
   // ✅ Ghép URL chính xác
   const wsUrl =
@@ -17,7 +21,7 @@ export async function connectWebSocket(
       ? `${base}${endpoint}?access_token=${encodeURIComponent(token)}`
       : `${base}${endpoint}`;
 
-  console.log("🔌 Connecting WebSocket:", wsUrl);
+  console.log("🔌 Connecting WebSocket:", endpoint);
 
   return new Promise((resolve, reject) => {
     const ws = new WebSocket(wsUrl);

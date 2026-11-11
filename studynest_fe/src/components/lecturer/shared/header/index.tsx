@@ -33,6 +33,7 @@ const LecturerHeader = () => {
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   const navLinks = [
+    { href: "/lecturer/providers", label: "Đơn vị", icon: HiAcademicCap },
     { href: "/lecturer", label: "Trang chủ", icon: HiAcademicCap },
     { href: "/lecturer/courses", label: "Khóa học", icon: HiVideoCamera },
     { href: "/lecturer/discounts", label: "Mã giảm giá", icon: HiTag },
@@ -95,10 +96,10 @@ const LecturerHeader = () => {
               <HiAcademicCap className="h-6 w-6 text-white" />
             </div>
             <div className="hidden sm:block">
-              <span className="text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                StudyNest
+              <span className="text-xl font-bold text-primary font-display">
+                Mây Mây
               </span>
-              <p className="text-xs text-gray-500 -mt-1">Giảng viên</p>
+              <p className="text-xs text-muted-foreground -mt-1">Giảng viên</p>
             </div>
           </Link>
 
@@ -168,7 +169,7 @@ const LecturerHeader = () => {
               {/* Invisible bridge to connect button and dropdown */}
               <div className="absolute right-0 top-full w-80 h-2 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto z-40"></div>
 
-              {/* Beautiful Dropdown Menu - StudyNest Style */}
+              {/* Beautiful Dropdown Menu */}
               <div className="absolute right-0 top-full w-80 bg-white rounded-xl shadow-2xl border-2 border-green-100 opacity-0 group-hover:opacity-100 transform scale-95 group-hover:scale-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto z-50">
                 {/* User Info Section - Green Theme */}
                 <div className="px-6 py-4 border-b-2 border-green-100 bg-gradient-to-r from-green-50 to-emerald-50">
@@ -195,7 +196,7 @@ const LecturerHeader = () => {
                         {user?.fullname || "Giảng viên"}
                       </p>
                       <p className="text-sm text-emerald-600 truncate font-medium">
-                        {user?.email || "lecturer@studynest.com"}
+                        {user?.email || "lecturer@maymay.edu.vn"}
                       </p>
                     </div>
                   </div>

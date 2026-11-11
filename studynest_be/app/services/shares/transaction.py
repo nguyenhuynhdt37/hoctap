@@ -28,6 +28,7 @@ from app.db.models.database import (
     Wallets,
     WithdrawalRequests,
 )
+from app.services.catalog import public_course, require_real_course
 from app.db.sesson import get_session
 from app.libs.formats.datetime import now as get_now
 from app.libs.formats.datetime import to_vietnam_naive
@@ -365,13 +366,16 @@ class TransactionsService:
         discount_service: DiscountService,
     ):
         try:
+            from app.services.bundles import lock_purchase_user
+            await lock_purchase_user(self.db, user.id)
+
             # ============================
             # 0) VALIDATE COURSE
             # ============================
             courses = (
                 (
                     await self.db.execute(
-                        select(Courses).where(Courses.id.in_(course_ids))
+                        select(Courses).where(Courses.id.in_(course_ids), public_course())
                     )
                 )
                 .scalars()
@@ -385,6 +389,7 @@ class TransactionsService:
                 raise HTTPException(400, "Một hoặc nhiều khóa học không tồn tại.")
 
             for c in courses:
+                require_real_course(c)
                 price = Decimal(str(c.base_price or 0))
                 if price <= 0:
                     raise HTTPException(

@@ -230,7 +230,7 @@ export default memo(function CommentWithReplies({
   const isHidden = comment.content === "[Bình luận đã bị ẩn]";
 
   return (
-    <div className="p-3 border-b border-gray-200 last:border-b-0">
+    <div className="p-3 border-b border-border last:border-b-0">
       <div className="flex gap-3">
         {/* Avatar */}
         <div className="flex-shrink-0">
@@ -241,7 +241,7 @@ export default memo(function CommentWithReplies({
               className="w-10 h-10 rounded-full object-cover"
             />
           ) : (
-            <div className="w-10 h-10 rounded-full bg-[#356FA7] flex items-center justify-center text-white font-semibold text-sm">
+            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-semibold text-sm">
               {comment.user_name.charAt(0).toUpperCase()}
             </div>
           )}
@@ -252,15 +252,15 @@ export default memo(function CommentWithReplies({
           {/* Header */}
           <div className="flex items-start justify-between mb-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-semibold text-gray-900 text-sm">
+              <span className="font-semibold text-foreground text-sm">
                 {comment.user_name}
               </span>
               {comment.is_author && (
-                <span className="px-1.5 py-0.5 text-xs bg-[#E8F2FA] text-[#285C90] rounded font-medium">
+                <span className="px-1.5 py-0.5 text-xs bg-primary-pastel text-primary rounded font-medium">
                   Tác giả
                 </span>
               )}
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-muted-foreground">
                 {formatDate(comment.created_at)}
               </span>
             </div>
@@ -270,7 +270,7 @@ export default memo(function CommentWithReplies({
                 <button
                   onClick={() => onEdit(comment.id)}
                   disabled={isDeletingComment === comment.id}
-                  className="p-1.5 rounded-full hover:bg-gray-100 text-gray-600 hover:text-[#356FA7] transition-colors disabled:opacity-50"
+                  className="p-1.5 rounded-full hover:bg-background text-muted-foreground hover:text-primary transition-colors disabled:opacity-50"
                   title="Chỉnh sửa"
                 >
                   <HiPencil className="w-4 h-4" />
@@ -281,7 +281,7 @@ export default memo(function CommentWithReplies({
                     isDeletingComment === comment.id ||
                     editingComment === comment.id
                   }
-                  className="p-1.5 rounded-full hover:bg-gray-100 text-gray-600 hover:text-red-600 transition-colors disabled:opacity-50"
+                  className="p-1.5 rounded-full hover:bg-background text-muted-foreground hover:text-red-600 transition-colors disabled:opacity-50"
                   title="Xóa"
                 >
                   <HiTrash className="w-4 h-4" />
@@ -291,7 +291,7 @@ export default memo(function CommentWithReplies({
           </div>
 
           {/* Content */}
-          <div className="text-gray-900 mb-2 text-sm leading-relaxed">
+          <div className="text-foreground mb-2 text-sm leading-relaxed">
             <CommentContent content={comment.content} />
           </div>
 
@@ -307,14 +307,14 @@ export default memo(function CommentWithReplies({
                 <button
                   onClick={() => onReply(comment.id)}
                   disabled={editingComment === comment.id}
-                  className="text-sm text-gray-600 hover:text-[#356FA7] font-medium disabled:opacity-50 transition-colors"
+                  className="text-sm text-muted-foreground hover:text-primary font-medium disabled:opacity-50 transition-colors"
                 >
                   Phản hồi
                 </button>
                 {hasReplies && (
                   <button
                     onClick={() => onToggleReplies(comment.id)}
-                    className="text-sm text-gray-600 hover:text-[#356FA7] font-medium transition-colors"
+                    className="text-sm text-muted-foreground hover:text-primary font-medium transition-colors"
                   >
                     {isExpanded ? "Ẩn phản hồi" : "Xem phản hồi"}
                   </button>
@@ -390,7 +390,7 @@ export default memo(function CommentWithReplies({
                               className="w-8 h-8 rounded-full object-cover"
                             />
                           ) : (
-                            <div className="w-8 h-8 rounded-full bg-[#356FA7] flex items-center justify-center text-white font-semibold text-xs">
+                            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-semibold text-xs">
                               {reply.user_name.charAt(0).toUpperCase()}
                             </div>
                           )}
@@ -405,7 +405,7 @@ export default memo(function CommentWithReplies({
                                 {reply.user_name}
                               </span>
                               {reply.is_author && (
-                                <span className="px-1.5 py-0.5 text-xs bg-[#E8F2FA] text-[#285C90] rounded font-medium">
+                                <span className="px-1.5 py-0.5 text-xs bg-primary-light text-primary-hover rounded font-medium">
                                   Tác giả
                                 </span>
                               )}
@@ -419,7 +419,7 @@ export default memo(function CommentWithReplies({
                                 <button
                                   onClick={() => onEdit(reply.id)}
                                   disabled={isDeletingComment === reply.id}
-                                  className="p-1 rounded-full hover:bg-gray-100 text-gray-600 hover:text-[#356FA7] transition-colors disabled:opacity-50"
+                                  className="p-1 rounded-full hover:bg-gray-100 text-gray-600 hover:text-primary transition-colors disabled:opacity-50"
                                   title="Chỉnh sửa"
                                 >
                                   <HiPencil className="w-3.5 h-3.5" />
@@ -462,7 +462,7 @@ export default memo(function CommentWithReplies({
                                 <button
                                   onClick={() => onReply(reply.id)}
                                   disabled={editingComment === reply.id}
-                                  className="text-sm text-gray-600 hover:text-[#356FA7] font-medium disabled:opacity-50 transition-colors"
+                                  className="text-sm text-gray-600 hover:text-primary font-medium disabled:opacity-50 transition-colors"
                                 >
                                   Phản hồi
                                 </button>
@@ -472,7 +472,7 @@ export default memo(function CommentWithReplies({
                                   onClick={() =>
                                     onToggleDepth1Reply(reply.id, comment.id)
                                   }
-                                  className="text-sm text-gray-600 hover:text-[#356FA7] font-medium transition-colors"
+                                  className="text-sm text-gray-600 hover:text-primary font-medium transition-colors"
                                 >
                                   {isDepth1Expanded
                                     ? "Ẩn phản hồi"
@@ -536,7 +536,7 @@ export default memo(function CommentWithReplies({
                                             className="w-7 h-7 rounded-full object-cover"
                                           />
                                         ) : (
-                                          <div className="w-7 h-7 rounded-full bg-[#356FA7] flex items-center justify-center text-white font-semibold text-xs">
+                                          <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-white font-semibold text-xs">
                                             {nestedReply.user_name
                                               .charAt(0)
                                               .toUpperCase()}
@@ -553,7 +553,7 @@ export default memo(function CommentWithReplies({
                                               {nestedReply.user_name}
                                             </span>
                                             {nestedReply.is_author && (
-                                              <span className="px-1.5 py-0.5 text-xs bg-[#E8F2FA] text-[#285C90] rounded font-medium">
+                                              <span className="px-1.5 py-0.5 text-xs bg-primary-light text-primary-hover rounded font-medium">
                                                 Tác giả
                                               </span>
                                             )}
@@ -573,7 +573,7 @@ export default memo(function CommentWithReplies({
                                                     isDeletingComment ===
                                                     nestedReply.id
                                                   }
-                                                  className="p-1 rounded-full hover:bg-gray-100 text-gray-600 hover:text-[#356FA7] transition-colors disabled:opacity-50"
+                                                  className="p-1 rounded-full hover:bg-gray-100 text-gray-600 hover:text-primary transition-colors disabled:opacity-50"
                                                   title="Chỉnh sửa"
                                                 >
                                                   <HiPencil className="w-3 h-3" />
@@ -665,7 +665,7 @@ export default memo(function CommentWithReplies({
                       <button
                         onClick={loadMoreReplies}
                         disabled={isLoadingMore}
-                        className="text-sm text-[#356FA7] hover:text-[#285C90] font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        className="text-sm text-primary hover:text-primary-hover font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
                         {isLoadingMore ? "Đang tải..." : "Xem thêm phản hồi"}
                       </button>

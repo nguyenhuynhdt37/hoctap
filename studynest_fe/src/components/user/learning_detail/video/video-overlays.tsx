@@ -69,7 +69,7 @@ export default function VideoOverlays({
         >
           <button
             onClick={onOpenQuiz}
-            className="bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white px-6 py-3 rounded-xl shadow-xl transition-all duration-300 transform hover:scale-105 hover:shadow-2xl border border-teal-500/20 cursor-pointer"
+            className="bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-xl shadow-xl transition-all duration-300 transform hover:scale-105 hover:shadow-2xl border border-primary-light/30 cursor-pointer"
           >
             <div className="flex items-center space-x-2">
               <div className="w-6 h-6 bg-white/20 rounded-lg flex items-center justify-center">
@@ -89,7 +89,7 @@ export default function VideoOverlays({
                 <div className="text-sm font-semibold">
                   {isCompleted ? "Luyện tập Quiz" : "Làm Quiz"}
                 </div>
-                <div className="text-xs text-teal-100">
+                <div className="text-xs text-primary-pastel">
                   {quizzesCount} câu hỏi
                 </div>
               </div>
@@ -105,14 +105,14 @@ export default function VideoOverlays({
         watchTime > 0 &&
         isHoveringVideo && (
           <div className="absolute top-4 left-4 z-20">
-            <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg shadow-lg border border-green-400/20">
+            <div className="bg-primary text-white px-4 py-2 rounded-xl shadow-lg border border-primary-light/30">
               <div className="flex items-center space-x-2">
                 <div className="w-6 h-6 bg-white/20 rounded-lg flex items-center justify-center">
                   ⏱️
                 </div>
                 <div>
                   <div className="text-sm font-semibold">Đã xem</div>
-                  <div className="text-xs text-green-100">
+                  <div className="text-xs text-primary-pastel">
                     {Math.floor(watchTime / 60)}:
                     {(watchTime % 60).toString().padStart(2, "0")} /{" "}
                     {Math.floor(duration / 60)}:
@@ -127,14 +127,14 @@ export default function VideoOverlays({
       {/* Cảnh báo khi tua video quá nhiều */}
       {isFastForwarding && !isPaused && (
         <div className="absolute top-4 right-4 z-30">
-          <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg shadow-lg border border-green-400/20">
+          <div className="bg-primary text-white px-4 py-2 rounded-xl shadow-lg border border-primary-light/30">
             <div className="flex items-center space-x-2">
               <div className="w-6 h-6 bg-white/20 rounded-lg flex items-center justify-center">
                 ⚠️
               </div>
               <div>
                 <div className="text-sm font-semibold">Cảnh báo tua video</div>
-                <div className="text-xs text-green-100">
+                <div className="text-xs text-primary-pastel">
                   Thời gian tua sẽ không được tính vào thời gian xem
                 </div>
               </div>

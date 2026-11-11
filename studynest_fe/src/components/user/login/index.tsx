@@ -1,6 +1,8 @@
 "use client";
 
+import AuthScenicLayout from "@/components/user/auth/auth-scenic-layout";
 import GoogleSignInButton from "@/components/shared/google-sign-in-button";
+import { Alert, Button, Card, Divider, Input, Modal } from "@/components/ui";
 import api from "@/lib/utils/fetcher/client/axios";
 import {
   calculateRemainingMs,
@@ -9,7 +11,7 @@ import {
   isLoginErrorDetail,
   LoginErrorDetail,
 } from "@/types/shared/auth";
-import Image from "next/image";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { HiEye, HiEyeOff } from "react-icons/hi";
@@ -62,14 +64,14 @@ const Countdown = ({ bannedUntil }: { bannedUntil: string }) => {
   }, [bannedUntil]);
 
   return (
-    <span className="text-yellow-600 font-medium">
+    <span className="text-warning-foreground font-medium">
       ({formatRemainingTime(remaining)})
     </span>
   );
 };
 
 // ============================================
-// DIALOG COMPONENT
+// DIALOG COMPONENT (Reusing Modal + Button from @/components/ui)
 // ============================================
 
 interface ErrorDialogProps {
@@ -89,51 +91,32 @@ const ErrorDialog = ({
   variant,
   actions,
 }: ErrorDialogProps) => {
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-
-      {/* Dialog */}
-      <div className="relative bg-white rounded-xl shadow-lg max-w-md w-full p-6">
-        {/* Title */}
-        <h3
-          className={`text-lg font-semibold mb-4 ${
-            variant === "error" ? "text-red-600" : "text-yellow-600"
-          }`}
-        >
-          {title}
-        </h3>
-
-        {/* Content */}
-        <div className="text-sm text-gray-700 mb-6">{content}</div>
-
-        {/* Actions */}
-        <div className="flex gap-3">
-          <button
-            onClick={onClose}
-            className="flex-1 px-4 py-2.5 text-gray-600 border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
-          >
+    <Modal
+      open={isOpen}
+      onClose={onClose}
+      title={title}
+      size="md"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose} className="flex-1">
             Đóng
-          </button>
+          </Button>
           {actions?.map((action, index) => (
-            <button
+            <Button
               key={index}
+              variant={variant === "error" ? "destructive" : "primary"}
               onClick={action.onClick}
-              className={`flex-1 px-4 py-2.5 text-white rounded-lg transition-colors text-sm font-medium ${
-                variant === "error"
-                  ? "bg-red-600 hover:bg-red-700"
-                  : "bg-yellow-600 hover:bg-yellow-700"
-              }`}
+              className="flex-1"
             >
               {action.label}
-            </button>
+            </Button>
           ))}
-        </div>
-      </div>
-    </div>
+        </>
+      }
+    >
+      <div className="text-sm text-foreground">{content}</div>
+    </Modal>
   );
 };
 
@@ -190,7 +173,6 @@ const Login = () => {
         router.push(redirectUrl);
         router.refresh();
       } catch (error: any) {
-        // Xử lý error cho Google login giống như email login
         handleLoginError(error);
       } finally {
         setIsGoogleLoading(false);
@@ -198,8 +180,6 @@ const Login = () => {
     },
     [router, redirectUrl]
   );
-
-
 
   // ============================================
   // FORM HANDLERS
@@ -264,15 +244,12 @@ const Login = () => {
   const handleLoginError = (error: any) => {
     const detail = error?.response?.data?.detail;
 
-    // Check if it's the new error format with error_code
     if (isLoginErrorDetail(detail)) {
       handleErrorByCode(detail);
       return;
     }
 
-    // Fallback: handle legacy error format
     if (error?.status === 401 || error?.response?.status === 401) {
-      // Legacy: EMAIL_NOT_VERIFIED
       const redirectParam =
         redirectUrl !== "/"
           ? `&redirect=${encodeURIComponent(redirectUrl)}`
@@ -308,7 +285,6 @@ const Login = () => {
         break;
 
       case "EMAIL_NOT_VERIFIED":
-        // Lưu email và redirect đến trang verify
         if (detail.email) {
           localStorage.setItem("pending_verify_email", detail.email);
         }
@@ -342,7 +318,7 @@ const Login = () => {
                   <span className="font-medium">📋 Lý do:</span> {detail.reason}
                 </p>
               )}
-              <p className="text-gray-500 text-xs mt-2">
+              <p className="text-muted-foreground text-xs mt-2">
                 Nếu bạn cho rằng đây là nhầm lẫn, vui lòng liên hệ bộ phận hỗ
                 trợ.
               </p>
@@ -377,7 +353,7 @@ const Login = () => {
                   <Countdown bannedUntil={detail.banned_until} />
                 </p>
               )}
-              <p className="text-gray-500 text-xs mt-2">
+              <p className="text-muted-foreground text-xs mt-2">
                 Vui lòng đợi đến khi tài khoản được mở khóa hoặc liên hệ support
                 nếu cần hỗ trợ.
               </p>
@@ -405,7 +381,7 @@ const Login = () => {
                   <span className="font-medium">📋 Lý do:</span> {detail.reason}
                 </p>
               )}
-              <p className="text-gray-500 text-xs mt-2">
+              <p className="text-muted-foreground text-xs mt-2">
                 Nếu bạn cho rằng đây là nhầm lẫn, vui lòng liên hệ bộ phận hỗ
                 trợ.
               </p>
@@ -460,26 +436,14 @@ const Login = () => {
 
   return (
     <>
-      <div className="min-h-screen bg-[#F6FAFF] flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
-        <div className="w-full max-w-md">
-          <div className="bg-white rounded-[24px] shadow-md border border-[#E7EEF7] p-8 sm:p-10 space-y-7">
+      <AuthScenicLayout>
+          <Card className="rounded-[24px] p-6 sm:p-8 space-y-5">
             {/* Header */}
             <div className="text-center space-y-2">
-              <div className="flex justify-center mb-4">
-                <div className="w-16 h-16 rounded-2xl bg-[#E8F2FA] border border-[#BFD7ED]/60 flex items-center justify-center shadow-2xs">
-                  <Image
-                    src="/logo/studynest-logo.svg"
-                    alt="StudyNest Logo"
-                    width={48}
-                    height={48}
-                    className="w-12 h-12"
-                  />
-                </div>
-              </div>
-              <h1 className="font-display text-3xl font-bold text-[#3D4A5A]">
+              <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground">
                 Đăng nhập
               </h1>
-              <p className="text-[#6F7C8C] text-sm">
+              <p className="text-muted-foreground text-sm">
                 Chào mừng trở lại! Vui lòng đăng nhập vào tài khoản của bạn
               </p>
             </div>
@@ -491,129 +455,100 @@ const Login = () => {
             />
 
             {/* Divider */}
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-[#E7EEF7]" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase tracking-wider">
-                <span className="px-4 bg-white text-[#8190A3]">hoặc</span>
-              </div>
-            </div>
+            <Divider label="HOẶC" />
 
             {/* Error Message */}
             {errors.general && (
-              <div className="bg-[#FCE8E8] border border-[#F5C2C7] rounded-xl p-4 text-sm text-[#A23C46]">
-                {errors.general}
-              </div>
+              <Alert variant="destructive">{errors.general}</Alert>
             )}
 
             {/* Login Form */}
             <form className="space-y-5" onSubmit={handleSubmit}>
-              <div>
-                <label
-                  htmlFor="email"
-                  className="block text-sm font-semibold text-[#3D4A5A] mb-2"
-                >
-                  Email
-                </label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => handleEmailChange(e.target.value)}
-                  onBlur={() => handleBlur("email")}
-                  className={`block w-full px-4 py-3 border rounded-xl text-sm text-[#3D4A5A] placeholder:text-[#8190A3] transition-all focus:outline-none focus:ring-2 ${
-                    errors.email && touched.email
-                      ? "border-[#A23C46] focus:border-[#A23C46] focus:ring-[#A23C46]/20"
-                      : "border-[#E7EEF7] bg-[#F6FAFF]/50 focus:bg-white focus:border-[#356FA7] focus:ring-[#356FA7]/20"
-                  }`}
-                  placeholder="you@example.com"
-                />
-                {errors.email && touched.email && (
-                  <div className="text-[#A23C46] text-xs mt-1.5">
-                    {errors.email}
-                  </div>
-                )}
-              </div>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                label="Email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => handleEmailChange(e.target.value)}
+                onBlur={() => handleBlur("email")}
+                error={touched.email ? errors.email : undefined}
+                placeholder="you@example.com"
+              />
 
               <div>
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-1.5">
                   <label
                     htmlFor="password"
-                    className="block text-sm font-semibold text-[#3D4A5A]"
+                    className="block text-sm font-medium text-foreground"
                   >
                     Mật khẩu
                   </label>
-                  <a
+                  <Link
                     href="/forgot-password"
-                    className="text-xs text-[#356FA7] hover:text-[#285C90] font-medium"
+                    className="text-xs text-primary hover:text-primary-hover font-medium"
                   >
                     Quên mật khẩu?
-                  </a>
+                  </Link>
                 </div>
-                <div className="relative">
-                  <input
-                    id="password"
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    autoComplete="current-password"
-                    required
-                    value={password}
-                    onChange={(e) => handlePasswordChange(e.target.value)}
-                    onBlur={() => handleBlur("password")}
-                    className={`block w-full px-4 py-3 pr-12 border rounded-xl text-sm text-[#3D4A5A] placeholder:text-[#8190A3] transition-all focus:outline-none focus:ring-2 ${
-                      errors.password && touched.password
-                        ? "border-[#A23C46] focus:border-[#A23C46] focus:ring-[#A23C46]/20"
-                        : "border-[#E7EEF7] bg-[#F6FAFF]/50 focus:bg-white focus:border-[#356FA7] focus:ring-[#356FA7]/20"
-                    }`}
-                    placeholder="••••••••"
-                  />
-                  <button
-                    type="button"
-                    className="absolute inset-y-0 right-0 pr-4 flex items-center cursor-pointer"
-                    onClick={() => setShowPassword(!showPassword)}
-                    tabIndex={-1}
-                    aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
-                  >
-                    {showPassword ? (
-                      <HiEyeOff className="h-5 w-5 text-[#8190A3] hover:text-[#3D4A5A]" />
-                    ) : (
-                      <HiEye className="h-5 w-5 text-[#8190A3] hover:text-[#3D4A5A]" />
-                    )}
-                  </button>
-                </div>
-                {errors.password && touched.password && (
-                  <div className="text-[#A23C46] text-xs mt-1.5">
-                    {errors.password}
-                  </div>
-                )}
+                <Input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => handlePasswordChange(e.target.value)}
+                  onBlur={() => handleBlur("password")}
+                  error={touched.password ? errors.password : undefined}
+                  rightIcon={
+                    <button
+                      type="button"
+                      className="text-subtle-foreground hover:text-foreground transition-colors cursor-pointer"
+                      onClick={() => setShowPassword(!showPassword)}
+                      tabIndex={-1}
+                      aria-label={
+                        showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"
+                      }
+                    >
+                      {showPassword ? (
+                        <HiEyeOff className="h-5 w-5" />
+                      ) : (
+                        <HiEye className="h-5 w-5" />
+                      )}
+                    </button>
+                  }
+                  placeholder="••••••••"
+                />
               </div>
 
-              <button
+              <Button
                 type="submit"
-                disabled={isLoading || isGoogleLoading || !email || !password}
-                className="w-full py-3.5 px-4 text-sm font-semibold rounded-xl text-white bg-[#356FA7] hover:bg-[#285C90] focus:outline-none focus:ring-2 focus:ring-[#356FA7]/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-xs cursor-pointer"
+                variant="primary"
+                size="lg"
+                fullWidth
+                disabled={isGoogleLoading || !email || !password}
+                isLoading={isLoading}
+                loadingText="Đang đăng nhập..."
               >
-                {isLoading ? "Đang đăng nhập..." : "Đăng nhập"}
-              </button>
+                Đăng nhập
+              </Button>
             </form>
 
             {/* Footer Link */}
-            <div className="text-center text-sm text-[#6F7C8C]">
+            <div className="text-center text-sm text-muted-foreground">
               Chưa có tài khoản?{" "}
-              <a
+              <Link
                 href="/register"
-                className="text-[#356FA7] hover:text-[#285C90] font-semibold"
+                className="text-primary hover:text-primary-hover font-semibold"
               >
                 Đăng ký ngay
-              </a>
+              </Link>
             </div>
-          </div>
-        </div>
-      </div>
+          </Card>
+      </AuthScenicLayout>
 
       {/* Error Dialog */}
       <ErrorDialog

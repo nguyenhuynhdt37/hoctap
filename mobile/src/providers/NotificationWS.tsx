@@ -256,11 +256,11 @@ export function NotificationWS() {
         if (unreadCountRef.current > 0) {
           showLocalNotification(
             'Bạn có thông báo chưa đọc',
-            `Bạn có ${unreadCountRef.current} thông báo chưa đọc trong StudyNest.`
+            `Bạn có ${unreadCountRef.current} thông báo chưa đọc trong Mây Mây.`
           );
         } else {
           showLocalNotification(
-            'StudyNest đang chạy ngầm',
+            'Mây Mây đang chạy ngầm',
             'Ứng dụng đang hoạt động để cập nhật bài học và thông báo mới cho bạn.'
           );
         }

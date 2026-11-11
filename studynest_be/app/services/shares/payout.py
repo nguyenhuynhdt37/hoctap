@@ -36,6 +36,12 @@ class PayoutService:
     # 1) PAYOUT MỘT EARNING
     # ==========================================================
     async def payout_single_earning(self, earning: InstructorEarnings):
+        from app.db.models.learning_paths import BundleOrderLine
+        from app.services.bundle_settlement import BundleSettlement
+        bundle_line = await self.db.scalar(select(BundleOrderLine).where(BundleOrderLine.earning_id == earning.id))
+        if bundle_line:
+            return await BundleSettlement(self.db).release(bundle_line)
+
         now = get_now()
 
         # 1. Load giảng viên

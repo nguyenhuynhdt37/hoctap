@@ -405,8 +405,8 @@ export default function CodeLesson({
 
   if (exercisesWithPassStatus.length === 0) {
     return (
-      <div className="w-full h-full bg-white rounded-xl shadow-sm p-8 flex items-center justify-center">
-        <p className="text-gray-500">
+      <div className="w-full h-full bg-surface border border-border rounded-2xl shadow-xs p-8 flex items-center justify-center">
+        <p className="text-muted-foreground">
           Không có bài tập code nào trong bài học này
         </p>
       </div>
@@ -414,7 +414,7 @@ export default function CodeLesson({
   }
 
   return (
-    <div className="w-full h-full bg-gray-50 overflow-y-auto">
+    <div className="w-full h-full bg-background overflow-y-auto">
       <div className="w-full h-full p-4 md:p-6 flex flex-col gap-4 md:gap-6">
         <ExerciseTabs
           exercises={exercisesWithPassStatus}
@@ -470,7 +470,7 @@ export default function CodeLesson({
           className={`flex items-center gap-2 px-4 py-2 rounded-full shadow-lg transition-colors ${
             infoTab === "qa"
               ? "bg-gray-200 text-gray-500 cursor-default"
-              : "bg-[#356FA7] text-white hover:bg-[#285C90]"
+              : "bg-primary text-white hover:bg-primary-hover"
           }`}
         >
           <HiChatAlt2 className="w-5 h-5" />

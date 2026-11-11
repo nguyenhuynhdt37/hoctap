@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui";
 import api from "@/lib/utils/fetcher/client/axios";
 import { getImageUrl } from "@/lib/utils/helpers/image";
 import useSWR from "swr";
@@ -33,16 +34,13 @@ const LecturerCard = ({ item }: { item: LecturerItem }) => {
   const router = useRouter();
 
   return (
-    <div
-      onClick={() => router.push(`/instructors/${item.instructor_id}`)}
-      className="group bg-white rounded-xl p-6 text-center hover:shadow-2xl hover:shadow-green-100/50 transition-all duration-300 border border-green-100 hover:border-green-300 hover:-translate-y-2 cursor-pointer"
-    >
+    <article className="rounded-[24px] border border-primary-pastel/80 bg-surface p-6 text-center">
       <div className="relative mb-4 inline-block">
-        <div className="w-20 h-20 rounded-full ring-4 ring-green-100 group-hover:ring-green-300 transition-all duration-300 overflow-hidden">
+        <div className="h-20 w-20 overflow-hidden rounded-full ring-2 ring-primary-pastel">
           <img
             src={getImageUrl(item.instructor_avatar)}
-            alt={item.instructor_name}
-            className="w-full h-full object-cover"
+            alt=""
+            className="h-full w-full object-cover"
             onError={(e) => {
               (
                 e.target as HTMLImageElement
@@ -52,36 +50,41 @@ const LecturerCard = ({ item }: { item: LecturerItem }) => {
             }}
           />
         </div>
-        <div className="absolute -bottom-1 -right-1">
-          <div className="w-7 h-7 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center shadow-lg">
-            <HiBadgeCheck className="h-4 w-4 text-white" />
-          </div>
-        </div>
+        <span className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground">
+          <HiBadgeCheck className="h-4 w-4" />
+        </span>
       </div>
 
-      <h3 className="text-base font-bold text-gray-900 mb-4 group-hover:text-green-600 transition-colors">
+      <h3 className="mb-4 text-base font-bold text-foreground">
         {item.instructor_name}
       </h3>
 
-      <div className="space-y-2 text-xs text-gray-600 mb-4">
+      <div className="mb-4 space-y-2 text-xs text-muted-foreground">
         <div className="flex items-center justify-center gap-1">
-          <HiUsers className="w-4 h-4 text-green-500" />
-          <span className="font-semibold">
+          <HiUsers className="h-4 w-4 text-primary" />
+          <span className="font-semibold text-foreground">
             {item.total_enrolls.toLocaleString()}
           </span>
           <span>học viên</span>
         </div>
         <div className="flex items-center justify-center gap-1">
-          <HiBookOpen className="w-4 h-4 text-emerald-500" />
-          <span className="font-semibold">{item.total_courses}</span>
+          <HiBookOpen className="h-4 w-4 text-primary" />
+          <span className="font-semibold text-foreground">
+            {item.total_courses}
+          </span>
           <span>khóa học</span>
         </div>
       </div>
 
-      <button className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white py-2.5 rounded-lg text-sm font-bold transition-all duration-300 shadow-md hover:shadow-xl">
-        Xem khóa học
-      </button>
-    </div>
+      <Button
+        variant="pastel"
+        size="sm"
+        fullWidth
+        onClick={() => router.push(`/instructors/${item.instructor_id}`)}
+      >
+        Xem giảng viên
+      </Button>
+    </article>
   );
 };
 
@@ -131,21 +134,17 @@ const LecturerRecommends = ({ slug }: LecturerRecommendsProps) => {
   }, [emblaApi, instructors.length]);
 
   const navBtnClass =
-    "absolute top-1/2 -translate-y-1/2 z-30 w-10 h-10 md:w-12 md:h-12 bg-white hover:bg-gradient-to-r hover:from-green-500 hover:to-emerald-500 text-green-600 hover:text-white rounded-full flex items-center justify-center transition-all border border-green-200 hover:border-green-500 shadow-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed";
+    "absolute top-1/2 z-30 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-primary-pastel bg-surface text-primary shadow-sm transition-colors hover:bg-primary hover:text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40";
 
   return (
-    <section className="py-16 bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 relative overflow-hidden">
-      <div className="absolute top-10 right-10 w-32 h-32 bg-green-200/20 rounded-full blur-3xl" />
-      <div className="absolute bottom-10 left-10 w-40 h-40 bg-emerald-200/20 rounded-full blur-3xl" />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <section className="bg-background py-12 sm:pb-20">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <h2 className="text-3xl font-bold bg-gradient-to-r from-green-700 to-emerald-700 bg-clip-text text-transparent mb-2">
+          <h2 className="font-display text-3xl text-foreground">
             Giảng viên được đánh giá cao
           </h2>
-          <p className="text-emerald-600 font-medium flex items-center gap-2">
-            <span className="text-green-500">👨‍🏫</span>
-            Học từ những chuyên gia có kinh nghiệm thực tế
+          <p className="mt-2 text-sm text-muted-foreground">
+            Học cùng giảng viên đang dạy trong danh mục này
           </p>
         </div>
 
@@ -154,22 +153,22 @@ const LecturerRecommends = ({ slug }: LecturerRecommendsProps) => {
             {Array.from({ length: 5 }).map((_, i) => (
               <div
                 key={i}
-                className="bg-white border border-green-100 rounded-xl p-6 animate-pulse"
+                className="animate-pulse rounded-[24px] border border-primary-pastel/80 bg-surface p-6"
               >
-                <div className="w-20 h-20 bg-green-100 rounded-full mx-auto mb-4" />
-                <div className="h-4 bg-green-100 rounded w-3/4 mx-auto mb-2" />
-                <div className="h-3 bg-green-100 rounded w-1/2 mx-auto" />
+                <div className="mx-auto mb-4 h-20 w-20 rounded-full bg-primary-light" />
+                <div className="mx-auto mb-2 h-4 w-3/4 rounded bg-primary-light" />
+                <div className="mx-auto h-3 w-1/2 rounded bg-primary-light" />
               </div>
             ))}
           </div>
         ) : instructors.length > 0 ? (
-          <div className="relative">
+          <div className="relative px-12">
             {hasMultiple && (
               <>
                 <button
                   onClick={() => emblaApi?.scrollPrev()}
                   disabled={prevBtnDisabled}
-                  className={`${navBtnClass} -left-4 sm:-left-6 lg:-left-8`}
+                  className={`${navBtnClass} left-0`}
                   aria-label="Slide trước"
                 >
                   <HiChevronLeft className="h-5 w-5 md:h-6 md:w-6" />
@@ -177,7 +176,7 @@ const LecturerRecommends = ({ slug }: LecturerRecommendsProps) => {
                 <button
                   onClick={() => emblaApi?.scrollNext()}
                   disabled={nextBtnDisabled}
-                  className={`${navBtnClass} -right-4 sm:-right-6 lg:-right-8`}
+                  className={`${navBtnClass} right-0`}
                   aria-label="Slide tiếp theo"
                 >
                   <HiChevronRight className="h-5 w-5 md:h-6 md:w-6" />
@@ -199,7 +198,7 @@ const LecturerRecommends = ({ slug }: LecturerRecommendsProps) => {
           </div>
         ) : (
           <div className="text-center py-12">
-            <p className="text-gray-500">Chưa có thông tin</p>
+            <p className="text-sm text-muted-foreground">Chưa có giảng viên trong mục này.</p>
           </div>
         )}
       </div>

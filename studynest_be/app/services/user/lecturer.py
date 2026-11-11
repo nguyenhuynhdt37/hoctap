@@ -1,7 +1,7 @@
 import uuid
 
 from fastapi import Depends, HTTPException
-from sqlalchemy import and_, asc, desc, func, select
+from sqlalchemy import and_, asc, desc, exists, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -20,6 +20,7 @@ from app.db.models.database import (
 from app.db.sesson import get_session
 from app.libs.formats.datetime import now as get_now
 from app.schemas.shares.notification import NotificationCreateSchema
+from app.services.catalog import public_course
 from app.services.shares.notification import NotificationService
 
 
@@ -50,8 +51,7 @@ class LecturerService:
             # ─────────────────────────────
             filters = [
                 Courses.instructor_id == lecturer_id,
-                Courses.is_published.is_(True),
-                Courses.approval_status == "approved",
+                public_course(),
             ]
 
             # ─────────────────────────────
@@ -285,7 +285,7 @@ class LecturerService:
                 select(User)
                 .join(UserRoles, UserRoles.user_id == User.id)
                 .join(Role, Role.id == UserRoles.role_id)
-                .where(Role.role_name == "LECTURER")
+                .where(Role.role_name == "LECTURER", User.deleted_at.is_(None), User.is_banned.is_(False), exists(select(Courses.id).where(Courses.instructor_id == User.id, public_course())))
                 .order_by(desc(User.student_count))
                 .limit(4)
             )
@@ -339,7 +339,7 @@ class LecturerService:
 
                 # 4) Lấy/tạo role LECTURER
                 lecturer_role = await self.db.scalar(
-                    select(Role).where(Role.role_name == "LECTURER")
+                    select(Role).where(Role.role_name == "LECTURER", User.deleted_at.is_(None), User.is_banned.is_(False), exists(select(Courses.id).where(Courses.instructor_id == User.id, public_course())))
                 )
                 if not lecturer_role:
                     lecturer_role = Role(

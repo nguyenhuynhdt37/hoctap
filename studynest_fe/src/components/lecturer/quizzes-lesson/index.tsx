@@ -20,7 +20,7 @@ import {
   HiLightningBolt,
   HiPencil,
   HiPlus,
-  HiSparkles,
+  HiCloud,
   HiTrash,
   HiX,
 } from "react-icons/hi";
@@ -505,7 +505,7 @@ const QuizzesLesson = () => {
                         </>
                       ) : (
                         <>
-                          <HiSparkles className="h-4 w-4" />
+                          <HiCloud className="h-4 w-4" />
                           <span>Tạo bằng AI</span>
                         </>
                       )}
@@ -798,7 +798,7 @@ const QuizzesLesson = () => {
             <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 shadow-xl">
               <div className="flex items-center gap-3 mb-4">
                 <div className="p-2 bg-purple-100 rounded-lg">
-                  <HiSparkles className="h-5 w-5 text-purple-600" />
+                  <HiCloud className="h-5 w-5 text-purple-600" />
                 </div>
                 <h3 className="text-lg font-bold text-gray-900">
                   Tạo quiz bằng AI

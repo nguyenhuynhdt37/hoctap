@@ -114,26 +114,26 @@ export default function UserGrowthChart() {
   if (!mounted) return null;
 
   return (
-    <div className="bg-white rounded-[20px] shadow-xs border border-[#E7EEF7] p-6">
+    <div className="bg-white rounded-[20px] shadow-xs border border-border p-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
         <div>
-          <h3 className="text-lg font-semibold text-[#3D4A5A]">
+          <h3 className="text-lg font-semibold text-foreground">
             Tăng trưởng người dùng
           </h3>
           <div className="flex gap-4 mt-2 text-sm">
-            <span className="text-[#6F7C8C]">
+            <span className="text-muted-foreground">
               Tổng:{" "}
-              <span className="font-semibold text-[#3D4A5A]">
+              <span className="font-semibold text-foreground">
                 {(data?.total ?? 0).toLocaleString("vi-VN")}
               </span>
             </span>
-            <span className="text-[#276749]">
+            <span className="text-success-foreground">
               Đã xác minh:{" "}
               <span className="font-semibold">
                 {(data?.verified ?? 0).toLocaleString("vi-VN")}
               </span>
             </span>
-            <span className="text-[#A23C46]">
+            <span className="text-destructive-foreground">
               Bị cấm:{" "}
               <span className="font-semibold">
                 {(data?.banned ?? 0).toLocaleString("vi-VN")}
@@ -141,15 +141,15 @@ export default function UserGrowthChart() {
             </span>
           </div>
         </div>
-        <div className="flex gap-1.5 bg-[#F6FAFF] p-1 rounded-xl border border-[#E7EEF7]">
+        <div className="flex gap-1.5 bg-background p-1 rounded-xl border border-border">
           {(["day", "week", "month", "year"] as RevenuePeriod[]).map((p) => (
             <button
               key={p}
               onClick={() => setPeriod(p)}
               className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                 period === p
-                  ? "bg-[#356FA7] text-white shadow-2xs"
-                  : "text-[#6F7C8C] hover:text-[#3D4A5A]"
+                  ? "bg-primary text-white shadow-2xs"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               {p === "day"
@@ -167,7 +167,7 @@ export default function UserGrowthChart() {
       <div className="h-56 relative">
         {isLoading ? (
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-8 h-8 border-4 border-[#356FA7] border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
           <Line data={chartData} options={options as any} />

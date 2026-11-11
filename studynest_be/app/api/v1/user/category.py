@@ -130,8 +130,8 @@ async def get_courses_by_category(
     cursor: str | None = None,
     rating: float | None = Query(None, ge=1.0, le=5.0),
     duration: str | None = Query(None, regex="^(0-1|1-3|3-6|6-17)$"),
-    level: str | None = None,
-    language: str | None = None,
+    level: str | None = Query(None, pattern="^(all|beginner|intermediate|advanced)$"),
+    language: str | None = Query(None, pattern="^(vi|en)$"),
     price: str | None = Query(None, regex="^(free|paid)$"),
     sort: str = Query("newest", regex="^(newest|top_rated|most_popular)$"),
     service: CategoryService = Depends(CategoryService),
@@ -153,6 +153,7 @@ async def get_courses_by_category(
             level=level,
             language=language,
             sort=sort,
+            price=price,
         )
     except HTTPException:
         raise

@@ -1,6 +1,6 @@
 /**
  * Mock Data cho Learning Feature
- * Mô phỏng API response từ backend StudyNest
+ * Mô phỏng API response từ backend Mây Mây
  */
 
 import type {

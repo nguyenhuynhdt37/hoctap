@@ -18,14 +18,14 @@ export default function QuizNavigation({
   onNext,
 }: QuizNavigationProps) {
   return (
-    <div className="flex justify-between items-center pt-4 border-t border-gray-200">
+    <div className="flex justify-between items-center pt-4 border-t border-border">
       <button
         onClick={onPrev}
         disabled={isFirstQuestion}
-        className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+        className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-colors ${
           isFirstQuestion
-            ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-            : "bg-gray-100 text-gray-700 hover:bg-gray-200 cursor-pointer"
+            ? "bg-background text-muted-foreground/50 cursor-not-allowed"
+            : "bg-background text-foreground hover:bg-border cursor-pointer"
         }`}
       >
         <HiArrowLeft className="w-4 h-4" />
@@ -35,10 +35,10 @@ export default function QuizNavigation({
       <button
         onClick={onNext}
         disabled={!isAnswered}
-        className={`flex items-center space-x-2 px-6 py-2 rounded-lg transition-colors ${
+        className={`flex items-center space-x-2 px-6 py-2 rounded-xl transition-colors ${
           isAnswered
-            ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 cursor-pointer shadow-md"
-            : "bg-gray-100 text-gray-400 cursor-not-allowed"
+            ? "bg-primary text-white hover:bg-primary-hover cursor-pointer shadow-sm"
+            : "bg-background text-muted-foreground/50 cursor-not-allowed"
         }`}
       >
         <span>{isLastQuestion ? "Hoàn thành" : "Tiếp theo"}</span>

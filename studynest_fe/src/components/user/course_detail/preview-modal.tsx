@@ -1,6 +1,6 @@
 "use client";
 
-import { HiPlay } from "react-icons/hi";
+import { HiPlay, HiX } from "react-icons/hi";
 
 interface PreviewItem {
   id: string;
@@ -37,29 +37,36 @@ export default function PreviewModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
-        className="absolute inset-0 bg-black/60"
+        className="absolute inset-0 bg-foreground/55 backdrop-blur-xs"
         onClick={onClose}
       />
-      <div className="relative z-10 w-full max-w-6xl bg-white rounded-lg overflow-hidden shadow-2xl">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <h3 className="text-xl font-semibold text-gray-900">
-            {title || "Xem trước khóa học"}
-          </h3>
+      <div className="relative z-10 w-full max-w-4xl bg-surface rounded-[24px] border border-border overflow-hidden shadow-2xl">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-background/60">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-primary block">
+              Học thử trên Mây Mây
+            </span>
+            <h3 className="text-base sm:text-lg font-bold text-foreground truncate">
+              {title || "Xem trước bài giảng"}
+            </h3>
+          </div>
           <button
-            className="text-gray-500 hover:text-gray-700 text-2xl"
+            type="button"
+            className="w-9 h-9 rounded-full bg-surface border border-border text-muted-foreground hover:text-primary hover:border-primary-pastel flex items-center justify-center transition-colors cursor-pointer"
             onClick={onClose}
             aria-label="Đóng"
           >
-            ×
+            <HiX className="w-4 h-4" />
           </button>
         </div>
+
         <div className="flex flex-col">
-          <div className="w-full bg-black">
+          <div className="w-full bg-foreground">
             {isLoading ? (
               <div className="aspect-video flex items-center justify-center text-white">
                 <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-                  <div>Đang tải video...</div>
+                  <div className="animate-spin rounded-full h-10 w-10 border-2 border-primary-pastel border-t-transparent mx-auto mb-3" />
+                  <div className="text-sm">Đang tải bài giảng...</div>
                 </div>
               </div>
             ) : previewUrl ? (
@@ -72,69 +79,74 @@ export default function PreviewModal({
                 key={previewUrl}
               />
             ) : (
-              <div className="aspect-video flex items-center justify-center text-white">
-                <div className="text-center">
-                  <HiPlay className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                  <div>Không có video xem trước</div>
+              <div className="aspect-video flex items-center justify-center bg-gradient-to-br from-primary-light via-surface to-secondary-light/50 p-6">
+                <div className="text-center max-w-md">
+                  <div className="w-14 h-14 rounded-full bg-primary text-primary-foreground flex items-center justify-center mx-auto mb-3 shadow-sm">
+                    <HiPlay className="h-7 w-7 translate-x-0.5" />
+                  </div>
+                  <h4 className="font-bold text-foreground text-base mb-1">
+                    Bài giảng mẫu đang được cập nhật
+                  </h4>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    Bạn có thể tham khảo chi tiết đề cương các chương và mục tiêu bài học ngay trên trang thông tin khóa học.
+                  </p>
                 </div>
               </div>
             )}
           </div>
 
-          <div className="w-full bg-white border-t border-gray-200 max-h-[40vh] overflow-y-auto">
-            <div className="p-4">
-              <h4 className="text-sm font-semibold text-gray-700 mb-3">
-                Danh sách xem trước
+          {previewItems.length > 0 && (
+            <div className="w-full bg-surface border-t border-border max-h-[34vh] overflow-y-auto p-5">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">
+                Danh sách bài học xem trước
               </h4>
               <div className="space-y-2">
                 {previewItems.map((item, idx) => (
                   <button
                     key={item.id}
+                    type="button"
                     onClick={() => onSelectItem(idx)}
-                    className={`w-full text-left p-3 rounded-lg border transition-all duration-200 cursor-pointer ${
+                    className={`w-full text-left p-3.5 rounded-2xl border transition-all duration-200 cursor-pointer ${
                       idx === activeIndex
-                        ? "bg-teal-50 border-teal-200 shadow-sm"
-                        : "bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300"
+                        ? "bg-primary-light/80 border-primary-pastel shadow-2xs"
+                        : "bg-background border-border hover:border-primary-pastel"
                     }`}
                   >
-                    <div className="flex items-start gap-3">
+                    <div className="flex items-center gap-3">
                       <div
-                        className={`mt-1 w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                        className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
                           idx === activeIndex
-                            ? "bg-teal-600 text-white"
-                            : "bg-gray-200 text-gray-600"
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-surface border border-border text-muted-foreground"
                         }`}
                       >
                         {idx + 1}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div
-                          className={`text-sm font-medium leading-tight ${
+                          className={`text-sm font-semibold truncate ${
                             idx === activeIndex
-                              ? "text-teal-700"
-                              : "text-gray-900"
+                              ? "text-primary"
+                              : "text-foreground"
                           }`}
                         >
                           {item.title}
                         </div>
-                        <div className="text-xs text-gray-500 mt-1">
-                          Xem trước • {formatSecondsToMmSs(item.duration)}
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          Học thử • {formatSecondsToMmSs(item.duration)}
                         </div>
                       </div>
                       {idx === activeIndex && (
-                        <div className="mt-1">
-                          <HiPlay className="h-4 w-4 text-teal-600" />
-                        </div>
+                        <HiPlay className="h-4 w-4 text-primary shrink-0" />
                       )}
                     </div>
                   </button>
                 ))}
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
   );
 }
-

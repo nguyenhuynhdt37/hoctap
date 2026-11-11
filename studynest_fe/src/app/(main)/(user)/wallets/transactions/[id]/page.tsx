@@ -10,10 +10,12 @@ export default async function TransactionDetailPage({ params }: PageProps) {
   return (
     <Suspense
       fallback={
-        <div className="min-h-[400px] flex items-center justify-center">
+        <div className="flex min-h-[400px] items-center justify-center p-8">
           <div className="text-center">
-            <div className="inline-block h-12 w-12 border-4 border-green-600 border-t-transparent rounded-full animate-spin mb-4" />
-            <p className="text-gray-600">Đang tải chi tiết giao dịch...</p>
+            <div className="mb-3 inline-block h-10 w-10 animate-spin rounded-full border-3 border-primary border-t-transparent" />
+            <p className="text-xs text-muted-foreground">
+              Đang tải chi tiết giao dịch...
+            </p>
           </div>
         </div>
       }

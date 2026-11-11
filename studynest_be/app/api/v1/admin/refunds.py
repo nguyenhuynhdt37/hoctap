@@ -74,11 +74,11 @@ async def lecturer_review_refund(
     service: RefundService = Depends(RefundService),
     notification_service: NotificationService = Depends(NotificationService),
 ):
-    await auth.require_role(["ADMIN"])
+    reviewer = await auth.require_role(["ADMIN"])
 
     return await service.review_refund_request_async(
         refund_id=refund_id,
-        reviewer_id=None,
+        reviewer_id=reviewer.id,
         role="ADMIN",
         action=body.action,
         reason=body.reason,

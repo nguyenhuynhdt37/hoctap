@@ -12,39 +12,47 @@ export default function ReviewsSection({ reviews }: ReviewsSectionProps) {
   if (!reviews || reviews.length === 0) return null;
 
   return (
-    <div className="bg-white rounded-lg p-6 border border-gray-200">
-      <h2 className="text-xl font-semibold text-gray-900 mb-4">
-        Đánh giá mẫu
+    <section
+      id="reviews"
+      className="bg-surface rounded-[24px] p-6 sm:p-8 border border-border shadow-xs"
+    >
+      <span className="text-[11px] font-bold uppercase tracking-wider text-primary block mb-1">
+        Cảm nhận thực tế
+      </span>
+      <h2 className="font-display text-xl sm:text-2xl font-bold text-foreground mb-5">
+        Đánh giá từ học viên Mây Mây
       </h2>
-      <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {reviews.map((rv) => (
-          <div key={rv.id} className="border border-gray-100 rounded-lg p-4">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-semibold text-gray-600">
-                  {rv.user_fullname.charAt(0)}
+          <div
+            key={rv.id}
+            className="border border-border bg-background/60 rounded-2xl p-5 space-y-3"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary-light border border-primary-pastel flex items-center justify-center text-xs font-bold text-primary">
+                  {rv.user_fullname?.charAt(0) || "H"}
                 </div>
                 <div>
-                  <div className="text-sm font-medium text-gray-900">
+                  <div className="text-sm font-semibold text-foreground">
                     {rv.user_fullname}
                   </div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-muted-foreground">
                     {new Date(rv.created_at).toLocaleDateString("vi-VN")}
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-1 text-yellow-500 text-sm">
-                <HiStar className="h-4 w-4" />
-                <span className="font-medium">{rv.rating.toFixed(1)}</span>
+              <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-accent-vanilla border border-accent-vanilla-border text-warning-foreground text-xs font-bold">
+                <HiStar className="h-3.5 w-3.5" />
+                <span>{rv.rating.toFixed(1)}</span>
               </div>
             </div>
-            <div className="text-sm leading-relaxed">
+            <div className="text-sm text-muted-foreground leading-relaxed">
               <MarkdownRenderer content={rv.content} isHtml={true} />
             </div>
           </div>
         ))}
       </div>
-    </div>
+    </section>
   );
 }
-

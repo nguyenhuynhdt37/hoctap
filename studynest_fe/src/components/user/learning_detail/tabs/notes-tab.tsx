@@ -124,14 +124,14 @@ export default function NotesTab({
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">
+      <h2 className="text-2xl font-bold text-foreground mb-6">
         Ghi chú của bạn
       </h2>
 
       {lessonOverview?.lesson_type === "video" && (
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">
+            <h3 className="text-lg font-semibold text-foreground">
               Ghi chú theo thời gian video
             </h3>
             <button
@@ -144,28 +144,28 @@ export default function NotesTab({
                   handleOpenCreateNote();
                 }
               }}
-              className="px-4 py-2 bg-gradient-to-r from-teal-500 to-emerald-500 text-white rounded-lg hover:from-teal-600 hover:to-emerald-600 transition-all duration-200 font-medium text-sm"
+              className="px-4 py-2 bg-primary text-white rounded-xl hover:bg-primary-hover transition-all duration-200 font-medium text-sm cursor-pointer"
             >
               {showCreateNote ? "Hủy" : "+ Thêm ghi chú"}
             </button>
           </div>
 
           {showCreateNote && (
-            <div className="mb-6 p-4 bg-teal-50 border border-teal-200 rounded-xl">
+            <div className="mb-6 p-4 bg-primary-pastel/40 border border-primary-light/50 rounded-2xl">
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-foreground mb-2">
                     Thời gian
                   </label>
-                  <div className="px-3 py-2 bg-white border border-teal-200 rounded-lg text-gray-700">
+                  <div className="px-3 py-2 bg-surface border border-border rounded-xl text-foreground">
                     {formatTime(newNoteTimeSeconds)}
                   </div>
-                  <p className="mt-1 text-xs text-gray-500">
+                  <p className="mt-1 text-xs text-muted-foreground">
                     Video đã được tạm dừng tại thời gian này
                   </p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-foreground mb-2">
                     Nội dung ghi chú
                   </label>
                   <TiptapEditor
@@ -184,14 +184,14 @@ export default function NotesTab({
                       setNewNoteContent("");
                       setNewNoteTimeSeconds(0);
                     }}
-                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="px-4 py-2 border border-border text-foreground bg-surface rounded-xl hover:bg-background transition-colors cursor-pointer"
                   >
                     Hủy
                   </button>
                   <button
                     onClick={handleCreateNote}
                     disabled={!newNoteContent.trim() || isCreatingNote}
-                    className="px-6 py-2 bg-gradient-to-r from-teal-500 to-emerald-500 text-white rounded-lg hover:from-teal-600 hover:to-emerald-600 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-6 py-2 bg-primary text-white rounded-xl hover:bg-primary-hover transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                   >
                     {isCreatingNote ? "Đang tạo..." : "Tạo ghi chú"}
                   </button>
@@ -206,7 +206,7 @@ export default function NotesTab({
                 .map((note) => (
                   <div
                     key={note.id}
-                    className="p-4 bg-white border border-teal-200 rounded-xl hover:border-teal-300 transition-colors"
+                    className="p-4 bg-surface border border-border rounded-2xl hover:border-primary-light transition-colors"
                   >
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center space-x-2">
@@ -223,12 +223,12 @@ export default function NotesTab({
                               }
                             }
                           }}
-                          className="px-2 py-1 bg-teal-100 text-teal-700 rounded-lg text-sm font-semibold hover:bg-teal-200 hover:text-teal-800 transition-colors cursor-pointer"
+                          className="px-2.5 py-1 bg-primary-pastel text-primary rounded-lg text-sm font-semibold hover:bg-primary-light/50 transition-colors cursor-pointer"
                           title="Click để tua đến thời gian này"
                         >
                           {formatTime(note.time_seconds)}
                         </button>
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-muted-foreground">
                           {new Date(note.created_at).toLocaleDateString(
                             "vi-VN",
                             {
@@ -243,25 +243,25 @@ export default function NotesTab({
                       </div>
                       <button
                         onClick={() => handleDeleteNote(note.id)}
-                        className="px-3 py-1 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                        className="px-3 py-1 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                         title="Xóa ghi chú"
                       >
                         Xóa
                       </button>
                     </div>
-                    <div className="text-gray-700">
+                    <div className="text-foreground">
                       <MarkdownRenderer
                         content={note.content}
                         isHtml={false}
-                        className="prose prose-sm max-w-none text-gray-700"
+                        className="prose prose-sm max-w-none text-foreground/90"
                       />
                     </div>
                   </div>
                 ))}
             </div>
           ) : (
-            <div className="p-6 bg-gray-50 border border-gray-200 rounded-xl text-center">
-              <p className="text-gray-600">
+            <div className="p-6 bg-surface border border-border rounded-2xl text-center">
+              <p className="text-muted-foreground">
                 Chưa có ghi chú nào cho video này.
               </p>
             </div>
@@ -272,19 +272,19 @@ export default function NotesTab({
       {lessonOverview?.lesson_type !== "video" && (
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Ghi chú của bạn
             </label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Thêm ghi chú cho bài học này..."
-              className="w-full p-4 border border-teal-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-base"
+              className="w-full p-4 bg-surface border border-border rounded-2xl focus:ring-2 focus:ring-primary/20 focus:border-primary text-base text-foreground outline-none"
               rows={6}
             />
           </div>
           <div className="flex justify-start">
-            <button className="bg-gradient-to-r from-teal-500 to-emerald-500 text-white px-8 py-3 rounded-xl hover:from-teal-600 hover:to-emerald-600 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl">
+            <button className="bg-primary text-white px-8 py-3 rounded-xl hover:bg-primary-hover transition-all duration-200 font-semibold shadow-sm hover:shadow-md cursor-pointer">
               Lưu ghi chú
             </button>
           </div>

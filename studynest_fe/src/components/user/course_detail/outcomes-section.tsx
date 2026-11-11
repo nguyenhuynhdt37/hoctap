@@ -1,36 +1,43 @@
 "use client";
 
-import { HiCheckCircle, HiLightningBolt } from "react-icons/hi";
+import { HiCheckCircle, HiCloud } from "react-icons/hi";
 
 interface OutcomesSectionProps {
   outcomes: string[];
 }
 
-export default function OutcomesSection({
-  outcomes,
-}: OutcomesSectionProps) {
+export default function OutcomesSection({ outcomes }: OutcomesSectionProps) {
   if (!outcomes || outcomes.length === 0) return null;
 
   return (
-    <div className="bg-teal-50 rounded-lg shadow-sm border border-teal-200 p-6">
-      <h2 className="text-2xl font-semibold text-gray-900 mb-6 flex items-center gap-3">
-        <div className="w-8 h-8 bg-teal-500 rounded-lg flex items-center justify-center">
-          <HiLightningBolt className="h-4 w-4 text-white" />
+    <section className="rounded-[24px] bg-gradient-to-br from-primary-light/85 via-surface to-secondary-light/35 border border-primary-pastel p-6 sm:p-8 shadow-xs">
+      <div className="flex items-center gap-3 mb-5">
+        <div className="w-10 h-10 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center shadow-2xs shrink-0">
+          <HiCloud className="h-5 w-5" />
         </div>
-        Bạn sẽ học được gì
-      </h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-primary block">
+            Mục tiêu khóa học
+          </span>
+          <h2 className="font-display text-xl sm:text-2xl font-bold text-foreground">
+            Bạn sẽ đạt được gì sau khóa học?
+          </h2>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
         {outcomes.map((outcome, index) => (
           <div
             key={index}
-            className="flex items-start gap-3 p-3 bg-white rounded-lg border border-teal-100 hover:shadow-sm transition-shadow"
+            className="flex items-start gap-3 p-4 bg-surface/90 rounded-2xl border border-white/90 shadow-2xs hover:border-primary-pastel transition-all"
           >
-            <HiCheckCircle className="h-5 w-5 text-teal-500 mt-0.5 flex-shrink-0" />
-            <span className="text-gray-700 font-medium">{outcome}</span>
+            <HiCheckCircle className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+            <span className="text-sm text-foreground font-medium leading-relaxed">
+              {outcome}
+            </span>
           </div>
         ))}
       </div>
-    </div>
+    </section>
   );
 }
-

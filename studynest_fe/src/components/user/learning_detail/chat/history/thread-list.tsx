@@ -108,14 +108,14 @@ function ChatHistorySidebar({
   };
 
   return (
-    <div className="h-full flex flex-col bg-gray-50 border-r border-gray-200">
+    <div className="h-full flex flex-col bg-background border-r border-border">
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2.5 border-b border-gray-200">
-        <span className="text-sm font-medium text-gray-700">Lịch sử chat</span>
+      <div className="flex items-center justify-between px-3 py-2.5 border-b border-border">
+        <span className="text-sm font-medium text-foreground">Lịch sử chat</span>
         <div className="flex items-center gap-1">
           <button
             onClick={fetchThreads}
-            className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+            className="p-1 text-muted-foreground hover:text-foreground hover:bg-surface rounded transition-colors"
             title="Làm mới"
           >
             <HiRefresh
@@ -124,7 +124,7 @@ function ChatHistorySidebar({
           </button>
           <button
             onClick={onClose}
-            className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+            className="p-1 text-muted-foreground hover:text-foreground hover:bg-surface rounded transition-colors"
             title="Đóng"
           >
             <HiX className="w-4 h-4" />
@@ -133,7 +133,7 @@ function ChatHistorySidebar({
       </div>
 
       {/* New Chat Button */}
-      <div className="p-3 border-b border-gray-100">
+      <div className="p-3 border-b border-border">
         <CreateButton
           lessonId={lessonId}
           onCreated={(thread) => {
@@ -154,23 +154,23 @@ function ChatHistorySidebar({
       <div className="flex-1 overflow-y-auto">
         {isLoading ? (
           <div className="flex items-center justify-center h-32">
-            <div className="w-6 h-6 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
+            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           </div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center h-full px-4 text-center">
             <p className="text-sm text-red-500 mb-2">{error}</p>
             <button
               onClick={fetchThreads}
-              className="text-xs text-green-600 hover:underline"
+              className="text-xs text-primary hover:underline"
             >
               Thử lại
             </button>
           </div>
         ) : sessions.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full px-4 text-center">
-            <HiChat className="w-10 h-10 text-gray-300 mb-3" />
-            <p className="text-sm text-gray-500">Chưa có cuộc trò chuyện nào</p>
-            <p className="text-xs text-gray-400 mt-1">
+            <HiChat className="w-10 h-10 text-muted-foreground/40 mb-3" />
+            <p className="text-sm text-muted-foreground">Chưa có cuộc trò chuyện nào</p>
+            <p className="text-xs text-muted-foreground/70 mt-1">
               Bấm nút ở trên để bắt đầu
             </p>
           </div>

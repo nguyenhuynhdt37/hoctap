@@ -46,7 +46,7 @@ export function WalletCard({ summary }: WalletCardProps) {
           <View className="z-10 flex-row justify-between items-end">
             <View>
               <Text className="text-white/40 text-[10px] font-black tracking-[1.5px] uppercase mb-1.5">
-                STUDYNEST PREMIUM
+                MÂY MÂY PREMIUM
               </Text>
               <Text className="text-white font-bold text-xl tracking-[4px]">
                 {summary?.id ? `**** **** **** ${summary.id.slice(-4)}` : '•••• •••• •••• ••••'}

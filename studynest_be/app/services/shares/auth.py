@@ -1,20 +1,26 @@
 from __future__ import annotations
 
+import json
 from datetime import timedelta
 from typing import Any
+from uuid import UUID
 
 from fastapi import Depends, HTTPException, Response, status
+from fastapi.encoders import jsonable_encoder
 from google.auth.transport import requests
 from google.oauth2 import id_token
+from loguru import logger
+from redis.exceptions import RedisError
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlalchemy.sql.expression import desc
 
+from app.core.redis import get_redis
 from app.core.security import SecurityService
 from app.core.settings import settings
 from app.core.ws_manager import ws_manager
-from app.db.models.database import EmailVerifications, Role, User, UserRoles, Sessions
+from app.db.models.database import EmailVerifications, Role, Sessions, User, UserRoles
 from app.db.sesson import get_session
 from app.libs.formats.datetime import now as get_now
 from app.libs.formats.datetime import strip_tz
@@ -78,27 +84,7 @@ class AuthService:
         # 3. Tạo Access Token (chứa sid)
         access_token = await self.security.create_access_token(sub=str(user_id), sid=str(new_session.id))
 
-        # 4. Set Cookies
-        # Access Token
-        res.set_cookie(
-            key="access_token",
-            value=access_token,
-            httponly=True,
-            secure=False,  # Dev = False, Prod = True
-            samesite="lax",
-            max_age=60 * 15, # 15 phút (nên ngắn hạn)
-            path="/",
-        )
-        # Refresh Token (Cái này mới quan trọng)
-        res.set_cookie(
-            key="refresh_token",
-            value=refresh_token,
-            httponly=True,
-            secure=False,
-            samesite="lax",
-            max_age=60 * 60 * 24 * 30, # 30 ngày
-            path="/",
-        )
+        self._set_session_cookies(res, access_token, refresh_token)
         return {
             "message": "Login successful",
             "session_id": str(new_session.id),
@@ -106,6 +92,16 @@ class AuthService:
             "refresh_token": refresh_token,
             "expired_at": new_session.expired_at
         }
+
+    def _set_session_cookies(self, res, access_token, refresh_token):
+        res.headers["Cache-Control"] = "no-store"
+        for name, value, max_age in [
+            ("access_token", access_token, int(float(settings.ACCESS_TOKEN_EXPIRE_MINUTES) * 60)),
+            ("refresh_token", refresh_token, 60 * 60 * 24 * 30),
+        ]:
+            res.set_cookie(name, value, httponly=True,
+                           secure=settings.FRONTEND_URL.startswith("https://"),
+                           samesite="lax", max_age=max_age, path="/")
 
     async def _broadcast_new_session(
         self,
@@ -334,7 +330,7 @@ class AuthService:
             today_start = get_now().replace(hour=0, minute=0, second=0, microsecond=0)
             tomorrow_start = today_start + timedelta(days=1)
             user = (
-                await self.db.scalars(select(User).where((User.email == schema.email)))
+                await self.db.scalars(select(User).where(User.email == schema.email))
             ).first()
             if not user:
                 raise HTTPException(
@@ -591,32 +587,67 @@ class AuthService:
             print("Google login error detail:", str(e))
             traceback.print_exc()
             await self.db.rollback()
-            raise HTTPException(400, f"Token Google không hợp lệ: {str(e)}")
+            raise HTTPException(400, f"Token Google không hợp lệ: {e!s}")
 
     async def refresh_token_async(self, refresh_token: str | None, res: Response, user_agent: str | None = None, ip: str | None = None):
         if not refresh_token:
             raise HTTPException(status_code=401, detail={"error_code": "MISSING_REFRESH_TOKEN", "message": "Thiếu mã làm mới phiên"})
 
-        # 1. Hash token khách gửi lên để tìm trong DB
         token_hash = await self.security.hash_token(refresh_token)
+        redis = get_redis()
+        key = "auth:refresh:result:" + token_hash
+        lock = redis.lock("auth:refresh:lock:" + token_hash, timeout=30, blocking_timeout=10)
+        try:
+            acquired = await lock.acquire()
+        except RedisError:
+            raise HTTPException(503, "Chưa thể làm mới phiên. Vui lòng thử lại.") from None
+        if not acquired:
+            raise HTTPException(503, "Phiên đang được làm mới. Vui lòng thử lại.")
+        try:
+            # A short grace period makes concurrent page/API/tab refreshes return
+            # the same rotation. Never reissue credentials for a revoked session.
+            cached = await redis.get(key)
+            for _ in range(5):
+                if not cached:
+                    break
+                result = json.loads(cached)
+                session = await self.db.get(Sessions, UUID(result["session_id"]), populate_existing=True)
+                if not session or session.is_revoked or strip_tz(session.expired_at) < get_now():
+                    raise HTTPException(401, "Phiên đăng nhập đã hết hạn")
+                result_hash = await self.security.hash_token(result["refresh_token"])
+                if session.refresh_token_hash == result_hash:
+                    self._set_session_cookies(res, result["access_token"], result["refresh_token"])
+                    return result
+                cached = await redis.get("auth:refresh:result:" + result_hash)
 
-        # 2. Tìm session tương ứng
-        stmt = select(Sessions).where(Sessions.refresh_token_hash == token_hash)
-        session = (await self.db.execute(stmt)).scalar_one_or_none()
-
-        if not session or session.is_revoked or strip_tz(session.expired_at) < get_now():
-            # Nếu token không hợp lệ/bị hack -> Xóa sạch dấu vết
-            res.delete_cookie("access_token")
-            res.delete_cookie("refresh_token")
-            raise HTTPException(status_code=401, detail="Phiên đăng nhập không hợp lệ hoặc đã hết hạn")
-
-        # 3. REFRESH TOKEN ROTATION: Xóa session cũ, tạo session mới hoàn toàn
-        user_id = session.user_id
-        await self.db.delete(session)
-        await self.db.flush()
-
-        # 4. Cấp cặp token mới
-        return await self._create_session(user_id, res, user_agent, ip)
+            stmt = select(Sessions).where(Sessions.refresh_token_hash == token_hash).with_for_update()
+            session = (await self.db.execute(stmt)).scalar_one_or_none()
+            if not session or session.is_revoked or strip_tz(session.expired_at) < get_now():
+                raise HTTPException(401, "Phiên đăng nhập không hợp lệ hoặc đã hết hạn")
+            # Keep the device/session ID stable: another tab's valid access token
+            # and WebSocket must not be revoked merely because one tab refreshes.
+            new_refresh = await self.security.generate_refresh_token()
+            session.refresh_token_hash = await self.security.hash_token(new_refresh)
+            session.expired_at = get_now() + timedelta(days=30)
+            session.updated_at = get_now()
+            access = await self.security.create_access_token(str(session.user_id), str(session.id))
+            result = jsonable_encoder({"message": "Session refreshed", "session_id": str(session.id),
+                "access_token": access, "refresh_token": new_refresh, "expired_at": session.expired_at})
+            await self.db.commit()
+            self._set_session_cookies(res, access, new_refresh)
+            try:
+                await redis.set(key, json.dumps(result), ex=15)
+            except RedisError:
+                # The committed rotation and its cookies must still reach the browser.
+                logger.warning("Refresh rotation committed; short grace cache unavailable")
+            return result
+        except RedisError:
+            raise HTTPException(503, "Chưa thể làm mới phiên. Vui lòng thử lại.") from None
+        finally:
+            try:
+                await lock.release()
+            except RedisError:
+                logger.warning("Refresh lock release failed; lock will expire")
 
     def _serialize_session(self, session: Sessions, current_sid: str | None = None) -> dict[str, Any]:
         user_agent = session.user_agent or ""

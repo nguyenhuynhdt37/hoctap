@@ -265,24 +265,28 @@ function TutorChatPanel({
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <header className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+        <header className="flex items-center justify-between px-4 py-3 border-b border-border bg-primary-light/40">
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowHistory(!showHistory)}
               className={`p-1.5 rounded-lg transition-colors ${
                 showHistory
-                  ? "bg-green-100 text-green-600"
-                  : "text-gray-400 hover:bg-gray-100"
+                  ? "bg-primary-light text-primary"
+                  : "text-muted-foreground hover:bg-background"
               }`}
             >
               <HiMenuAlt2 className="w-5 h-5" />
             </button>
-            <HiChat className="w-5 h-5 text-green-600" />
+            <img
+              src="/logo/studynest-logo.svg"
+              alt="Mây Mây AI"
+              className="w-5 h-5 object-contain"
+            />
             <div>
-              <h3 className="font-medium text-sm text-gray-900">
-                Trợ giảng AI
+              <h3 className="font-semibold text-sm text-foreground">
+                Trợ giảng Mây Mây AI
               </h3>
-              <p className="text-xs text-gray-500 truncate max-w-[200px]">
+              <p className="text-xs text-muted-foreground truncate max-w-[200px]">
                 {lessonTitle}
               </p>
             </div>
@@ -290,14 +294,14 @@ function TutorChatPanel({
           <div className="flex items-center gap-1">
             <button
               onClick={() => setShowHistory(true)}
-              className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg"
+              className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary-light rounded-lg"
             >
               <HiPlus className="w-4 h-4" />
             </button>
             {onClose && (
               <button
                 onClick={onClose}
-                className="p-1.5 text-gray-400 hover:bg-gray-100 rounded-lg"
+                className="p-1.5 text-muted-foreground hover:bg-background rounded-lg"
               >
                 <HiX className="w-4 h-4" />
               </button>
@@ -309,14 +313,20 @@ function TutorChatPanel({
         <div className="flex-1 overflow-y-auto px-4 py-4">
           {isFetchingHistory ? (
             <div className="h-full flex items-center justify-center">
-              <div className="w-6 h-6 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
+              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
             </div>
           ) : messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center">
-              <HiChat className="w-10 h-10 text-gray-300 mb-3" />
-              <h4 className="font-medium text-gray-700 mb-1">Hỏi gì đó đi!</h4>
-              <p className="text-xs text-gray-500 mb-4">
-                Tôi sẵn sàng hỗ trợ bạn.
+              <img
+                src="/logo/studynest-logo.svg"
+                alt="Mây Mây AI"
+                className="w-11 h-11 object-contain mb-3"
+              />
+              <h4 className="font-semibold text-foreground mb-1">
+                Hỏi Trợ giảng Mây Mây nhé!
+              </h4>
+              <p className="text-xs text-muted-foreground mb-4">
+                Mây Mây sẵn sàng giải đáp bài học cho bạn.
               </p>
             </div>
           ) : (

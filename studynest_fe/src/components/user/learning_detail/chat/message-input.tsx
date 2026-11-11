@@ -311,8 +311,8 @@ function MessageInput({
 
   return (
     <div
-      className={`border-t border-gray-100 p-3 transition-colors ${
-        isDragging ? "bg-green-50" : ""
+      className={`border-t border-border p-3 transition-colors ${
+        isDragging ? "bg-primary-pastel/40" : ""
       }`}
       onDragEnter={(e) => {
         e.preventDefault();
@@ -338,7 +338,7 @@ function MessageInput({
           {localImages.map((img) => (
             <div
               key={img.tempId}
-              className="relative group w-16 h-16 rounded-lg border bg-gray-50 overflow-hidden"
+              className="relative group w-16 h-16 rounded-lg border border-border bg-background overflow-hidden"
             >
               <img
                 src={
@@ -387,9 +387,9 @@ function MessageInput({
 
       {/* Drag overlay */}
       {isDragging && (
-        <div className="mb-2 p-4 border-2 border-dashed border-green-400 rounded-lg bg-green-50 text-center">
-          <HiPhotograph className="w-8 h-8 text-green-500 mx-auto mb-1" />
-          <p className="text-sm text-green-600">Thả ảnh vào đây</p>
+        <div className="mb-2 p-4 border-2 border-dashed border-primary-light rounded-xl bg-primary-pastel/40 text-center">
+          <HiPhotograph className="w-8 h-8 text-primary mx-auto mb-1" />
+          <p className="text-sm text-primary">Thả ảnh vào đây</p>
         </div>
       )}
 
@@ -407,7 +407,7 @@ function MessageInput({
         <button
           onClick={() => fileRef.current?.click()}
           disabled={disabled}
-          className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg disabled:opacity-40 transition-colors"
+          className="p-2 text-muted-foreground hover:text-primary hover:bg-primary-pastel/50 rounded-xl disabled:opacity-40 transition-colors cursor-pointer"
         >
           <HiPhotograph className="w-5 h-5" />
         </button>
@@ -416,8 +416,8 @@ function MessageInput({
           ref={inputRef}
           onKeyDown={handleKeyDown}
           onPaste={handlePaste}
-          placeholder={localImages.length ? "Mô tả ảnh..." : "Hỏi gì đó..."}
-          className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg resize-none focus:outline-none focus:ring-1 focus:ring-green-500 text-sm"
+          placeholder={localImages.length ? "Mô tả ảnh..." : "Hỏi trợ giảng Mây Mây..."}
+          className="flex-1 px-3 py-2 bg-background border border-border rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm text-foreground"
           rows={1}
           disabled={disabled}
         />
@@ -425,7 +425,7 @@ function MessageInput({
         <button
           onClick={handleSubmit}
           disabled={disabled}
-          className={`px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-40 transition-all ${
+          className={`px-3 py-2 bg-primary text-white rounded-xl hover:bg-primary-hover disabled:opacity-40 transition-all ${
             disabled ? "cursor-not-allowed" : "cursor-pointer"
           }`}
         >

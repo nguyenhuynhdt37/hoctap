@@ -183,7 +183,7 @@ const Personalize = ({ learningFields }: personalizeProps) => {
                 <div className="relative">
                   <img
                     src="/logo/studynest-logo.svg"
-                    alt="StudyNest Logo"
+                    alt="Mây Mây"
                     width={40}
                     height={40}
                     className="w-10 h-10"

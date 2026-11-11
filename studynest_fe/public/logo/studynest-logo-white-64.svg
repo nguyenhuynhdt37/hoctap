@@ -1,20 +1,13 @@
 <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Book pages -->
+  <g fill="#FFFFFF">
+    <circle cx="22" cy="38" r="13" />
+    <circle cx="36" cy="32" r="16" />
+    <circle cx="48" cy="40" r="10" />
+    <rect x="16" y="36" width="36" height="16" rx="8" />
+  </g>
   <path
-    d="M12 8C12 6.89543 12.8954 6 14 6H48C49.1046 6 50 6.89543 50 8V52C50 53.1046 49.1046 54 48 54H14C12.8954 54 12 53.1046 12 52V8Z"
-    fill="white" />
-
-  <!-- Book spine -->
-  <path d="M12 8C12 6.89543 12.8954 6 14 6H16V54H14C12.8954 54 12 53.1046 12 52V8Z" fill="white"
-    fill-opacity="0.8" />
-
-  <!-- Page lines -->
-  <line x1="20" y1="16" x2="44" y2="16" stroke="currentColor" stroke-width="2" stroke-opacity="0.3" />
-  <line x1="20" y1="22" x2="44" y2="22" stroke="currentColor" stroke-width="2" stroke-opacity="0.3" />
-  <line x1="20" y1="28" x2="38" y2="28" stroke="currentColor" stroke-width="2" stroke-opacity="0.3" />
-  <line x1="20" y1="34" x2="42" y2="34" stroke="currentColor" stroke-width="2" stroke-opacity="0.3" />
-  <line x1="20" y1="40" x2="36" y2="40" stroke="currentColor" stroke-width="2" stroke-opacity="0.3" />
-
-  <!-- Bookmark -->
-  <path d="M40 6V20L36 16L32 20V6H40Z" fill="white" fill-opacity="0.9" />
+    d="M54 11.2L55.15 14.55L58.5 15.7L55.15 16.85L54 20.2L52.85 16.85L49.5 15.7L52.85 14.55L54 11.2Z"
+    fill="#F7C9D9"
+  />
+  <circle cx="46.2" cy="13.4" r="1.25" fill="#FFFFFF" opacity="0.85" />
 </svg>

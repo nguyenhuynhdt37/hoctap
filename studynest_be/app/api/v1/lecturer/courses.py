@@ -75,8 +75,8 @@ async def upload_course_thumbnail(
     course_service: CourseService = Depends(CourseService),
     authorization: AuthorizationService = Depends(AuthorizationService),
 ):
-    await authorization.require_role(["LECTURER"])
-    return await course_service.upload_thumbnail_async(course_id=course_id, file=file)
+    lecturer = await authorization.require_role(["LECTURER"])
+    return await course_service.upload_thumbnail_async(course_id=course_id, file=file, lecturer_id=lecturer.id)
 
 
 @router.get("/is_lecturer")

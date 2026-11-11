@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
-import { HiSparkles, HiX } from "react-icons/hi";
+import { useCallback, useEffect, useState } from "react";
+import { HiX } from "react-icons/hi";
 import ChatSql from "./index";
 
 export default function FloatingChatButton() {
@@ -9,7 +9,6 @@ export default function FloatingChatButton() {
 
   const toggle = useCallback(() => setIsOpen((prev) => !prev), []);
 
-  // Đóng khi nhấn Escape
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") setIsOpen(false);
@@ -22,34 +21,34 @@ export default function FloatingChatButton() {
 
   return (
     <>
-      {/* Floating Button */}
       <button
+        type="button"
         onClick={toggle}
-        className={`fixed bottom-6 right-6 z-50 p-4 rounded-full shadow-lg transition-all duration-300 ${
+        className={`fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-lg border transition-all duration-300 flex items-center justify-center cursor-pointer ${
           isOpen
-            ? "bg-gray-600 hover:bg-gray-700 rotate-0"
-            : "bg-green-600 hover:bg-green-700 hover:scale-110"
+            ? "bg-surface border-border text-foreground hover:bg-primary-light"
+            : "bg-primary border-primary-pastel text-primary-foreground hover:bg-primary-hover hover:scale-105 ring-4 ring-primary-light/80"
         }`}
-        aria-label={isOpen ? "Đóng chat" : "Mở trợ lý AI"}
+        aria-label={isOpen ? "Đóng Mây Mây AI" : "Mở trợ lý Mây Mây AI"}
       >
         {isOpen ? (
-          <HiX className="w-6 h-6 text-white" />
+          <HiX className="w-6 h-6" />
         ) : (
-          <HiSparkles className="w-6 h-6 text-white" />
+          <img
+            src="/logo/studynest-logo-white-64.svg"
+            alt="Mây Mây AI"
+            className="w-7 h-7 object-contain"
+          />
         )}
       </button>
 
-      {/* Chat Panel */}
       {isOpen && (
         <>
-          {/* Backdrop */}
           <div
-            className="fixed inset-0 bg-black/20 z-40 md:hidden"
+            className="fixed inset-0 bg-foreground/20 backdrop-blur-2xs z-40 md:hidden"
             onClick={toggle}
           />
-
-          {/* Chat Window */}
-          <div className="fixed bottom-24 right-6 z-50 w-[calc(100vw-48px)] max-w-md h-[500px] md:h-[600px] animate-in slide-in-from-bottom-4 fade-in duration-200">
+          <div className="fixed bottom-24 right-6 z-50 w-[calc(100vw-48px)] max-w-md h-[500px] md:h-[580px] animate-in slide-in-from-bottom-4 fade-in duration-200">
             <ChatSql />
           </div>
         </>

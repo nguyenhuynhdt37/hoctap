@@ -23,6 +23,7 @@ from sqlalchemy.orm import aliased, selectinload
 
 from app.db.models.database import Categories, Courses, User
 from app.db.sesson import get_session
+from app.services.catalog import public_course
 
 
 class CategoryService:
@@ -34,7 +35,7 @@ class CategoryService:
             stmt = (
                 select(Categories)
                 .options(selectinload(Categories.parent_reverse))
-                .where(Categories.parent_id.is_(None))
+                .where(Categories.parent_id.is_(None), Categories.is_onboarding_visible.is_(True))
                 .order_by(Categories.order_index)
                 .limit(limit_parent)
             )
@@ -83,6 +84,7 @@ class CategoryService:
             stmt = (
                 select(Categories)
                 .options(selectinload(Categories.topics))
+                .where(Categories.is_onboarding_visible.is_(True))
                 .order_by(Categories.order_index.asc(), Categories.name.asc())
             )
 
@@ -164,6 +166,11 @@ class CategoryService:
             )
 
             rows = (await self.db.execute(stmt)).mappings().all()
+            visible_ids = set((await self.db.scalars(select(Courses.id).where(
+                Courses.id.in_([row['course_id'] for row in rows]), public_course()
+            ))).all())
+            rows = [row for row in rows if row['course_id'] in visible_ids]
+
 
             return {
                 "items": [
@@ -207,8 +214,7 @@ class CategoryService:
             .join(User, User.id == Courses.instructor_id)
             .where(
                 Courses.category_id.in_(category_ids),
-                Courses.is_published.is_(True),
-                Courses.approval_status == "approved",
+                public_course(),
             )
             .group_by(Courses.instructor_id, User.fullname, User.avatar)
             .order_by(func.sum(func.coalesce(Courses.total_enrolls, 0)).desc())
@@ -231,142 +237,29 @@ class CategoryService:
         }
 
     async def get_category_courses(
-        self,
-        category_slug: str,
-        limit: int = 20,
-        cursor: Optional[str] = None,
-        rating: Optional[float] = None,
-        duration: Optional[str] = None,
-        level: Optional[str] = None,
-        language: Optional[str] = None,
-        sort: str = "newest",
+        self, category_slug: str, limit: int = 20, cursor: Optional[str] = None,
+        rating: Optional[float] = None, duration: Optional[str] = None,
+        level: Optional[str] = None, language: Optional[str] = None,
+        sort: str = 'newest', price: Optional[str] = None,
     ):
-        try:
-            # 2) Lấy subtree categories
-            category_ids = await self.get_all_subcategories(category_slug)
-
-            Instructor = aliased(User)
-
-            # 3) Base query
-            stmt = (
-                select(
-                    Courses.id,
-                    Courses.title,
-                    Courses.slug,
-                    Courses.thumbnail_url,
-                    Courses.rating_avg,
-                    Courses.rating_count,
-                    Courses.total_length_seconds,
-                    Courses.level,
-                    Courses.language,
-                    Courses.created_at,
-                    Instructor.id.label("instructor_id"),
-                    Instructor.fullname.label("instructor_name"),
-                    Instructor.avatar.label("instructor_avatar"),
-                )
-                .join(Instructor, Instructor.id == Courses.instructor_id)
-                .where(Courses.category_id.in_(category_ids))
-            )
-
-            # 4) FILTERS
-            if rating:
-                stmt = stmt.where(Courses.rating_avg >= rating)
-
-            # duration filter → chuyển sang filter theo seconds
-            if duration:
-                ranges = {
-                    "0-1": (0, 3600),
-                    "1-3": (3600, 10800),
-                    "3-6": (10800, 21600),
-                    "6-17": (21600, 61200),
-                }
-                if duration in ranges:
-                    low, high = ranges[duration]
-                    stmt = stmt.where(
-                        and_(
-                            Courses.total_length_seconds >= low,
-                            Courses.total_length_seconds <= high,
-                        )
-                    )
-
-            if level:
-                stmt = stmt.where(Courses.level == level)
-
-            if language:
-                stmt = stmt.where(Courses.language == language)
-
-            # 5) SORT + CURSOR
-            if sort == "newest":
-                sort_field = Courses.created_at
-            elif sort == "top_rated":
-                sort_field = Courses.rating_avg
-            else:
-                sort_field = Courses.created_at
-
-            stmt = stmt.order_by(sort_field.desc())
-
-            # cursor
-            if cursor:
-                if sort == "newest":
-                    cursor_val = datetime.datetime.fromisoformat(cursor)
-                    stmt = stmt.where(Courses.created_at < cursor_val)
-                elif sort == "top_rated":
-                    cursor_val = float(cursor)
-                    stmt = stmt.where(Courses.rating_avg < cursor_val)
-
-            stmt = stmt.limit(limit + 1)
-
-            # 6) Query
-            rows = (await self.db.execute(stmt)).all()
-
-            has_more = len(rows) > limit
-            items = rows[:limit]
-
-            if has_more:
-                last = items[-1]
-                if sort == "newest":
-                    next_cursor = last.created_at.isoformat()
-                else:
-                    next_cursor = str(last.rating_avg)
-            else:
-                next_cursor = None
-
-            # 7) Format output
-            results = []
-            for r in items:
-                total_hours = (r.total_length_seconds or 0) / 3600
-
-                results.append(
-                    {
-                        "id": r.id,
-                        "title": r.title,
-                        "slug": r.slug,
-                        "thumbnail": r.thumbnail_url,
-                        "rating_avg": float(r.rating_avg or 0),
-                        "rating_count": r.rating_count,
-                        "total_hours": round(total_hours, 1),
-                        "level": r.level,
-                        "language": r.language,
-                        "created_at": r.created_at.isoformat(),
-                        "instructor": {
-                            "id": r.instructor_id,
-                            "fullname": r.instructor_name,
-                            "avatar": r.instructor_avatar,
-                        },
-                    }
-                )
-
-            return {
-                "items": results,
-                "next_cursor": next_cursor,
-                "has_more": has_more,
-            }
-
-        except Exception as e:
-            print("❌ Category courses error:", e)
-            raise HTTPException(
-                500, f"Lỗi khi lấy danh sách khóa học theo category. {e}"
-            )
+        from app.schemas.catalog import CatalogFilters
+        from app.services.catalog import CatalogService
+        category_ids = await self.get_all_subcategories(category_slug)
+        conditions = []
+        if duration:
+            low, high = {'0-1': (0, 3600), '1-3': (3600, 10800), '3-6': (10800, 21600), '6-17': (21600, 61200)}[duration]
+            conditions += [Courses.total_length_seconds >= low, Courses.total_length_seconds <= high]
+        if level:
+            conditions.append(Courses.level == level)
+        if language:
+            conditions.append(Courses.language == language)
+        if price == 'paid':
+            conditions.append(Courses.base_price > 0)
+        filters = CatalogFilters(limit=limit, cursor=cursor, rating=rating, currency=None,
+            max_price=0 if price == 'free' else None,
+            sort={'newest': 'newest', 'top_rated': 'rating', 'most_popular': 'popular'}[sort])
+        return await CatalogService(self.db).courses(filters, category_ids, conditions,
+            scope=f'{duration}:{level}:{language}:{price}')
 
     async def get_root_and_level1_async(self, slug: str):
         try:

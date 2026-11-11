@@ -1,5 +1,7 @@
 "use client";
 
+import CourseTaxonomyForm from "@/components/catalog/course-taxonomy-form";
+import { emptyTaxonomy, taxonomyInput, type CourseTaxonomyInput, type CourseEducation } from "@/types/catalog";
 import TiptapEditor from "@/components/shared/tiptap_editor";
 import api from "@/lib/utils/fetcher/client/axios";
 import { Category } from "@/types/admin/category";
@@ -52,6 +54,7 @@ interface CourseFormData {
 
 const CreateCourse = () => {
   const router = useRouter();
+  const [education, setEducation] = useState<CourseTaxonomyInput>(emptyTaxonomy);
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -549,6 +552,7 @@ const CreateCourse = () => {
     try {
       // Clean up empty strings from arrays
       const payload: any = {
+        education,
         title: formData.title.trim(),
         subtitle: formData.subtitle.trim(),
         category_id: formData.category_id,
@@ -686,6 +690,7 @@ const CreateCourse = () => {
         {/* Step Content */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-8 mb-6">
           {/* Step 0: Basic Info */}
+          {currentStep === 0 && <CourseTaxonomyForm value={education} onChange={setEducation} />}
           {currentStep === 0 && (
             <div className="space-y-6">
               <div>

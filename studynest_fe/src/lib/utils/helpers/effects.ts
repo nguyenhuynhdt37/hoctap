@@ -1,5 +1,5 @@
 /**
- * Effects configuration for StudyNest
+ * Effects configuration for Mây Mây
  * Centralized effects like confetti, sounds, animations
  */
 
@@ -7,7 +7,7 @@ import confetti from "canvas-confetti";
 
 // Confetti configuration
 export const confettiConfig = {
-  // Colors matching StudyNest Cloudy Blue pastel palette
+  // Colors matching Mây Mây Cloudy Blue pastel palette
   colors: ["#356FA7", "#BFD7ED", "#F7C9D9", "#E3D5F5", "#F8E9C9"],
 
   // Particle settings

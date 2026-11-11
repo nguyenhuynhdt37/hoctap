@@ -1,4 +1,4 @@
-import api from "./axios";
+import { refreshSession } from "./refresh-session";
 import { consumeChatEvents } from "./chat-events";
 
 export async function postChatStream<T>(
@@ -18,7 +18,7 @@ export async function postChatStream<T>(
     let response = await send();
     if (response.status === 401) {
       await response.body?.cancel();
-      await api.post("/auth/refresh", {});
+      await refreshSession();
       response = await send();
     }
     if (!response.ok) {

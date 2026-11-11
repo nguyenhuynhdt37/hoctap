@@ -1,6 +1,7 @@
 "use client";
 
 import { HiChevronLeft, HiChevronRight } from "react-icons/hi";
+import { cn } from "@/lib/utils";
 
 export interface PaginationProps {
   currentPage: number;
@@ -59,24 +60,36 @@ export default function Pagination({
   };
 
   return (
-    <div
-      className={`px-6 py-4 border-t border-[#E7EEF7] bg-[#F6FAFF]/60 ${className}`}
+    <nav
+      aria-label="Phân trang dữ liệu"
+      className={cn(
+        "px-6 py-4 border-t border-border bg-background/60",
+        className
+      )}
     >
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-4">
-          <div className="text-sm text-[#6F7C8C]">
-            Hiển thị <span className="font-medium text-[#3D4A5A]">{startItem}</span> đến{" "}
-            <span className="font-medium text-[#3D4A5A]">{endItem}</span> trong tổng số{" "}
-            <span className="font-medium text-[#3D4A5A]">{totalItems}</span> mục
+          <div className="text-sm text-muted-foreground">
+            Hiển thị{" "}
+            <span className="font-medium text-foreground">{startItem}</span> đến{" "}
+            <span className="font-medium text-foreground">{endItem}</span> trong
+            tổng số{" "}
+            <span className="font-medium text-foreground">{totalItems}</span> mục
           </div>
 
           {showPageSizeSelector && onPageSizeChange && (
             <div className="flex items-center space-x-2">
-              <span className="text-sm text-[#6F7C8C]">Hiển thị:</span>
+              <label
+                htmlFor="pagination-page-size"
+                className="text-sm text-muted-foreground"
+              >
+                Hiển thị:
+              </label>
               <select
+                id="pagination-page-size"
                 value={pageSize}
                 onChange={(e) => onPageSizeChange(Number(e.target.value))}
-                className="px-3 py-1.5 text-sm bg-white text-[#3D4A5A] border border-[#E7EEF7] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#356FA7]/25 focus:border-[#356FA7] transition-all duration-200"
+                className="h-9 px-3 py-1.5 text-sm bg-surface text-foreground border border-input rounded-xl hover:border-primary-pastel focus:outline-none focus:ring-2 focus:ring-ring/20 focus:border-ring transition-all duration-150 cursor-pointer"
               >
                 {pageSizeOptions.map((size) => (
                   <option key={size} value={size}>
@@ -90,11 +103,13 @@ export default function Pagination({
 
         <div className="flex items-center space-x-1.5">
           <button
+            type="button"
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage === 1 || totalPages <= 1}
-            className="flex items-center space-x-1 px-3 py-2 text-sm font-medium text-[#3D4A5A] bg-white border border-[#E7EEF7] rounded-xl hover:bg-[#F6FAFF] hover:border-[#BFD7ED] disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 cursor-pointer"
+            aria-label="Trang trước"
+            className="inline-flex h-9 items-center space-x-1 px-3 text-sm font-medium text-foreground bg-surface border border-border rounded-xl hover:bg-background hover:border-primary-pastel focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 cursor-pointer"
           >
-            <HiChevronLeft className="w-4 h-4" />
+            <HiChevronLeft className="w-4 h-4" aria-hidden="true" />
             <span>Trước</span>
           </button>
 
@@ -105,44 +120,53 @@ export default function Pagination({
                   return (
                     <span
                       key={`dots-${index}`}
-                      className="px-3 py-2 text-sm text-[#8190A3]"
+                      aria-hidden="true"
+                      className="px-3 py-2 text-sm text-subtle-foreground"
                     >
                       ...
                     </span>
                   );
                 }
 
+                const isCurrent = page === currentPage;
+
                 return (
                   <button
                     key={page}
+                    type="button"
+                    aria-current={isCurrent ? "page" : undefined}
+                    aria-label={`Trang ${page}`}
                     onClick={() => onPageChange(page as number)}
-                    className={`px-3.5 py-2 text-sm font-semibold rounded-xl transition-colors duration-200 cursor-pointer ${
-                      page === currentPage
-                        ? "bg-[#356FA7] text-white shadow-2xs"
-                        : "text-[#3D4A5A] bg-white border border-[#E7EEF7] hover:bg-[#F6FAFF] hover:border-[#BFD7ED]"
-                    }`}
+                    className={cn(
+                      "inline-flex h-9 min-w-9 items-center justify-center px-3 text-sm font-semibold rounded-xl transition-colors duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      isCurrent
+                        ? "bg-primary text-primary-foreground shadow-2xs"
+                        : "text-foreground bg-surface border border-border hover:bg-background hover:border-primary-pastel"
+                    )}
                   >
                     {page}
                   </button>
                 );
               })
             ) : (
-              <div className="px-3.5 py-2 text-sm font-medium text-[#6F7C8C] bg-white border border-[#E7EEF7] rounded-xl">
+              <div className="inline-flex h-9 items-center px-3.5 text-sm font-medium text-muted-foreground bg-surface border border-border rounded-xl">
                 Trang 1
               </div>
             )}
           </div>
 
           <button
+            type="button"
             onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage === totalPages || totalPages <= 1}
-            className="flex items-center space-x-1 px-3 py-2 text-sm font-medium text-[#3D4A5A] bg-white border border-[#E7EEF7] rounded-xl hover:bg-[#F6FAFF] hover:border-[#BFD7ED] disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 cursor-pointer"
+            aria-label="Trang sau"
+            className="inline-flex h-9 items-center space-x-1 px-3 text-sm font-medium text-foreground bg-surface border border-border rounded-xl hover:bg-background hover:border-primary-pastel focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 cursor-pointer"
           >
             <span>Sau</span>
-            <HiChevronRight className="w-4 h-4" />
+            <HiChevronRight className="w-4 h-4" aria-hidden="true" />
           </button>
         </div>
       </div>
-    </div>
+    </nav>
   );
 }

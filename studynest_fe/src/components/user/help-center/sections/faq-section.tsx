@@ -27,12 +27,12 @@ const faqData: FaqItem[] = [
   {
     question: "Tôi có thể học trên thiết bị di động không?",
     answer:
-      "Có, StudyNest hoàn toàn tương thích với thiết bị di động. Bạn có thể truy cập và học trên điện thoại, máy tính bảng thông qua trình duyệt web hoặc ứng dụng di động.",
+      "Có, Mây Mây hoàn toàn tương thích với thiết bị di động. Bạn có thể truy cập và học trên điện thoại, máy tính bảng thông qua trình duyệt web hoặc ứng dụng di động.",
   },
   {
     question: "Chứng chỉ có giá trị như thế nào?",
     answer:
-      "Chứng chỉ hoàn thành khóa học của StudyNest được công nhận bởi nhiều nhà tuyển dụng và tổ chức giáo dục. Chứng chỉ được cấp sau khi bạn hoàn thành tất cả bài học và đạt điểm số yêu cầu.",
+      "Chứng chỉ hoàn thành khóa học của Mây Mây được công nhận bởi nhiều nhà tuyển dụng và tổ chức giáo dục. Chứng chỉ được cấp sau khi bạn hoàn thành tất cả bài học và đạt điểm số yêu cầu.",
   },
   {
     question: "Làm thế nào để liên hệ với giảng viên?",

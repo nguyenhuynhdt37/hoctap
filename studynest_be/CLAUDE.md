@@ -1,4 +1,4 @@
-# StudyNest Backend — CLAUDE.md
+# Mây Mây Backend — CLAUDE.md
 
 > **Mục đích**: File này giúp Claude AI (hoặc bất kỳ AI assistant nào) hiểu đầy đủ codebase,
 > áp dụng đúng pattern, và viết code nhất quán với dự án này.

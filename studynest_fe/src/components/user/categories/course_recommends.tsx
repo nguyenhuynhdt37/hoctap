@@ -56,68 +56,62 @@ const RecommendedCourseCard = ({
   };
 
   return (
-    <div
+    <button
+      type="button"
       onClick={handleClick}
-      className="w-full group bg-white rounded-2xl overflow-hidden hover:shadow-md transition-all duration-500 flex flex-col md:flex-row h-[280px] md:h-[320px] cursor-pointer border border-green-100 hover:border-green-300 relative"
+      className="group flex h-auto w-full cursor-pointer flex-col overflow-hidden rounded-[24px] border border-primary-pastel/80 bg-surface text-left shadow-sm transition-colors hover:border-primary md:h-72 md:flex-row"
     >
-      <div className="absolute inset-0 bg-gradient-to-br from-green-50/0 via-emerald-50/0 to-teal-50/0 group-hover:from-green-50/50 group-hover:via-emerald-50/30 group-hover:to-teal-50/50 transition-all duration-500 pointer-events-none" />
-
-      <div className="w-full md:w-[40rem] flex-shrink-0 h-full relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent z-10" />
+      <div className="relative h-48 w-full shrink-0 overflow-hidden md:h-auto md:w-[42%]">
         <img
           src={getImageUrl(course.thumbnail || "")}
-          alt={course.title}
-          className="w-full h-full object-cover"
+          alt=""
+          className="h-full w-full object-cover"
           onError={(e) => {
-            (
-              e.target as HTMLImageElement
-            ).src = `https://via.placeholder.com/400x300/E8F2FA/356FA7?text=${encodeURIComponent(
-              course.title
-            )}`;
+            e.currentTarget.onerror = null;
+            e.currentTarget.src = "/logo/maymay-logo.svg";
           }}
         />
-        {course.score && (
-          <div className="absolute top-4 right-4 z-20 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-sm font-bold px-4 py-2 rounded-full backdrop-blur-sm">
-            Điểm: {course.score.toLocaleString()}
-          </div>
-        )}
+        {course.score ? (
+          <span className="absolute right-4 top-4 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
+            Điểm {course.score.toLocaleString()}
+          </span>
+        ) : null}
       </div>
 
-      <div className="flex-1 p-6 md:p-8 flex flex-col justify-between relative z-10">
+      <div className="flex flex-1 flex-col justify-between p-6 md:p-8">
         <div>
-          <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-4 line-clamp-2 group-hover:text-green-600 transition-colors leading-tight">
+          <h3 className="line-clamp-2 text-xl font-bold leading-tight text-foreground md:text-2xl">
             {course.title}
           </h3>
           {course.instructor && (
-            <div className="flex items-center gap-3 mb-6">
+            <div className="mt-4 flex items-center gap-3">
               {course.instructor.avatar && (
-                <div className="relative">
-                  <img
-                    src={getImageUrl(course.instructor.avatar)}
-                    alt={course.instructor.name}
-                    className="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover ring-4 ring-green-100 group-hover:ring-green-300 transition-all"
-                    onError={(e) => {
-                      (
-                        e.target as HTMLImageElement
-                      ).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                        course.instructor.name
-                      )}&background=E8F2FA&color=356FA7&size=48`;
-                    }}
-                  />
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-green-400/20 to-emerald-400/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </div>
+                <img
+                  src={getImageUrl(course.instructor.avatar)}
+                  alt=""
+                  className="h-11 w-11 rounded-full object-cover ring-2 ring-primary-pastel"
+                  onError={(e) => {
+                    (
+                      e.target as HTMLImageElement
+                    ).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                      course.instructor.name
+                    )}&background=E8F2FA&color=356FA7&size=48`;
+                  }}
+                />
               )}
               <div>
-                <p className="text-sm text-gray-500 font-medium">Giảng viên</p>
-                <p className="text-base text-gray-800 font-semibold group-hover:text-green-600 transition-colors">
+                <p className="text-xs font-medium text-muted-foreground">
+                  Giảng viên
+                </p>
+                <p className="text-sm font-semibold text-foreground">
                   {course.instructor.name}
                 </p>
               </div>
             </div>
           )}
         </div>
-        <div className="flex items-center gap-2 text-green-600 font-semibold text-sm group-hover:gap-3 transition-all">
-          <span>Khám phá khóa học</span>
+        <div className="mt-6 flex items-center gap-2 text-sm font-semibold text-primary">
+          <span>{isChecking ? "Đang mở..." : "Xem khóa học"}</span>
           <svg
             className="w-5 h-5 group-hover:translate-x-1 transition-transform"
             fill="none"
@@ -133,7 +127,7 @@ const RecommendedCourseCard = ({
           </svg>
         </div>
       </div>
-    </div>
+    </button>
   );
 };
 
@@ -188,40 +182,36 @@ const CourseRecommends = ({ slug }: CourseRecommendsProps) => {
   }, [emblaApi, courses.length]);
 
   const navBtnClass =
-    "absolute top-1/2 -translate-y-1/2 z-30 w-10 h-10 md:w-12 md:h-12 bg-white hover:bg-gradient-to-r hover:from-green-500 hover:to-emerald-500 text-green-600 hover:text-white rounded-full flex items-center justify-center transition-all border border-green-200 hover:border-green-500 shadow-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed";
+    "absolute top-1/2 z-30 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-primary-pastel bg-surface text-primary shadow-sm transition-colors hover:bg-primary hover:text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40";
 
   return (
-    <section className="py-16 bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 relative overflow-hidden">
-      <div className="absolute top-10 right-10 w-32 h-32 bg-green-200/20 rounded-full blur-3xl" />
-      <div className="absolute bottom-10 left-10 w-40 h-40 bg-emerald-200/20 rounded-full blur-3xl" />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <section className="bg-background py-12 sm:py-16">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <h2 className="text-3xl font-bold bg-gradient-to-r from-green-700 to-emerald-700 bg-clip-text text-transparent mb-2">
+          <h2 className="font-display text-3xl text-foreground">
             Khóa học gợi ý
           </h2>
-          <p className="text-emerald-600 font-medium flex items-center gap-2">
-            <span className="text-green-500">🎯</span>
+          <p className="mt-2 text-sm text-muted-foreground">
             Khóa học phù hợp nhất với danh mục này
           </p>
         </div>
 
         {isLoading ? (
-          <div className="w-full bg-white border border-green-100 rounded-2xl overflow-hidden animate-pulse flex">
-            <div className="w-64 md:w-80 flex-shrink-0 h-48 bg-gradient-to-r from-green-100 via-emerald-100 to-teal-100" />
-            <div className="flex-1 p-6 space-y-3">
-              <div className="h-6 bg-gradient-to-r from-green-100 to-emerald-100 rounded w-3/4" />
-              <div className="h-4 bg-gradient-to-r from-emerald-100 to-teal-100 rounded w-1/2" />
+          <div className="flex animate-pulse overflow-hidden rounded-[24px] border border-primary-pastel/80 bg-surface">
+            <div className="h-48 w-full shrink-0 bg-primary-light md:h-72 md:w-[42%]" />
+            <div className="flex-1 space-y-3 p-6">
+              <div className="h-6 w-3/4 rounded-lg bg-primary-light" />
+              <div className="h-4 w-1/2 rounded-lg bg-primary-light" />
             </div>
           </div>
         ) : courses.length > 0 ? (
-          <div className="relative">
+          <div className="relative px-12">
             {hasMultiple && (
               <>
                 <button
                   onClick={() => emblaApi?.scrollPrev()}
                   disabled={prevBtnDisabled}
-                  className={`${navBtnClass} -left-4 sm:-left-6 lg:-left-8`}
+                  className={`${navBtnClass} left-0`}
                   aria-label="Slide trước"
                 >
                   <HiChevronLeft className="h-5 w-5 md:h-6 md:w-6" />
@@ -229,7 +219,7 @@ const CourseRecommends = ({ slug }: CourseRecommendsProps) => {
                 <button
                   onClick={() => emblaApi?.scrollNext()}
                   disabled={nextBtnDisabled}
-                  className={`${navBtnClass} -right-4 sm:-right-6 lg:-right-8`}
+                  className={`${navBtnClass} right-0`}
                   aria-label="Slide tiếp theo"
                 >
                   <HiChevronRight className="h-5 w-5 md:h-6 md:w-6" />
@@ -248,7 +238,7 @@ const CourseRecommends = ({ slug }: CourseRecommendsProps) => {
           </div>
         ) : (
           <div className="text-center py-12">
-            <p className="text-gray-500">Chưa có thông tin</p>
+            <p className="text-sm text-muted-foreground">Chưa có khóa học gợi ý.</p>
           </div>
         )}
       </div>

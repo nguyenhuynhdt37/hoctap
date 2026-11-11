@@ -63,7 +63,6 @@ class StudentsByCourseItem(BaseModel):
 class StudentAnalyticsResponse(BaseModel):
     total_new_students: int
     active_students: int
-    retention_rate: float
     students_by_course: List[StudentsByCourseItem]
 
     model_config = ConfigDict(from_attributes=True)

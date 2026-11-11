@@ -17,7 +17,7 @@ async def main():
     storage = FileStorageService()
     client = storage._client()
     key = f"private/verification/{uuid4().hex}.txt"
-    payload = b"StudyNest R2 connection check"
+    payload = "Mây Mây R2 connection check".encode()
     uploaded = False
     try:
         await asyncio.to_thread(client.put_object, Bucket=settings.R2_BUCKET_NAME,

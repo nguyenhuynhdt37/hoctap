@@ -16,7 +16,7 @@ export function PrivacySection() {
             Cam kết bảo vệ quyền riêng tư
           </h4>
           <p className="text-gray-700 leading-relaxed">
-            StudyNest cam kết bảo vệ quyền riêng tư của bạn. Chúng tôi hiểu rằng
+            Mây Mây cam kết bảo vệ quyền riêng tư của bạn. Chúng tôi hiểu rằng
             thông tin cá nhân của bạn là quan trọng và chúng tôi sẽ xử lý nó một
             cách cẩn thận và minh bạch.
           </p>

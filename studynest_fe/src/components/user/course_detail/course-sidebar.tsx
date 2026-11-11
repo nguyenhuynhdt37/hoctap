@@ -13,21 +13,25 @@ import { Course } from "@/types/user/course_detail";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {
+  HiAcademicCap,
+  HiBookOpen,
+  HiCheckCircle,
   HiClock,
+  HiGlobe,
   HiHeart,
   HiPlay,
   HiShare,
   HiShoppingCart,
+  HiCloud,
 } from "react-icons/hi";
 import EnrollmentModal from "./enrollment-modal";
 
-// Discount Effect Component - tinh tế theo Cloudy Blue
 const DiscountEffect = ({ active = false }: { active?: boolean }) => {
   if (!active) return null;
 
   return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-[20px] z-0">
-      <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-[#FCE8EF]/50 via-[#FFF9F6]/30 to-transparent" />
+    <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-[24px] z-0">
+      <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-secondary-light/50 via-surface-muted/30 to-transparent" />
     </div>
   );
 };
@@ -83,7 +87,11 @@ export default function CourseSidebar({
     Boolean(course?.instructor?.id) &&
     user!.id === course!.instructor!.id;
 
-  // Reset tất cả state enrollment khi component mount hoặc course thay đổi
+  const totalLessons = (course.sections || []).reduce(
+    (total, section) => total + (section.lessons?.length || 0),
+    0,
+  );
+
   useEffect(() => {
     setIsEnrollModalOpen(false);
     setIsEnrolling(false);
@@ -95,11 +103,9 @@ export default function CourseSidebar({
     isInitialLoadRef.current = true;
   }, [course.id]);
 
-  // Fetch available discounts khi course có phí (chỉ fetch 1 lần cho mỗi course)
+  // Only fetch available discounts when user is logged in AND course is paid
   useEffect(() => {
-    if (!hasPrice || !course.id) return;
-
-    // Đã fetch cho course này rồi thì không fetch lại
+    if (!user?.id || !hasPrice || !course.id) return;
     if (hasFetchedDiscountsRef.current === course.id) return;
 
     let isMounted = true;
@@ -116,13 +122,11 @@ export default function CourseSidebar({
         const discounts = response.data.items || [];
         setAvailableDiscounts(discounts);
 
-        // Tự động điền và apply mã đầu tiên nếu có
         if (discounts.length > 0 && isInitialLoadRef.current) {
           const firstDiscountCode = discounts[0].discount_code;
           setDiscountInput(firstDiscountCode);
           isInitialLoadRef.current = false;
 
-          // Tự động apply mã đầu tiên
           try {
             setIsApplyingDiscount(true);
             const applyResponse = await api.post<DiscountApplyResponse>(
@@ -130,13 +134,13 @@ export default function CourseSidebar({
               {
                 course_ids: [course.id],
                 discount_input: firstDiscountCode,
-              }
+              },
             );
 
             if (!isMounted) return;
 
             const courseResult = applyResponse.data.items.find(
-              (item) => item.course_id === course.id
+              (item) => item.course_id === course.id,
             );
             if (courseResult?.applied) {
               setPricingResult(courseResult);
@@ -163,11 +167,8 @@ export default function CourseSidebar({
                 user_remaining_uses: applyResponse.data.user_remaining_uses,
               });
             }
-          } catch (applyError) {
-            // Không hiển thị lỗi khi tự động áp dụng lần đầu
-            if (isMounted) {
-              console.log("Auto-apply discount failed:", applyError);
-            }
+          } catch {
+            // Ignore initial auto-apply error
           } finally {
             if (isMounted) {
               setIsApplyingDiscount(false);
@@ -175,12 +176,9 @@ export default function CourseSidebar({
           }
         }
 
-        // Đánh dấu đã fetch cho course này
         hasFetchedDiscountsRef.current = course.id;
-      } catch (error) {
-        if (isMounted) {
-          console.error("Error fetching available discounts:", error);
-        }
+      } catch {
+        // Ignore discount fetch failure
       } finally {
         if (isMounted) {
           setIsLoadingDiscounts(false);
@@ -193,11 +191,15 @@ export default function CourseSidebar({
     return () => {
       isMounted = false;
     };
-  }, [course.id, hasPrice]);
+  }, [user?.id, course.id, hasPrice]);
 
-  // Handle apply discount khi user click nút
   const handleApplyDiscount = async () => {
-    if (!hasPrice || !course.id || !discountInput.trim()) {
+    if (!hasPrice || !course.id || !discountInput.trim()) return;
+    if (!user?.id) {
+      showToast.info("Vui lòng đăng nhập để áp dụng mã ưu đãi.");
+      router.push(
+        `/login?redirect=${encodeURIComponent(`/course/${courseSlug || ""}`)}`,
+      );
       return;
     }
 
@@ -208,27 +210,22 @@ export default function CourseSidebar({
         {
           course_ids: [course.id],
           discount_input: discountInput.trim(),
-        }
+        },
       );
 
-      // Tìm kết quả cho course này
       const courseResult = response.data.items.find(
-        (item) => item.course_id === course.id
+        (item) => item.course_id === course.id,
       );
       if (courseResult) {
-        // Kiểm tra nếu mã không áp dụng được
         if (!courseResult.applied) {
           const errorMsg =
             courseResult.reason || "Mã giảm giá không thể áp dụng";
           showToast.error(errorMsg);
           setPricingResult(null);
           setDiscountInfo(null);
-          // Xóa mã giảm giá nếu không áp dụng được
           setDiscountInput("");
         } else {
-          // Chỉ lưu nếu applied = true
           setPricingResult(courseResult);
-          // Lưu thông tin discount từ response
           setDiscountInfo({
             discount_id: response.data.discount_id,
             discount_code: response.data.discount_code,
@@ -251,10 +248,8 @@ export default function CourseSidebar({
         }
       }
     } catch (error: any) {
-      console.error("Error applying discount:", error);
       setPricingResult(null);
       setDiscountInfo(null);
-      // Bắt lỗi từ API response
       let errorMsg = "Không thể áp dụng mã giảm giá. Vui lòng thử lại.";
       if (error?.response?.data?.detail) {
         errorMsg = error.response.data.detail;
@@ -262,14 +257,12 @@ export default function CourseSidebar({
         errorMsg = error.response.data.message;
       }
       showToast.error(errorMsg);
-      // Xóa mã giảm giá nếu có lỗi
       setDiscountInput("");
     } finally {
       setIsApplyingDiscount(false);
     }
   };
 
-  // Countdown timer cho discount - cập nhật real-time
   useEffect(() => {
     if (!discountInfo?.end_at) {
       setTimeRemaining("");
@@ -283,7 +276,6 @@ export default function CourseSidebar({
 
       if (distance < 0) {
         setTimeRemaining("Đã hết hạn");
-        // Reset discount info khi hết hạn
         setDiscountInfo(null);
         setPricingResult(null);
         return;
@@ -291,7 +283,7 @@ export default function CourseSidebar({
 
       const days = Math.floor(distance / (1000 * 60 * 60 * 24));
       const hours = Math.floor(
-        (distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+        (distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
       );
       const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((distance % (1000 * 60)) / 1000);
@@ -307,81 +299,11 @@ export default function CourseSidebar({
       }
     };
 
-    // Cập nhật ngay lập tức
     updateCountdown();
-    // Cập nhật mỗi giây
     const interval = setInterval(updateCountdown, 1000);
 
     return () => clearInterval(interval);
   }, [discountInfo?.end_at]);
-
-  // Fetch số lượng mã còn lại định kỳ (sử dụng user_remaining_uses)
-  // Chỉ fetch khi discount đã được apply và không fetch ngay lập tức để tránh duplicate calls
-  useEffect(() => {
-    if (!discountInfo?.discount_id || !hasPrice || !course.id) {
-      return;
-    }
-
-    // Không fetch ngay lập tức, chỉ fetch định kỳ sau khi đã có discount info
-    // Điều này tránh duplicate call ngay sau khi apply discount
-    const fetchRemainingUsage = async () => {
-      try {
-        const response = await api.post<DiscountApplyResponse>(
-          "/users/discounts/apply",
-          {
-            course_ids: [course.id],
-            discount_input: discountInfo.discount_id,
-          }
-        );
-
-        // Cập nhật thông tin discount nếu có thay đổi
-        setDiscountInfo((prev) => {
-          if (!prev) return null;
-          return {
-            ...prev,
-            discount_code: response.data.discount_code || prev.discount_code,
-            discount_name: response.data.discount_name || prev.discount_name,
-            discount_description:
-              response.data.discount_description || prev.discount_description,
-            discount_applies_to:
-              response.data.discount_applies_to || prev.discount_applies_to,
-            discount_type: response.data.discount_type || prev.discount_type,
-            discount_percent_value:
-              response.data.discount_percent_value ??
-              prev.discount_percent_value,
-            discount_fixed_value:
-              response.data.discount_fixed_value ?? prev.discount_fixed_value,
-            discount_usage_limit:
-              response.data.discount_usage_limit ?? prev.discount_usage_limit,
-            discount_usage_count:
-              response.data.discount_usage_count ?? prev.discount_usage_count,
-            discount_per_user_limit:
-              response.data.discount_per_user_limit ??
-              prev.discount_per_user_limit,
-            discount_is_active:
-              response.data.discount_is_active ?? prev.discount_is_active,
-            discount_is_hidden:
-              response.data.discount_is_hidden ?? prev.discount_is_hidden,
-            start_at: response.data.discount_start_at || prev.start_at,
-            end_at: response.data.discount_end_at || prev.end_at,
-            user_used_transactions:
-              response.data.user_used_transactions ??
-              prev.user_used_transactions,
-            user_remaining_uses:
-              response.data.user_remaining_uses ?? prev.user_remaining_uses,
-          };
-        });
-      } catch (error) {
-        console.error("Error fetching remaining usage:", error);
-      }
-    };
-
-    // Chỉ fetch định kỳ mỗi 60 giây (tăng từ 30s để giảm số lần gọi API)
-    // Không fetch ngay lập tức để tránh duplicate với lần apply đầu tiên
-    const interval = setInterval(fetchRemainingUsage, 60000);
-
-    return () => clearInterval(interval);
-  }, [discountInfo?.discount_id, hasPrice, course.id]);
 
   const displayPrice = pricingResult
     ? pricingResult.final_price
@@ -389,12 +311,28 @@ export default function CourseSidebar({
   const discountAmount = pricingResult ? pricingResult.discounted_amount : 0;
   const isDiscountApplied = pricingResult?.applied ?? false;
 
-  // Handle enrollment
+  const handleShare = async () => {
+    if (typeof window === "undefined") return;
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      showToast.success("Đã sao chép đường dẫn khóa học!");
+    } catch {
+      showToast.info("Bạn có thể sao chép đường dẫn trên thanh địa chỉ.");
+    }
+  };
+
   const handleEnroll = async () => {
+    if (!user?.id) {
+      showToast.info("Vui lòng đăng nhập để đăng ký khóa học.");
+      router.push(
+        `/login?redirect=${encodeURIComponent(`/course/${courseSlug || ""}`)}`,
+      );
+      return;
+    }
     if (!course || isEnrolling) return;
     if (!courseSlug) {
       showToast.error(
-        "Không thể đăng ký: Thiếu thông tin khóa học. Vui lòng thử lại sau."
+        "Không thể đăng ký: Thiếu thông tin khóa học. Vui lòng thử lại sau.",
       );
       return;
     }
@@ -402,7 +340,6 @@ export default function CourseSidebar({
     try {
       setIsEnrolling(true);
 
-      // Nếu user là giảng viên của khóa học → cho truy cập trực tiếp (dù có phí)
       if (
         user?.id &&
         course?.instructor?.id &&
@@ -410,10 +347,9 @@ export default function CourseSidebar({
       ) {
         try {
           await api.post(`/courses/${course.id}/enroll`);
-        } catch (_) {
-          // Bỏ qua lỗi enroll nếu đã có trong khóa học
+        } catch {
+          // Ignore if already enrolled
         }
-        // Điều hướng thẳng vào trang học
         if (typeof window !== "undefined") {
           window.location.replace(`/learning/${courseSlug}`);
         } else {
@@ -422,7 +358,6 @@ export default function CourseSidebar({
         return;
       }
 
-      // Nếu khóa học có phí, chỉ gọi API checkout (không gọi enroll)
       if (course.base_price > 0) {
         const checkoutPayload: {
           course_ids: string[];
@@ -431,7 +366,6 @@ export default function CourseSidebar({
           course_ids: [course.id],
         };
 
-        // Thêm discount_code nếu có
         if (discountInfo?.discount_code) {
           checkoutPayload.discount_code = discountInfo.discount_code;
         }
@@ -452,12 +386,8 @@ export default function CourseSidebar({
 
           if (checkoutResponse.status === 200 && checkoutResponse.data) {
             const { is_free, transaction_id, message } = checkoutResponse.data;
-
-            // Hiển thị thông báo thành công
             showToast.success(message || "Thanh toán thành công! 🎉");
 
-            // Xóa toàn bộ lịch sử router trước đó để người dùng không thể back lại
-            // Sử dụng window.location.replace để thay thế hoàn toàn entry hiện tại
             const redirectToLearning = () => {
               if (typeof window !== "undefined") {
                 window.location.replace(`/learning/${courseSlug}`);
@@ -466,14 +396,11 @@ export default function CourseSidebar({
               }
             };
 
-            // Xử lý redirect dựa trên is_free và transaction_id
             if (is_free) {
-              // Free checkout: redirect trực tiếp đến learning (không có transaction)
               setTimeout(() => {
                 redirectToLearning();
               }, 1500);
             } else if (transaction_id) {
-              // Có transaction: redirect đến trang transaction success
               const redirectUrl = `/transaction?status=success&order_id=${transaction_id}&redirect=/learning/${courseSlug}`;
               if (typeof window !== "undefined") {
                 window.location.replace(redirectUrl);
@@ -481,8 +408,6 @@ export default function CourseSidebar({
                 router.replace(redirectUrl);
               }
             } else {
-              // Trường hợp không có transaction_id nhưng không phải free (không nên xảy ra)
-              console.warn("Checkout thành công nhưng không có transaction_id");
               setTimeout(() => {
                 redirectToLearning();
               }, 1500);
@@ -490,49 +415,21 @@ export default function CourseSidebar({
             return;
           }
         } catch (checkoutError: any) {
-          // Xử lý các lỗi cụ thể từ backend
           let errorMessage = "Không thể thanh toán. Vui lòng thử lại sau.";
-
-          if (checkoutError?.response?.status === 400) {
-            // Lỗi validation: khóa học không tồn tại, giá = 0, etc.
-            const errorDetail =
-              checkoutError?.response?.data?.detail ||
-              checkoutError?.response?.data?.message;
-            if (errorDetail) {
-              errorMessage = errorDetail;
-            } else {
-              errorMessage =
-                "Thông tin thanh toán không hợp lệ. Vui lòng kiểm tra lại.";
-            }
-          } else if (checkoutError?.response?.status === 404) {
-            // Ví không tồn tại
-            errorMessage =
-              checkoutError?.response?.data?.detail ||
-              "Ví không tồn tại. Vui lòng liên hệ hỗ trợ.";
-          } else if (checkoutError?.response?.status === 402) {
-            // Không đủ tiền trong ví (Payment Required)
-            errorMessage =
-              checkoutError?.response?.data?.detail ||
-              "Số dư ví không đủ. Vui lòng nạp thêm tiền.";
-          } else if (checkoutError?.response?.data?.detail) {
+          if (checkoutError?.response?.data?.detail) {
             errorMessage = checkoutError.response.data.detail;
           } else if (checkoutError?.response?.data?.message) {
             errorMessage = checkoutError.response.data.message;
           }
-
           showToast.error(errorMessage);
           throw checkoutError;
         }
       } else {
-        // Nếu khóa học miễn phí, gọi API enroll
         try {
           const response = await api.post(`/courses/${course.id}/enroll`);
           if (response.status === 200) {
             showToast.success("Đăng ký khóa học thành công! 🎉");
             setEnrollSuccess(true);
-
-            // Xóa toàn bộ lịch sử router trước đó để người dùng không thể back lại
-            // Sử dụng window.location.replace để thay thế hoàn toàn entry hiện tại
             setTimeout(() => {
               if (typeof window !== "undefined") {
                 window.location.replace(`/learning/${courseSlug}`);
@@ -549,8 +446,7 @@ export default function CourseSidebar({
           showToast.error(errorMessage);
         }
       }
-    } catch (error) {
-      // Lỗi không mong đợi
+    } catch {
       showToast.error("Đã xảy ra lỗi không mong đợi. Vui lòng thử lại sau.");
     } finally {
       setIsEnrolling(false);
@@ -560,35 +456,32 @@ export default function CourseSidebar({
   const isFireActive =
     !isInstructorOwner && Boolean(isDiscountApplied && discountInfo);
 
-  // Notify parent when fire active state changes
   useEffect(() => {
     onFireActiveChange?.(isFireActive);
   }, [isFireActive, onFireActiveChange]);
 
   return (
-    <div className="sticky top-20 space-y-6">
+    <div className="sticky top-24 space-y-6">
       <div
-        className={`rounded-[20px] shadow-xs border p-6 relative overflow-hidden transition-all duration-200 ${
+        className={`rounded-[24px] shadow-md border p-6 sm:p-7 relative overflow-hidden transition-all duration-200 ${
           !isInstructorOwner && isDiscountApplied && discountInfo
-            ? "bg-[#FFF9F6] border-[#F7C9D9] shadow-sm"
-            : "bg-white border-[#E7EEF7]"
+            ? "bg-surface-muted border-secondary-pastel"
+            : "bg-surface border-border"
         }`}
       >
         <DiscountEffect active={isFireActive} />
 
         {/* Discount Banner */}
         {!isInstructorOwner && isDiscountApplied && discountInfo && (
-          <div className="absolute top-0 left-0 right-0 bg-[#FCE8EF] text-[#8A3B58] border-b border-[#F7C9D9] py-2 px-4 rounded-t-[20px] z-10">
+          <div className="absolute top-0 left-0 right-0 bg-secondary-light text-secondary-foreground border-b border-secondary-pastel py-2 px-4 rounded-t-[24px] z-10">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold">
-                  Ưu đãi đặc biệt đang áp dụng
-                </span>
-              </div>
+              <span className="text-xs font-semibold">
+                Ưu đãi Mây Mây đang áp dụng
+              </span>
               {timeRemaining && (
-                <div className="flex items-center gap-1 bg-white/80 border border-[#F7C9D9] rounded-full px-2.5 py-0.5">
+                <div className="flex items-center gap-1 bg-surface/90 border border-secondary-pastel rounded-full px-2.5 py-0.5">
                   <span className="text-xs font-medium">⏰</span>
-                  <span className="text-xs font-bold font-mono text-[#8A3B58]">
+                  <span className="text-xs font-bold font-mono text-secondary-foreground">
                     {timeRemaining}
                   </span>
                 </div>
@@ -597,377 +490,331 @@ export default function CourseSidebar({
           </div>
         )}
 
+        {/* Price Header */}
         <div
-          className={`text-center mb-6 ${
-            isDiscountApplied && discountInfo ? "mt-10" : ""
-          }`}
+          className={`mb-6 ${isDiscountApplied && discountInfo ? "mt-8" : ""}`}
         >
-          {!isInstructorOwner &&
-            (hasPrice ? (
-              <div className="space-y-1.5">
-                {discountAmount > 0 && isDiscountApplied ? (
-                  <>
-                    <div className="text-base text-[#8190A3] line-through">
-                      {formatPrice(course.base_price, course.currency)}
-                    </div>
-                    <div className="text-3xl font-bold text-[#356FA7]">
+          {!isInstructorOwner && (
+            <div className="space-y-1.5">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-primary block">
+                Học phí trọn khóa
+              </span>
+              {hasPrice ? (
+                discountAmount > 0 && isDiscountApplied ? (
+                  <div className="flex flex-wrap items-baseline gap-2.5">
+                    <span className="text-3xl font-bold text-primary">
                       {formatPrice(displayPrice, course.currency)}
-                    </div>
-                    <div className="inline-block text-xs text-[#276749] bg-[#E4F3E9] px-3 py-1 rounded-full font-semibold">
+                    </span>
+                    <span className="text-sm text-subtle-foreground line-through">
+                      {formatPrice(course.base_price, course.currency)}
+                    </span>
+                    <span className="text-xs text-success-foreground bg-success-bg px-2.5 py-0.5 rounded-full font-semibold">
                       Tiết kiệm {formatPrice(discountAmount, course.currency)}
-                    </div>
-                  </>
+                    </span>
+                  </div>
                 ) : (
-                  <div className="text-3xl font-bold text-[#3D4A5A]">
+                  <div className="text-3xl font-bold text-foreground">
                     {formatPrice(course.base_price, course.currency)}
                   </div>
-                )}
-              </div>
-            ) : (
-              <div className="text-3xl font-bold text-[#276749] mb-2">
-                {formatPrice(course.base_price, course.currency)}
-              </div>
-            ))}
+                )
+              ) : (
+                <div className="text-3xl font-bold text-primary">
+                  {formatPrice(course.base_price, course.currency)}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* Instructor owner: Direct access button */}
-        {isInstructorOwner && (
-          <div className="mb-4 pb-4 border-b border-[#E7EEF7]">
-            <button
-              onClick={() => void handleEnroll()}
-              disabled={!courseSlug || isEnrolling}
-              className={`w-full py-3 px-4 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
-                courseSlug
-                  ? "bg-[#356FA7] text-white hover:bg-[#285C90]"
-                  : "bg-[#E7EEF7] text-[#8190A3] cursor-not-allowed"
-              }`}
-            >
-              {isEnrolling ? (
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <>
-                  <HiPlay className="h-5 w-5" />
-                  Truy cập ngay
-                </>
-              )}
-            </button>
-          </div>
-        )}
-
-        {/* Discount Input - chỉ hiện khi có phí */}
-        {!isInstructorOwner && hasPrice && (
-          <div className="mb-4 pb-4 border-b border-[#E7EEF7]">
-            <label className="block text-sm font-semibold text-[#3D4A5A] mb-2">
-              🎟️ Mã giảm giá
-            </label>
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <input
-                  type="text"
-                  value={discountInput}
-                  onChange={(e) => {
-                    setDiscountInput(e.target.value);
-                    setShowDiscountDropdown(true);
-                  }}
-                  onFocus={() => setShowDiscountDropdown(true)}
-                  onBlur={() => {
-                    setTimeout(() => setShowDiscountDropdown(false), 200);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && discountInput.trim()) {
-                      handleApplyDiscount();
-                    }
-                  }}
-                  placeholder="Nhập mã giảm giá hoặc chọn từ danh sách"
-                  disabled={isApplyingDiscount}
-                  className="w-full px-3.5 py-2.5 bg-[#F6FAFF] border border-[#E7EEF7] rounded-xl text-[#3D4A5A] placeholder:text-[#8190A3] focus:outline-none focus:ring-2 focus:ring-[#356FA7]/25 focus:border-[#356FA7] focus:bg-white transition-all duration-200 text-sm"
-                />
-                {isLoadingDiscounts && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <div className="w-4 h-4 border-2 border-[#356FA7] border-t-transparent rounded-full animate-spin" />
-                  </div>
-                )}
-                {availableDiscounts.length > 0 &&
-                  showDiscountDropdown &&
-                  discountInput.trim() === "" && (
-                    <div className="absolute z-10 w-full mt-1.5 bg-white border border-[#E7EEF7] rounded-xl shadow-md max-h-60 overflow-y-auto">
-                      {availableDiscounts.map((discount) => (
-                        <button
-                          key={discount.id}
-                          type="button"
-                          onClick={() => {
-                            setDiscountInput(discount.discount_code);
-                            setShowDiscountDropdown(false);
-                          }}
-                          className="w-full text-left px-4 py-2.5 hover:bg-[#F6FAFF] transition-colors text-sm border-b border-[#E7EEF7]/60 last:border-b-0"
-                        >
-                          <div className="font-semibold text-[#356FA7]">
-                            {discount.discount_code}
-                          </div>
-                          <div className="text-xs text-[#6F7C8C]">
-                            {discount.name}
-                            {discount.discount_type === "percent"
-                              ? ` - ${discount.percent_value}%`
-                              : ` - ${formatPrice(
-                                  discount.fixed_value ?? 0,
-                                  course.currency
-                                )}`}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-              </div>
-              <button
-                type="button"
-                onClick={handleApplyDiscount}
-                disabled={!discountInput.trim() || isApplyingDiscount}
-                className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 whitespace-nowrap ${
-                  discountInput.trim() && !isApplyingDiscount
-                    ? "bg-[#E8F2FA] text-[#356FA7] hover:bg-[#356FA7] hover:text-white border border-[#BFD7ED] cursor-pointer"
-                    : "bg-[#F6FAFF] text-[#8190A3] border border-[#E7EEF7] cursor-not-allowed"
-                }`}
-              >
-                {isApplyingDiscount ? (
-                  <div className="w-4 h-4 border-2 border-[#356FA7] border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  "Áp dụng"
-                )}
-              </button>
-            </div>
-            {discountInput && (
-              <button
-                type="button"
-                onClick={() => {
-                  setDiscountInput("");
-                  setPricingResult(null);
-                  setDiscountInfo(null);
-                }}
-                className="text-xs text-[#6F7C8C] hover:text-[#3D4A5A] mt-2 flex items-center gap-1 cursor-pointer"
-              >
-                ✕ Xóa mã giảm giá
-              </button>
-            )}
-
-            <div className="space-y-3 my-4">
-              <button
-                onClick={() => {
-                  if (course.base_price === 0) {
-                    void handleEnroll();
-                  } else {
-                    setIsEnrollModalOpen(true);
-                  }
-                }}
-                disabled={!courseSlug}
-                className={`w-full py-3.5 px-4 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs ${
-                  courseSlug
-                    ? "bg-[#356FA7] text-white hover:bg-[#285C90]"
-                    : "bg-[#E7EEF7] text-[#8190A3] cursor-not-allowed"
-                }`}
-              >
-                {!courseSlug ? (
-                  <>
-                    <HiClock className="h-5 w-5" />
-                    Đang tải thông tin...
-                  </>
-                ) : course.base_price === 0 ? (
-                  <>
-                    <HiPlay className="h-5 w-5" />
-                    Đăng ký ngay
-                  </>
-                ) : (
-                  <>
-                    <HiShoppingCart className="h-5 w-5" />
-                    Mua ngay{" "}
-                    {discountAmount > 0 && isDiscountApplied && (
-                      <span className="text-xs opacity-90">
-                        ({formatPrice(displayPrice, course.currency)})
-                      </span>
-                    )}
-                  </>
-                )}
-              </button>
-
-              <div className="flex gap-2">
+        {
+          <>
+            {/* Instructor owner: Direct access button */}
+            {isInstructorOwner && (
+              <div className="mb-5 pb-5 border-b border-border">
                 <button
-                  onClick={onToggleFavourite}
-                  disabled={isTogglingFavourite}
-                  className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
-                    isFavourite
-                      ? "bg-[#FCE8EF] border-[#F7C9D9] border text-[#8A3B58] hover:bg-[#F7C9D9]/50"
-                      : "border border-[#E7EEF7] text-[#3D4A5A] hover:border-[#BFD7ED] hover:bg-[#F6FAFF]"
-                  }`}
+                  type="button"
+                  onClick={() => void handleEnroll()}
+                  disabled={!courseSlug || isEnrolling}
+                  className="w-full py-3.5 px-4 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground font-semibold transition-colors flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  <HiHeart
-                    className={`h-4 w-4 ${isFavourite ? "fill-current" : ""}`}
-                  />
-                  {isTogglingFavourite
-                    ? "Đang xử lý..."
-                    : isFavourite
-                    ? "Đã yêu thích"
-                    : "Yêu thích"}
-                </button>
-                <button className="flex-1 border border-[#E7EEF7] text-[#3D4A5A] py-2.5 px-4 rounded-xl text-sm font-medium hover:border-[#BFD7ED] hover:bg-[#F6FAFF] transition-colors flex items-center justify-center gap-2 cursor-pointer">
-                  <HiShare className="h-4 w-4" />
-                  Chia sẻ
+                  {isEnrolling ? (
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <HiPlay className="h-5 w-5" />
+                      <span>Truy cập bài giảng</span>
+                    </>
+                  )}
                 </button>
               </div>
-            </div>
-            {/* Discount Info - chỉ hiện khi có discount applied */}
-            {isDiscountApplied && discountInfo && (
-              <div className="mt-4 p-4 bg-white border border-[#F7C9D9] rounded-xl">
-                <div className="grid grid-cols-2 gap-3">
-                  {/* Countdown Timer */}
-                  {discountInfo.end_at && timeRemaining && (
-                    <div className="bg-[#FFF9F6] border border-[#F8E9C9] rounded-xl p-3">
-                      <div className="text-xs font-medium text-[#6F7C8C] mb-1">
-                        ⏰ Thời gian còn lại
-                      </div>
-                      <div className="text-sm font-bold text-[#875415] font-mono">
-                        {timeRemaining}
-                      </div>
-                    </div>
-                  )}
+            )}
 
-                  {/* Usage Count - Số lượng mã còn lại */}
-                  {discountInfo.user_remaining_uses !== undefined &&
-                    discountInfo.user_remaining_uses !== null && (
-                      <div className="bg-[#E8F2FA]/60 border border-[#BFD7ED] rounded-xl p-3">
-                        <div className="text-xs font-medium text-[#6F7C8C] mb-1">
-                          🎫 Mã còn lại
-                        </div>
-                        <div className="text-sm font-bold text-[#356FA7]">
-                          {discountInfo.user_remaining_uses}
-                        </div>
+            {/* Paid Course Discount & Purchase Controls */}
+            {!isInstructorOwner && hasPrice && (
+              <div className="mb-5 pb-5 border-b border-border">
+                <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                  Mã ưu đãi học phí
+                </label>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <input
+                      type="text"
+                      value={discountInput}
+                      onChange={(e) => {
+                        setDiscountInput(e.target.value);
+                        setShowDiscountDropdown(true);
+                      }}
+                      onFocus={() => setShowDiscountDropdown(true)}
+                      onBlur={() => {
+                        setTimeout(() => setShowDiscountDropdown(false), 200);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && discountInput.trim()) {
+                          handleApplyDiscount();
+                        }
+                      }}
+                      placeholder="Nhập mã ưu đãi..."
+                      disabled={isApplyingDiscount}
+                      className="w-full px-3.5 py-2.5 bg-background border border-border rounded-xl text-foreground placeholder:text-subtle-foreground focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary focus:bg-surface transition-all duration-200 text-sm"
+                    />
+                    {isLoadingDiscounts && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                       </div>
                     )}
+                    {availableDiscounts.length > 0 &&
+                      showDiscountDropdown &&
+                      discountInput.trim() === "" && (
+                        <div className="absolute z-20 w-full mt-1.5 bg-surface border border-border rounded-xl shadow-md max-h-60 overflow-y-auto">
+                          {availableDiscounts.map((discount) => (
+                            <button
+                              key={discount.id}
+                              type="button"
+                              onClick={() => {
+                                setDiscountInput(discount.discount_code);
+                                setShowDiscountDropdown(false);
+                              }}
+                              className="w-full text-left px-4 py-2.5 hover:bg-primary-light/60 transition-colors text-sm border-b border-border/60 last:border-b-0 cursor-pointer"
+                            >
+                              <div className="font-semibold text-primary">
+                                {discount.discount_code}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {discount.name}
+                                {discount.discount_type === "percent"
+                                  ? ` - Giảm ${discount.percent_value}%`
+                                  : ` - Giảm ${formatPrice(
+                                      discount.fixed_value ?? 0,
+                                      course.currency,
+                                    )}`}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleApplyDiscount}
+                    disabled={!discountInput.trim() || isApplyingDiscount}
+                    className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 whitespace-nowrap ${
+                      discountInput.trim() && !isApplyingDiscount
+                        ? "bg-primary-light text-primary hover:bg-primary hover:text-primary-foreground border border-primary-pastel cursor-pointer"
+                        : "bg-background text-subtle-foreground border border-border cursor-not-allowed"
+                    }`}
+                  >
+                    {isApplyingDiscount ? (
+                      <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      "Áp dụng"
+                    )}
+                  </button>
                 </div>
 
-                {/* Thông tin chi tiết mã giảm giá */}
-                <div className="mt-3 space-y-2">
-                  {discountInfo.discount_name && (
-                    <div className="bg-[#F6FAFF] rounded-lg p-2.5 border border-[#E7EEF7]">
-                      <div className="text-xs text-[#6F7C8C] mb-0.5">Tên mã</div>
-                      <div className="text-sm font-semibold text-[#3D4A5A]">
-                        {discountInfo.discount_name}
-                      </div>
-                    </div>
-                  )}
+                {discountInput && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDiscountInput("");
+                      setPricingResult(null);
+                      setDiscountInfo(null);
+                    }}
+                    className="text-xs text-muted-foreground hover:text-foreground mt-2 flex items-center gap-1 cursor-pointer"
+                  >
+                    ✕ Xóa mã giảm giá
+                  </button>
+                )}
 
-                  {discountInfo.discount_code && (
-                    <div className="bg-[#F6FAFF] rounded-lg p-2.5 border border-[#E7EEF7]">
-                      <div className="text-xs text-[#6F7C8C] mb-0.5">
-                        Mã giảm giá
-                      </div>
-                      <div className="text-sm font-mono font-bold text-[#356FA7]">
-                        {discountInfo.discount_code}
-                      </div>
-                    </div>
-                  )}
+                <div className="space-y-3 mt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!user?.id) {
+                        showToast.info(
+                          "Vui lòng đăng nhập để đăng ký khóa học.",
+                        );
+                        router.push(
+                          `/login?redirect=${encodeURIComponent(
+                            `/course/${courseSlug || ""}`,
+                          )}`,
+                        );
+                        return;
+                      }
+                      if (course.base_price === 0) {
+                        void handleEnroll();
+                      } else {
+                        setIsEnrollModalOpen(true);
+                      }
+                    }}
+                    disabled={!courseSlug}
+                    className="w-full py-3.5 px-4 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground font-semibold transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+                  >
+                    <HiShoppingCart className="h-5 w-5" />
+                    <span>Đăng ký khóa học ngay</span>
+                  </button>
 
-                  {discountInfo.discount_description && (
-                    <div className="bg-[#F6FAFF] rounded-lg p-2.5 border border-[#E7EEF7]">
-                      <div className="text-xs text-[#6F7C8C] mb-0.5">Mô tả</div>
-                      <div className="text-sm text-[#3D4A5A]">
-                        {discountInfo.discount_description}
-                      </div>
-                    </div>
-                  )}
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={onToggleFavourite}
+                      disabled={isTogglingFavourite}
+                      className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 ${
+                        isFavourite
+                          ? "bg-secondary-light border-secondary-pastel border text-secondary-foreground"
+                          : "border border-border text-foreground hover:border-primary-pastel hover:bg-background"
+                      }`}
+                    >
+                      <HiHeart
+                        className={`h-4 w-4 ${isFavourite ? "fill-current" : ""}`}
+                      />
+                      <span>
+                        {isTogglingFavourite
+                          ? "Đang lưu..."
+                          : isFavourite
+                            ? "Đã lưu"
+                            : "Yêu thích"}
+                      </span>
+                    </button>
 
-                  {/* Thông tin giá trị giảm giá */}
-                  {(discountInfo.discount_type ||
-                    discountInfo.discount_percent_value !== null ||
-                    discountInfo.discount_fixed_value !== null) && (
-                    <div className="bg-[#F6FAFF] rounded-lg p-2.5 border border-[#E7EEF7]">
-                      <div className="text-xs text-[#6F7C8C] mb-0.5">
-                        Giá trị giảm
-                      </div>
-                      <div className="text-sm text-[#3D4A5A]">
-                        {discountInfo.discount_type === "percent" &&
-                        discountInfo.discount_percent_value !== null ? (
-                          <span className="font-bold text-[#356FA7]">
-                            {discountInfo.discount_percent_value}%
-                          </span>
-                        ) : discountInfo.discount_type === "fixed" &&
-                          discountInfo.discount_fixed_value !== null &&
-                          discountInfo.discount_fixed_value !== undefined ? (
-                          <span className="font-bold text-[#356FA7]">
-                            {formatPrice(
-                              discountInfo.discount_fixed_value,
-                              course.currency
-                            )}
-                          </span>
-                        ) : null}
-                      </div>
-                    </div>
-                  )}
+                    <button
+                      type="button"
+                      onClick={handleShare}
+                      className="flex-1 border border-border text-foreground py-2.5 px-4 rounded-xl text-sm font-medium hover:border-primary-pastel hover:bg-background transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <HiShare className="h-4 w-4" />
+                      <span>Chia sẻ</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
-          </div>
-        )}
 
-        {/* Nút đăng ký cho khóa học miễn phí (luôn hiển thị) */}
-        {!isInstructorOwner && !hasPrice && (
-          <div className="mb-4 pb-4 border-b border-[#E7EEF7]">
-            <button
-              onClick={() => void handleEnroll()}
-              disabled={!courseSlug || isEnrolling}
-              className={`w-full py-3.5 px-4 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
-                courseSlug
-                  ? "bg-[#356FA7] text-white hover:bg-[#285C90]"
-                  : "bg-[#E7EEF7] text-[#8190A3] cursor-not-allowed"
-              }`}
-            >
-              {isEnrolling ? (
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <>
-                  <HiPlay className="h-5 w-5" />
-                  Đăng ký ngay
-                </>
-              )}
-            </button>
-          </div>
-        )}
+            {/* Free Course Enroll Controls */}
+            {!isInstructorOwner && !hasPrice && (
+              <div className="mb-5 pb-5 border-b border-border space-y-3">
+                <button
+                  type="button"
+                  onClick={() => void handleEnroll()}
+                  disabled={!courseSlug || isEnrolling}
+                  className="w-full py-3.5 px-4 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground font-semibold transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+                >
+                  {isEnrolling ? (
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <HiPlay className="h-5 w-5" />
+                      <span>Bắt đầu học miễn phí</span>
+                    </>
+                  )}
+                </button>
 
-        <div className="text-center text-xs text-[#6F7C8C] mb-6">
-          Đảm bảo hoàn tiền trong 3 ngày
-        </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={onToggleFavourite}
+                    disabled={isTogglingFavourite}
+                    className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2 cursor-pointer ${
+                      isFavourite
+                        ? "bg-secondary-light border-secondary-pastel border text-secondary-foreground"
+                        : "border border-border text-foreground hover:border-primary-pastel hover:bg-background"
+                    }`}
+                  >
+                    <HiHeart
+                      className={`h-4 w-4 ${isFavourite ? "fill-current" : ""}`}
+                    />
+                    <span>{isFavourite ? "Đã lưu" : "Yêu thích"}</span>
+                  </button>
 
-        <div className="space-y-3 text-sm">
-          <div className="flex justify-between items-center py-2 border-b border-[#E7EEF7]">
-            <span className="text-[#6F7C8C]">Thời lượng:</span>
-            <span className="font-semibold text-[#3D4A5A]">
+                  <button
+                    type="button"
+                    onClick={handleShare}
+                    className="flex-1 border border-border text-foreground py-2.5 px-4 rounded-xl text-sm font-medium hover:border-primary-pastel hover:bg-background transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <HiShare className="h-4 w-4" />
+                    <span>Chia sẻ</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        }
+
+        {/* Course Key Specifications */}
+        <div className="space-y-3 text-xs sm:text-sm">
+          <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            Thông tin khóa học trên Mây Mây
+          </p>
+
+          <div className="flex justify-between items-center py-2 border-b border-border/70">
+            <span className="flex items-center gap-2 text-muted-foreground">
+              <HiClock className="w-4 h-4 text-primary" />
+              <span>Thời lượng</span>
+            </span>
+            <span className="font-semibold text-foreground">
               {formatSecondsToHms(totalDurationSeconds)}
             </span>
           </div>
-          <div className="flex justify-between items-center py-2 border-b border-[#E7EEF7]">
-            <span className="text-[#6F7C8C]">Bài học:</span>
-            <span className="font-semibold text-[#3D4A5A]">
-              {course.sections.reduce(
-                (total, section) => total + section.lessons.length,
-                0
-              )}
+
+          <div className="flex justify-between items-center py-2 border-b border-border/70">
+            <span className="flex items-center gap-2 text-muted-foreground">
+              <HiBookOpen className="w-4 h-4 text-primary" />
+              <span>Số bài giảng</span>
+            </span>
+            <span className="font-semibold text-foreground">
+              {totalLessons} bài học
             </span>
           </div>
-          <div className="flex justify-between items-center py-2 border-b border-[#E7EEF7]">
-            <span className="text-[#6F7C8C]">Cấp độ:</span>
-            <span className="font-semibold text-[#3D4A5A]">
+
+          <div className="flex justify-between items-center py-2 border-b border-border/70">
+            <span className="flex items-center gap-2 text-muted-foreground">
+              <HiAcademicCap className="w-4 h-4 text-primary" />
+              <span>Trình độ</span>
+            </span>
+            <span className="font-semibold text-foreground">
               {course.level === "beginner"
-                ? "Cơ bản"
+                ? "Cơ bản & Nền tảng"
                 : course.level === "intermediate"
-                ? "Trung cấp"
-                : course.level === "advanced"
-                ? "Nâng cao"
-                : course.level}
+                  ? "Vận dụng & Mở rộng"
+                  : course.level === "advanced"
+                    ? "Nâng cao & Chuyên sâu"
+                    : "Phổ thông toàn diện"}
             </span>
           </div>
-          <div className="flex justify-between items-center py-2">
-            <span className="text-[#6F7C8C]">Ngôn ngữ:</span>
-            <span className="font-semibold text-[#3D4A5A]">
-              {(course.language || "").toUpperCase()}
+
+          <div className="flex justify-between items-center py-2 border-b border-border/70">
+            <span className="flex items-center gap-2 text-muted-foreground">
+              <HiGlobe className="w-4 h-4 text-primary" />
+              <span>Ngôn ngữ giảng dạy</span>
             </span>
+            <span className="font-semibold text-foreground">Tiếng Việt</span>
+          </div>
+
+          <div className="flex justify-between items-center pt-2">
+            <span className="flex items-center gap-2 text-muted-foreground">
+              <HiCheckCircle className="w-4 h-4 text-primary" />
+              <span>Trợ giảng Mây Mây AI</span>
+            </span>
+            <span className="font-semibold text-primary">Hỗ trợ 24/7</span>
           </div>
         </div>
       </div>

@@ -21,12 +21,11 @@ class TopicService:
     async def create_topic_async(
         self, schema: TopicCreate, background_tasks: BackgroundTasks
     ):
-        category_exists = await self.db.scalar(
-            select(Categories.id).where(Categories.id == schema.category_id)
-        )
-        if not category_exists:
+        category = await self.db.get(Categories, schema.category_id)
+        if not category:
             raise HTTPException(status_code=404, detail="❌ Category khsông tồn tại")
-        slug = slugify(schema.name or schema.name, allow_unicode=True)
+        # A subject name repeats across grades: Toán lớp 8 and Toán lớp 9.
+        slug = slugify(f"{schema.name}-{category.slug}", allow_unicode=False)
         slug_exists = await self.db.scalar(select(Topics.id).where(Topics.slug == slug))
         if slug_exists:
             raise HTTPException(

@@ -10,6 +10,7 @@ export async function fetcher<T>(
     process.env.NEXT_PUBLIC_URL_BACKEND || "http://127.0.0.1:8000";
   const res = await fetch(`${backendUrl}/api/v1${url}`, {
     ...options,
+    cache: "no-store",
     headers: {
       "Content-Type": "application/json",
       ...(options?.headers || {}),

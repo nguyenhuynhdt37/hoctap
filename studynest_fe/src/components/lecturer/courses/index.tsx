@@ -48,12 +48,9 @@ const LecturerCourses = () => {
   const [deleteReason, setDeleteReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Mock lecturer ID - In production, get from auth context
-  const lecturerId = "a2c1069c-fb4c-41cb-9486-255f39da06ac";
-
   // Fetch courses
   const { data, error, isLoading, mutate } = useSWR<LecturerCoursesResponse>(
-    `/lecturer/courses?lecturer_id=${lecturerId}&page=${page}&page_size=9&sort_by=${sortBy}${
+    `/lecturer/courses?page=${page}&page_size=9&sort_by=${sortBy}${
       search ? `&search=${search}` : ""
     }`,
     async (url: string) => {

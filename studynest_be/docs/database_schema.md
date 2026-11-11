@@ -1,6 +1,6 @@
 # Database Schema Documentation
 
-This document provides a comprehensive overview of the database schema for the StudyNest application. It is intended to be used as context for AI models to generate SQL queries (Text-to-SQL) and for developers to understand the data structure.
+This document provides a comprehensive overview of the database schema for the Mây Mây application. It is intended to be used as context for AI models to generate SQL queries (Text-to-SQL) and for developers to understand the data structure.
 
 ## Entity-Relationship Diagram (ERD)
 

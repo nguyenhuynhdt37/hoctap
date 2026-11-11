@@ -444,7 +444,7 @@ export const RichTextEditor = ({
           <button
             type="button"
             onClick={() => execCommandWithFeedback("bold")}
-            className="p-2 text-gray-700 hover:bg-gray-200 rounded transition-colors"
+            className="p-2 text-foreground hover:bg-primary-light rounded transition-colors"
             title="In đậm"
           >
             <FaBold className="w-4 h-4" />
@@ -453,7 +453,7 @@ export const RichTextEditor = ({
           <button
             type="button"
             onClick={() => execCommandWithFeedback("italic")}
-            className="p-2 text-gray-700 hover:bg-gray-200 rounded transition-colors"
+            className="p-2 text-foreground hover:bg-primary-light rounded transition-colors"
             title="In nghiêng"
           >
             <FaItalic className="w-4 h-4" />
@@ -462,21 +462,21 @@ export const RichTextEditor = ({
           <button
             type="button"
             onClick={() => execCommandWithFeedback("underline")}
-            className="p-2 text-gray-700 hover:bg-gray-200 rounded transition-colors"
+            className="p-2 text-foreground hover:bg-primary-light rounded transition-colors"
             title="Gạch chân"
           >
             <FaUnderline className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="w-px h-8 bg-gray-300 mx-1"></div>
+        <div className="w-px h-8 bg-border mx-1"></div>
 
         {/* Headings */}
         <div className="flex gap-1">
           <button
             type="button"
             onClick={() => formatHeading(1)}
-            className="p-2 text-gray-700 hover:bg-gray-200 rounded transition-colors"
+            className="p-2 text-foreground hover:bg-primary-light rounded transition-colors"
             title="Tiêu đề 1"
           >
             H1
@@ -485,7 +485,7 @@ export const RichTextEditor = ({
           <button
             type="button"
             onClick={() => formatHeading(2)}
-            className="p-2 text-gray-700 hover:bg-gray-200 rounded transition-colors"
+            className="p-2 text-foreground hover:bg-primary-light rounded transition-colors"
             title="Tiêu đề 2"
           >
             H2
@@ -494,21 +494,21 @@ export const RichTextEditor = ({
           <button
             type="button"
             onClick={() => formatHeading(3)}
-            className="p-2 text-gray-700 hover:bg-gray-200 rounded transition-colors"
+            className="p-2 text-foreground hover:bg-primary-light rounded transition-colors"
             title="Tiêu đề 3"
           >
             H3
           </button>
         </div>
 
-        <div className="w-px h-8 bg-gray-300 mx-1"></div>
+        <div className="w-px h-8 bg-border mx-1"></div>
 
         {/* Lists */}
         <div className="flex gap-1">
           <button
             type="button"
             onClick={() => execCommandWithFeedback("insertUnorderedList")}
-            className="p-2 text-gray-700 hover:bg-gray-200 rounded transition-colors"
+            className="p-2 text-foreground hover:bg-primary-light rounded transition-colors"
             title="Danh sách có dấu đầu dòng"
           >
             <FaListUl className="w-4 h-4" />
@@ -517,21 +517,21 @@ export const RichTextEditor = ({
           <button
             type="button"
             onClick={() => execCommandWithFeedback("insertOrderedList")}
-            className="p-2 text-gray-700 hover:bg-gray-200 rounded transition-colors"
+            className="p-2 text-foreground hover:bg-primary-light rounded transition-colors"
             title="Danh sách có số thứ tự"
           >
             <FaListOl className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="w-px h-8 bg-gray-300 mx-1"></div>
+        <div className="w-px h-8 bg-border mx-1"></div>
 
         {/* Alignment */}
         <div className="flex gap-1">
           <button
             type="button"
             onClick={() => execCommandWithFeedback("justifyLeft")}
-            className="p-2 text-gray-700 hover:bg-gray-200 rounded transition-colors"
+            className="p-2 text-foreground hover:bg-primary-light rounded transition-colors"
             title="Căn trái"
           >
             <FaAlignLeft className="w-4 h-4" />
@@ -540,7 +540,7 @@ export const RichTextEditor = ({
           <button
             type="button"
             onClick={() => execCommandWithFeedback("justifyCenter")}
-            className="p-2 text-gray-700 hover:bg-gray-200 rounded transition-colors"
+            className="p-2 text-foreground hover:bg-primary-light rounded transition-colors"
             title="Căn giữa"
           >
             <FaAlignCenter className="w-4 h-4" />
@@ -549,7 +549,7 @@ export const RichTextEditor = ({
           <button
             type="button"
             onClick={() => execCommandWithFeedback("justifyRight")}
-            className="p-2 text-gray-700 hover:bg-gray-200 rounded transition-colors"
+            className="p-2 text-foreground hover:bg-primary-light rounded transition-colors"
             title="Căn phải"
           >
             <FaAlignRight className="w-4 h-4" />
@@ -558,21 +558,21 @@ export const RichTextEditor = ({
           <button
             type="button"
             onClick={() => execCommandWithFeedback("justifyFull")}
-            className="p-2 text-gray-700 hover:bg-gray-200 rounded transition-colors"
+            className="p-2 text-foreground hover:bg-primary-light rounded transition-colors"
             title="Căn đều"
           >
             <FaAlignJustify className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="w-px h-8 bg-gray-300 mx-1"></div>
+        <div className="w-px h-8 bg-border mx-1"></div>
 
         {/* Special Elements */}
         <div className="flex gap-1">
           <button
             type="button"
             onClick={() => execCommandWithFeedback("formatBlock", "blockquote")}
-            className="p-2 text-gray-700 hover:bg-gray-200 rounded transition-colors"
+            className="p-2 text-foreground hover:bg-primary-light rounded transition-colors"
             title="Trích dẫn"
           >
             <FaQuoteLeft className="w-4 h-4" />
@@ -581,21 +581,21 @@ export const RichTextEditor = ({
           <button
             type="button"
             onClick={insertCodeBlock}
-            className="p-2 text-gray-700 hover:bg-gray-200 rounded transition-colors"
+            className="p-2 text-foreground hover:bg-primary-light rounded transition-colors"
             title="Chèn code block"
           >
             <FaCode className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="w-px h-8 bg-gray-300 mx-1"></div>
+        <div className="w-px h-8 bg-border mx-1"></div>
 
         {/* Media */}
         <div className="flex gap-1">
           <button
             type="button"
             onClick={insertLink}
-            className="p-2 text-gray-700 hover:bg-gray-200 rounded transition-colors"
+            className="p-2 text-foreground hover:bg-primary-light rounded transition-colors"
             title="Chèn liên kết"
           >
             <FaLink className="w-4 h-4" />
@@ -605,7 +605,7 @@ export const RichTextEditor = ({
             type="button"
             onClick={insertImage}
             disabled={uploading}
-            className="p-2 text-gray-700 hover:bg-gray-200 rounded transition-colors disabled:opacity-50"
+            className="p-2 text-foreground hover:bg-primary-light rounded transition-colors disabled:opacity-50"
             title="Chèn hình ảnh"
           >
             {uploading ? (
@@ -628,8 +628,8 @@ export const RichTextEditor = ({
         onDrop={handleDrop}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
-        className={`editor ${isFocused ? "ring-2 ring-green-500" : ""} ${
-          dragOver ? "ring-2 ring-green-400 bg-green-50" : ""
+        className={`editor ${isFocused ? "ring-2 ring-ring" : ""} ${
+          dragOver ? "ring-2 ring-primary bg-primary-light/50" : ""
         }`}
         data-placeholder={placeholder}
       />
@@ -638,8 +638,8 @@ export const RichTextEditor = ({
       {uploading && (
         <div className="upload-overlay">
           <div className="flex items-center">
-            <FaSpinner className="w-8 h-8 text-green-500 animate-spin mr-2" />
-            <p className="text-gray-700 font-semibold">Đang tải ảnh lên...</p>
+            <FaSpinner className="w-8 h-8 text-primary animate-spin mr-2" />
+            <p className="text-foreground font-semibold">Đang tải ảnh lên...</p>
           </div>
         </div>
       )}

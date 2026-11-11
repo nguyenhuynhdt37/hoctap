@@ -1,13 +1,16 @@
 "use client";
 
 import React from "react";
+import { cn } from "@/lib/utils";
 
-interface ContextMenuItem {
+export interface ContextMenuItem {
   label: string;
   onClick: () => void;
+  danger?: boolean;
+  disabled?: boolean;
 }
 
-interface ContextMenuProps {
+export interface ContextMenuProps {
   x: number;
   y: number;
   items: ContextMenuItem[];
@@ -37,7 +40,9 @@ export default function ContextMenu({
 
   return (
     <div
-      className="fixed z-50 min-w-[220px] bg-white border border-green-200 rounded-lg shadow-lg p-1"
+      role="menu"
+      aria-orientation="vertical"
+      className="fixed z-50 min-w-[220px] rounded-2xl border border-border bg-surface p-1.5 shadow-md"
       style={{ left: x, top: y }}
       onContextMenu={(e) => e.preventDefault()}
     >
@@ -45,7 +50,16 @@ export default function ContextMenu({
         <button
           key={idx}
           type="button"
-          className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-green-50 text-gray-700 hover:text-green-700 transition-colors"
+          role="menuitem"
+          disabled={item.disabled}
+          className={cn(
+            "w-full text-left px-3 py-2 text-sm font-medium rounded-xl transition-colors duration-150 cursor-pointer",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            "disabled:opacity-50 disabled:cursor-not-allowed",
+            item.danger
+              ? "text-destructive-foreground hover:bg-destructive-bg"
+              : "text-foreground hover:bg-primary-light hover:text-primary"
+          )}
           onClick={item.onClick}
         >
           {item.label}
@@ -54,4 +68,3 @@ export default function ContextMenu({
     </div>
   );
 }
-

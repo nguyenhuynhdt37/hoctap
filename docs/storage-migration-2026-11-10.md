@@ -1,4 +1,4 @@
-# Chuyển dữ liệu StudyNest sang R2 — 10/11/2026
+# Chuyển dữ liệu Mây Mây sang R2 — 10/11/2026
 
 Đã gỡ Google Drive khỏi luồng chạy của ứng dụng. Upload chỉ dùng Cloudflare R2.
 

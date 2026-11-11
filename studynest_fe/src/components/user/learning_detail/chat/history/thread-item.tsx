@@ -79,26 +79,26 @@ function ChatHistoryItem({
   return (
     <div
       onClick={handleSelect}
-      className={`group relative p-3 rounded-lg cursor-pointer transition-colors ${
+      className={`group relative p-3 rounded-xl cursor-pointer transition-colors ${
         isActive
-          ? "bg-green-100 border border-green-300"
-          : "hover:bg-gray-100 border border-transparent"
+          ? "bg-primary-pastel/70 border border-primary-light"
+          : "hover:bg-surface border border-transparent"
       } ${isSelecting ? "opacity-50 pointer-events-none" : ""}`}
     >
       {/* Confirm Delete Overlay */}
       {showConfirm && (
-        <div className="absolute inset-0 bg-white rounded-lg border border-red-200 flex items-center justify-center gap-2 z-10">
+        <div className="absolute inset-0 bg-surface rounded-xl border border-red-200 flex items-center justify-center gap-2 z-10">
           <button
             onClick={handleConfirmDelete}
             disabled={isDeleting}
-            className="px-3 py-1.5 bg-red-600 text-white text-xs rounded-md hover:bg-red-700 disabled:opacity-50"
+            className="px-3 py-1.5 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 disabled:opacity-50"
           >
             {isDeleting ? "Đang xóa..." : "Xóa"}
           </button>
           <button
             onClick={handleCancelDelete}
             disabled={isDeleting}
-            className="px-3 py-1.5 bg-gray-200 text-gray-700 text-xs rounded-md hover:bg-gray-300 disabled:opacity-50"
+            className="px-3 py-1.5 bg-background border border-border text-foreground text-xs rounded-lg hover:bg-border disabled:opacity-50"
           >
             Hủy
           </button>
@@ -108,21 +108,21 @@ function ChatHistoryItem({
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
-            <h4 className="text-sm font-medium text-gray-900 truncate">
+            <h4 className="text-sm font-medium text-foreground truncate">
               {session.title}
             </h4>
             {session.isActive && (
-              <span className="px-1.5 py-0.5 bg-green-100 text-green-700 text-[10px] rounded flex-shrink-0">
+              <span className="px-1.5 py-0.5 bg-primary-pastel text-primary text-[10px] rounded flex-shrink-0 font-medium">
                 Đang hoạt động
               </span>
             )}
           </div>
           <div className="flex items-center gap-2 mt-1">
-            <span className="text-[10px] text-gray-400">
+            <span className="text-[10px] text-muted-foreground">
               {formatDate(session.createdAt)}
             </span>
-            <span className="text-[10px] text-gray-400">•</span>
-            <span className="text-[10px] text-gray-400">
+            <span className="text-[10px] text-muted-foreground">•</span>
+            <span className="text-[10px] text-muted-foreground">
               {session.messageCount} tin nhắn
             </span>
           </div>

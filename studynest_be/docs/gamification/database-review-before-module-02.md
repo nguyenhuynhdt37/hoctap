@@ -1,6 +1,6 @@
 # Review Database Gamification trước khi triển khai Module 02 (Streak)
 
-Tài liệu này đánh giá hiện trạng cơ sở dữ liệu (Database Schema) của hệ thống Gamification thuộc StudyNest để đảm bảo tính sẵn sàng trước khi tiến hành triển khai Module 02 (Streak) cùng các module kế tiếp.
+Tài liệu này đánh giá hiện trạng cơ sở dữ liệu (Database Schema) của hệ thống Gamification thuộc Mây Mây để đảm bảo tính sẵn sàng trước khi tiến hành triển khai Module 02 (Streak) cùng các module kế tiếp.
 
 Quy tắc cốt lõi: **Không tự ý thay đổi Database; không tạo Migration mới; không sửa Entity hiện tại trừ khi có sự xác nhận rõ ràng từ phía người dùng.**
 

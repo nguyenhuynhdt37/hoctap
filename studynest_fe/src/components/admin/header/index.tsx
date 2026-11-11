@@ -134,7 +134,7 @@ export default function Header({ isCollapsed }: HeaderProps) {
             {/* Invisible bridge to connect button and dropdown */}
             <div className="absolute right-0 top-full w-80 h-2 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto z-40"></div>
 
-            {/* Beautiful Dropdown Menu - StudyNest Style */}
+            {/* Beautiful Dropdown Menu */}
             <div className="absolute right-0 top-full w-80 bg-white rounded-xl shadow-2xl border-2 border-green-100 opacity-0 group-hover:opacity-100 transform scale-95 group-hover:scale-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto z-50">
               {/* User Info Section - Green Theme */}
               <div className="px-6 py-4 border-b-2 border-green-100 bg-gradient-to-r from-green-50 to-emerald-50">
@@ -161,7 +161,7 @@ export default function Header({ isCollapsed }: HeaderProps) {
                       {user?.fullname || "Quản trị viên"}
                     </p>
                     <p className="text-sm text-emerald-600 truncate font-medium">
-                      {user?.email || "admin@studynest.com"}
+                      {user?.email || "admin@maymay.edu.vn"}
                     </p>
                   </div>
                 </div>

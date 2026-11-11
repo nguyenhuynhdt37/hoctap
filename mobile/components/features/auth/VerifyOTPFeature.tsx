@@ -84,7 +84,7 @@ export function VerifyOTPFeature({
         // Hiển thị thông báo thành công
         showLocalNotification(
           t('auth.verify_success', { defaultValue: 'Xác thực thành công!' }),
-          t('auth.verify_welcome', { defaultValue: 'Chào mừng bạn đến với StudyNest.' })
+          t('auth.verify_welcome', { defaultValue: 'Chào mừng bạn đến với Mây Mây.' })
         )
         
         await saveTokens(data)

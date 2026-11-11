@@ -24,7 +24,7 @@ import {
   HiPencil,
   HiPlay,
   HiPlus,
-  HiSparkles,
+  HiCloud,
   HiTrash,
   HiVideoCamera,
   HiX,
@@ -2564,7 +2564,7 @@ const EditCodeLesson = () => {
                     <div className="flex-1">
                       <div className="flex items-center mb-4 gap-3">
                         <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
-                          <HiSparkles className="h-6 w-6 text-white" />
+                          <HiCloud className="h-6 w-6 text-white" />
                         </div>
                         <div>
                           <h3 className="text-lg font-bold text-green-900 mb-1">
@@ -2675,7 +2675,7 @@ const EditCodeLesson = () => {
                           </>
                         ) : (
                           <>
-                            <HiSparkles className="h-5 w-5" />
+                            <HiCloud className="h-5 w-5" />
                             {generateMode === "replace"
                               ? "Làm lại từ đầu với"
                               : "Thêm vào danh sách từ"}{" "}

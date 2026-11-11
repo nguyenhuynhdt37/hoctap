@@ -1,87 +1,48 @@
+import { Card } from "@/components/ui";
+
 export function AboutSection() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-7 text-foreground">
       <div>
-        <h3 className="text-xl font-semibold text-gray-900 mb-4">
-          Về StudyNest
-        </h3>
+        <h3 className="font-display text-2xl font-semibold">Về Mây Mây</h3>
+        <p className="mt-3 leading-relaxed text-muted-foreground">
+          Mây Mây là nền tảng để học viên tìm khóa học, theo dõi tiến độ và học
+          theo lộ trình phù hợp. Danh mục khóa học được cập nhật khi nội dung đã
+          sẵn sàng công khai.
+        </p>
       </div>
 
-      <section>
-        <h4 className="font-semibold text-gray-900 mb-3">Sứ mệnh của chúng tôi</h4>
-        <p className="text-gray-700 leading-relaxed">
-          StudyNest được thành lập với sứ mệnh mang đến nền tảng học tập trực
-          tuyến chất lượng cao, giúp mọi người có thể tiếp cận giáo dục một cách
-          dễ dàng và hiệu quả. Chúng tôi tin rằng giáo dục là quyền cơ bản của
-          mọi người và không nên bị giới hạn bởi địa lý hay điều kiện kinh tế.
+      <section aria-labelledby="about-mission">
+        <h4 id="about-mission" className="mb-3 text-lg font-semibold">
+          Mục tiêu của chúng tôi
+        </h4>
+        <p className="leading-relaxed text-muted-foreground">
+          Giúp học sinh và gia đình tìm nội dung học tập theo cấp học, lớp và
+          môn một cách rõ ràng. Thông tin về từng khóa, giảng viên và giá được
+          hiển thị trước khi người học đăng ký.
         </p>
       </section>
 
-      <section>
-        <h4 className="font-semibold text-gray-900 mb-3">Chúng tôi là ai</h4>
-        <p className="text-gray-700 leading-relaxed mb-3">
-          StudyNest là nền tảng học tập trực tuyến hàng đầu, cung cấp hàng nghìn
-          khóa học chất lượng cao từ các giảng viên chuyên nghiệp. Chúng tôi
-          tập trung vào:
-        </p>
-        <ul className="list-disc list-inside space-y-2 text-gray-700 ml-4">
-          <li>Nội dung học tập chất lượng và cập nhật</li>
-          <li>Trải nghiệm người dùng tối ưu</li>
-          <li>Hỗ trợ học viên tận tâm</li>
-          <li>Cộng đồng học tập tích cực</li>
-        </ul>
-      </section>
-
-      <section>
-        <h4 className="font-semibold text-gray-900 mb-3">Giá trị cốt lõi</h4>
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="p-4 bg-teal-50 rounded-lg border border-teal-200">
-            <h5 className="font-semibold text-teal-900 mb-2">🎯 Chất lượng</h5>
-            <p className="text-sm text-gray-700">
-              Chúng tôi cam kết cung cấp nội dung học tập chất lượng cao, được
-              kiểm duyệt kỹ lưỡng.
-            </p>
-          </div>
-          <div className="p-4 bg-teal-50 rounded-lg border border-teal-200">
-            <h5 className="font-semibold text-teal-900 mb-2">💡 Đổi mới</h5>
-            <p className="text-sm text-gray-700">
-              Luôn cập nhật công nghệ và phương pháp giảng dạy mới nhất để mang
-              đến trải nghiệm tốt nhất.
-            </p>
-          </div>
-          <div className="p-4 bg-teal-50 rounded-lg border border-teal-200">
-            <h5 className="font-semibold text-teal-900 mb-2">🤝 Hỗ trợ</h5>
-            <p className="text-sm text-gray-700">
-              Đội ngũ hỗ trợ luôn sẵn sàng giúp đỡ bạn trong suốt hành trình học tập.
-            </p>
-          </div>
-          <div className="p-4 bg-teal-50 rounded-lg border border-teal-200">
-            <h5 className="font-semibold text-teal-900 mb-2">🌱 Phát triển</h5>
-            <p className="text-sm text-gray-700">
-              Khuyến khích và hỗ trợ sự phát triển cá nhân và nghề nghiệp của mỗi học viên.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section>
-        <h4 className="font-semibold text-gray-900 mb-3">Thành tựu</h4>
-        <div className="grid gap-4 md:grid-cols-3">
-          <div className="text-center p-6 bg-gray-50 rounded-lg">
-            <div className="text-3xl font-bold text-teal-600 mb-2">100K+</div>
-            <div className="text-sm text-gray-600">Học viên</div>
-          </div>
-          <div className="text-center p-6 bg-gray-50 rounded-lg">
-            <div className="text-3xl font-bold text-teal-600 mb-2">5K+</div>
-            <div className="text-sm text-gray-600">Khóa học</div>
-          </div>
-          <div className="text-center p-6 bg-gray-50 rounded-lg">
-            <div className="text-3xl font-bold text-teal-600 mb-2">500+</div>
-            <div className="text-sm text-gray-600">Giảng viên</div>
-          </div>
+      <section aria-labelledby="about-features">
+        <h4 id="about-features" className="mb-4 text-lg font-semibold">
+          Bạn có thể làm gì trên Mây Mây?
+        </h4>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {[
+            ["Tìm khóa học", "Lọc khóa theo lớp, môn và mục tiêu học tập."],
+            ["Theo dõi lộ trình", "Xem các chặng học và tiến độ của khóa đã đăng ký."],
+            ["Học theo bài", "Truy cập nội dung và bài luyện tập trong khóa đã sở hữu."],
+            ["Quản lý quyền lợi", "Xem lịch sử đăng ký và đơn hàng trong tài khoản."],
+          ].map(([title, description]) => (
+            <Card key={title} className="rounded-2xl border-border bg-surface p-5">
+              <h5 className="font-semibold text-foreground">{title}</h5>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                {description}
+              </p>
+            </Card>
+          ))}
         </div>
       </section>
     </div>
   );
 }
-

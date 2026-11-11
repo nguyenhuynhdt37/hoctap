@@ -1,4 +1,4 @@
-# StudyNest Backend - Cấu Trúc Dự Án
+# Mây Mây Backend - Cấu Trúc Dự Án
 
 ## 📁 Tổng Quan Thư Mục
 

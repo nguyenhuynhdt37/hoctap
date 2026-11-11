@@ -71,12 +71,12 @@ export default function VideoLesson({
         spread: 120,
         origin: { y: 0.6 },
         colors: [
-          "#ff6b6b",
-          "#4ecdc4",
-          "#45b7d1",
-          "#96ceb4",
-          "#feca57",
-          "#ff9ff3",
+          "#356FA7",
+          "#7BAFD4",
+          "#BFD7ED",
+          "#F7C9D9",
+          "#E3D5F5",
+          "#F8E9C9",
         ],
         shapes: ["star", "circle"],
         scalar: 1.2,
@@ -343,12 +343,12 @@ export default function VideoLesson({
         spread: 120,
         origin: { y: 0.6 },
         colors: [
-          "#ff6b6b",
-          "#4ecdc4",
-          "#45b7d1",
-          "#96ceb4",
-          "#feca57",
-          "#ff9ff3",
+          "#356FA7",
+          "#7BAFD4",
+          "#BFD7ED",
+          "#F7C9D9",
+          "#E3D5F5",
+          "#F8E9C9",
         ],
         shapes: ["star", "circle"],
         scalar: 1.2,
@@ -419,15 +419,15 @@ export default function VideoLesson({
 
   if (!lesson.file_id) {
     return (
-      <div className="flex items-center justify-center h-[70vh] bg-gray-100 rounded-lg text-gray-600">
+      <div className="flex items-center justify-center h-[70vh] bg-background border-b border-border text-muted-foreground font-medium">
         Không có video để phát...
       </div>
     );
   }
 
   return (
-    <div className="bg-white overflow-hidden relative">
-      <div className="relative bg-gray-50">
+    <div className="bg-surface overflow-hidden relative">
+      <div className="relative bg-background">
         <div
           onMouseEnter={handleVideoMouseEnter}
           onMouseLeave={handleVideoMouseLeave}

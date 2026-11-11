@@ -1,29 +1,27 @@
 import Link from "next/link";
-import { HiArrowLeft, HiXCircle } from "react-icons/hi";
+import { AlertCircle, ArrowLeft } from "lucide-react";
+import { Button, Card } from "@/components/ui";
 
-export default function NotFound() {
+export default function DiscountNotFound() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="mx-auto px-4 py-8">
-        <div className="bg-white rounded-lg border border-red-200 shadow-sm p-6">
-          <div className="flex items-center gap-3 text-red-600 mb-4">
-            <HiXCircle className="h-6 w-6" />
-            <h3 className="font-semibold text-lg">
-              Không tìm thấy mã giảm giá
-            </h3>
-          </div>
-          <p className="text-gray-600 mb-4">
-            Mã giảm giá bạn đang tìm kiếm không tồn tại hoặc đã bị xóa.
-          </p>
-          <Link
-            href="/admin/discounts"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-          >
-            <HiArrowLeft className="h-5 w-5" />
-            <span>Quay lại danh sách</span>
-          </Link>
+    <div className="min-h-[60vh] flex items-center justify-center p-4">
+      <Card className="max-w-md w-full p-6 text-center border-border shadow-xs">
+        <div className="w-12 h-12 rounded-2xl bg-destructive-bg text-destructive-foreground border border-destructive-border flex items-center justify-center mx-auto mb-4">
+          <AlertCircle className="w-6 h-6" />
         </div>
-      </div>
+        <h3 className="text-lg font-semibold text-foreground mb-2">
+          Không tìm thấy mã giảm giá
+        </h3>
+        <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
+          Mã giảm giá bạn đang tìm kiếm không tồn tại hoặc đã được gỡ bỏ khỏi hệ
+          thống quản trị.
+        </p>
+        <Link href="/admin/discounts" className="inline-block">
+          <Button variant="primary" leftIcon={<ArrowLeft className="w-4 h-4" />}>
+            Quay lại danh sách
+          </Button>
+        </Link>
+      </Card>
     </div>
   );
 }

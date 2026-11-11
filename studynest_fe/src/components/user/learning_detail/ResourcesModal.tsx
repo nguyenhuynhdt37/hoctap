@@ -93,25 +93,25 @@ export default function ResourcesModal(props: ResourcesModalProps) {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        className="absolute inset-0 bg-foreground/40 backdrop-blur-xs"
         onClick={onClose}
       />
-      <div className="relative w-full max-w-2xl bg-white rounded-xl shadow-2xl border border-teal-100 overflow-hidden">
+      <div className="relative w-full max-w-2xl bg-surface rounded-2xl shadow-xl border border-border overflow-hidden">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-teal-100 bg-gradient-to-r from-teal-50 to-emerald-50 flex items-center justify-between">
+        <div className="px-6 py-4 border-b border-border bg-gradient-to-r from-primary-pastel/50 to-secondary-pastel/40 flex items-center justify-between">
           <div className="min-w-0 pr-4">
-            <h3 className="text-lg font-bold text-gray-900 truncate">
+            <h3 className="text-lg font-bold text-foreground truncate">
               Tài nguyên bài học
             </h3>
             {lessonTitle && (
-              <p className="text-sm text-teal-700 truncate mt-1">
+              <p className="text-sm text-primary truncate mt-1">
                 {lessonTitle}
               </p>
             )}
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-white/50 text-teal-600 hover:text-teal-700 transition-colors cursor-pointer"
+            className="p-2 rounded-lg hover:bg-surface/60 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
             aria-label="Đóng"
           >
             <HiX className="w-5 h-5" />
@@ -122,11 +122,11 @@ export default function ResourcesModal(props: ResourcesModalProps) {
         <div className="max-h-[60vh] overflow-y-auto p-6">
           {resources.length === 0 ? (
             <div className="text-center py-12">
-              <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <HiDocumentText className="w-8 h-8 text-teal-600" />
+              <div className="w-16 h-16 bg-primary-pastel rounded-full flex items-center justify-center mx-auto mb-4">
+                <HiDocumentText className="w-8 h-8 text-primary" />
               </div>
-              <p className="text-gray-600 font-medium">Không có tài nguyên</p>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-foreground font-medium">Không có tài nguyên</p>
+              <p className="text-sm text-muted-foreground mt-1">
                 Bài học này chưa có tài liệu đính kèm
               </p>
             </div>
@@ -138,24 +138,24 @@ export default function ResourcesModal(props: ResourcesModalProps) {
                   href={res.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-4 p-4 rounded-lg border-2 border-teal-100 bg-gradient-to-r from-teal-50/50 to-emerald-50/50 hover:border-teal-300 hover:from-teal-50 hover:to-emerald-50 transition-all duration-200 group cursor-pointer"
+                  className="flex items-center gap-4 p-4 rounded-xl border border-border bg-background/60 hover:border-primary-light hover:bg-primary-pastel/30 transition-all duration-200 group cursor-pointer"
                 >
                   {/* Icon */}
-                  <div className="flex-shrink-0 w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center text-teal-600 group-hover:bg-teal-200 transition-colors">
+                  <div className="flex-shrink-0 w-12 h-12 bg-primary-pastel rounded-xl flex items-center justify-center text-primary group-hover:bg-primary-light/50 transition-colors">
                     {getResourceIcon(res.resource_type || "file")}
                   </div>
 
                   {/* Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <h4 className="text-sm font-semibold text-gray-900 truncate">
+                      <h4 className="text-sm font-semibold text-foreground truncate">
                         {res.title || "Tài nguyên"}
                       </h4>
-                      <span className="flex-shrink-0 text-xs px-2 py-0.5 rounded-full bg-teal-100 text-teal-700 font-medium">
+                      <span className="flex-shrink-0 text-xs px-2 py-0.5 rounded-full bg-primary-pastel text-primary font-medium">
                         {getResourceTypeLabel(res.resource_type || "file")}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       {formatFileSize(res.file_size) && (
                         <>
                           <span>{formatFileSize(res.file_size)}</span>
@@ -168,7 +168,7 @@ export default function ResourcesModal(props: ResourcesModalProps) {
 
                   {/* Download Button */}
                   <div className="flex-shrink-0">
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-teal-500 text-white group-hover:bg-teal-600 transition-colors">
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary text-white group-hover:bg-primary-hover transition-colors">
                       <HiDownload className="w-4 h-4" />
                       <span className="text-sm font-medium">Tải</span>
                     </div>
@@ -180,10 +180,10 @@ export default function ResourcesModal(props: ResourcesModalProps) {
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-teal-100 bg-gradient-to-r from-gray-50 to-teal-50/30 flex justify-end">
+        <div className="px-6 py-4 border-t border-border bg-background/50 flex justify-end">
           <button
             onClick={onClose}
-            className="px-6 py-2 rounded-lg bg-teal-500 text-white hover:bg-teal-600 text-sm font-semibold transition-colors shadow-md cursor-pointer"
+            className="px-6 py-2 rounded-xl bg-primary text-white hover:bg-primary-hover text-sm font-semibold transition-colors shadow-xs cursor-pointer"
           >
             Đóng
           </button>

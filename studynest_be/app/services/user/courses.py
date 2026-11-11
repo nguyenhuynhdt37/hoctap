@@ -24,6 +24,7 @@ from app.db.models.database import (
     LessonVideos,
     User,
 )
+from app.services.catalog import public_course, require_real_course
 from app.db.sesson import get_session
 from app.libs.formats.datetime import now as get_now
 from app.libs.formats.datetime import strip_tz
@@ -207,6 +208,7 @@ class CoursePublicService:
             )
             if course is None:
                 raise HTTPException(status_code=404, detail="Khóa học không tồn tại")
+            await self._require_course_visibility(course, user)
             course_existing_favourite = None
             if user is not None:
                 course_existing_favourite = await self.db.scalar(
@@ -275,10 +277,11 @@ class CoursePublicService:
             if course is None:
                 raise HTTPException(status_code=404, detail="Khóa học không tồn tại")
 
+            await self._require_course_visibility(course, user)
             # 2️⃣ Tính toán tag (Thịnh hành, Bán chạy, Đánh giá cao)
             stmt_all = select(
                 Courses.id, Courses.views, Courses.total_enrolls, Courses.rating_avg
-            ).where(Courses.is_published.is_(True))
+            ).where(public_course())
             result_all = await self.db.execute(stmt_all)
             data = result_all.mappings().all()
             tags = []
@@ -456,6 +459,9 @@ class CoursePublicService:
 
     async def get_all_lesson_preview_async(self, course_id: uuid.UUID):
         try:
+            if not await self.db.scalar(select(Courses.id).where(Courses.id == course_id, public_course())):
+                raise HTTPException(404, 'Khóa học không tồn tại')
+
             results = await self.db.execute(
                 select(Lessons)
                 .where(
@@ -510,10 +516,15 @@ class CoursePublicService:
         user: User,
     ):
         try:
+            from app.services.bundles import lock_purchase_user
+            await lock_purchase_user(self.db, user.id)
+
             # ===== Lấy khóa học =====
-            course: Courses | None = await self.db.get(Courses, course_id)
+            course: Courses | None = await self.db.scalar(select(Courses).where(Courses.id == course_id, public_course()))
             if course is None:
                 raise HTTPException(404, "Khóa học không tồn tại")
+
+            require_real_course(course)
 
             # ===== Kiểm tra đã đăng ký chưa =====
             course_enroll = await self.db.scalar(
@@ -670,7 +681,7 @@ class CoursePublicService:
                 Courses.total_enrolls,
                 Courses.rating_avg,
             ).where(
-                Courses.is_published.is_(True),
+                public_course(),
                 Courses.approval_status == "approved",
             )
             stats = (await self.db.execute(stats_stmt)).mappings().all()
@@ -702,7 +713,7 @@ class CoursePublicService:
                 select(Courses)
                 .options(selectinload(Courses.instructor))
                 .where(
-                    Courses.is_published.is_(True),
+                    public_course(),
                     Courses.approval_status == "approved",
                 )
             )
@@ -804,7 +815,7 @@ class CoursePublicService:
                 Courses.total_enrolls,
                 Courses.rating_avg,
             ).where(
-                Courses.is_published.is_(True),
+                public_course(),
                 Courses.approval_status == "approved",
             )
             stats = (await self.db.execute(stats_stmt)).mappings().all()
@@ -837,7 +848,7 @@ class CoursePublicService:
                 select(Courses)
                 .options(selectinload(Courses.instructor))
                 .where(
-                    Courses.is_published.is_(True),
+                    public_course(),
                     Courses.approval_status == "approved",
                 )
             )
@@ -940,7 +951,7 @@ class CoursePublicService:
                 Courses.total_enrolls,
                 Courses.rating_avg,
             ).where(
-                Courses.is_published.is_(True),
+                public_course(),
                 Courses.approval_status == "approved",
             )
             stats = (await self.db.execute(stats_stmt)).mappings().all()
@@ -972,7 +983,7 @@ class CoursePublicService:
                 select(Courses)
                 .options(selectinload(Courses.instructor))
                 .where(
-                    Courses.is_published.is_(True),
+                    public_course(),
                     Courses.approval_status == "approved",
                 )
             )
@@ -1072,7 +1083,7 @@ class CoursePublicService:
                 Courses.total_enrolls,
                 Courses.rating_avg,
             ).where(
-                Courses.is_published.is_(True),
+                public_course(),
                 Courses.approval_status == "approved",
             )
             stats = (await self.db.execute(stats_stmt)).mappings().all()
@@ -1104,7 +1115,7 @@ class CoursePublicService:
                 select(Courses)
                 .options(selectinload(Courses.instructor))
                 .where(
-                    Courses.is_published.is_(True),
+                    public_course(),
                     Courses.approval_status == "approved",
                     Courses.rating_count > 0,  # chỉ lấy khóa đã có đánh giá
                 )
@@ -1206,6 +1217,12 @@ class CoursePublicService:
             )
 
             rows = (await self.db.execute(stmt)).mappings().all()
+            from app.services.catalog import public_course
+            visible_ids = set((await self.db.scalars(select(Courses.id).where(
+                Courses.id.in_([row['course_id'] for row in rows]), public_course()
+            ))).all())
+            rows = [row for row in rows if row['course_id'] in visible_ids]
+
 
             return {
                 "items": [
@@ -1228,3 +1245,13 @@ class CoursePublicService:
         except Exception as e:
             await self.db.rollback()
             raise e
+
+    async def _require_course_visibility(self, course, user):
+        visible = await self.db.scalar(select(Courses.id).where(Courses.id == course.id, public_course()))
+        if visible:
+            return
+        if user and course.instructor_id == user.id:
+            return
+        if user and await self.db.scalar(select(CourseEnrollments.course_id).where(CourseEnrollments.course_id == course.id, CourseEnrollments.user_id == user.id)):
+            return
+        raise HTTPException(404, 'Khóa học không tồn tại')

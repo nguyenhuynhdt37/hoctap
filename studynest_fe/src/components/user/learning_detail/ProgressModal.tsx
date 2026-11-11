@@ -33,19 +33,19 @@ export default function ProgressModal(props: ProgressModalProps) {
 
   return (
     <div className="fixed inset-0 z-[100]">
-      <div className="absolute inset-0 bg-[#3D4A5A]/10 backdrop-blur-[1px]" onClick={onClose} />
-      <div className="absolute right-6 top-[4.75rem] w-full max-w-md bg-white rounded-[20px] shadow-lg border border-[#E7EEF7]">
-        <div className="absolute -top-2 right-10 w-4 h-4 bg-white border-l border-t border-[#E7EEF7] rotate-45" />
-        <div className="px-5 py-4 border-b border-[#E7EEF7] flex items-center justify-between">
+      <div className="absolute inset-0 bg-foreground/10 backdrop-blur-[1px]" onClick={onClose} />
+      <div className="absolute right-6 top-[4.75rem] w-full max-w-md bg-white rounded-[20px] shadow-lg border border-border">
+        <div className="absolute -top-2 right-10 w-4 h-4 bg-white border-l border-t border-border rotate-45" />
+        <div className="px-5 py-4 border-b border-border flex items-center justify-between">
           <div className="min-w-0 pr-4">
-            <h3 className="text-base font-semibold text-[#3D4A5A] truncate">
+            <h3 className="text-base font-semibold text-foreground truncate">
               Tiến độ học tập
             </h3>
-            <p className="text-xs text-[#6F7C8C] truncate">{title}</p>
+            <p className="text-xs text-muted-foreground truncate">{title}</p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-[#F6FAFF] text-[#6F7C8C] hover:text-[#3D4A5A] transition-colors cursor-pointer"
+            className="p-2 rounded-lg hover:bg-background text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
             aria-label="Đóng"
           >
             ✕
@@ -93,7 +93,7 @@ export default function ProgressModal(props: ProgressModalProps) {
                   y="50%"
                   dominantBaseline="middle"
                   textAnchor="middle"
-                  className="fill-[#356FA7]"
+                  className="fill-primary"
                   style={{ fontWeight: 700, fontSize: 22 }}
                 >
                   {percent}%
@@ -103,40 +103,40 @@ export default function ProgressModal(props: ProgressModalProps) {
             <div className="sm:col-span-2">
               <div className="mb-3">
                 <div className="flex items-center justify-between text-sm mb-2">
-                  <span className="text-[#6F7C8C]">Hoàn thành</span>
-                  <span className="font-semibold text-[#356FA7]">
+                  <span className="text-muted-foreground">Hoàn thành</span>
+                  <span className="font-semibold text-primary">
                     {percent}%
                   </span>
                 </div>
-                <div className="w-full bg-[#E8F2FA] rounded-full h-2.5">
+                <div className="w-full bg-primary-light rounded-full h-2.5">
                   <div
-                    className="bg-[#356FA7] h-2.5 rounded-full transition-all duration-300"
+                    className="bg-primary h-2.5 rounded-full transition-all duration-300"
                     style={{ width: `${percent}%` }}
                   />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="p-3 rounded-xl bg-[#F6FAFF] border border-[#E7EEF7]">
-                  <div className="text-[11px] text-[#6F7C8C] mb-1">
+                <div className="p-3 rounded-xl bg-background border border-border">
+                  <div className="text-[11px] text-muted-foreground mb-1">
                     Bài đã hoàn thành
                   </div>
-                  <div className="text-xl font-bold text-[#3D4A5A] tabular-nums">
+                  <div className="text-xl font-bold text-foreground tabular-nums">
                     {completedLessons}
                   </div>
                 </div>
-                <div className="p-3 rounded-xl bg-[#F6FAFF] border border-[#E7EEF7]">
-                  <div className="text-[11px] text-[#6F7C8C] mb-1">
+                <div className="p-3 rounded-xl bg-background border border-border">
+                  <div className="text-[11px] text-muted-foreground mb-1">
                     Tổng số bài
                   </div>
-                  <div className="text-xl font-bold text-[#3D4A5A] tabular-nums">
+                  <div className="text-xl font-bold text-foreground tabular-nums">
                     {totalLessons}
                   </div>
                 </div>
-                <div className="p-3 rounded-xl bg-[#F6FAFF] border border-[#E7EEF7] col-span-2">
-                  <div className="text-[11px] text-[#6F7C8C] mb-1">
+                <div className="p-3 rounded-xl bg-background border border-border col-span-2">
+                  <div className="text-[11px] text-muted-foreground mb-1">
                     Tổng thời lượng
                   </div>
-                  <div className="text-base font-semibold text-[#3D4A5A]">
+                  <div className="text-base font-semibold text-foreground">
                     {totalDurationLabel}
                   </div>
                 </div>
@@ -145,10 +145,10 @@ export default function ProgressModal(props: ProgressModalProps) {
           </div>
         </div>
 
-        <div className="px-5 py-4 border-t border-[#E7EEF7] flex justify-end">
+        <div className="px-5 py-4 border-t border-border flex justify-end">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-[#356FA7] text-white hover:bg-[#285C90] text-sm font-semibold transition-colors cursor-pointer"
+            className="px-4 py-2 rounded-xl bg-primary text-white hover:bg-primary-hover text-sm font-semibold transition-colors cursor-pointer"
           >
             Đóng
           </button>

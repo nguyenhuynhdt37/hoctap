@@ -12,19 +12,19 @@ export default memo(function TypingIndicator({
   if (typingUsers.size === 0) return null;
 
   return (
-    <div className="mb-4 px-4 py-2 bg-[#E8F2FA] border border-[#BFD7ED] rounded-xl">
-      <div className="flex items-center gap-2 text-sm text-[#356FA7]">
+    <div className="mb-4 px-4 py-2 bg-primary-light border border-primary-pastel rounded-xl">
+      <div className="flex items-center gap-2 text-sm text-primary">
         <div className="flex gap-1">
           <div
-            className="w-2 h-2 bg-[#356FA7] rounded-full animate-bounce"
+            className="w-2 h-2 bg-primary rounded-full animate-bounce"
             style={{ animationDelay: "0ms" }}
           />
           <div
-            className="w-2 h-2 bg-[#356FA7] rounded-full animate-bounce"
+            className="w-2 h-2 bg-primary rounded-full animate-bounce"
             style={{ animationDelay: "150ms" }}
           />
           <div
-            className="w-2 h-2 bg-[#356FA7] rounded-full animate-bounce"
+            className="w-2 h-2 bg-primary rounded-full animate-bounce"
             style={{ animationDelay: "300ms" }}
           />
         </div>

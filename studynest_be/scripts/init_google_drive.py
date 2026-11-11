@@ -10,7 +10,7 @@ from app.services.shares.google_driver import GoogleDriveAsyncService
 
 async def main():
     print("=" * 60)
-    print("🚀 Bắt đầu xác thực Google Drive cho StudyNest...")
+    print("🚀 Bắt đầu xác thực Google Drive cho Mây Mây...")
     print("Trình duyệt sẽ tự động mở để bạn đăng nhập Google và cấp quyền.")
     print("=" * 60)
     service = await GoogleDriveAsyncService.create()

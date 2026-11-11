@@ -15,7 +15,7 @@ export default memo(function NewCommentForm({
   onTyping,
 }: NewCommentFormProps) {
   return (
-    <div className="mb-4 p-3 bg-white border border-gray-200 rounded-lg">
+    <div className="mb-4 p-3 bg-surface border border-border rounded-2xl">
       <CommentForm
         onSubmit={onSubmit}
         isSubmitting={isSubmitting}

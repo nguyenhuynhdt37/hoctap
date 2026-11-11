@@ -1,17 +1,21 @@
 "use client";
 
+import Link from "next/link";
+import { CheckCircle2, Clock, Play, Star } from "lucide-react";
+import { Badge, Card, Progress } from "@/components/ui";
 import { formatDate, formatDuration } from "@/lib/utils/helpers/date";
 import { getImageUrl } from "@/lib/utils/helpers/image";
 import type { CoursesMeItem, CoursesMeVariant } from "@/types/user/courses-me";
-import Link from "next/link";
-import { HiOutlineStar } from "react-icons/hi";
 
-const FALLBACK_THUMBNAIL = "https://placehold.co/600x400/0fbba7/FFFFFF?text=Study+Course";
+const FALLBACK_THUMBNAIL = "/logo/studynest-logo.svg";
 
-const LEVEL_LABELS: Record<string, string> = {
-  beginner: "Cơ bản",
-  intermediate: "Trung cấp",
-  advanced: "Nâng cao",
+const LEVEL_CONFIG: Record<
+  string,
+  { label: string; variant: "primary" | "secondary" | "lavender" | "default" }
+> = {
+  beginner: { label: "Cơ bản", variant: "primary" },
+  intermediate: { label: "Trung cấp", variant: "lavender" },
+  advanced: { label: "Nâng cao", variant: "secondary" },
 };
 
 type CourseCardProps = {
@@ -20,67 +24,123 @@ type CourseCardProps = {
 };
 
 export const CourseCard = ({ course, variant }: CourseCardProps) => {
-  const progress = Math.round(course.progress_percent || 0);
-  const levelLabel = LEVEL_LABELS[course.level] || "Không xác định";
+  const progress = Math.min(100, Math.max(0, Math.round(course.progress_percent || 0)));
+  const isCompleted = progress === 100;
+  const levelInfo = LEVEL_CONFIG[course.level] || {
+    label: "Mọi cấp độ",
+    variant: "default",
+  };
   const thumbnailSrc = getImageUrl(course.thumbnail_url || FALLBACK_THUMBNAIL);
 
   return (
     <Link
       href={`/learning/${course.slug}`}
-      className="group block h-full focus:outline-none focus-visible:ring-2 focus-visible:ring-green-300 focus-visible:ring-offset-2"
+      className="group block h-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-[20px]"
+      aria-label={`Tiếp tục học khóa ${course.title}`}
     >
-      <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-green-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
-        <div className="relative h-48 w-full overflow-hidden">
+      <Card
+        interactive
+        className="flex h-full flex-col overflow-hidden border-border bg-surface shadow-xs transition-all duration-200 group-hover:-translate-y-1 group-hover:border-primary-pastel group-hover:shadow-ambient-md rounded-[20px] p-0"
+      >
+        {/* Thumbnail Area */}
+        <div className="relative aspect-video w-full overflow-hidden bg-primary-light/40">
           <img
             src={thumbnailSrc}
             alt={course.title}
             loading="lazy"
-            className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
-          <span className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-xs font-medium uppercase tracking-wide text-green-600 shadow-sm">
-            {levelLabel}
-          </span>
+
+          {/* Overlay gradient nhẹ khi hover */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex items-end p-4">
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-white drop-shadow-sm">
+              <Play className="w-3.5 h-3.5 fill-current" />
+              {isCompleted ? "Xem lại bài giảng" : progress > 0 ? "Tiếp tục bài học" : "Bắt đầu học ngay"}
+            </span>
+          </div>
+
+          {/* Level Badge góc trái */}
+          <div className="absolute left-3.5 top-3.5">
+            <Badge
+              variant={levelInfo.variant}
+              className="backdrop-blur-md shadow-2xs font-medium text-[11px] px-2.5 py-0.5"
+            >
+              {levelInfo.label}
+            </Badge>
+          </div>
+
+          {/* Status Badge góc phải (nếu đã hoàn thành) */}
+          {isCompleted && (
+            <div className="absolute right-3.5 top-3.5">
+              <Badge
+                variant="success"
+                className="backdrop-blur-md shadow-2xs text-[11px] px-2.5 py-0.5 flex items-center gap-1"
+              >
+                <CheckCircle2 className="w-3 h-3" />
+                Hoàn thành
+              </Badge>
+            </div>
+          )}
         </div>
 
-        <div className="flex flex-1 flex-col gap-4 p-6">
-          <header className="space-y-2">
-            <h3 className="line-clamp-2 text-lg font-semibold leading-snug text-gray-900">
-              {course.title}
-            </h3>
-            <div className="flex items-center gap-3 text-sm text-gray-600">
-              <span className="inline-flex items-center gap-1">
-                <HiOutlineStar className="h-4 w-4 text-amber-400" />
-                {course.rating_avg.toFixed(1)}
-                <span className="text-xs text-gray-400">({course.review_count})</span>
+        {/* Course Info Body */}
+        <div className="flex flex-1 flex-col p-5">
+          {/* Metadata Row: Rating & Duration */}
+          <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
+            <div className="flex items-center gap-1 font-medium">
+              <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-400" />
+              <span className="text-foreground">{course.rating_avg.toFixed(1)}</span>
+              <span className="text-subtle-foreground font-normal">
+                ({course.review_count || 0})
               </span>
-              <span aria-hidden="true">•</span>
+            </div>
+
+            <div className="flex items-center gap-1">
+              <Clock className="h-3.5 w-3.5 text-subtle-foreground" />
               <span>{formatDuration(course.total_length_seconds)}</span>
             </div>
-          </header>
+          </div>
 
+          {/* Title */}
+          <h3 className="line-clamp-2 text-base font-semibold leading-snug text-foreground group-hover:text-primary transition-colors mb-4">
+            {course.title}
+          </h3>
+
+          {/* Progress Section */}
           {variant === "purchased" && (
-            <div className="flex items-center justify-between rounded-xl bg-green-50 p-3">
-              <div className="space-y-1">
-                <p className="text-xs font-medium uppercase text-green-600">Tiến độ</p>
-                <p className="text-sm font-semibold text-gray-700">{progress}%</p>
-              </div>
-              <div className="relative ml-3 h-2 flex-1 rounded-full bg-green-100">
+            <div className="mt-auto pt-3 border-t border-border/70">
+              <div className="flex items-center justify-between text-xs mb-1.5 font-medium">
+                <span className="text-muted-foreground">Tiến độ bài học</span>
                 <span
-                  className="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-green-500 to-emerald-500 transition-all"
-                  style={{ width: `${progress}%` }}
-                />
+                  className={
+                    isCompleted
+                      ? "text-success-foreground font-semibold"
+                      : "text-primary font-semibold"
+                  }
+                >
+                  {progress}%
+                </span>
               </div>
+              <Progress
+                value={progress}
+                variant={isCompleted ? "success" : "primary"}
+                size="sm"
+                className="bg-primary-light/70"
+              />
             </div>
           )}
 
-          <footer className="mt-auto flex items-center justify-between text-xs text-gray-500">
-            <span>Ngôn ngữ: {course.language?.toUpperCase() || "N/A"}</span>
+          {/* Footer Metadata */}
+          <div className="mt-3 flex items-center justify-between text-[11px] text-subtle-foreground">
+            <span>Ngôn ngữ: {course.language?.toUpperCase() || "VI"}</span>
             <span>
-              {variant === "purchased" ? "Đăng ký" : "Đã lưu"}: {formatDate(course.created_at)}
+              {course.enrolled_at
+                ? `Đăng ký: ${formatDate(course.enrolled_at)}`
+                : `Ngày tạo: ${formatDate(course.created_at)}`}
             </span>
-          </footer>
+          </div>
         </div>
-      </article>
+      </Card>
     </Link>
   );
 };

@@ -18,7 +18,7 @@ class MailerService:
             MAIL_USERNAME=settings.MAIL_USERNAME,
             MAIL_PASSWORD=SecretStr(settings.MAIL_PASSWORD),
             MAIL_FROM=settings.MAIL_FROM,
-            MAIL_FROM_NAME="StudyNest",
+            MAIL_FROM_NAME="Mây Mây",
             MAIL_PORT=settings.MAIL_PORT,
             MAIL_SERVER=settings.MAIL_SERVER,
             MAIL_STARTTLS=settings.MAIL_TLS,
@@ -32,7 +32,7 @@ class MailerService:
     async def send_verification_email(self, email: str, fullname: str, code: str):
         """Gửi email xác thực tài khoản."""
         message = MessageSchema(
-            subject="Xác thực email - StudyNest",
+            subject="Xác thực email - Mây Mây",
             recipients=[email],
             template_body={"fullname": fullname, "code": code},
             subtype=MessageType.html,
@@ -43,7 +43,7 @@ class MailerService:
     async def send_login_otp_email(self, email: str, fullname: str, code: str):
         """Gửi email OTP đăng nhập."""
         message = MessageSchema(
-            subject="Mã OTP đăng nhập - StudyNest",
+            subject="Mã OTP đăng nhập - Mây Mây",
             recipients=[email],
             template_body={"fullname": fullname, "code": code},
             subtype=MessageType.html,
@@ -56,7 +56,7 @@ class MailerService:
     ):
         """Gửi email đặt lại mật khẩu."""
         message = MessageSchema(
-            subject="Đặt lại mật khẩu - Huỳnh E-learning",
+            subject="Đặt lại mật khẩu - Mây Mây",
             recipients=[email],
             template_body={"fullname": fullname, "reset_link": reset_link},
             subtype=MessageType.html,

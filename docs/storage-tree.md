@@ -1,4 +1,4 @@
-# Cấu trúc file StudyNest trên R2
+# Cấu trúc file Mây Mây trên R2
 
 Bucket `studynest` luôn private. `public/` chỉ có nghĩa ứng dụng cho phép xem
 nhóm file đó mà không đăng nhập; bucket không được mở public toàn bộ.
