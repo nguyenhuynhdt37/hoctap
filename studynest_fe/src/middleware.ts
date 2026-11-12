@@ -18,9 +18,23 @@ export async function middleware(req: NextRequest) {
   const isLecturer = path === "/lecturer" || path.startsWith("/lecturer/");
   const isUser = userPrefixes.some(prefix => path === prefix || path.startsWith(`${prefix}/`));
   const protectedPage = isAdmin || isLecturer || isUser;
+  const isPrefetch =
+    req.headers.get("next-router-prefetch") === "1" ||
+    req.headers.get("purpose") === "prefetch" ||
+    req.headers.get("sec-purpose") === "prefetch";
   const access = req.cookies.get("access_token")?.value;
   const refresh = req.cookies.get("refresh_token")?.value;
-  if (!protectedPage && !access && !refresh) return NextResponse.next();
+  if (!protectedPage && (isPrefetch || (!access && !refresh))) {
+    return NextResponse.next();
+  }
+  if (protectedPage && !access && !refresh) {
+    return NextResponse.redirect(
+      new URL(
+        `/login?redirect=${encodeURIComponent(path + req.nextUrl.search)}`,
+        req.url
+      )
+    );
+  }
 
   let user = null;
   let unavailable = false;
@@ -89,5 +103,7 @@ export async function middleware(req: NextRequest) {
 
 // Public pages also hydrate login state; assets and /api keep their own handlers.
 export const config = {
-  matcher: ["/((?!api|_next|favicon.ico|robots.txt|sitemap.xml|logo|images|fonts).*)"],
+  matcher: [
+    "/((?!api|_next|\\.well-known|favicon\\.ico|robots\\.txt|sitemap\\.xml|logo|images|fonts|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|map|woff|woff2|ttf)$).*)",
+  ],
 };

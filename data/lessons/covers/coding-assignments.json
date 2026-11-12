@@ -1,0 +1,16 @@
+[
+  {
+    "course_id": "075522a0-adb5-4816-9593-da0d254acf45",
+    "asset": "tin-hoc-cpp-may-may-v1.jpg",
+    "thumbnail_url": "/api/storage/files/public/courses/075522a0-adb5-4816-9593-da0d254acf45/thumbnails/7324b91625ec41b1951864e2408ba54a-tin-hoc-cpp-may-may-v1.jpg",
+    "key": "public/courses/075522a0-adb5-4816-9593-da0d254acf45/thumbnails/7324b91625ec41b1951864e2408ba54a-tin-hoc-cpp-may-may-v1.jpg",
+    "sha256": "41407bb130bf2834ca638652acd02d8a2bb781dd4f5bc776a3f438fc620368f2"
+  },
+  {
+    "course_id": "e03af09c-57cc-4eec-b16d-47ccf745aa25",
+    "asset": "tin-hoc-javascript-may-may-v1.jpg",
+    "thumbnail_url": "/api/storage/files/public/courses/e03af09c-57cc-4eec-b16d-47ccf745aa25/thumbnails/d6077daf48ea4c62a97881af099cd093-tin-hoc-javascript-may-may-v1.jpg",
+    "key": "public/courses/e03af09c-57cc-4eec-b16d-47ccf745aa25/thumbnails/d6077daf48ea4c62a97881af099cd093-tin-hoc-javascript-may-may-v1.jpg",
+    "sha256": "21912b865634c2a3785cb848c877e3fcfa0a0527f98b7232370ddadf697583a4"
+  }
+]

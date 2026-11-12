@@ -73,3 +73,8 @@ youtube-transcript-api
 apscheduler
 google-auth
 boto3>=1.36,<2
+
+# Public provider directory/logo crawler
+beautifulsoup4>=4.12,<5
+
+google-genai>=3.0,<4

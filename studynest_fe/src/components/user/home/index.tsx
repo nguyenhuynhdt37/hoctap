@@ -34,11 +34,7 @@ const Home = () => {
 
   return (
     <main className="min-h-screen bg-background">
-      <LandingDynamicIsland
-        onExploreCourses={scrollToCourses}
-        onSelectGradeLevel={handleSelectGradeLevel}
-        onSkipVideo={scrollToContent}
-      />
+      <LandingDynamicIsland onSkipVideo={scrollToContent} />
       <LandingVoiceTour />
 
       {/* Section B: Scroll-Driven 3D Cinematic Hero */}

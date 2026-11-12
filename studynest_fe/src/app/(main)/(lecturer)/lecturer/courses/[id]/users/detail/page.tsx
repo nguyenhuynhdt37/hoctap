@@ -5,8 +5,8 @@ import { cookies } from "next/headers";
 import Link from "next/link";
 
 interface PageProps {
-  params: { id: string };
-  searchParams: { [key: string]: string | string[] | undefined };
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export default async function Page({ params, searchParams }: PageProps) {
@@ -50,17 +50,17 @@ export default async function Page({ params, searchParams }: PageProps) {
         detailText || messageText || `${message} (mã lỗi ${res.status})`;
     } catch {}
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         <div className="max-w-screen-2xl mx-auto px-2 md:px-4 lg:px-6 py-6 md:py-8">
-          <div className="bg-white border border-gray-200 rounded-xl p-6">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          <div className="bg-surface border border-border rounded-2xl p-6 shadow-xs">
+            <h1 className="font-display text-2xl font-bold text-foreground mb-2">
               Lỗi tải dữ liệu
             </h1>
-            <p className="text-gray-700">{message}</p>
+            <p className="text-muted-foreground">{message}</p>
             <div className="mt-4">
               <Link
-                href={`/lecturer/courses/${params.id}/users`}
-                className="inline-flex items-center px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white transition-colors"
+                href={`/lecturer/courses/${paramsData.id}/users`}
+                className="inline-flex items-center px-4 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white font-medium text-sm transition-colors"
               >
                 Quay lại danh sách học viên
               </Link>

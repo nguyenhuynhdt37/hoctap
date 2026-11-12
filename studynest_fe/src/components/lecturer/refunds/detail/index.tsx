@@ -1,21 +1,23 @@
 "use client";
 
+import { Badge, Card } from "@/components/ui";
+import type { BadgeVariant } from "@/components/ui/badge";
 import api from "@/lib/utils/fetcher/client/axios";
 import { getImageUrl } from "@/lib/utils/helpers/image";
 import { showToast } from "@/lib/utils/helpers/toast";
 import { LecturerRefundDetailData } from "@/types/lecturer/refund";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Clock,
+  Tag,
+  User,
+  XCircle,
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import {
-  HiArrowLeft,
-  HiCheckCircle,
-  HiClock,
-  HiTag,
-  HiUser,
-  HiXCircle,
-} from "react-icons/hi";
 import { ActionPanel } from "./action-panel";
 import { DetailRow } from "./detail-row";
 import { SectionCard } from "./section-card";
@@ -54,36 +56,36 @@ const formatDateTime = (value?: string | null) => {
 
 const statusMeta: Record<
   RefundStatus,
-  { label: string; badgeClass: string; description: string }
+  { label: string; variant: BadgeVariant; description: string }
 > = {
   requested: {
     label: "Đã yêu cầu",
-    badgeClass: "bg-yellow-100 text-yellow-700 border-yellow-300",
+    variant: "warning",
     description: "Chờ giảng viên xử lý",
   },
   instructor_approved: {
     label: "GV đã duyệt",
-    badgeClass: "bg-green-100 text-green-700 border-green-300",
+    variant: "info",
     description: "Đã chấp nhận yêu cầu",
   },
   instructor_rejected: {
     label: "GV đã từ chối",
-    badgeClass: "bg-red-100 text-red-700 border-red-300",
+    variant: "destructive",
     description: "Đã từ chối hoàn tiền",
   },
   admin_approved: {
     label: "Admin đã duyệt",
-    badgeClass: "bg-green-100 text-green-700 border-green-300",
+    variant: "success",
     description: "Admin đã thông qua",
   },
   admin_rejected: {
     label: "Admin đã từ chối",
-    badgeClass: "bg-red-100 text-red-700 border-red-300",
+    variant: "destructive",
     description: "Admin từ chối yêu cầu",
   },
   refunded: {
     label: "Đã hoàn tiền",
-    badgeClass: "bg-green-100 text-green-700 border-green-300",
+    variant: "success",
     description: "Tiền đã hoàn cho học viên",
   },
 };
@@ -172,51 +174,71 @@ export default function LecturerRefundDetail({
     }
   };
 
+  const isRejected =
+    data.refund.status === "instructor_rejected" ||
+    data.refund.status === "admin_rejected";
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
+    <div className="min-h-screen bg-background">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-6">
         <button
           type="button"
           onClick={() => router.back()}
-          className="flex items-center gap-2 text-gray-600 hover:text-green-600 transition-colors"
+          className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
         >
-          <HiArrowLeft className="h-5 w-5" />
-          <span className="font-semibold text-sm">Quay lại</span>
+          <ArrowLeft className="h-4 w-4" />
+          <span>Quay lại</span>
         </button>
 
-        <div className="bg-white rounded-xl border border-green-200 shadow-sm p-6 flex flex-col md:flex-row items-start md:items-center gap-6">
+        <Card
+          variant="surface"
+          className="p-6 flex flex-col md:flex-row items-start md:items-center gap-6"
+        >
           <div className="flex items-center gap-4">
-            <div className="h-14 w-14 rounded-full bg-green-50 flex items-center justify-center">
-              {data.refund.status === "instructor_rejected" ||
-              data.refund.status === "admin_rejected" ? (
-                <HiXCircle className="h-8 w-8 text-red-500" />
+            <div
+              className={`h-14 w-14 rounded-2xl border flex items-center justify-center shrink-0 ${
+                isRejected
+                  ? "bg-destructive-bg border-destructive-border"
+                  : data.refund.status === "requested"
+                  ? "bg-warning-bg border-warning-border"
+                  : "bg-success-bg border-success-border"
+              }`}
+            >
+              {isRejected ? (
+                <XCircle className="h-7 w-7 text-destructive-foreground" />
+              ) : data.refund.status === "requested" ? (
+                <Clock className="h-7 w-7 text-warning-foreground" />
               ) : (
-                <HiCheckCircle className="h-8 w-8 text-green-500" />
+                <CheckCircle2 className="h-7 w-7 text-success-foreground" />
               )}
             </div>
             <div>
-              <p className="text-sm text-gray-600 mb-1">Trạng thái hiện tại</p>
-              <div className="text-2xl font-bold text-gray-900">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-1">
+                Trạng thái hiện tại
+              </p>
+              <div className="font-display text-2xl font-semibold text-foreground tracking-tight">
                 {statusInfo.label}
               </div>
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-muted-foreground">
                 {statusInfo.description}
               </div>
             </div>
           </div>
-          <div className="md:ml-auto text-right">
-            <p className="text-sm text-gray-600 mb-1">Số tiền hoàn</p>
-            <div className="text-3xl font-extrabold text-green-600">
+          <div className="md:ml-auto md:text-right">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-1">
+              Số tiền hoàn
+            </p>
+            <div className="text-3xl font-bold text-primary tabular-nums">
               {formatCurrency(data.refund.amount)}
             </div>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground mt-1">
               Yêu cầu ID:{" "}
               <span className="font-mono">
                 {data.refund.id.slice(0, 10)}...
               </span>
             </p>
           </div>
-        </div>
+        </Card>
 
         {canRespond && (
           <ActionPanel
@@ -232,9 +254,9 @@ export default function LecturerRefundDetail({
           <div className="lg:col-span-2 space-y-6">
             <SectionCard
               title="Thông tin yêu cầu"
-              icon={<HiClock className="h-5 w-5 text-green-600" />}
+              icon={<Clock className="h-5 w-5 text-primary" />}
             >
-              <div className="space-y-4">
+              <div className="space-y-1">
                 <DetailRow
                   label="ID yêu cầu"
                   value={<span className="font-mono">{data.refund.id}</span>}
@@ -243,11 +265,9 @@ export default function LecturerRefundDetail({
                 <DetailRow
                   label="Trạng thái"
                   value={
-                    <span
-                      className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${statusInfo.badgeClass}`}
-                    >
+                    <Badge variant={statusInfo.variant} size="sm" dot>
                       {statusInfo.label}
-                    </span>
+                    </Badge>
                   }
                 />
                 <DetailRow
@@ -276,7 +296,7 @@ export default function LecturerRefundDetail({
 
             <SectionCard
               title="Dòng thời gian"
-              icon={<HiClock className="h-5 w-5 text-green-600" />}
+              icon={<Clock className="h-5 w-5 text-primary" />}
             >
               <div className="space-y-2">
                 {timeline.map((item, index) => (
@@ -295,9 +315,9 @@ export default function LecturerRefundDetail({
 
             <SectionCard
               title="Thông tin mua hàng"
-              icon={<HiTag className="h-5 w-5 text-green-600" />}
+              icon={<Tag className="h-5 w-5 text-primary" />}
             >
-              <div className="space-y-4">
+              <div className="space-y-1">
                 <DetailRow
                   label="Mã đơn hàng"
                   value={
@@ -332,17 +352,19 @@ export default function LecturerRefundDetail({
                 <DetailRow
                   label="Trạng thái đơn"
                   value={
-                    <span
-                      className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${
+                    <Badge
+                      variant={
                         data.purchase.status === "completed"
-                          ? "bg-green-100 text-green-700 border-green-300"
-                          : "bg-yellow-100 text-yellow-700 border-yellow-300"
-                      }`}
+                          ? "success"
+                          : "warning"
+                      }
+                      size="sm"
+                      dot
                     >
                       {data.purchase.status === "completed"
                         ? "Hoàn thành"
                         : "Đang xử lý"}
-                    </span>
+                    </Badge>
                   }
                 />
                 <DetailRow
@@ -354,23 +376,25 @@ export default function LecturerRefundDetail({
 
             <SectionCard
               title="Thông tin thu nhập"
-              icon={<HiCheckCircle className="h-5 w-5 text-green-600" />}
+              icon={<CheckCircle2 className="h-5 w-5 text-primary" />}
             >
-              <div className="space-y-4">
+              <div className="space-y-1">
                 <DetailRow
                   label="Trạng thái"
                   value={
-                    <span
-                      className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${
+                    <Badge
+                      variant={
                         data.earnings.status === "holding"
-                          ? "bg-yellow-100 text-yellow-700 border-yellow-300"
-                          : "bg-green-100 text-green-700 border-green-300"
-                      }`}
+                          ? "warning"
+                          : "success"
+                      }
+                      size="sm"
+                      dot
                     >
                       {data.earnings.status === "holding"
                         ? "Đang giữ"
                         : "Đã giải ngân"}
-                    </span>
+                    </Badge>
                   }
                 />
                 <DetailRow
@@ -396,13 +420,13 @@ export default function LecturerRefundDetail({
           <div className="space-y-6">
             <SectionCard
               title="Khóa học"
-              icon={<HiTag className="h-5 w-5 text-green-600" />}
+              icon={<Tag className="h-5 w-5 text-primary" />}
             >
               <Link
                 href={`/learning/${data.course.course_id}`}
                 className="block group"
               >
-                <div className="relative w-full h-48 rounded-xl overflow-hidden bg-gray-100 mb-4">
+                <div className="relative w-full h-48 rounded-xl overflow-hidden bg-background border border-border mb-4">
                   {courseThumbnail && !thumbnailError ? (
                     <Image
                       src={courseThumbnail}
@@ -413,12 +437,12 @@ export default function LecturerRefundDetail({
                       unoptimized
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-500">
+                    <div className="w-full h-full flex items-center justify-center text-sm text-muted-foreground bg-primary-light/30">
                       Không có ảnh
                     </div>
                   )}
                 </div>
-                <p className="text-base font-semibold text-gray-900 group-hover:text-green-600 transition-colors line-clamp-2">
+                <p className="text-base font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2">
                   {data.course.title}
                 </p>
               </Link>
@@ -426,7 +450,7 @@ export default function LecturerRefundDetail({
 
             <SectionCard
               title="Giảng viên"
-              icon={<HiUser className="h-5 w-5 text-green-600" />}
+              icon={<User className="h-5 w-5 text-primary" />}
             >
               <div className="flex items-center gap-3">
                 {instructorAvatar && !avatarError ? (
@@ -435,12 +459,12 @@ export default function LecturerRefundDetail({
                     alt={data.instructor.fullname}
                     width={56}
                     height={56}
-                    className="rounded-full object-cover object-center aspect-square border border-green-200"
+                    className="rounded-full object-cover object-center aspect-square border border-border"
                     onError={() => setAvatarError(true)}
                     unoptimized
                   />
                 ) : (
-                  <div className="w-14 h-14 rounded-full bg-green-100 text-green-700 font-bold flex items-center justify-center border border-green-200">
+                  <div className="w-14 h-14 rounded-full bg-primary-light text-primary font-bold flex items-center justify-center border border-primary-pastel">
                     {data.instructor.fullname
                       .split(" ")
                       .map((name) => name[0])
@@ -450,10 +474,12 @@ export default function LecturerRefundDetail({
                   </div>
                 )}
                 <div>
-                  <p className="font-semibold text-gray-900">
+                  <p className="font-semibold text-foreground">
                     {data.instructor.fullname}
                   </p>
-                  <p className="text-sm text-gray-600">Người tạo khóa học</p>
+                  <p className="text-sm text-muted-foreground">
+                    Người tạo khóa học
+                  </p>
                 </div>
               </div>
             </SectionCard>

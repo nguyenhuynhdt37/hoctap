@@ -7,10 +7,6 @@ from uuid import uuid4
 
 import httpx
 import pytest
-from fastapi import FastAPI, HTTPException
-from sqlalchemy import event, func, select
-from sqlalchemy.exc import IntegrityError
-
 from app.api.v1.catalog import router
 from app.core.deps import AuthorizationService
 from app.db.models.catalog import (
@@ -18,6 +14,7 @@ from app.db.models.catalog import (
     Exam,
     Grade,
     Provider,
+    ProviderMember,
     Subject,
     course_grades,
     grade_subjects,
@@ -29,13 +26,16 @@ from app.schemas.catalog import (
     CatalogFilters,
     CourseTaxonomy,
     MemberInput,
-    ProviderInput,
+    ProviderAdminInput,
     TaxonomyInput,
 )
 from app.services.admin.category import CategoryService
 from app.services.catalog import CatalogService
 from app.services.providers import ProviderService
+from fastapi import FastAPI, HTTPException
 from scripts.seed_catalog_v2 import seed
+from sqlalchemy import event, func, select
+from sqlalchemy.exc import IntegrityError
 
 pytestmark = [
     pytest.mark.asyncio,
@@ -345,7 +345,9 @@ async def test_browse_http_contract_and_validation(db_session):
     ) as client:
         options = await client.get("/catalog/browse-filters")
         assert options.status_code == 200
-        populated = await client.get("/catalog/courses", params={"keyword": course.title})
+        populated = await client.get(
+            "/catalog/courses", params={"keyword": course.title}
+        )
         assert populated.status_code == 200
         assert populated.json()["items"][0]["id"] == str(course.id)
         assert "description" not in populated.json()["items"][0]
@@ -367,20 +369,38 @@ async def test_browse_http_contract_and_validation(db_session):
 
 async def test_provider_permissions_and_settlement_guard(db_session):
     course, user = await make_course(db_session, is_published=False)
+    user_id = user.id
     svc = ProviderService(db_session)
-    data = await svc.save(
-        ProviderInput(
-            name="Test center", slug="test-" + uuid4().hex, provider_type="center"
-        ),
-        user.id,
+    pending = ProviderAdminInput(
+        name="Test center " + uuid4().hex, provider_type="center"
     )
+    data = await svc.save(pending, user_id, admin=True)
     provider_id = data["id"]
     assert data["verification_status"] == "pending"
+    with pytest.raises(HTTPException) as hidden:
+        await svc.detail(data["slug"])
+    assert hidden.value.status_code == 404
+    data = await svc.save(
+        ProviderAdminInput(
+            **{
+                **pending.model_dump(),
+                "slug": data["slug"],
+                "verification_status": "verified",
+            }
+        ),
+        user_id,
+        provider_id,
+        admin=True,
+    )
+    db_session.add(
+        ProviderMember(provider_id=provider_id, user_id=user_id, status="active")
+    )
+    await db_session.commit()
     profile = await svc.detail(data["slug"])
     assert profile["course_count"] == 0 and profile["subjects"] == []
     assert "email" not in profile
     catalog = CatalogService(db_session)
-    await catalog.assign(course, CourseTaxonomy(provider_id=provider_id), user.id)
+    await catalog.assign(course, CourseTaxonomy(provider_id=provider_id), user_id)
     with pytest.raises(HTTPException) as e:
         await catalog.validate_assignment(
             CourseTaxonomy(provider_id=provider_id), uuid4()
@@ -388,16 +408,13 @@ async def test_provider_permissions_and_settlement_guard(db_session):
     assert e.value.status_code == 403
     with pytest.raises(HTTPException) as e:
         await catalog.validate_assignment(
-            CourseTaxonomy(provider_id=provider_id), user.id, publishing=True
+            CourseTaxonomy(provider_id=provider_id), user_id, publishing=True
         )
     assert e.value.status_code == 409
     with pytest.raises(HTTPException):
-        await svc.member(
-            provider_id, MemberInput(user_id=user.id, role="instructor"), user.id
-        )
-    # A teacher can belong to more than one provider.
+        await svc.member(provider_id, MemberInput(user_id=user_id), user_id)
     other = await svc.save(
-        ProviderInput(name="Second teacher", slug="test-" + uuid4().hex), user.id
+        ProviderAdminInput(name="Second teacher " + uuid4().hex), user_id, admin=True
     )
     assert other["id"] != provider_id
 
@@ -447,10 +464,9 @@ async def test_http_validation_anonymous_mutation_and_draft(db_session):
 
 
 async def test_legacy_and_v2_course_crud_and_ownership(db_session):
-    from fastapi import BackgroundTasks
-
     from app.schemas.lecturer.courses import CreateCourse, UpdateCourse
     from app.services.lecturer.course import CourseService
+    from fastapi import BackgroundTasks
 
     user = await db_session.scalar(select(User).limit(1))
     category = await db_session.scalar(
@@ -493,9 +509,8 @@ async def test_legacy_and_v2_course_crud_and_ownership(db_session):
 async def test_thumbnail_rejects_other_instructor_before_storage(db_session):
     from io import BytesIO
 
-    from fastapi import UploadFile
-
     from app.services.lecturer.course import CourseService
+    from fastapi import UploadFile
 
     course, _ = await make_course(db_session)
     identity = str(course.id)
@@ -576,10 +591,9 @@ async def test_admin_taxonomy_create_update_and_safe_delete(db_session):
 @pytest.mark.parametrize("paid", [False, True])
 @pytest.mark.parametrize("slug_prefix", ["demo-catalog", "seed-shop"])
 async def test_demo_fixtures_cannot_enroll_or_charge(db_session, paid, slug_prefix):
-    from fastapi import BackgroundTasks
-
     from app.services.shares.transaction import TransactionsService
     from app.services.user.courses import CoursePublicService
+    from fastapi import BackgroundTasks
 
     course, user = await make_course(
         db_session,

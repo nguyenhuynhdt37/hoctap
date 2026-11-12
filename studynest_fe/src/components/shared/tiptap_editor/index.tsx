@@ -1,6 +1,6 @@
 "use client";
 
-import api from "@/lib/utils/fetcher/client/axios";
+import { uploadFile } from "@/lib/uploadFile";
 import { getImageUrl } from "@/lib/utils/helpers/image";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
 import HorizontalRule from "@tiptap/extension-horizontal-rule";
@@ -233,7 +233,7 @@ export default function TiptapEditor({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<Editor | null>(null);
   const hasAutoFocusedRef = useRef(false);
-  const lastSyncedValueRef = useRef<string>("");
+  const lastSyncedValueRef = useRef<string>(value || "");
 
   const programmingLanguages = [
     { value: "plaintext", label: "Plain Text" },
@@ -249,19 +249,6 @@ export default function TiptapEditor({
     { value: "bash", label: "Bash" },
     { value: "sql", label: "SQL" },
   ];
-
-  const uploadImage = async (file: File): Promise<string> => {
-    const formData = new FormData();
-    formData.append("file", file);
-
-    const response = await api.post("/upload", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
-
-    return response.data;
-  };
 
   const handleImageUpload = async (file: File, editorInstance: Editor) => {
     // Validate file type
@@ -286,7 +273,7 @@ export default function TiptapEditor({
     reader.readAsDataURL(file);
 
     try {
-      const imageUrl = await uploadImage(file);
+      const imageUrl = await uploadFile(file);
       // Resolve the stored image URL
       const embeddableUrl = getImageUrl(imageUrl);
       editorInstance.chain().focus().setImage({ src: embeddableUrl }).run();
@@ -295,6 +282,7 @@ export default function TiptapEditor({
       const errorMsg =
         error?.response?.data?.detail ||
         error?.response?.data?.message ||
+        error?.message ||
         "Không thể tải ảnh lên. Vui lòng thử lại.";
       alert(errorMsg);
       setUploadPreview(null);
@@ -307,6 +295,12 @@ export default function TiptapEditor({
     extensions: [
       StarterKit.configure({
         codeBlock: false,
+        // These extensions are configured explicitly below (StarterKit v3
+        // includes them too).
+        link: false,
+        underline: false,
+        strike: false,
+        horizontalRule: false,
         heading: { levels: [1, 2, 3, 4, 5, 6] },
       }),
       Underline,
@@ -414,87 +408,19 @@ export default function TiptapEditor({
     }
   }, [value]);
 
-  // Helper: Normalize markdown để so sánh (loại bỏ whitespace thừa)
-  const normalizeMarkdown = (md: string): string => {
-    if (!md) return "";
-    return md
-      .replace(/\r\n/g, "\n")
-      .replace(/\r/g, "\n")
-      .replace(/\n{3,}/g, "\n\n")
-      .trim();
-  };
-
-  // Sync value vào editor khi không ở markdown mode
+  // Prop synchronization must stay silent: it is not a user edit. Parsing
+  // already carries paragraph alignment, so no delayed formatting transaction
+  // is needed (it emitted onUpdate and could outlive an unmounted editor).
   useEffect(() => {
-    if (!editor || isMarkdownMode || value === undefined) return;
-
-    // Nếu value không thay đổi, không cần sync
+    if (!editor || editor.isDestroyed || isMarkdownMode || value === undefined) return;
     if (value === lastSyncedValueRef.current) return;
 
-    // Detect nếu value là markdown format (có ##, **, etc.) hoặc không phải HTML
-    const isMarkdownFormat =
-      value.includes("##") ||
-      value.includes("**") ||
-      value.includes("__") ||
-      value.includes("```") ||
-      value.includes("- ") ||
-      value.includes("* ") ||
-      value.includes("1. ") ||
-      (value.includes("\n") && !value.trim().startsWith("<"));
-
-    if (isMarkdownFormat || !value.trim().startsWith("<")) {
-      // Parse markdown thành HTML (đã có justify trong HTML)
-      let htmlContent = parseMarkdownToHTML(value);
-      if (htmlContent && htmlContent.trim()) {
-        // Resolve image URLs in HTML
-        htmlContent = htmlContent.replace(
-          /<img[^>]+src=["']([^"']+)["'][^>]*>/gi,
-          (match, src) => {
-            const embeddableUrl = getImageUrl(src);
-            return match.replace(src, embeddableUrl);
-          }
-        );
-        // Set content và lưu lại value đã sync
-        editor.commands.setContent(htmlContent, { emitUpdate: false });
-
-        // Sau khi set content, apply justify cho tất cả paragraph
-        // (HTML đã có style justify, nhưng cần apply attribute cho TipTap)
-        setTimeout(() => {
-          // Select toàn bộ document và apply justify cho tất cả paragraph
-          const { from, to } = { from: 0, to: editor.state.doc.content.size };
-          editor
-            .chain()
-            .setTextSelection({ from, to })
-            .setTextAlign("justify")
-            .run();
-        }, 10);
-
-        lastSyncedValueRef.current = value;
-      }
-    } else {
-      // Resolve image URLs before setting HTML
-      let htmlContent = value;
-      htmlContent = htmlContent.replace(
-        /<img[^>]+src=["']([^"']+)["'][^>]*>/gi,
-        (match, src) => {
-          const embeddableUrl = getImageUrl(src);
-          return match.replace(src, embeddableUrl);
-        }
-      );
-      editor.commands.setContent(htmlContent, { emitUpdate: false });
-
-      // Apply justify cho tất cả paragraph
-      setTimeout(() => {
-        const { from, to } = { from: 0, to: editor.state.doc.content.size };
-        editor
-          .chain()
-          .setTextSelection({ from, to })
-          .setTextAlign("justify")
-          .run();
-      }, 10);
-
-      lastSyncedValueRef.current = value;
-    }
+    const htmlContent = parseMarkdownToHTML(value).replace(
+      /<img[^>]+src=["']([^"']+)["'][^>]*>/gi,
+      (match, src) => match.replace(src, getImageUrl(src))
+    );
+    editor.commands.setContent(htmlContent, { emitUpdate: false });
+    lastSyncedValueRef.current = value;
   }, [value, editor, isMarkdownMode]);
 
   useEffect(() => {

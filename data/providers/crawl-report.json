@@ -1,0 +1,197 @@
+{
+  "checked_at": "2026-11-12T04:33:26.077691+00:00",
+  "school_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+  "source_download": "https://docs.google.com/spreadsheets/d/e/2PACX-1vSwuZ48zegu7YaiU6dVnCa50v7PuRihrKhLrxk1TdWVxOTWes7D-luC5vI7ltwreQ/pub?output=csv",
+  "source_sha256": "3773c14a27a4a8efab609798838b7ba46d94b6d63ba4c3dad3523bf0449b2153",
+  "counts": {
+    "school": 3323,
+    "exam_center": 17
+  },
+  "provinces": {
+    "An Giang": 106,
+    "Bắc Ninh": 93,
+    "Cao Bằng": 30,
+    "Cà Mau": 76,
+    "Cần Thơ": 106,
+    "Gia Lai": 108,
+    "Hà Nội": 241,
+    "Hà Tĩnh": 47,
+    "Hưng Yên": 81,
+    "Hải Phòng": 120,
+    "Khánh Hoà": 70,
+    "Lai Châu": 23,
+    "Lào Cai": 78,
+    "Lâm Đồng": 119,
+    "Lạng Sơn": 38,
+    "Nghệ An": 92,
+    "Ninh Bình": 117,
+    "Phú Thọ": 137,
+    "Quảng Ngãi": 69,
+    "Quảng Ninh": 57,
+    "Quảng Trị": 74,
+    "Sơn La": 48,
+    "TP. Đồng Nai": 112,
+    "Thanh Hoá": 115,
+    "Thành phố Huế": 78,
+    "Thái Nguyên": 64,
+    "Tp. Hồ Chí Minh": 368,
+    "Tuyên Quang": 101,
+    "Tây Ninh": 75,
+    "Vĩnh Long": 120,
+    "Điện Biên": 52,
+    "Đà Nẵng": 93,
+    "Đắk Lắk": 93,
+    "Đồng Tháp": 122
+  },
+  "excluded_counts": {
+    "outside_school_scope": 872,
+    "historical_or_requires_review": 495,
+    "placeholder": 208,
+    "ambiguous_requires_review": 24
+  },
+  "centers": [
+    {
+      "name": "HOCMAI",
+      "status": 200,
+      "url": "https://hocmai.vn/",
+      "title": "Học trực tuyến - Hệ thống giáo dục HOCMAI"
+    },
+    {
+      "name": "Tuyensinh247",
+      "status": 200,
+      "url": "https://tuyensinh247.com/",
+      "title": "Tuyensinh247.com - Học trực tuyến cùng Thầy cô giáo giỏi, nổi tiếng"
+    },
+    {
+      "name": "VUIHOC",
+      "status": 200,
+      "url": "https://vuihoc.vn/",
+      "title": "Vuihoc.vn - Nền tảng học online hàng đầu cho lớp 1-12"
+    },
+    {
+      "name": "VTED",
+      "url": "https://vted.vn/",
+      "error": "ConnectTimeout",
+      "supplemental_evidence": {
+        "retrieval_method": "first_party_web_index_or_open",
+        "checked_on": "2026-11-12",
+        "page_title": "Danh sách khóa học toán và luyện thi THPT",
+        "direct_crawl_failed": true
+      },
+      "evidence_url": "https://vted.vn/khoa-hoc.html"
+    },
+    {
+      "name": "Moon.vn",
+      "url": "https://moon.vn/",
+      "error": "ValueError"
+    },
+    {
+      "name": "HOC247",
+      "status": 200,
+      "url": "https://hoc247.net/",
+      "title": "Học Trực Tuyến Cấp 1,2,3 - Hoc Online 247"
+    },
+    {
+      "name": "Mclass",
+      "url": "https://mclass.vn/",
+      "error": "HTTPStatusError",
+      "supplemental_evidence": {
+        "retrieval_method": "first_party_web_index_or_open",
+        "checked_on": "2026-11-12",
+        "page_title": "Mclass - Lớp học Livestream; nhà phát triển công bố khóa luyện thi THPT",
+        "direct_crawl_failed": true
+      },
+      "evidence_url": "https://play.google.com/store/apps/details?hl=vi&id=vn.mclass.elearning"
+    },
+    {
+      "name": "HSA Education",
+      "status": 200,
+      "url": "https://thithuhsa.vn/",
+      "title": "HSA EDUCATION - LUYỆN THI ĐÁNH GIÁ NĂNG LỰC, ĐÁNH GIÁ TƯ DUY"
+    },
+    {
+      "name": "VietJack",
+      "status": 200,
+      "url": "https://vietjack.com/",
+      "title": "Trang giải bài tập, khóa học, đề thi, giáo án, website giáo dục nhiều người truy cập nhất Việt Nam"
+    },
+    {
+      "name": "VUNGOI",
+      "status": 200,
+      "url": "https://vungoi.vn/",
+      "title": "Vừng ơi - Học online toán và các môn với bài tập, lý thuyết và đề thi đầy đủ"
+    },
+    {
+      "name": "Luyện Thi 123",
+      "url": "https://luyenthi123.edu.vn/",
+      "error": "HTTPStatusError",
+      "supplemental_evidence": {
+        "retrieval_method": "first_party_web_index_or_open",
+        "checked_on": "2026-11-12",
+        "page_title": "Luyện Thi 123 - Học chắc nền tảng, vững vàng mỗi kỳ thi",
+        "direct_crawl_failed": true
+      },
+      "evidence_url": "https://luyenthi123.edu.vn/"
+    },
+    {
+      "name": "Luyện thi Nguyễn Thượng Hiền",
+      "url": "https://ltnth.edu.vn/",
+      "error": "ConnectError",
+      "supplemental_evidence": {
+        "retrieval_method": "first_party_web_index_or_open",
+        "checked_on": "2026-11-12",
+        "page_title": "Trung tâm luyện thi THPT và đại học Nguyễn Thượng Hiền",
+        "direct_crawl_failed": true
+      },
+      "evidence_url": "https://ltnth.edu.vn/"
+    },
+    {
+      "name": "TopHSA",
+      "status": 200,
+      "url": "https://giaoduchsa.edu.vn/",
+      "title": "Trang Chủ - TopHSA"
+    },
+    {
+      "name": "Luyện thi Thành Công - Cần Thơ",
+      "status": 200,
+      "url": "https://thanhcongedu.vn/",
+      "title": "Trung tâm luyện thi V-SAT hàng đầu tại Cần Thơ"
+    },
+    {
+      "name": "Bồi dưỡng văn hóa và Luyện thi Thành Công",
+      "url": "https://ttthanhcong.edu.vn/",
+      "error": "ConnectError",
+      "supplemental_evidence": {
+        "retrieval_method": "first_party_web_index_or_open",
+        "checked_on": "2026-11-12",
+        "page_title": "Bồi dưỡng Văn hóa và Luyện thi Thành Công - tài liệu tốt nghiệp THPT",
+        "direct_crawl_failed": true
+      },
+      "evidence_url": "https://ttthanhcong.edu.vn/list_news.php"
+    },
+    {
+      "name": "Luyện thi CLC",
+      "status": 200,
+      "url": "https://luyenthiclc.edu.vn/",
+      "title": "Trang chủ - luyenthiclc.edu.vn"
+    },
+    {
+      "name": "Luyện thi Nhân Tài Việt",
+      "url": "https://toanlyhoa.vn/",
+      "error": "ConnectTimeout",
+      "supplemental_evidence": {
+        "retrieval_method": "first_party_web_index_or_open",
+        "checked_on": "2026-11-12",
+        "page_title": "Trung tâm Nhân Tài Việt - ôn thi THPT, đại học, đánh giá năng lực",
+        "direct_crawl_failed": true
+      },
+      "evidence_url": "https://toanlyhoa.vn/"
+    },
+    {
+      "name": "DMT Education",
+      "status": 200,
+      "url": "https://www.dmteducation.edu.vn/",
+      "title": "DMT Education"
+    }
+  ]
+}

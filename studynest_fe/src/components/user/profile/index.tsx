@@ -1,3 +1,1 @@
-"use client";
-
-export { default } from "./edit";
+export { default } from "./profile-screen";

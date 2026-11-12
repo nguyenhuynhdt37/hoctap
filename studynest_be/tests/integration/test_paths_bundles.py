@@ -123,7 +123,7 @@ async def setup_fixture(db):
     platform = await db.scalar(select(PlatformSettings).limit(1))
     if not platform:
         platform = PlatformSettings(
-            platform_name="Test", platform_fee=Decimal("0.3"), hold_days=7
+            platform_fee=Decimal("0.3"), hold_days=7
         )
         db.add(platform)
     platform.platform_fee = Decimal("0.3")

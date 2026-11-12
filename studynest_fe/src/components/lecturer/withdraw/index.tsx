@@ -1,7 +1,10 @@
 "use client";
 
+import { Alert, Badge, Button, Card, EmptyState, Skeleton } from "@/components/ui";
+import type { BadgeVariant } from "@/components/ui/badge";
 import api from "@/lib/utils/fetcher/client/axios";
 import { getImageUrl } from "@/lib/utils/helpers/image";
+import { ArrowDown, ArrowUp, Banknote, Plus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -59,16 +62,16 @@ const getStatusLabel = (status: string) => {
   return labels[status] || status;
 };
 
-const getStatusClass = (status: string) => {
-  const classes: Record<string, string> = {
-    pending: "bg-yellow-100 text-yellow-700 border-yellow-300",
-    approved: "bg-green-100 text-green-700 border-green-200",
-    rejected: "bg-red-100 text-red-700 border-red-200",
-    payout_pending: "bg-yellow-100 text-yellow-700 border-yellow-300",
-    failed: "bg-red-100 text-red-700 border-red-200",
-    paid: "bg-green-100 text-green-700 border-green-200",
+const getStatusVariant = (status: string): BadgeVariant => {
+  const variants: Record<string, BadgeVariant> = {
+    pending: "warning",
+    approved: "success",
+    rejected: "destructive",
+    payout_pending: "warning",
+    failed: "destructive",
+    paid: "success",
   };
-  return classes[status] || "bg-gray-100 text-gray-700 border-gray-200";
+  return variants[status] || "neutral";
 };
 
 export default function WithdrawPage() {
@@ -103,40 +106,41 @@ export default function WithdrawPage() {
   const totalPages = data ? Math.max(1, Math.ceil(data.total / limit)) : 1;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="min-h-screen bg-background py-8 px-4 sm:px-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="font-display text-2xl sm:text-3xl font-semibold text-foreground tracking-tight">
               Lịch sử yêu cầu rút tiền
             </h1>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-muted-foreground mt-1.5">
               Theo dõi các yêu cầu rút tiền của bạn
             </p>
           </div>
           <Link
             href="/lecturer/withdraw/create"
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:bg-primary-hover font-semibold text-sm transition-colors shadow-soft-xs self-start sm:self-auto"
           >
-            Tạo yêu cầu mới
+            <Plus className="h-4 w-4" />
+            <span>Tạo yêu cầu mới</span>
           </Link>
         </div>
 
         {error && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+          <Alert variant="destructive">
             Không thể tải danh sách yêu cầu. Vui lòng thử lại
-          </div>
+          </Alert>
         )}
 
-        <div className="bg-white rounded-xl border border-green-200 shadow-sm">
-          <div className="p-4 border-b border-gray-200 flex flex-wrap items-center gap-4">
+        <Card variant="surface" className="overflow-hidden">
+          <div className="p-4 sm:p-5 border-b border-border flex flex-wrap items-center gap-3">
             <select
               value={status}
               onChange={(e) => {
                 setStatus(e.target.value);
                 setPage(1);
               }}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="px-3.5 py-2 text-sm border border-border bg-surface text-foreground rounded-xl focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
             >
               <option value="all">Tất cả trạng thái</option>
               <option value="pending">Đang chờ</option>
@@ -153,79 +157,70 @@ export default function WithdrawPage() {
                 setOrderBy(e.target.value);
                 setPage(1);
               }}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="px-3.5 py-2 text-sm border border-border bg-surface text-foreground rounded-xl focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
             >
               <option value="requested_at">Sắp xếp theo thời gian</option>
               <option value="amount">Sắp xếp theo số tiền</option>
               <option value="status">Sắp xếp theo trạng thái</option>
             </select>
 
-            <button
+            <Button
+              type="button"
+              variant="outline"
+              size="md"
               onClick={() => setOrderDir(orderDir === "asc" ? "desc" : "asc")}
-              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2"
+              leftIcon={
+                orderDir === "asc" ? (
+                  <ArrowUp className="h-4 w-4" />
+                ) : (
+                  <ArrowDown className="h-4 w-4" />
+                )
+              }
             >
-              {orderDir === "asc" ? (
-                <>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                    <path
-                      d="M12 19V5m0 0-5 5m5-5 5 5"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                  Tăng dần
-                </>
-              ) : (
-                <>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                    <path
-                      d="M12 5v14m0 0-5-5m5 5 5-5"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                  Giảm dần
-                </>
-              )}
-            </button>
+              {orderDir === "asc" ? "Tăng dần" : "Giảm dần"}
+            </Button>
           </div>
 
           {isLoading ? (
-            <div className="p-12 text-center text-gray-500">
-              <div className="w-6 h-6 border-2 border-green-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-              <p className="mt-2">Đang tải...</p>
+            <div className="p-6 space-y-3">
+              {[...Array(4)].map((_, i) => (
+                <Skeleton key={i} className="h-14 w-full rounded-xl" />
+              ))}
             </div>
           ) : data && data.items.length === 0 ? (
-            <div className="p-12 text-center text-gray-500">
-              <p>Chưa có yêu cầu rút tiền nào</p>
+            <div className="p-8">
+              <EmptyState
+                icon={<Banknote className="h-7 w-7" />}
+                title="Chưa có yêu cầu rút tiền nào"
+                description="Khi bạn tạo yêu cầu rút tiền, danh sách sẽ được hiển thị tại đây."
+              />
             </div>
           ) : (
             <>
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                <table className="min-w-full divide-y divide-border">
+                  <thead className="bg-background">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                         Avatar
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                         Thời gian
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                         Số tiền
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                         Trạng thái
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100 bg-white">
+                  <tbody className="divide-y divide-border bg-surface">
                     {data?.items.map((item) => (
-                      <tr key={item.id} className="hover:bg-gray-50">
+                      <tr
+                        key={item.id}
+                        className="hover:bg-background/80 transition-colors"
+                      >
                         <td className="px-4 py-4">
                           <div className="flex items-center">
                             <img
@@ -237,28 +232,28 @@ export default function WithdrawPage() {
                                     "&background=E8F2FA&color=356FA7"
                               }
                               alt={item.fullname}
-                              className="w-10 h-10 rounded-full object-cover"
+                              className="w-10 h-10 rounded-full object-cover border border-border"
                             />
                           </div>
                         </td>
                         <td className="px-4 py-4">
-                          <div className="text-sm text-gray-900">
+                          <div className="text-sm text-foreground">
                             {formatDateTime(item.requested_at)}
                           </div>
                         </td>
                         <td className="px-4 py-4">
-                          <div className="text-lg font-bold text-gray-900">
+                          <div className="text-base font-bold text-foreground tabular-nums">
                             {formatCurrency(item.amount)}
                           </div>
                         </td>
                         <td className="px-4 py-4">
-                          <span
-                            className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${getStatusClass(
-                              item.status
-                            )}`}
+                          <Badge
+                            variant={getStatusVariant(item.status)}
+                            size="sm"
+                            dot
                           >
                             {getStatusLabel(item.status)}
-                          </span>
+                          </Badge>
                         </td>
                       </tr>
                     ))}
@@ -267,38 +262,42 @@ export default function WithdrawPage() {
               </div>
 
               {totalPages > 1 && (
-                <div className="p-4 border-t border-gray-200 flex items-center justify-between">
-                  <div className="text-sm text-gray-600">
+                <div className="p-4 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="text-sm text-muted-foreground">
                     Hiển thị {(page - 1) * limit + 1}-
                     {Math.min(page * limit, data?.total || 0)} trên tổng số{" "}
                     {data?.total || 0} yêu cầu
                   </div>
                   <div className="flex items-center gap-2">
-                    <button
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
                       onClick={() => setPage((p) => Math.max(1, p - 1))}
                       disabled={page === 1}
-                      className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
                     >
                       Trước
-                    </button>
-                    <span className="text-sm text-gray-600">
+                    </Button>
+                    <span className="text-sm text-muted-foreground px-2">
                       Trang {page} / {totalPages}
                     </span>
-                    <button
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
                       onClick={() =>
                         setPage((p) => Math.min(totalPages, p + 1))
                       }
                       disabled={page === totalPages}
-                      className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
                     >
                       Sau
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}
             </>
           )}
-        </div>
+        </Card>
       </div>
     </div>
   );

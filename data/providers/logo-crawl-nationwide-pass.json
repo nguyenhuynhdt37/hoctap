@@ -1,0 +1,3412 @@
+{
+  "checked_at": "2026-11-12T05:04:23.325278+00:00",
+  "target_database": "studynest",
+  "directory_sources": [
+    {
+      "url": "https://www.danang.edu.vn/DSDonvimb?codekhoi=thpt",
+      "matched": 0
+    },
+    {
+      "url": "https://haiphong.edu.vn/DSDonVi?codekhoi=thpt",
+      "matched": 42
+    },
+    {
+      "url": "https://www.hanoi.edu.vn/c3conglap",
+      "matched": 35
+    },
+    {
+      "url": "https://www.hanoi.edu.vn/C3conglap.aspx?key=&khuvuc=0&trang=2",
+      "matched": 42
+    },
+    {
+      "url": "https://haiphong.edu.vn/DSDonVi?codekhoi=thpt&trang=2",
+      "matched": 47
+    },
+    {
+      "url": "https://www.hanoi.edu.vn/C3conglap.aspx?key=&khuvuc=0&trang=3",
+      "matched": 36
+    },
+    {
+      "url": "https://haiphong.edu.vn/DSDonVi?codekhoi=thpt&trang=3",
+      "matched": 20
+    },
+    {
+      "url": "https://tuyenquang.edu.vn/DSDonVi?codekhoi=thpt",
+      "matched": 0
+    },
+    {
+      "url": "https://www.hanoi.edu.vn/C3conglap.aspx?key=&khuvuc=0&trang=1",
+      "matched": 35
+    },
+    {
+      "url": "https://haiphong.edu.vn/DSDonVi?codekhoi=thpt&trang=1",
+      "matched": 42
+    },
+    {
+      "url": "https://dienbien.edu.vn/DSDonVi?codekhoi=thpt",
+      "matched": 0
+    },
+    {
+      "url": "https://laichau.edu.vn/DSDonVi?codekhoi=thpt",
+      "error": "ConnectError"
+    },
+    {
+      "url": "https://sogddt.sonla.gov.vn/DSDonVi?codekhoi=thpt",
+      "matched": 0
+    },
+    {
+      "url": "https://khaothicaobang.edu.vn/DSDonVi?codekhoi=thpt",
+      "error": "HTTPStatusError"
+    },
+    {
+      "url": "https://langson.edu.vn/DSDonVi?codekhoi=thpt",
+      "error": "HTTPStatusError"
+    },
+    {
+      "url": "https://thainguyen.edu.vn/DSDonVi?codekhoi=thpt",
+      "matched": 0
+    },
+    {
+      "url": "https://hungyen.edu.vn/DSDonVi?codekhoi=thpt",
+      "error": "ConnectError"
+    },
+    {
+      "url": "https://laocai.edu.vn/DSDonVi?codekhoi=thpt",
+      "error": "ConnectError"
+    },
+    {
+      "url": "https://bacninh.edu.vn/DSDonVi?codekhoi=thpt",
+      "matched": 0
+    },
+    {
+      "url": "https://phutho.edu.vn/DSDonVi?codekhoi=thpt",
+      "matched": 0
+    },
+    {
+      "url": "https://thanhhoa.edu.vn/DSDonVi?codekhoi=thpt",
+      "error": "ConnectError"
+    },
+    {
+      "url": "https://ninhbinh.edu.vn/DSDonVi?codekhoi=thpt",
+      "error": "HTTPStatusError"
+    },
+    {
+      "url": "https://quangtri.edu.vn/DSDonVi?codekhoi=thpt",
+      "error": "ConnectError"
+    },
+    {
+      "url": "https://thuathienhue.edu.vn/DSDonVi?codekhoi=thpt",
+      "error": "ConnectError"
+    },
+    {
+      "url": "https://quangngai.edu.vn/DSDonVi?codekhoi=thpt",
+      "error": "HTTPStatusError"
+    },
+    {
+      "url": "https://hatinh.edu.vn/DSDonVi?codekhoi=thpt",
+      "matched": 0
+    },
+    {
+      "url": "https://khanhhoa.edu.vn/DSDonVi?codekhoi=thpt",
+      "matched": 0
+    },
+    {
+      "url": "https://gialai.edu.vn/DSDonVi?codekhoi=thpt",
+      "matched": 0
+    },
+    {
+      "url": "https://lamdongtructuyen.vn/DSDonVi?codekhoi=thpt",
+      "error": "HTTPStatusError"
+    },
+    {
+      "url": "https://dongnai.edu.vn/DSDonVi?codekhoi=thpt",
+      "error": "gaierror"
+    },
+    {
+      "url": "https://daklak.edu.vn/DSDonVi?codekhoi=thpt",
+      "error": "HTTPStatusError"
+    },
+    {
+      "url": "https://tayninh.edu.vn/DSDonVi?codekhoi=thpt",
+      "error": "gaierror"
+    },
+    {
+      "url": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt",
+      "matched": 28
+    },
+    {
+      "url": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=2",
+      "matched": 35
+    },
+    {
+      "url": "https://vinhlong.edu.vn/DSDonVi?codekhoi=thpt",
+      "matched": 0
+    },
+    {
+      "url": "https://dongthap.edu.vn/DSDonVi?codekhoi=thpt",
+      "error": "HTTPStatusError"
+    },
+    {
+      "url": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=3",
+      "matched": 23
+    },
+    {
+      "url": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=1",
+      "matched": 28
+    },
+    {
+      "url": "https://angiang.edu.vn/DSDonVi?codekhoi=thpt",
+      "matched": 0
+    },
+    {
+      "url": "https://camau.edu.vn/DSDonVi?codekhoi=thpt",
+      "error": "ConnectError"
+    },
+    {
+      "url": "https://ctu.edu.vn/DSDonVi?codekhoi=thpt",
+      "error": "gaierror"
+    },
+    {
+      "url": "https://quangninh.edu.vn/DSDonVi?codekhoi=thpt",
+      "error": "ConnectTimeout"
+    }
+  ],
+  "items": [
+    {
+      "provider_id": "d32112fe-9f45-4ac8-bbb9-8a10ed42e814",
+      "name": "THPT Việt Đức",
+      "website_url": "http://c3vietduc.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "4c265013-76ee-4d6c-bcbb-66dc500dc880",
+      "name": "THPT Nguyễn Gia Thiều",
+      "website_url": "http://thpt-nguyengiathieu-hanoi.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/c3conglap",
+      "status": "source_unavailable",
+      "error": "gaierror"
+    },
+    {
+      "provider_id": "d1e3eff1-f65d-436a-8692-e78eaa647a6d",
+      "name": "THPT Tây Hồ",
+      "website_url": "https://thpt-tayho-hanoi.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/c3conglap",
+      "status": "source_unavailable",
+      "error": "ConnectError"
+    },
+    {
+      "provider_id": "1c25135f-1319-4d5f-9f04-c890df08d576",
+      "name": "THPT Yên Hòa",
+      "website_url": "http://www.thpt-yenhoa-hanoi.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/C3conglap.aspx?key=&khuvuc=0&trang=2",
+      "status": "source_unavailable",
+      "error": "gaierror"
+    },
+    {
+      "provider_id": "b44edea8-0aff-4f74-a3c1-b04d350c37d2",
+      "name": "THPT Phúc Lợi",
+      "website_url": "https://thptphucloi.hanoi.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/c3conglap",
+      "status": "source_unavailable",
+      "error": "HTTPStatusError"
+    },
+    {
+      "provider_id": "6c8249f2-a14a-4a92-8ab1-3f266ca2d018",
+      "name": "THPT Phan Huy Chú-Đống Đa",
+      "website_url": "http://www.phc.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "7c01bda1-b1f8-4b3c-866f-94b70a829461",
+      "name": "THPT Đoàn Kết-Hai Bà Trưng",
+      "website_url": "http://thptdoanket-hbt.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/c3conglap",
+      "status": "source_unavailable",
+      "error": "gaierror"
+    },
+    {
+      "provider_id": "7367349f-ac81-4a19-8c35-6826e4c34b01",
+      "name": "THPT chuyên Hà Nội-Amsterdam",
+      "website_url": "http://www.hn-ams.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/C3conglap.aspx?key=&khuvuc=0&trang=2",
+      "status": "no_valid_raster_logo"
+    },
+    {
+      "provider_id": "84049e79-dc98-4ed0-b2eb-e5eaaec155b8",
+      "name": "THPT Nhân Chính",
+      "website_url": "http://c3nhanchinh.hanoi.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/c3conglap",
+      "status": "source_unavailable",
+      "error": "HTTPStatusError"
+    },
+    {
+      "provider_id": "15018678-8474-4e08-8667-43d88567324a",
+      "name": "THPT Đống Đa",
+      "website_url": "http://c3dongda.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/c3conglap",
+      "candidate_errors": [
+        {
+          "url": "https://c3dongda.edu.vn/pic/logo_thptdongda.png",
+          "error": "HTTPStatusError"
+        },
+        {
+          "url": "https://c3dongda.edu.vn/pic/logo_footer.png",
+          "error": "HTTPStatusError"
+        }
+      ],
+      "status": "no_valid_raster_logo"
+    },
+    {
+      "provider_id": "f622421a-8fa6-45b1-8628-b3292aa312af",
+      "name": "THPT Phạm Hồng Thái",
+      "website_url": "http://thpt-phamhongthai.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/c3conglap",
+      "status": "no_valid_raster_logo"
+    },
+    {
+      "provider_id": "c06f8adc-ea05-4c77-a760-d743b9126c3f",
+      "name": "THPT Xuân Giang",
+      "website_url": "http://htttp://c3xuangiang.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/C3conglap.aspx?key=&khuvuc=0&trang=3",
+      "status": "source_unavailable",
+      "error": "gaierror"
+    },
+    {
+      "provider_id": "59cff630-9521-449a-9680-1b119e5cf59a",
+      "name": "THPT Minh Phú",
+      "website_url": "http://c3minhphu.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "25eee9fb-e7cd-4dbf-81a7-06b4c42ccf9d",
+      "name": "THPT Vân Nội",
+      "website_url": "http://c3vannoi.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/C3conglap.aspx?key=&khuvuc=0&trang=2",
+      "status": "source_unavailable",
+      "error": "gaierror"
+    },
+    {
+      "provider_id": "ee33766e-74b8-42b1-942d-de0602dfe9e7",
+      "name": "THPT Trung Giã",
+      "website_url": "http://c3trunggia.hanoi.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/C3conglap.aspx?key=&khuvuc=0&trang=3",
+      "status": "source_unavailable",
+      "error": "HTTPStatusError"
+    },
+    {
+      "provider_id": "081603c6-394c-43bb-9d74-3f4d08a0f859",
+      "name": "THPT Bắc Thăng Long",
+      "website_url": "https://thptbacthanglong.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/C3conglap.aspx?key=&khuvuc=0&trang=2",
+      "status": "no_valid_raster_logo"
+    },
+    {
+      "provider_id": "e8858a80-9f6b-43f6-a95d-5f0359eb7a62",
+      "name": "THPT Quang Trung-Đống Đa",
+      "website_url": "http://thptquangtrungdongda.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptquangtrungdongda.edu.vn/Images/logohanoi.png",
+      "sha256": "da7479adb2113787618649ba32ef368dd4b689765e6a27ad6abeaa6b9343c6cc",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/1587fbdb4b124263a106a2208fb86a59-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/1587fbdb4b124263a106a2208fb86a59-avatar.webp"
+    },
+    {
+      "provider_id": "19384d6f-0a9c-4a20-b8f4-6f83018691d3",
+      "name": "THPT Đa Phúc",
+      "website_url": "http://www.daphuc.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/C3conglap.aspx?key=&khuvuc=0&trang=3",
+      "status": "no_valid_raster_logo"
+    },
+    {
+      "provider_id": "cdfd94eb-baeb-49f4-b21e-dcefd8d25d4a",
+      "name": "THPT Nguyễn Thị Minh Khai",
+      "website_url": "http://ntminhkhai.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/C3conglap.aspx?key=&khuvuc=0&trang=3",
+      "status": "source_unavailable",
+      "error": "gaierror"
+    },
+    {
+      "provider_id": "ca475d4d-ee8b-41af-9d30-3141f5db9d98",
+      "name": "THPT Dương Xá",
+      "website_url": "https://thptduongxa-hanoi.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/c3conglap",
+      "status": "source_unavailable",
+      "error": "gaierror"
+    },
+    {
+      "provider_id": "ede9bf90-fbea-4e3b-82f1-ac5b86c6f344",
+      "name": "THPT Yên Viên",
+      "website_url": "http://thptyenvien.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/c3conglap",
+      "status": "no_valid_raster_logo"
+    },
+    {
+      "provider_id": "c43d48e9-bd8e-4ef8-957f-0334a9abc301",
+      "name": "THPT Ngô Thì Nhậm",
+      "website_url": "http://c3ngothinham-hanoi.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/C3conglap.aspx?key=&khuvuc=0&trang=3",
+      "status": "source_unavailable",
+      "error": "gaierror"
+    },
+    {
+      "provider_id": "f1c44611-3a43-4fe4-a466-2b8f79c11fc4",
+      "name": "THPT Đông Mỹ",
+      "website_url": "http://thptdongmy.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/C3conglap.aspx?key=&khuvuc=0&trang=3",
+      "status": "source_unavailable",
+      "error": "gaierror"
+    },
+    {
+      "provider_id": "a123a2a0-1122-4d39-bae3-4f3ea1f45470",
+      "name": "THPT Quang Minh",
+      "website_url": "http://c3quangminh.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "c3358c31-6ca8-414d-8b8a-bc9c193133c5",
+      "name": "THPT Tiến Thịnh",
+      "website_url": "http://c3tienthinh.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "e20dfd9c-2ade-4a3e-b8c6-f15c91efed25",
+      "name": "THPT Minh Quang",
+      "website_url": "http://thptminhquang.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/C3conglap.aspx?key=&khuvuc=0&trang=2",
+      "status": "no_valid_raster_logo"
+    },
+    {
+      "provider_id": "3131e266-6621-41c0-881b-3bdb660536c6",
+      "name": "THPT Trần Hưng Đạo-Hà Đông",
+      "website_url": "http://c3tranhungdaohd.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/c3conglap",
+      "status": "source_unavailable",
+      "error": "gaierror"
+    },
+    {
+      "provider_id": "9a598f2d-342b-4401-b117-2ce643bef245",
+      "name": "THPT Trần Hưng Đạo-Thanh Xuân",
+      "website_url": "http://www.tranhungdaothanhxuan-hanoi.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/c3conglap",
+      "status": "source_unavailable",
+      "error": "ConnectError"
+    },
+    {
+      "provider_id": "45e7cdc9-befb-4d01-b7a6-1361057e7a33",
+      "name": "THPT Tùng Thiện",
+      "website_url": "https://thpttungthien.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/C3conglap.aspx?key=&khuvuc=0&trang=3",
+      "status": "source_unavailable",
+      "error": "ConnectError"
+    },
+    {
+      "provider_id": "bda92f4b-c0e5-4bf0-8002-e6a31a8a9c93",
+      "name": "THPT Xuân Khanh",
+      "website_url": "http://thptxuankhanh.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/C3conglap.aspx?key=&khuvuc=0&trang=3",
+      "status": "source_unavailable",
+      "error": "ConnectError"
+    },
+    {
+      "provider_id": "14ae9eb9-262a-43b6-8f0f-9f6c15ac1b27",
+      "name": "THPT Xuân Đỉnh",
+      "website_url": "http://thptxuandinh-hanoi.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/C3conglap.aspx?key=&khuvuc=0&trang=3",
+      "candidate_errors": [
+        {
+          "url": "https://thptxuandinh-hanoi.edu.vn/Content/images/logo.svg?v=1760797732414",
+          "error": "HTTPException"
+        }
+      ],
+      "status": "no_valid_raster_logo"
+    },
+    {
+      "provider_id": "bcb1ec67-ac22-4032-9c93-5f78bc3cb084",
+      "name": "THPT Bất Bạt",
+      "website_url": "http://c3batbatedu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/C3conglap.aspx?key=&khuvuc=0&trang=2",
+      "status": "source_unavailable",
+      "error": "gaierror"
+    },
+    {
+      "provider_id": "341781be-0b48-4f78-a5b6-ec018e159258",
+      "name": "THPT Lê Quý Đôn-Hà Đông",
+      "website_url": "http://lequydonhadong.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/c3conglap",
+      "status": "no_valid_raster_logo"
+    },
+    {
+      "provider_id": "8cb8288b-2d46-42e9-a238-d4b7ec55c915",
+      "name": "THPT Ngọc Tảo",
+      "website_url": "http://www.c3ngoctao.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/C3conglap.aspx?key=&khuvuc=0&trang=3",
+      "status": "source_unavailable",
+      "error": "ConnectError"
+    },
+    {
+      "provider_id": "351c2821-a0de-4465-a6fd-a2ce9ee47ed0",
+      "name": "THPT Đan Phượng",
+      "website_url": "http://thptdanphuong.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/C3conglap.aspx?key=&khuvuc=0&trang=2",
+      "status": "source_unavailable",
+      "error": "gaierror"
+    },
+    {
+      "provider_id": "86afa608-9336-4d31-86db-bb82643c56cf",
+      "name": "Hữu Nghị T78",
+      "website_url": "http://huunghit78.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "3657ad6a-6b54-43d8-a505-014f6564bf8a",
+      "name": "THPT Vạn Xuân-Hoài Đức",
+      "website_url": "http://c3vanxuanhd.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/C3conglap.aspx?key=&khuvuc=0&trang=2",
+      "status": "source_unavailable",
+      "error": "gaierror"
+    },
+    {
+      "provider_id": "7c3e489c-7714-46a9-9156-dd57f77212ac",
+      "name": "THPT Hoài Đức B",
+      "website_url": "http://c3hoaiducb.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/C3conglap.aspx?key=&khuvuc=0&trang=2",
+      "status": "source_unavailable",
+      "error": "gaierror"
+    },
+    {
+      "provider_id": "a492be35-e064-4627-990d-4ce6b735510d",
+      "name": "THPT chuyên Nguyễn Huệ",
+      "website_url": "http://chuyennguyenhue.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "0a4194d6-5dd1-4784-8c61-ef48ea4232cf",
+      "name": "THPT Ngô Quyền-Ba Vì",
+      "website_url": "http://www.c3ngoquyen.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/C3conglap.aspx?key=&khuvuc=0&trang=2",
+      "status": "no_valid_raster_logo"
+    },
+    {
+      "provider_id": "baff4cab-a525-4288-91a7-6c3223011a93",
+      "name": "THPT Hai Bà Trưng-Thạch Thất",
+      "website_url": "http://c3hbttt.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/C3conglap.aspx?key=&khuvuc=0&trang=3",
+      "status": "source_unavailable",
+      "error": "gaierror"
+    },
+    {
+      "provider_id": "e65707d0-a976-4ec0-b31b-ccf40c5647e9",
+      "name": "THPT Phan Huy Chú-Quốc Oai",
+      "website_url": "https://c3phanhuychu.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/C3conglap.aspx?key=&khuvuc=0&trang=2",
+      "status": "source_unavailable",
+      "error": "HTTPStatusError"
+    },
+    {
+      "provider_id": "d546ac00-3af1-422a-abd8-a380c507c46b",
+      "name": "THPT Phúc Thọ",
+      "website_url": "http://C3phuctho.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/C3conglap.aspx?key=&khuvuc=0&trang=3",
+      "status": "no_valid_raster_logo"
+    },
+    {
+      "provider_id": "2ebc1739-9b6a-46f7-8b29-0f2ecb3b7021",
+      "name": "THPT Chúc Động",
+      "website_url": "http://chucdong.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/C3conglap.aspx?key=&khuvuc=0&trang=2",
+      "status": "source_unavailable",
+      "error": "gaierror"
+    },
+    {
+      "provider_id": "700be6ab-6f8f-4cb7-91f2-f0328022f08a",
+      "name": "THPT Chương Mỹ B",
+      "website_url": "http://thptchuongmyb.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/C3conglap.aspx?key=&khuvuc=0&trang=2",
+      "status": "source_unavailable",
+      "error": "gaierror"
+    },
+    {
+      "provider_id": "b77df4e4-e6a6-4352-94f5-35b4aa7e2984",
+      "name": "THPT Minh Hà",
+      "website_url": "http://thptminhha.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/C3conglap.aspx?key=&khuvuc=0&trang=3",
+      "status": "no_valid_raster_logo"
+    },
+    {
+      "provider_id": "60511adf-cf48-4770-b531-6fa40dbf026c",
+      "name": "THPT Thanh Oai A",
+      "website_url": "http://c3thanhoaia.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "b8b36cdd-caad-4173-86fd-705c3923329f",
+      "name": "THPT Nguyễn Trãi-Thường Tín",
+      "website_url": "http://www.nguyentraiedu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/C3conglap.aspx?key=&khuvuc=0&trang=2",
+      "status": "source_unavailable",
+      "error": "gaierror"
+    },
+    {
+      "provider_id": "4f0d0bdb-9130-4935-915c-c43ed6e88354",
+      "name": "THPT Thường Tín",
+      "website_url": "http://thptthuongtin.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/C3conglap.aspx?key=&khuvuc=0&trang=2",
+      "status": "source_unavailable",
+      "error": "gaierror"
+    },
+    {
+      "provider_id": "5d7f662a-0a00-4639-9415-47ab886438cf",
+      "name": "THPT Chương Mỹ A",
+      "website_url": "http://c3chuongmya.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/C3conglap.aspx?key=&khuvuc=0&trang=2",
+      "status": "source_unavailable",
+      "error": "ConnectError"
+    },
+    {
+      "provider_id": "f79cf94c-e748-4d8a-92be-6e1c94849485",
+      "name": "THPT Thanh Oai B",
+      "website_url": "http://c3thanhoaib.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/C3conglap.aspx?key=&khuvuc=0&trang=3",
+      "status": "source_unavailable",
+      "error": "ConnectError"
+    },
+    {
+      "provider_id": "010a6f0b-552f-4934-b00a-094b52cd1666",
+      "name": "THPT Tô Hiệu-Thường Tín",
+      "website_url": "https://thpttohieu-thuongtin.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/C3conglap.aspx?key=&khuvuc=0&trang=2",
+      "status": "source_unavailable",
+      "error": "gaierror"
+    },
+    {
+      "provider_id": "75a94c33-a021-4b76-ae90-18c346f4efcb",
+      "name": "THPT Vân Tảo",
+      "website_url": "http://thptvantao.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/C3conglap.aspx?key=&khuvuc=0&trang=2",
+      "status": "source_unavailable",
+      "error": "ConnectError"
+    },
+    {
+      "provider_id": "6a304386-95f7-44d7-91b9-943452732ef4",
+      "name": "THPT Đại Cường",
+      "website_url": "http://thptdaicuong.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/C3conglap.aspx?key=&khuvuc=0&trang=3",
+      "status": "no_valid_raster_logo"
+    },
+    {
+      "provider_id": "fc2e0045-4f56-47d9-8d40-82ae54339f63",
+      "name": "THPT Trần Đăng Ninh",
+      "website_url": "http://thpttrandangninh.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/C3conglap.aspx?key=&khuvuc=0&trang=3",
+      "status": "source_unavailable",
+      "error": "ConnectError"
+    },
+    {
+      "provider_id": "460420ef-8e05-42bd-b400-bf411cdf5591",
+      "name": "THPT Hợp Thanh",
+      "website_url": "https://www.thpthopthanh.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/C3conglap.aspx?key=&khuvuc=0&trang=2",
+      "status": "source_unavailable",
+      "error": "ConnectError"
+    },
+    {
+      "provider_id": "08e0c354-3144-4582-968c-b23342d2e0c9",
+      "name": "THPT Mỹ Đức A",
+      "website_url": "http://c3myduca.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/C3conglap.aspx?key=&khuvuc=0&trang=2",
+      "status": "source_unavailable",
+      "error": "gaierror"
+    },
+    {
+      "provider_id": "05a4b4ac-db12-4bfb-8a5e-33ba14732c45",
+      "name": "THPT Ứng Hòa A",
+      "website_url": "http://thptunghoaa.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/C3conglap.aspx?key=&khuvuc=0&trang=3",
+      "status": "no_valid_raster_logo"
+    },
+    {
+      "provider_id": "2e2bcac9-93b9-4fa4-9e43-f03348bdb3a3",
+      "name": "THPT Lưu Hoàng",
+      "website_url": "http://c3luuhoang.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/C3conglap.aspx?key=&khuvuc=0&trang=3",
+      "status": "source_unavailable",
+      "error": "ConnectError"
+    },
+    {
+      "provider_id": "6a9188d5-c085-4fa6-baa4-e9edb2292f0a",
+      "name": "THPT Thành Đông",
+      "website_url": "https://thptthanhdong.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "12e41823-995e-40a1-8f1a-c59e63ef3d99",
+      "name": "THPT Nam Sách",
+      "website_url": "https://thptnamsach.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "d5a446fb-8efd-4217-9e51-bb720c23a0c5",
+      "name": "Trường THPT Ái Quốc",
+      "website_url": "https://thptaiquoc.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "9a15761d-f045-4385-9def-a7731eb610cf",
+      "name": "THPT Thanh Bình",
+      "website_url": "https://thptthanhbinh.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "b49f5e38-535b-40c5-bef9-c6850e87b03a",
+      "name": "THPT Kim Thành II",
+      "website_url": "https://thptkimthanhii.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "00b00086-b9cd-4958-ab35-44ac33eed6a2",
+      "name": "THPT Cẩm Giàng",
+      "website_url": "https://thptcamgiang.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "181f255e-ea28-4653-865c-661dffa9fc2d",
+      "name": "THPT Cẩm Giàng II",
+      "website_url": "https://thptcamgiangii.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "f88366f0-aad1-4302-915f-9a73ad603a6a",
+      "name": "THPT Quảng Oai",
+      "website_url": "http://thptquangoai.edu.vn",
+      "directory_source": "https://www.hanoi.edu.vn/C3conglap.aspx?key=&khuvuc=0&trang=2",
+      "status": "no_valid_raster_logo"
+    },
+    {
+      "provider_id": "bc2400ba-382e-4437-8eca-0b12b93d609d",
+      "name": "THPT Bình Giang",
+      "website_url": "https://thptbinhgiang.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "df367ce6-3b79-4c70-ad74-7aa3294fb3da",
+      "name": "THPT Đoàn Thượng",
+      "website_url": "https://thptdoanthuong.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "fc156817-bd6c-447c-843b-f5281be4cf05",
+      "name": "THPT Lương Thế Vinh - Hải Dương",
+      "website_url": "https://thptluongthevinh-haiduong.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "3aa28745-02b7-44df-9131-043f63939490",
+      "name": "THPT Khúc Thừa Dụ",
+      "website_url": "https://thptkhucthuadu.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "1949defe-26ec-48bf-acca-81d4a9c5132c",
+      "name": "THPT Thanh Miện III",
+      "website_url": "https://thptthanhmieniii.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "12d87519-da36-49eb-8635-dc84549ecf7d",
+      "name": "THPT Quang Trung - Ninh Giang",
+      "website_url": "https://thptquangtrung-ninhgiang.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "9ff90bfd-f7af-48df-9cfe-cc8149ea4d31",
+      "name": "THPT Lê Hồng Phong",
+      "website_url": "https://thptlehongphong.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "9798404a-91d7-44a0-99ed-b5a5d6795abf",
+      "name": "THPT Ngô Quyền",
+      "website_url": "https://thptngoquyen.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "8f88bc4c-c649-4ee2-aea1-275e36f59a20",
+      "name": "Trường THPT Hữu Nghị Quốc Tế",
+      "website_url": "https://highschool.hns.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "6617a2cb-c61a-4e51-9e0c-5767134a7f7e",
+      "name": "THPT Sao Đỏ",
+      "website_url": "https://thptsaodo.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptsaodo.haiphong.edu.vn/Images/logohp.png",
+      "sha256": "d56f993cd61ed57d2fbae912e4c7d41283f1373eed4c5f357a79e7912196403c",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/282256e5609d4ed691878d71e4e888ad-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/282256e5609d4ed691878d71e4e888ad-avatar.webp"
+    },
+    {
+      "provider_id": "a2eb8400-d4de-4ed4-bcac-4f7be8996def",
+      "name": "Trường TH-THCS-THPT EDISON",
+      "website_url": "https://edisonhp.edu.vn",
+      "directory_source": "https://haiphong.edu.vn/DSDonVi?codekhoi=thpt",
+      "status": "source_unavailable",
+      "error": "gaierror"
+    },
+    {
+      "provider_id": "588a2343-4cac-4102-9185-7066b77d920e",
+      "name": "THPT Kiến An",
+      "website_url": "https://thptkienan.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "06841a9a-f372-4eab-beb1-769c8a34588a",
+      "name": "THPT Đồ Sơn",
+      "website_url": "https://thptdoson.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "b5997ce1-a4ae-4f6e-8934-1e8a4759fe0a",
+      "name": "THPT Nam Triệu",
+      "website_url": "https://thptnamtrieu.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "4fcb201c-48d9-4d47-8518-04b4a889835e",
+      "name": "Trường THPT An Hải",
+      "website_url": "https://thptanhai.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "76e5c7fb-201b-4525-a684-2da186244392",
+      "name": "Trường THPT Trần Tất Văn",
+      "website_url": "https://thpttrantatvan.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "8c68b42f-2caf-4afa-8430-232a12c27d64",
+      "name": "THPT Quốc Tuấn",
+      "website_url": "https://thptquoctuan.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "763523d1-5491-420c-915f-b60bbfefa663",
+      "name": "THPT Kiến Thụy",
+      "website_url": "https://thptkienthuy.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "9be5c013-3ede-4050-b4ff-6f31c404ec9f",
+      "name": "Trường THPT Mạc Đĩnh Chi",
+      "website_url": "https://thptmacdinhchi.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "4022c684-be15-4df1-bc65-81c26b5169e2",
+      "name": "THPT Tô Hiệu",
+      "website_url": "https://thpttohieu.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "9eb5df40-4065-44eb-bff2-5526fec4f657",
+      "name": "THPT Cộng Hiền",
+      "website_url": "https://thptconghien.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "9d3d1da8-f194-4114-bf03-b0c4a7ecae2d",
+      "name": "THPT Phả Lại",
+      "website_url": "https://thptphalai.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptphalai.haiphong.edu.vn/Images/logohp.png",
+      "sha256": "d56f993cd61ed57d2fbae912e4c7d41283f1373eed4c5f357a79e7912196403c",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/943df4c0e4c04ef58e15f3e3ecb1b609-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/943df4c0e4c04ef58e15f3e3ecb1b609-avatar.webp"
+    },
+    {
+      "provider_id": "b44e3812-f68e-4e39-9cfa-3d1fc7ffc4ae",
+      "name": "Trường THPT Hải An",
+      "website_url": "https://thpthaian.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thpthaian.haiphong.edu.vn/Images/logohp.png",
+      "sha256": "d56f993cd61ed57d2fbae912e4c7d41283f1373eed4c5f357a79e7912196403c",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/c96af8fd43d34133956fc211eefad4bd-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/c96af8fd43d34133956fc211eefad4bd-avatar.webp"
+    },
+    {
+      "provider_id": "e27c3a11-ebe3-4e6a-b41f-c00133c6954b",
+      "name": "THCS-THPT Nguyễn Khuyến-Bình Dương",
+      "website_url": "https://thcs-thptnguyenkhuyenbd.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thcs-thptnguyenkhuyenbd.hcm.edu.vn/Images/logohcm.png",
+      "sha256": "1eb7335d0cf6c618abfc3073b813760ccf339d48e9275475481ad02847182e61",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/7171ae1c1d0842c5aa2036a9940c94d3-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/7171ae1c1d0842c5aa2036a9940c94d3-avatar.webp"
+    },
+    {
+      "provider_id": "3aa2be9e-6b6e-4f2e-a637-08736cc05587",
+      "name": "THPT Trưng Vương",
+      "website_url": "https://thpttrungvuong.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thpttrungvuong.hcm.edu.vn/Images/logohcm.png",
+      "sha256": "1eb7335d0cf6c618abfc3073b813760ccf339d48e9275475481ad02847182e61",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/f26e1aacd5d64cdfa37546e084c4e5aa-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/f26e1aacd5d64cdfa37546e084c4e5aa-avatar.webp"
+    },
+    {
+      "provider_id": "c12f75ed-38a4-4ccc-a6a6-3b3804ff4768",
+      "name": "THPT Bùi Thị Xuân",
+      "website_url": "https://thptbuithixuan.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt",
+      "status": "uploaded",
+      "source_image_url": "https://filethpt.hcm.shieldix.app/uploadimages/haydung/thptbuithixuan/anhhaydung/logo-cdvn-trong-suot_22620261329.png?w=600&format=jpg",
+      "sha256": "80576dbb5785d5eade531c67b9ca38db5e2135b1fe690ef42bdcf629cc19f8fe",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/10d214c19ab443bcb7b7afb8fc1e1615-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/10d214c19ab443bcb7b7afb8fc1e1615-avatar.webp"
+    },
+    {
+      "provider_id": "2711a6c6-812f-43a4-9cff-1596d4fcc889",
+      "name": "THPT Lương Thế Vinh",
+      "website_url": "https://thptluongthevinh.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptluongthevinh.hcm.edu.vn/Images/logohcm.png",
+      "sha256": "1eb7335d0cf6c618abfc3073b813760ccf339d48e9275475481ad02847182e61",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/c46eb5300b7b4727adcab3454c7ea250-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/c46eb5300b7b4727adcab3454c7ea250-avatar.webp"
+    },
+    {
+      "provider_id": "ed3486a9-43ef-441f-8c86-881f6349f1e0",
+      "name": "THPT Phan Đình Phùng",
+      "website_url": "http://hn-pdp.info",
+      "directory_source": "https://www.hanoi.edu.vn/c3conglap",
+      "status": "source_unavailable",
+      "error": "ConnectTimeout"
+    },
+    {
+      "provider_id": "db7f954d-9772-4f8b-90e4-b6ba238f6ba9",
+      "name": "THPT Ten Lơ Man",
+      "website_url": "https://thpttenloman.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thpttenloman.hcm.edu.vn/Images/logohcm.png",
+      "sha256": "1eb7335d0cf6c618abfc3073b813760ccf339d48e9275475481ad02847182e61",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/c12095e334494392a98e11b0694a262a-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/c12095e334494392a98e11b0694a262a-avatar.webp"
+    },
+    {
+      "provider_id": "e9d150de-7d2c-44e6-a021-46168796fa8e",
+      "name": "THPT Năng Khiếu TDTT",
+      "website_url": "https://thptnangkhieutdtt.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptnangkhieutdtt.hcm.edu.vn/Images/logohcm.png",
+      "sha256": "1eb7335d0cf6c618abfc3073b813760ccf339d48e9275475481ad02847182e61",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/2639f2fda9314eecb58d499406f7686f-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/2639f2fda9314eecb58d499406f7686f-avatar.webp"
+    },
+    {
+      "provider_id": "79558e98-0fed-4f61-9757-389e812963ae",
+      "name": "THPT chuyên Nguyễn Trãi",
+      "website_url": "https://thptchuyennguyentrai.haiphong.edu.vn",
+      "directory_source": "https://haiphong.edu.vn/DSDonVi?codekhoi=thpt",
+      "status": "source_unavailable",
+      "error": "ConnectTimeout"
+    },
+    {
+      "provider_id": "9ca92d19-88ee-472d-884e-1300ad5add15",
+      "name": "THPT Đào Sơn Tây",
+      "website_url": "https://thptdaosontay.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=2",
+      "status": "source_unavailable",
+      "error": "ReadTimeout"
+    },
+    {
+      "provider_id": "d29a2ee9-f019-48e2-a39b-56b62f29bdab",
+      "name": "THPT Bình Chiểu",
+      "website_url": "https://thptbinhchieu.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=2",
+      "status": "source_unavailable",
+      "error": "ReadTimeout"
+    },
+    {
+      "provider_id": "72298bea-ab99-46cc-8165-4d95adc56a3f",
+      "name": "THPT Linh Trung",
+      "website_url": "https://thptlinhtrung.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=2",
+      "status": "source_unavailable",
+      "error": "ReadTimeout"
+    },
+    {
+      "provider_id": "ad124c69-6fa1-45ef-bbb3-fb55f7eee060",
+      "name": "THPT Tam Phú",
+      "website_url": "https://thpttamphu.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=2",
+      "status": "source_unavailable",
+      "error": "ReadTimeout"
+    },
+    {
+      "provider_id": "f509ff1e-645c-4de5-ba45-a8b114281923",
+      "name": "THPT Hiệp Bình",
+      "website_url": "https://thpthiepbinh.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=2",
+      "status": "source_unavailable",
+      "error": "ConnectTimeout"
+    },
+    {
+      "provider_id": "dbe1c90b-b6f6-4f51-84f9-ad076d86f64b",
+      "name": "THPT Nguyễn Hữu Huân",
+      "website_url": "http://thptnguyenhuuhuan.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=2",
+      "status": "source_unavailable",
+      "error": "ConnectTimeout"
+    },
+    {
+      "provider_id": "f81e0d87-3f24-4040-bc3d-b135b506a32d",
+      "name": "THPT Thủ Đức",
+      "website_url": "https://thptthuduc.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=2",
+      "status": "source_unavailable",
+      "error": "ConnectTimeout"
+    },
+    {
+      "provider_id": "3d10575e-27b4-48f8-b973-6f3c9f902c75",
+      "name": "THPT Thạnh Lộc",
+      "website_url": "https://thpt-thanhloc-tphcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt",
+      "candidate_errors": [
+        {
+          "url": "https://thpt-thanhloc-tphcm.edu.vn/uploads/item/logo1.jpg",
+          "error": "ReadTimeout"
+        },
+        {
+          "url": "https://thpt-thanhloc-tphcm.edu.vn/uploads/news/87/39387/400-200-Logo_Trường THPT Thạnh Lộc.png",
+          "error": "ConnectTimeout"
+        },
+        {
+          "url": "https://thpt-thanhloc-tphcm.edu.vn/uploads/news/87/39387/200-200-Logo_Trường THPT Thạnh Lộc.png",
+          "error": "ConnectError"
+        }
+      ],
+      "status": "uploaded",
+      "source_image_url": "https://thpt-thanhloc-tphcm.edu.vn/uploads/news/71/39371/200-Logo_Tr%C6%B0%E1%BB%9Dng%20THPT%20Th%E1%BA%A1nh%20L%E1%BB%99c.png",
+      "sha256": "43dad18120205c0e9f54a9404c60ea4380d8e55c809f80e6bffb0b23e14c6b97",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/fb2f67e141e442a1bf2fb41cf4d26261-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/fb2f67e141e442a1bf2fb41cf4d26261-avatar.webp"
+    },
+    {
+      "provider_id": "e4fed8fd-0ad8-435b-8737-9373e50b4c28",
+      "name": "THPT Nguyễn Văn Tăng",
+      "website_url": "https://thptnguyenvantang.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=2",
+      "status": "uploaded",
+      "source_image_url": "https://filethpt.hcm.shieldix.app/UploadImages/Config/thptnguyenvantang/logo2.gif",
+      "sha256": "f996fa4456056022fa9ccd9ae2e007ac0def1b8b1c51e8cb6b0a1e9fff81d534",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/ea30f4a218ed468d8368fc690a613868-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/ea30f4a218ed468d8368fc690a613868-avatar.webp"
+    },
+    {
+      "provider_id": "9a23b299-9ee6-4346-b5af-111d9ad87887",
+      "name": "THPT Dương Văn Thì",
+      "website_url": "https://thptduongvanthi.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=2",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptduongvanthi.hcm.edu.vn/Images/logohcm.png",
+      "sha256": "1eb7335d0cf6c618abfc3073b813760ccf339d48e9275475481ad02847182e61",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/582d659ba3ed42b39fe908c90abfba71-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/582d659ba3ed42b39fe908c90abfba71-avatar.webp"
+    },
+    {
+      "provider_id": "56d8ae72-c4f1-4dd5-bd5b-c50d9062c9a2",
+      "name": "THPT Nguyễn Trung Trực",
+      "website_url": "https://thptnguyentrungtruc.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=2",
+      "status": "uploaded",
+      "source_image_url": "https://filethpt.hcm.shieldix.app/UploadImages/Config/thptnguyentrungtruc/logo%20NTT.jpg",
+      "sha256": "1485d22907f418141fbbf0c1fd1e097411d7e37aea8f9080705609a22c5bdddf",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/dfb4779fd0fb49d4837eebed1326002d-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/dfb4779fd0fb49d4837eebed1326002d-avatar.webp"
+    },
+    {
+      "provider_id": "4fca6778-30d9-408c-885d-4002e6159cb3",
+      "name": "THPT Phước Long",
+      "website_url": "https://thptphuoclong.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=3",
+      "status": "uploaded",
+      "source_image_url": "https://filethpt.hcm.shieldix.app/uploadimages/config/2025/thptphuoclong/logo-pl-moi_2720251024.jpg",
+      "sha256": "0c1f2ee4fd25e5bf35cb304c6dcde24e18dfd7cebdfcb60d8a35de4f65d05ae3",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/f5e7c0c0a3b54c42abcb2932042e02c3-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/f5e7c0c0a3b54c42abcb2932042e02c3-avatar.webp"
+    },
+    {
+      "provider_id": "468cb9bb-56bd-4241-9043-4a8bf7212d2f",
+      "name": "THPT Nguyễn Công Trứ",
+      "website_url": "https://thptnguyencongtru.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=2",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptnguyencongtru.hcm.edu.vn/Images/logohcm.png",
+      "sha256": "1eb7335d0cf6c618abfc3073b813760ccf339d48e9275475481ad02847182e61",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/dbe20180cce14863ac5eacf0d78540c4-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/dbe20180cce14863ac5eacf0d78540c4-avatar.webp"
+    },
+    {
+      "provider_id": "0c292710-4ae6-4ea6-82e0-fe028c4e46e2",
+      "name": "THPT Hoàng Hoa Thám",
+      "website_url": "https://thpthoanghoatham.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=2",
+      "status": "uploaded",
+      "source_image_url": "https://filethpt.hcm.shieldix.app/uploadimages/news/2026/thpthoanghoatham/2026_10/9/logo50nam_91020261035.jpg?w=800",
+      "sha256": "cdfab9e9a467e956d352ff0ac97a2579d29ca26837a95fe3a6669a01f5cd84b7",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/e4bc5a9a100e4511a902ca35bf8a64b8-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/e4bc5a9a100e4511a902ca35bf8a64b8-avatar.webp"
+    },
+    {
+      "provider_id": "d4c70908-e1c5-4cbd-8be7-21fb5688def4",
+      "name": "THPT Trần Văn Giàu",
+      "website_url": "https://thpttranvangiau.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=2",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thpttranvangiau.hcm.edu.vn/Images/logohcm.png",
+      "sha256": "1eb7335d0cf6c618abfc3073b813760ccf339d48e9275475481ad02847182e61",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/b00425eaa1d14edfbda62da671f71ea6-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/b00425eaa1d14edfbda62da671f71ea6-avatar.webp"
+    },
+    {
+      "provider_id": "c65e89a0-3d48-4e36-93f3-dc95d5063c26",
+      "name": "THPT Gò Vấp",
+      "website_url": "https://thptgovap.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=2",
+      "status": "uploaded",
+      "source_image_url": "https://filethpt.hcm.shieldix.app/uploadimages/config/2025/thptgovap/logo-gv_23120251057.png",
+      "sha256": "9127c8e2b73ae272f463c10a7a7b4bad5ed0bc5cd3636251636df402b23ee6ea",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/9b82a9dc29c64e9e808db9ce4cb09eed-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/9b82a9dc29c64e9e808db9ce4cb09eed-avatar.webp"
+    },
+    {
+      "provider_id": "81bd8938-c567-402b-a7ad-71a0ce9d0ebc",
+      "name": "THPT Gia Định",
+      "website_url": "https://thptgiadinh.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=2",
+      "status": "uploaded",
+      "source_image_url": "https://filethpt.hcm.shieldix.app/UploadImages/thptgiadinh/2023_8/21/Khenthuong/logo_2182023191.jpg?w=320",
+      "sha256": "0c3136af7bf1df44abb3beb388f7145c155bf4ccffdf10a7adbc12dfb8ba9f89",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/5e0204d7363648008768fb4a430f815c-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/5e0204d7363648008768fb4a430f815c-avatar.webp"
+    },
+    {
+      "provider_id": "4a082c1e-f31a-4c7e-ad02-0da6ae0b3ffa",
+      "name": "THPT Nguyễn Thượng Hiền",
+      "website_url": "https://thptnguyenthuonghien.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=2",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptnguyenthuonghien.hcm.edu.vn/Images/logohcm.png",
+      "sha256": "1eb7335d0cf6c618abfc3073b813760ccf339d48e9275475481ad02847182e61",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/ad3b9b1b590848a48d9f6a1380ccd213-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/ad3b9b1b590848a48d9f6a1380ccd213-avatar.webp"
+    },
+    {
+      "provider_id": "83496116-da38-4e62-a891-81cf87fa1690",
+      "name": "THPT Nguyễn Thái Bình",
+      "website_url": "https://thptnguyenthaibinh.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=2",
+      "status": "uploaded",
+      "source_image_url": "https://filethpt.hcm.shieldix.app/uploadimages/news/2026/thptnguyenthaibinh/ptklungtv/2026_10/22/logo1_221020261030.jpg?w=800",
+      "sha256": "83b94db73c0710eaed41a907479a5ebcc7ab0e81d6c7e609c4c862d060c87e74",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/cc4b5844d2d74c7b8cd5ff0876778f9d-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/cc4b5844d2d74c7b8cd5ff0876778f9d-avatar.webp"
+    },
+    {
+      "provider_id": "64b16c88-96f8-4a63-b7af-332d3fcf652b",
+      "name": "THPT Nguyễn Chí Thanh",
+      "website_url": "https://thptnguyenchithanh.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=2",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptnguyenchithanh.hcm.edu.vn/Images/logohcm.png",
+      "sha256": "1eb7335d0cf6c618abfc3073b813760ccf339d48e9275475481ad02847182e61",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/037d9f4907d94f39b76ccf56ad6e4992-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/037d9f4907d94f39b76ccf56ad6e4992-avatar.webp"
+    },
+    {
+      "provider_id": "34d6f9d4-da73-4300-8422-9bc248640657",
+      "name": "THPT Thủ Khoa Huân",
+      "website_url": "https://thptthukhoahuan.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt",
+      "status": "no_valid_raster_logo"
+    },
+    {
+      "provider_id": "665cc45d-fa18-4a12-b823-e32e89600572",
+      "name": "THPT Tây Thạnh",
+      "website_url": "https://thpttaythanh.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=2",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thpttaythanh.hcm.edu.vn/Images/logohcm.png",
+      "sha256": "1eb7335d0cf6c618abfc3073b813760ccf339d48e9275475481ad02847182e61",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/b72677d7e4af4e7fb7890b6059a5868d-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/b72677d7e4af4e7fb7890b6059a5868d-avatar.webp"
+    },
+    {
+      "provider_id": "ad78d35e-d380-4bad-8328-8e0f9bbd865a",
+      "name": "THPT Lê Trọng Tấn",
+      "website_url": "https://thptletrongtan.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=2",
+      "status": "uploaded",
+      "source_image_url": "https://filethpt.hcm.shieldix.app/uploadimages/config/2025/thptletrongtan/mau-logo-ltt-2025_2452025851.png",
+      "sha256": "8dd9a61f4b5a5bb7d2757c80f487249e191bb9f078bb9c2a0d824818b4a5f1b1",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/0eb53787ebd94ddba69e36ae635b1ad5-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/0eb53787ebd94ddba69e36ae635b1ad5-avatar.webp"
+    },
+    {
+      "provider_id": "7808d84a-5cd5-43e5-89e1-06f6a6890581",
+      "name": "THPT Phú Nhuận",
+      "website_url": "https://thptphunhuan.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=2",
+      "status": "uploaded",
+      "source_image_url": "https://filethpt.hcm.shieldix.app/UploadImages/thptphunhuan/hinh_bai_viet/anhtinbai/cropped-Logo-HBU-Final-1536x385.png?w=350",
+      "sha256": "291e4749519a0e3172935eeeb465c944ec241076451ecb57cd222434065183b7",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/6c09f7245f6441a2bc1eb9585e3255ba-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/6c09f7245f6441a2bc1eb9585e3255ba-avatar.webp"
+    },
+    {
+      "provider_id": "0e7b1cea-52c6-496a-a792-b249c67454e8",
+      "name": "THPT Hàn Thuyên",
+      "website_url": "https://thpthanthuyen.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=2",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thpthanthuyen.hcm.edu.vn/Images/logohcm.png",
+      "sha256": "1eb7335d0cf6c618abfc3073b813760ccf339d48e9275475481ad02847182e61",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/b303677c46bf42fc8767641504af0a90-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/b303677c46bf42fc8767641504af0a90-avatar.webp"
+    },
+    {
+      "provider_id": "894af197-5ad4-47de-a2a7-53bf0875a67f",
+      "name": "THPT Thủ Thiêm",
+      "website_url": "https://thptthuthiem.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=3",
+      "status": "uploaded",
+      "source_image_url": "https://filethpt.hcm.shieldix.app/uploadimages/haydung/thptthuthiem/anhhaydung/logo-thu-thiem_1062024126.jpg",
+      "sha256": "125506e9758660e58e935eb45031756b119d037087cef1fe3803ef8dd3b93ecb",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/ff7cf2b858c1480ea9e492efe0f5e316-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/ff7cf2b858c1480ea9e492efe0f5e316-avatar.webp"
+    },
+    {
+      "provider_id": "09220a64-dbf2-44b7-9bb7-aefbfe10d4d1",
+      "name": "THPT Giồng Ông Tố",
+      "website_url": "https://thptgiongongto.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=2",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptgiongongto.hcm.edu.vn/Images/logohcm.png",
+      "sha256": "1eb7335d0cf6c618abfc3073b813760ccf339d48e9275475481ad02847182e61",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/ae1c27032686433ca3040b2a8a2bf394-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/ae1c27032686433ca3040b2a8a2bf394-avatar.webp"
+    },
+    {
+      "provider_id": "13ed4534-a690-4f82-97d5-828de3f69ae3",
+      "name": "THPT Phan Đăng Lưu",
+      "website_url": "https://thptphandangluu.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=2",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptphandangluu.hcm.edu.vn/Images/logohcm.png",
+      "sha256": "1eb7335d0cf6c618abfc3073b813760ccf339d48e9275475481ad02847182e61",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/a2ca42a194694661b9dab9534c1e5560-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/a2ca42a194694661b9dab9534c1e5560-avatar.webp"
+    },
+    {
+      "provider_id": "400ae827-0021-4965-a8b1-63e9793e795f",
+      "name": "THPT Marie Curie",
+      "website_url": "https://thptmariecurie.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptmariecurie.hcm.edu.vn/Images/logohcm.png",
+      "sha256": "1eb7335d0cf6c618abfc3073b813760ccf339d48e9275475481ad02847182e61",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/32f13cbd48c5436aafbdcdbedce7a9d7-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/32f13cbd48c5436aafbdcdbedce7a9d7-avatar.webp"
+    },
+    {
+      "provider_id": "3b4fa768-7026-4be0-a613-7d645a011188",
+      "name": "THPT Nguyễn Hiền",
+      "website_url": "https://thptnguyenhien.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=2",
+      "status": "uploaded",
+      "source_image_url": "https://filethpt.hcm.shieldix.app/uploadimages/config/2024/thptnguyenhien/logo-truong-nh_18120241125.jpg",
+      "sha256": "0f365156fabde15ca69e8c4e7a0f32341c708999867494960fe0d4dd1a3fbfb7",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/2b354aeec43c4e518e9504688c997f54-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/2b354aeec43c4e518e9504688c997f54-avatar.webp"
+    },
+    {
+      "provider_id": "69fe07d3-ff69-4c5d-b0a6-2deb190650e0",
+      "name": "THPT Nguyễn Thị Diệu",
+      "website_url": "https://thptnguyenthidieu.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptnguyenthidieu.hcm.edu.vn/Images/logohcm.png",
+      "sha256": "1eb7335d0cf6c618abfc3073b813760ccf339d48e9275475481ad02847182e61",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/54b322c4f4ae471ca0b858cc1f9f91d7-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/54b322c4f4ae471ca0b858cc1f9f91d7-avatar.webp"
+    },
+    {
+      "provider_id": "bb9bcce4-f1f0-479b-956b-7320b9f6ae75",
+      "name": "THPT Nam Kỳ Khởi Nghĩa",
+      "website_url": "https://thptnamkykhoinghia.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=2",
+      "status": "uploaded",
+      "source_image_url": "https://filethpt.hcm.shieldix.app/UploadImages/Config/thptnamkykhoinghia/logo.gif",
+      "sha256": "7211d93f3589dd64a36d6ada6c7055d5a04978922cb3655cd7acb8a969d475af",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/537e7cf2fef1458d9e125fcb5b93dfdc-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/537e7cf2fef1458d9e125fcb5b93dfdc-avatar.webp"
+    },
+    {
+      "provider_id": "f2988fc8-58ca-4dff-98a4-2e1bd29723a6",
+      "name": "THPT chuyên Trần Đại Nghĩa",
+      "website_url": "http://trandainghia.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt",
+      "status": "uploaded",
+      "source_image_url": "https://trandainghia.edu.vn/wp-content/uploads/2026/08/Web-truong_20260905-scaled.jpg",
+      "sha256": "b8c7548717fa82e7555e06074462d86f54fb034714b89e0103e452c5b7bf9f24",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/62f1b79a72b8424ca04ae408d2f7d342-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/62f1b79a72b8424ca04ae408d2f7d342-avatar.webp"
+    },
+    {
+      "provider_id": "f0461918-3568-442d-b9a1-4bf989128640",
+      "name": "THPT Trần Khai Nguyên",
+      "website_url": "https://thpttrankhainguyen.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thpttrankhainguyen.hcm.edu.vn/Images/logohcm.png",
+      "sha256": "1eb7335d0cf6c618abfc3073b813760ccf339d48e9275475481ad02847182e61",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/57371443b4ad4c0b993720ab800746b8-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/57371443b4ad4c0b993720ab800746b8-avatar.webp"
+    },
+    {
+      "provider_id": "3bcd7449-0ea1-4dd2-afa5-4e1a9c077475",
+      "name": "THPT Hùng Vương",
+      "website_url": "https://thpthungvuong.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thpthungvuong.hcm.edu.vn/Images/logohcm.png",
+      "sha256": "1eb7335d0cf6c618abfc3073b813760ccf339d48e9275475481ad02847182e61",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/4f66183d9f0246599d22f4375e098e12-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/4f66183d9f0246599d22f4375e098e12-avatar.webp"
+    },
+    {
+      "provider_id": "b89882c9-e003-4f3f-9793-dd0e0abd0d9c",
+      "name": "THPT Trần Hữu Trang",
+      "website_url": "https://thpttranhuutrang.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt",
+      "status": "uploaded",
+      "source_image_url": "https://filethpt.hcm.shieldix.app/uploadimages/config/2024/thpttranhuutrang/logo-truong_11720241934.png",
+      "sha256": "bdbfbaeda8669630bd42c498713d4f68b811c258e2d248b0d199276a9e0c8248",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/c074c15eba7e44d9bd198e0e0bdbe05f-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/c074c15eba7e44d9bd198e0e0bdbe05f-avatar.webp"
+    },
+    {
+      "provider_id": "0446cce3-750d-40b3-ade3-70357a626100",
+      "name": "THPT Nguyễn Tất Thành",
+      "website_url": "https://thptnguyentatthanh.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt",
+      "status": "uploaded",
+      "source_image_url": "https://filethpt.hcm.shieldix.app/uploadimages/config/2025/thptnguyentatthanh/untitled-1-1_281020251029.png",
+      "sha256": "78fb6046b9ec1029c705e92de9777e08eee4813810bb582f7492f3981170730c",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/d605e15c6f014e3881277181063cdb1f-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/d605e15c6f014e3881277181063cdb1f-avatar.webp"
+    },
+    {
+      "provider_id": "9086e4f3-b1ef-46d8-9905-820ca9751543",
+      "name": "THPT Mạc Đĩnh Chi",
+      "website_url": "https://thptmacdinhchi.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt",
+      "status": "uploaded",
+      "source_image_url": "https://filethpt.hcm.shieldix.app/UploadImages/Config/thptmacdinhchi/BANNER/LOGO.png",
+      "sha256": "3e118896f61ecd3506044f22fb1f8695b0efbb88985b373841047bdf9891c18f",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/4b471a8c7858444ca51e213cb2f3507a-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/4b471a8c7858444ca51e213cb2f3507a-avatar.webp"
+    },
+    {
+      "provider_id": "92141b92-11db-4827-881e-240333839660",
+      "name": "THPT Nguyễn Hữu Thọ",
+      "website_url": "https://thptnguyenhuutho.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptnguyenhuutho.hcm.edu.vn/Images/logohcm.png",
+      "sha256": "1eb7335d0cf6c618abfc3073b813760ccf339d48e9275475481ad02847182e61",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/7acfe9a7dd6d4e4cad35c3c2c6c491f1-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/7acfe9a7dd6d4e4cad35c3c2c6c491f1-avatar.webp"
+    },
+    {
+      "provider_id": "8499c9c7-1c1d-4438-a812-f4d5dc34be36",
+      "name": "THCS - THPT Phan Bội Châu",
+      "website_url": "https://thcs-thptphanboichau.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt",
+      "status": "uploaded",
+      "source_image_url": "https://filethpt.hcm.shieldix.app/uploadimages/config/2025/thcs-thptphanboichau/logopbc_29720251619.jpg",
+      "sha256": "95f2959ffcba4bfe89d9a200cd053d2d3fbf7c80b55c0a7d544f90931bf91745",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/9d424a35f5b44345b02aca3a17661773-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/9d424a35f5b44345b02aca3a17661773-avatar.webp"
+    },
+    {
+      "provider_id": "0019c88e-bf81-4492-b4e2-b36491377c6b",
+      "name": "THPT Phạm Phú Thứ",
+      "website_url": "https://thptphamphuthu.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptphamphuthu.hcm.edu.vn/Images/logohcm.png",
+      "sha256": "1eb7335d0cf6c618abfc3073b813760ccf339d48e9275475481ad02847182e61",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/6f0acd318c3244fbb59670dfc3a4afca-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/6f0acd318c3244fbb59670dfc3a4afca-avatar.webp"
+    },
+    {
+      "provider_id": "378b9399-4831-459f-9da4-ca1573a57b94",
+      "name": "THPT Nguyễn Văn Linh",
+      "website_url": "https://thptnguyenvanlinh.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=2",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptnguyenvanlinh.hcm.edu.vn/Images/logohcm.png",
+      "sha256": "1eb7335d0cf6c618abfc3073b813760ccf339d48e9275475481ad02847182e61",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/f571ef51e73d4c95a00fc64e584cc750-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/f571ef51e73d4c95a00fc64e584cc750-avatar.webp"
+    },
+    {
+      "provider_id": "6a22e4f3-075d-46b0-9c68-949ba53a43b6",
+      "name": "THPT Lương Văn Can",
+      "website_url": "https://thptluongvancan.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptluongvancan.hcm.edu.vn/Images/logohcm.png",
+      "sha256": "1eb7335d0cf6c618abfc3073b813760ccf339d48e9275475481ad02847182e61",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/2a479717ef95459b8e3d062a19167c58-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/2a479717ef95459b8e3d062a19167c58-avatar.webp"
+    },
+    {
+      "provider_id": "91cd3de4-3ebc-4c05-b72f-92c20e99a749",
+      "name": "THPT Tạ Quang Bửu",
+      "website_url": "https://thpttaquangbuu.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=2",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thpttaquangbuu.hcm.edu.vn/Images/logohcm.png",
+      "sha256": "1eb7335d0cf6c618abfc3073b813760ccf339d48e9275475481ad02847182e61",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/22bdb66402884734aa154f4f223f67d8-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/22bdb66402884734aa154f4f223f67d8-avatar.webp"
+    },
+    {
+      "provider_id": "07465d02-6bdb-4edd-896e-bf43638af05f",
+      "name": "THPT Ngô Gia Tự",
+      "website_url": "https://thptngogiatu.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=2",
+      "status": "uploaded",
+      "source_image_url": "https://filethpt.hcm.shieldix.app/UploadImages/Config/thptngogiatu/logo%20chinh.jpg",
+      "sha256": "41e83e3a7127ffc5561c786a10cbe18e9429783a53d416f8baea188f87d65b10",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/68c63c8e8419403988e3b280d7a3de86-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/68c63c8e8419403988e3b280d7a3de86-avatar.webp"
+    },
+    {
+      "provider_id": "4643dae0-b2d2-4bf6-b1d2-66a5935a84bc",
+      "name": "THPT Võ Văn Kiệt",
+      "website_url": "https://thptvovankiet.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=2",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptvovankiet.hcm.edu.vn/Images/logohcm.png",
+      "sha256": "1eb7335d0cf6c618abfc3073b813760ccf339d48e9275475481ad02847182e61",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/3d72b79285ad4b7fb1c721c412bd1dfe-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/3d72b79285ad4b7fb1c721c412bd1dfe-avatar.webp"
+    },
+    {
+      "provider_id": "bca1e6cb-1a35-465b-a0aa-9e99270439c7",
+      "name": "THPT Bình Hưng Hòa",
+      "website_url": "https://thptbinhhunghoa.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=2",
+      "status": "uploaded",
+      "source_image_url": "https://filethpt.hcm.shieldix.app/uploadimages/config/2026/thptbinhhunghoa/NewFolder/logo-web-bhh_2992026016.png",
+      "sha256": "084fb1276df030b7441d5e18f58405d7b3e5735ae2febd14aef1b94021f88d41",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/fbad1acc1da34a458a304d69cdb78f7f-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/fbad1acc1da34a458a304d69cdb78f7f-avatar.webp"
+    },
+    {
+      "provider_id": "cc19ad13-40cf-460c-acb8-33e43a527da1",
+      "name": "THPT Vĩnh Lộc",
+      "website_url": "https://thptvinhloc.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=2",
+      "status": "uploaded",
+      "source_image_url": "https://filethpt.hcm.shieldix.app/uploadimages/haydung/thptvinhloc/anhhaydung/logovinhlocpng-copy_281020251056.png",
+      "sha256": "01f6bae1b00191ff1d1c6f1a56ca1728694649883a027bdc7b3b7f9cfc3891ee",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/4b13442bcf124241918f908b6faa6489-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/4b13442bcf124241918f908b6faa6489-avatar.webp"
+    },
+    {
+      "provider_id": "df2042d1-fbb8-4d85-b234-90e559605da9",
+      "name": "THPT Bình Tân",
+      "website_url": "https://thptbinhtan.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=2",
+      "status": "uploaded",
+      "source_image_url": "https://filethpt.hcm.shieldix.app/uploadimages/config/2025/thptbinhtan/luuthuantuan/logotruong-removebg-preview_2720251426.png",
+      "sha256": "4973a3b187dffdc5e6f38e8dfa96fb8852dd82eed49582c2b2cc34ce376aa7b7",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/c9186c4344da46989eab83c710ce8980-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/c9186c4344da46989eab83c710ce8980-avatar.webp"
+    },
+    {
+      "provider_id": "95a8b954-a893-4d9b-a7c0-7c4b48a01f9d",
+      "name": "THPT Nguyễn Hữu Cảnh",
+      "website_url": "https://thptnguyenhuucanh.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=2",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptnguyenhuucanh.hcm.edu.vn/Images/logohcm.png",
+      "sha256": "1eb7335d0cf6c618abfc3073b813760ccf339d48e9275475481ad02847182e61",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/9a838274ade9438490f30e0c97a51fab-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/9a838274ade9438490f30e0c97a51fab-avatar.webp"
+    },
+    {
+      "provider_id": "c338a82a-af6c-40e1-a31b-35e7993d33dd",
+      "name": "THPT Lê Thánh Tôn",
+      "website_url": "https://thptlethanhton.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptlethanhton.hcm.edu.vn/Images/logohcm.png",
+      "sha256": "1eb7335d0cf6c618abfc3073b813760ccf339d48e9275475481ad02847182e61",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/ca0d6110fd5b4e37a22642d42f94d270-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/ca0d6110fd5b4e37a22642d42f94d270-avatar.webp"
+    },
+    {
+      "provider_id": "4a6cf8f2-279e-4e0b-85c8-b3655eb3b7f2",
+      "name": "THPT Tân Phong",
+      "website_url": "https://thpttanphong.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt",
+      "status": "uploaded",
+      "source_image_url": "https://filethpt.hcm.shieldix.app/UploadImages/Config/thpttanphong/LOGO.jpg",
+      "sha256": "89eb161f7de4e4b03338f617537284265f4bbc5ce8943bcb6fa60a5fcdd777e8",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/d5f0c2de14af4748a7bbe97f9418dab7-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/d5f0c2de14af4748a7bbe97f9418dab7-avatar.webp"
+    },
+    {
+      "provider_id": "f6082509-314b-42e2-aa35-e2dca50d389c",
+      "name": "THPT An Lạc",
+      "website_url": "https://thptanlac.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=2",
+      "candidate_errors": [
+        {
+          "url": "https://filethpt.hcm.shieldix.app/uploadimages/config/2025/thptanlac/anlaclogo-moi_1472025848.gif",
+          "error": "HTTPException"
+        }
+      ],
+      "status": "uploaded",
+      "source_image_url": "https://filethpt.hcm.shieldix.app/uploadimages/news/2024/thptanlac/logos-trang-nen6920241446_31102024108.png?w=320&format=jpg",
+      "sha256": "4587d060509f71209c4ba42ef43d7ca6088a516bb7f2b31634c5d526b7db447d",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/7df2c20dcb68435cb651511e01c57e34-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/7df2c20dcb68435cb651511e01c57e34-avatar.webp"
+    },
+    {
+      "provider_id": "ec7b39e1-4131-4290-a29d-a9358ac781a8",
+      "name": "THPT Nam Sài Gòn",
+      "website_url": "https://thptnamsaigon.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt",
+      "status": "uploaded",
+      "source_image_url": "https://filethpt.hcm.shieldix.app/uploadimages/config/2026/thptnamsaigon/logo-nsg-2_27820261052.png",
+      "sha256": "216dc1a7173cc05704d2010867c5065c5d94a9c658661cec19b8478547953b38",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/52c293054c5c4473a19b8fcc63ea8d2a-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/52c293054c5c4473a19b8fcc63ea8d2a-avatar.webp"
+    },
+    {
+      "provider_id": "517cbd99-a7fd-4ce3-864d-4c6ce2f58a9f",
+      "name": "THPT Củ Chi",
+      "website_url": "https://thptcuchi.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=3",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptcuchi.hcm.edu.vn/Images/logohcm.png",
+      "sha256": "1eb7335d0cf6c618abfc3073b813760ccf339d48e9275475481ad02847182e61",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/a56c60bc10b74fa4b51b8fe46e45e40b-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/a56c60bc10b74fa4b51b8fe46e45e40b-avatar.webp"
+    },
+    {
+      "provider_id": "3e56db8c-ace6-4de5-82ec-819a9d6d3cb9",
+      "name": "THPT Trung Lập",
+      "website_url": "https://thpttrunglap.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=3",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thpttrunglap.hcm.edu.vn/Images/logohcm.png",
+      "sha256": "1eb7335d0cf6c618abfc3073b813760ccf339d48e9275475481ad02847182e61",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/7c1cc41c9063439aa8babdbaf69b9882-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/7c1cc41c9063439aa8babdbaf69b9882-avatar.webp"
+    },
+    {
+      "provider_id": "c492df7a-abfa-458f-a26f-b2ec72758c5c",
+      "name": "THPT An Nhơn Tây",
+      "website_url": "https://thptannhontay.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=3",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptannhontay.hcm.edu.vn/Images/logohcm.png",
+      "sha256": "1eb7335d0cf6c618abfc3073b813760ccf339d48e9275475481ad02847182e61",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/70a8406f4f1b482e8266c532ccf5ab3d-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/70a8406f4f1b482e8266c532ccf5ab3d-avatar.webp"
+    },
+    {
+      "provider_id": "01ade852-a3bb-46ce-b4b4-3195728d780c",
+      "name": "THPT Tân Thông Hội",
+      "website_url": "https://thpttanthonghoi.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=3",
+      "status": "uploaded",
+      "source_image_url": "https://filethpt.hcm.shieldix.app/UploadImages/Config/thpttanthonghoi/Banner_logo/logotruong2.png",
+      "sha256": "87661012f16730bd2c618c98715719d63c700399132b7036624b9f4bea347160",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/9caf85c110d047c0ada02fc8c5b5c900-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/9caf85c110d047c0ada02fc8c5b5c900-avatar.webp"
+    },
+    {
+      "provider_id": "3c87a900-c502-48f7-9f12-44579d46bb64",
+      "name": "THPT chuyên Lê Hồng Phong",
+      "website_url": "https://www.thpt-lehongphong-tphcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt",
+      "status": "uploaded",
+      "source_image_url": "https://www.thpt-lehongphong-tphcm.edu.vn/sites/default/files/logo0.jpg",
+      "sha256": "8459c7eeb1419a9821e7291d77bf80b3ac37d2c3e9ad859d96d4fd3524dcaff3",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/0aa0c25f3ebe4245a68c2e93d6dfee55-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/0aa0c25f3ebe4245a68c2e93d6dfee55-avatar.webp"
+    },
+    {
+      "provider_id": "45d24bd7-0fcf-4158-9c18-59e01d80b9d0",
+      "name": "THPT Phú Hòa",
+      "website_url": "https://thptphuhoa.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=3",
+      "status": "uploaded",
+      "source_image_url": "https://filethpt.hcm.shieldix.app/UploadImages/Config/thptphuhoa/logo_opt.jpg",
+      "sha256": "506cfedd8984efe473ebf2fd2267f0e487727e5f6d36ca22a0ed272ab129fb65",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/e98ddf94b2f2448fa8ae9805da9f0702-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/e98ddf94b2f2448fa8ae9805da9f0702-avatar.webp"
+    },
+    {
+      "provider_id": "af58db30-568d-4d32-a3ba-5a3cb6e6997c",
+      "name": "THPT Hồ Thị Bi",
+      "website_url": "https://thpthothibi.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=3",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thpthothibi.hcm.edu.vn/Images/logohcm.png",
+      "sha256": "1eb7335d0cf6c618abfc3073b813760ccf339d48e9275475481ad02847182e61",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/558188c64a304c8fb14ca070573d018c-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/558188c64a304c8fb14ca070573d018c-avatar.webp"
+    },
+    {
+      "provider_id": "89467fba-5f7b-4c71-91e6-eff81e389438",
+      "name": "THPT Nguyễn Hữu Tiến",
+      "website_url": "https://thptnguyenhuutien.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=3",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptnguyenhuutien.hcm.edu.vn/Images/logohcm.png",
+      "sha256": "1eb7335d0cf6c618abfc3073b813760ccf339d48e9275475481ad02847182e61",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/05fe8d01c1444c7e803ef4f2c002939f-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/05fe8d01c1444c7e803ef4f2c002939f-avatar.webp"
+    },
+    {
+      "provider_id": "f84f806a-6ba8-443d-8556-d3cfd3fb205e",
+      "name": "THPT Lý Thường Kiệt",
+      "website_url": "https://thptlythuongkiet.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=3",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptlythuongkiet.hcm.edu.vn/Images/logohcm.png",
+      "sha256": "1eb7335d0cf6c618abfc3073b813760ccf339d48e9275475481ad02847182e61",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/cee07d8b87db4b288bc5bf947511304d-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/cee07d8b87db4b288bc5bf947511304d-avatar.webp"
+    },
+    {
+      "provider_id": "959593ed-d839-4caf-bc6a-5c408d64223c",
+      "name": "THPT Trung Phú",
+      "website_url": "https://thpttrungphu.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=3",
+      "status": "uploaded",
+      "source_image_url": "https://filethpt.hcm.shieldix.app/uploadimages/config/2025/thpttrungphu/logo-trung-phu-k-co-nen_257202591.png",
+      "sha256": "db75f5032f3b3d616975d256d9f85c15db910541df7dbd632a47077b88704a14",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/0529012bc15b460a9c7e3b36948f5554-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/0529012bc15b460a9c7e3b36948f5554-avatar.webp"
+    },
+    {
+      "provider_id": "aa84eaed-5110-45a8-9875-1bcfe215759f",
+      "name": "THPT Quang Trung",
+      "website_url": "https://thptquangtrung.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=3",
+      "status": "uploaded",
+      "source_image_url": "https://filethpt.hcm.shieldix.app/UploadImages/Config/thptquangtrung/Logo%20Truong%20Quang%20Trung.jpg",
+      "sha256": "96e8e7470828fa10124c124bedaa602194a79a308ed2640656b9b8064abdf6fb",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/870f0f55f86140abac24db0f225182ec-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/870f0f55f86140abac24db0f225182ec-avatar.webp"
+    },
+    {
+      "provider_id": "a0e6db27-7e1e-41d8-9ca9-b1a0bf65ddf3",
+      "name": "THPT Phạm Văn Sáng",
+      "website_url": "https://thptphamvansang.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=3",
+      "status": "uploaded",
+      "source_image_url": "https://filethpt.hcm.shieldix.app/uploadimages/config/2024/thptphamvansang/logo-bo-nen_111220241445.png",
+      "sha256": "3ff2bedd3c8602956dcc748336b55c8bbe4e4259e83bfbb4cd4d661c5873df11",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/817fb5a6145f4573a10855046cf4830f-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/817fb5a6145f4573a10855046cf4830f-avatar.webp"
+    },
+    {
+      "provider_id": "fab00f8b-ef79-41f8-8440-f874ea98dd0c",
+      "name": "THPT Bà Điểm",
+      "website_url": "https://thptbadiem.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptbadiem.hcm.edu.vn/Images/logohcm.png",
+      "sha256": "1eb7335d0cf6c618abfc3073b813760ccf339d48e9275475481ad02847182e61",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/28cd3908ff1a4b779f541baa01c48653-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/28cd3908ff1a4b779f541baa01c48653-avatar.webp"
+    },
+    {
+      "provider_id": "011e6552-07fa-4fa9-941c-4894ef648b31",
+      "name": "THPT Lê Minh Xuân",
+      "website_url": "https://thptleminhxuan.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=3",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptleminhxuan.hcm.edu.vn/Images/logohcm.png",
+      "sha256": "1eb7335d0cf6c618abfc3073b813760ccf339d48e9275475481ad02847182e61",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/f3488d84fcda4662bcfbde8adebacfc2-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/f3488d84fcda4662bcfbde8adebacfc2-avatar.webp"
+    },
+    {
+      "provider_id": "954e625f-2096-495f-b190-4a38d09f4717",
+      "name": "THPT Phong Phú",
+      "website_url": "https://thptphongphu.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=3",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptphongphu.hcm.edu.vn/Images/logohcm.png",
+      "sha256": "1eb7335d0cf6c618abfc3073b813760ccf339d48e9275475481ad02847182e61",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/4fb559166cfa489a83970a71f88ab4e8-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/4fb559166cfa489a83970a71f88ab4e8-avatar.webp"
+    },
+    {
+      "provider_id": "259aac5b-a140-4126-8d7b-1f5a1a98ea7b",
+      "name": "THPT Vĩnh Lộc B",
+      "website_url": "https://thptvinhlocb.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=3",
+      "status": "uploaded",
+      "source_image_url": "https://filethpt.hcm.shieldix.app/dataqig/2026/thptvinhlocb/codinh/giaodien/admin/logo-chinh-thuc_6112026832.png",
+      "sha256": "55fa47e13d0a3cd9f2834ec31037dce63e594f7221d26c24179a9c94e0724b17",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/76ccf77e54a44824a4e4bc6035c10594-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/76ccf77e54a44824a4e4bc6035c10594-avatar.webp"
+    },
+    {
+      "provider_id": "df95680b-4ba2-4ba1-9134-42b05a4fab00",
+      "name": "THPT Tân Túc",
+      "website_url": "https://thpttantuc.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=3",
+      "status": "uploaded",
+      "source_image_url": "https://filethpt.hcm.shieldix.app/UploadImages/Advertising/thpttantuc/Logo%20link%20li%C3%AAn%20k%E1%BA%BFt/3.png?w=1000",
+      "sha256": "5ce226bb7a5d0aa137745e2f97e37dc83b619e3fd3b4f4e83e9d7baf9c83d75f",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/f5b2e10c569c4b4196a4e143a925d4c9-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/f5b2e10c569c4b4196a4e143a925d4c9-avatar.webp"
+    },
+    {
+      "provider_id": "44cd5534-c5eb-4aff-8185-78953b2e0e19",
+      "name": "THPT Bình Chánh",
+      "website_url": "https://thptbinhchanh.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=3",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptbinhchanh.hcm.edu.vn/Images/logohcm.png",
+      "sha256": "1eb7335d0cf6c618abfc3073b813760ccf339d48e9275475481ad02847182e61",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/6f6e88b69f7f42238e163925437464cf-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/6f6e88b69f7f42238e163925437464cf-avatar.webp"
+    },
+    {
+      "provider_id": "26bb5a56-862f-41b3-908f-a289a60292ac",
+      "name": "THPT Dương Văn Dương",
+      "website_url": "https://thptduongvanduong.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=3",
+      "status": "uploaded",
+      "source_image_url": "https://filethpt.hcm.shieldix.app/uploadimages/haydung/thptduongvanduong/anhhaydung/haidangmedia/LOGO/4578093345051785191218958162640735436658029n_2492026208.jpg?w=800",
+      "sha256": "003496541511f794e2be3920d36011197797dbd9290c079f981e6a1166552791",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/6921d94191194a07a6a16d4fc8b3549c-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/6921d94191194a07a6a16d4fc8b3549c-avatar.webp"
+    },
+    {
+      "provider_id": "c3f354f8-5177-4345-aef5-b30548ff5d5a",
+      "name": "THPT Đa Phước",
+      "website_url": "http://thptdaphuoc.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt",
+      "status": "uploaded",
+      "source_image_url": "http://thptdaphuoc.edu.vn/templates/sj_news/images/blue/logo.png",
+      "sha256": "aa4a3c3d2b34f037ea4c656503c03b30235ee8d321ea98a267c7b05ff3196020",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/027f54d7e0f947398f6ee200285cc16f-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/027f54d7e0f947398f6ee200285cc16f-avatar.webp"
+    },
+    {
+      "provider_id": "7e32b5dc-1e15-472f-ae17-ea5b3cba4634",
+      "name": "THPT Phước Kiển",
+      "website_url": "https://thptphuockien.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt",
+      "status": "uploaded",
+      "source_image_url": "https://filethpt.hcm.shieldix.app/UploadImages/Config/thptphuockien/logo%201.gif",
+      "sha256": "56b9dcb25c8ef93dcac02d13175077ee77aaeba44d33390108c6fc4086276406",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/f2cbb8d9bf6542babc34017341e5105b-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/f2cbb8d9bf6542babc34017341e5105b-avatar.webp"
+    },
+    {
+      "provider_id": "692dae75-b0ab-4816-9a69-fd139cdbf42b",
+      "name": "THPT Long Thới",
+      "website_url": "https://thptlongthoi.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=3",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptlongthoi.hcm.edu.vn/Images/logohcm.png",
+      "sha256": "1eb7335d0cf6c618abfc3073b813760ccf339d48e9275475481ad02847182e61",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/cd33d633e8cd45e0a783567b437a7087-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/cd33d633e8cd45e0a783567b437a7087-avatar.webp"
+    },
+    {
+      "provider_id": "bdc0133f-4ff2-4975-8112-53cb428c636c",
+      "name": "THPT Cần Thạnh",
+      "website_url": "https://thptcanthanh.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=3",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptcanthanh.hcm.edu.vn/Images/logohcm.png",
+      "sha256": "1eb7335d0cf6c618abfc3073b813760ccf339d48e9275475481ad02847182e61",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/9a8d806fb7be4ed7aea523053967b9ee-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/9a8d806fb7be4ed7aea523053967b9ee-avatar.webp"
+    },
+    {
+      "provider_id": "eb341079-5b49-4d4c-a149-14236bf59bf5",
+      "name": "Mclass",
+      "website_url": "https://mclass.vn/",
+      "directory_source": "https://play.google.com/store/apps/details?hl=vi&id=vn.mclass.elearning",
+      "status": "source_unavailable",
+      "error": "HTTPStatusError"
+    },
+    {
+      "provider_id": "cde41311-a21f-4564-8193-c72632301100",
+      "name": "THPT An Nghĩa",
+      "website_url": "https://thptannghia.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=3",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptannghia.hcm.edu.vn/Images/logohcm.png",
+      "sha256": "1eb7335d0cf6c618abfc3073b813760ccf339d48e9275475481ad02847182e61",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/d5aba0a3ee2c4dc18949894f50bdafc7-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/d5aba0a3ee2c4dc18949894f50bdafc7-avatar.webp"
+    },
+    {
+      "provider_id": "7f479896-632a-4034-87f6-dbbe24e62f01",
+      "name": "Bồi dưỡng văn hóa và Luyện thi Thành Công",
+      "website_url": "https://ttthanhcong.edu.vn/",
+      "directory_source": "https://ttthanhcong.edu.vn/list_news.php",
+      "status": "source_unavailable",
+      "error": "ConnectError"
+    },
+    {
+      "provider_id": "58d51ed1-872d-41f8-8e42-cc3285987268",
+      "name": "THPT Bình Khánh",
+      "website_url": "https://thptbinhkhanh.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt&trang=3",
+      "status": "uploaded",
+      "source_image_url": "https://filethpt.hcm.shieldix.app/uploadimages/config/2025/thptbinhkhanh/logo-thpt-binh-khanh-2025_1612202590.png",
+      "sha256": "c4b0c1d6e1067afb5c3ff3f5d4f0503f2ae27281a2d9379e9cccbc2e5de24ed9",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/f43ebc1076a6468eb77da952cb7e1693-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/f43ebc1076a6468eb77da952cb7e1693-avatar.webp"
+    },
+    {
+      "provider_id": "9349c593-8917-489d-a914-58a8b78d4bfe",
+      "name": "THCS - THPT Thạnh An",
+      "website_url": "https://thcs-thptthanhan.hcm.edu.vn",
+      "directory_source": "https://hcm.edu.vn/DSDonVi?codekhoi=thpt",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thcs-thptthanhan.hcm.edu.vn/Images/logohcm.png",
+      "sha256": "1eb7335d0cf6c618abfc3073b813760ccf339d48e9275475481ad02847182e61",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/38070d6aded04819b0decd24f6b884af-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/38070d6aded04819b0decd24f6b884af-avatar.webp"
+    },
+    {
+      "provider_id": "eb0af619-2ce6-4dce-93aa-a7c431cb63af",
+      "name": "VUNGOI",
+      "website_url": "https://vungoi.vn/",
+      "directory_source": "https://vungoi.vn/",
+      "status": "no_valid_raster_logo"
+    },
+    {
+      "provider_id": "66699074-e1d9-471d-bd0a-ff48f7ceaceb",
+      "name": "Luyện Thi 123",
+      "website_url": "https://luyenthi123.edu.vn/",
+      "directory_source": "https://luyenthi123.edu.vn/",
+      "candidate_errors": [
+        {
+          "url": "https://luyenthi123.edu.vn/brand/logo.svg",
+          "error": "HTTPException"
+        }
+      ],
+      "status": "no_valid_raster_logo"
+    },
+    {
+      "provider_id": "e18b4c8c-6d7e-482c-9dd1-39d4151a7d6b",
+      "name": "HSA Education",
+      "website_url": "https://thithuhsa.vn/",
+      "directory_source": "https://thithuhsa.vn/",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "60e7d44a-bc0e-4a08-8cc3-e3ea692618e0",
+      "name": "TopHSA",
+      "website_url": "https://giaoduchsa.edu.vn/",
+      "directory_source": "https://giaoduchsa.edu.vn/",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "af622c9c-432b-4695-9967-4690de170adc",
+      "name": "THPT Nguyễn Trãi-Ba Đình",
+      "website_url": "http://thptnguyentrai-badinh.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "1eed5795-50d8-45f7-ad6c-e2db2aa8178d",
+      "name": "THPT Thạch Bàn",
+      "website_url": "http://c3thachban.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "7f8b1a50-3cbb-4392-9913-635f44c40f86",
+      "name": "THPT Cầu Giấy",
+      "website_url": "http://truongthptcaugiay.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "108ed130-4818-43d7-afe4-153f2f60f5c3",
+      "name": "THPT Lý Thường Kiệt",
+      "website_url": "http://thptlythuongkiet.hanoi.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "e55db368-ea65-4347-9df3-4ec8001acc9e",
+      "name": "THPT Hoàng Văn Thụ",
+      "website_url": "http://thpthoangvanthuhn.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "c6036bc6-2a4a-4718-aec3-83ff4aade29a",
+      "name": "THPT Thăng Long",
+      "website_url": "http://www.thptthanglonghanoi.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "af2d6b18-fd6d-4893-9294-c0074e6e9b04",
+      "name": "THPT Việt Nam-Ba Lan",
+      "website_url": "http://thptvietnambalan-hanoi.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "d1087676-d716-4e48-ae22-ac1f2b59bf1d",
+      "name": "THPT Sóc Sơn",
+      "website_url": "http://thptsocson.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "110eb4c2-57e6-4540-b3ca-fde994803e73",
+      "name": "THPT Kim Anh",
+      "website_url": "http://thptkimanh.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "6a4f89b9-aab6-431d-b0f5-832767408372",
+      "name": "THPT Cao Bá Quát-Gia Lâm",
+      "website_url": "http://caobaquat.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "6f8bf229-ef56-42e3-b442-94a1958ee819",
+      "name": "THPT Yên Lãng",
+      "website_url": "http://c3yenlang.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "325160d9-dd73-4d2f-8e94-188798c6de49",
+      "name": "THPT Tự Lập",
+      "website_url": "http://thpttulap.hanoi.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "6f9814d4-dd60-4ae0-abae-534fa1e786dd",
+      "name": "THPT Đại Mỗ",
+      "website_url": "http://thptdaimo.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "19533d10-a131-4b1c-935f-a9ae5419f8b7",
+      "name": "THPT Ngọc Hồi",
+      "website_url": "http://thptngochoi.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "b80d103c-b769-4b83-b569-7fb829cd0ef0",
+      "name": "THPT Ba Vì",
+      "website_url": "http://thptbavi.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "ce092d51-2e5d-4168-b272-a055476f63ad",
+      "name": "THPT Hoài Đức C",
+      "website_url": "http://thpthoaiducc.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "c486d653-5c87-4816-b84f-754ab79240f9",
+      "name": "THPT Minh Khai",
+      "website_url": "http://thptminhkhai.hanoi.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "df92c24c-9c9a-4b6b-859b-5c315837df42",
+      "name": "THPT Tân Lập",
+      "website_url": "https://c3tanlap.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "50365ece-eda1-4800-96e1-6841a03710cb",
+      "name": "THPT Cao Bá Quát-Quốc Oai",
+      "website_url": "http://cbqqo.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "99fbbcaf-cc47-4384-b49c-e9024355c5b0",
+      "name": "THPT Thạch Thất",
+      "website_url": "http://thptthachthat.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "f4d867bd-7d9a-4fff-b7c3-184901b9be2f",
+      "name": "THPT Phùng Khắc Khoan-Thạch Thất",
+      "website_url": "http://thptphungkhackhoan-thachthat.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "aa78333d-8fcb-4374-9d82-5078713479b3",
+      "name": "THPT Xuân Mai",
+      "website_url": "http://thptxuanmai.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "bfdbecd6-ee6b-4c22-9e64-9b7fac7708f0",
+      "name": "THPT Phú Xuyên A",
+      "website_url": "http://thptphuxuyena.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "c8bea690-2cce-4992-baa1-09adde7595e3",
+      "name": "THPT Ứng Hòa B",
+      "website_url": "http://c3unghoab.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "5727a3ab-e395-42c9-9a3a-ad246b03506d",
+      "name": "THPT Mỹ Đức C",
+      "website_url": "http://c3myducc.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "6938a62a-bdbd-460c-ad44-2767a2b279d8",
+      "name": "THPT Mỹ Đức B",
+      "website_url": "http://thpt-myducb.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "fe192040-2f48-4517-8566-bb62acbb7232",
+      "name": "THPT Lý Tử Tấn",
+      "website_url": "http://c3lytutan.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "39ccdef7-c998-41c4-88eb-ad0079a72ed7",
+      "name": "THPT Nguyễn Văn Trỗi",
+      "website_url": "https://c3nguyenvantroi.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "f6aaec75-e7f4-4911-ab30-09cda2215efc",
+      "name": "THPT Đồng Quan",
+      "website_url": "http://thpt-dongquan-hanoi.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "20c8fec6-ab1f-4a22-94f5-70a3d47e24ff",
+      "name": "THCS & THPT Marie Curie",
+      "website_url": "https://thcs-thptmariecurie.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "e5ebd2ea-05a6-4398-af82-8ecfeb1e74ed",
+      "name": "THPT Nguyễn Du",
+      "website_url": "https://thptnguyendu.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "5bb0c762-f299-4ede-b442-0567cadd9b2f",
+      "name": "Trường THPT Phan Bội Châu",
+      "website_url": "https://thptphanboichau.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "5e869985-b804-46ac-8727-bd1799f6a276",
+      "name": "HOC247",
+      "website_url": "https://hoc247.net/",
+      "directory_source": "https://hoc247.net/",
+      "candidate_errors": [
+        {
+          "url": "https://hoc247.net/images/graphics/hoc247_logo.png?id=1.001",
+          "error": "HTTPStatusError"
+        },
+        {
+          "url": "https://hoc247.net/images/graphics/hoc247_logo_pc.png",
+          "error": "HTTPStatusError"
+        }
+      ],
+      "status": "no_valid_raster_logo"
+    },
+    {
+      "provider_id": "397bec60-451b-4923-bf75-86c887ccd645",
+      "name": "THPT Tuệ Tĩnh",
+      "website_url": "https://thpttuetinh.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "f9c1bd37-a11b-4438-b896-fade2dba61b7",
+      "name": "THPT Phúc Thành",
+      "website_url": "https://thptphucthanh.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "0cafd364-a69e-4b3c-9445-020d30728e8d",
+      "name": "THPT Kẻ Sặt",
+      "website_url": "https://thptkesat.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "32aefc93-b0be-4c34-89c0-19c068101bca",
+      "name": "THPT Ninh Giang II",
+      "website_url": "https://thptninhgiangii.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "a4fd92a3-a1f8-4a2a-bdeb-932709b9278a",
+      "name": "THPT Vũ Ngọc Phan",
+      "website_url": "https://thptvungocphan.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "7136e3b3-2ac7-4e10-9c91-5526c314d7fc",
+      "name": "THPT Đường An",
+      "website_url": "https://thptduongan.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "f4c1ccca-d806-4ac1-8565-61f8478158f6",
+      "name": "THPT Thái Phiên",
+      "website_url": "https://thptthaiphien.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "5eb6c70e-83c1-4570-bd4a-c070563a20d4",
+      "name": "Trường THPT Hàng Hải",
+      "website_url": "https://thpthanghai.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "0ac32500-238a-4695-9735-fef044d441e7",
+      "name": "THPT Hà Đông",
+      "website_url": "https://thpthadong.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "c5813ba7-29d7-4b74-a4e2-9ecf2b233e31",
+      "name": "THPT Ninh Giang",
+      "website_url": "https://thptninhgiang.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "d8c9699f-9db3-4cfe-9298-ef9f283671f6",
+      "name": "THPT Lê Chân",
+      "website_url": "https://thptlechan.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "b91e914b-1714-40dd-a215-2d6214dd42b6",
+      "name": "DMT Education",
+      "website_url": "https://www.dmteducation.edu.vn/",
+      "directory_source": "https://www.dmteducation.edu.vn/",
+      "status": "no_valid_raster_logo"
+    },
+    {
+      "provider_id": "74c56748-49f7-4538-8d0f-03d8d1d7d25d",
+      "name": "THPT Trần Nguyên Hãn",
+      "website_url": "https://thpttrannguyenhan.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "6e751633-7c23-43d7-a855-8a03906f0d05",
+      "name": "THPT Lê Quý Đôn",
+      "website_url": "https://thptlequydon.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "144d9e3b-7f27-40f4-bf02-933d523f4298",
+      "name": "ThPT Nguyễn Bỉnh Khỉêm",
+      "website_url": "https://thptnguyenbinhkhiem.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "8f376b65-9e0f-48b7-ba83-dee667795ee8",
+      "name": "THPT Nguyễn Huệ",
+      "website_url": "https://thptnguyenhue.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "3a6ce137-326d-4cb6-87a2-f62cfa18d09a",
+      "name": "THPT Lý Thường Kiệt",
+      "website_url": "https://thptlythuongkiet.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "01e39162-87c2-471c-9895-c928ebee95b1",
+      "name": "THPT Trần Hưng Đạo",
+      "website_url": "https://thpttranhungdao.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "2f253cd4-8f12-428a-b7b8-503e191d3a12",
+      "name": "Luyện thi Nguyễn Thượng Hiền",
+      "website_url": "https://ltnth.edu.vn/",
+      "directory_source": "https://ltnth.edu.vn/",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "53e1be80-84ad-4e5c-a316-16dea0a37f6e",
+      "name": "VUIHOC",
+      "website_url": "https://vuihoc.vn/",
+      "directory_source": "https://vuihoc.vn/",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "708b0f44-b050-4994-91a3-3a2987cced85",
+      "name": "VietJack",
+      "website_url": "https://vietjack.com/",
+      "directory_source": "https://vietjack.com/",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "d2ff0b4e-8df5-406a-8d00-39ad267c21d8",
+      "name": "Luyện thi Thành Công - Cần Thơ",
+      "website_url": "https://thanhcongedu.vn/",
+      "directory_source": "https://thanhcongedu.vn/",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "03261294-c97a-4f62-9b6f-be2c089dd912",
+      "name": "Trường THPT Chu Văn An",
+      "website_url": "https://thptchuvanan.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptchuvanan.haiphong.edu.vn/Images/logohp.png",
+      "sha256": "d56f993cd61ed57d2fbae912e4c7d41283f1373eed4c5f357a79e7912196403c",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/9b97635d893c41ae8b60f8cac2d19956-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/9b97635d893c41ae8b60f8cac2d19956-avatar.webp"
+    },
+    {
+      "provider_id": "312b3c6a-7036-4cac-a6b2-65b0e2fa2e40",
+      "name": "HOCMAI",
+      "website_url": "https://hocmai.vn/",
+      "directory_source": "https://hocmai.vn/",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "6daf7b10-3e89-4392-9221-85a0ab47ca52",
+      "name": "Tuyensinh247",
+      "website_url": "https://tuyensinh247.com/",
+      "directory_source": "https://tuyensinh247.com/",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "af67d97a-a529-43ab-b18b-0968dac7bee8",
+      "name": "Luyện thi Nhân Tài Việt",
+      "website_url": "https://toanlyhoa.vn/",
+      "directory_source": "https://toanlyhoa.vn/",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "017ade02-7dd4-4013-a964-b1ba3b8d6153",
+      "name": "THPT Đông Anh",
+      "website_url": "http://thptdonganh.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "0e5a058c-32e8-4932-8e7c-6c9e004f7130",
+      "name": "THPT Tứ Kỳ II",
+      "website_url": "https://thpttukyii.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thpttukyii.haiphong.edu.vn/Images/logohp.png",
+      "sha256": "d56f993cd61ed57d2fbae912e4c7d41283f1373eed4c5f357a79e7912196403c",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/8aefbd7ca46548d99f3bfe0131391d69-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/8aefbd7ca46548d99f3bfe0131391d69-avatar.webp"
+    },
+    {
+      "provider_id": "2c463169-0aed-40da-93fc-ce07496bfe16",
+      "name": "THPT Bắc Lương Sơn",
+      "website_url": "http://thptbacluongson.hanoi.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "3059af5b-b2ed-4cba-ab44-a8b2cf4c7728",
+      "name": "THPT Mê Linh",
+      "website_url": "http://c3melinh.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "3bfb677a-9f24-45f8-acce-6e7fbc2935df",
+      "name": "THPT chuyên Trần Phú",
+      "website_url": "https://thptchuyentranphu.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "3eaa8203-ce5e-4cca-ab9e-7b469c598f1a",
+      "name": "THPT Kinh Môn",
+      "website_url": "https://thptkinhmon.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "49dca6d2-5884-4707-8b6b-7eaaa309f9b0",
+      "name": "THPT An Lão",
+      "website_url": "https://thptanlao.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "4ff82eff-eae5-49b6-9b96-dd87105a2731",
+      "name": "THPT Lương Khánh Thiện",
+      "website_url": "https://thptluongkhanhthien.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "e651ebe3-72c0-4638-adfe-d7184927d51f",
+      "name": "Trường THPT Vĩnh Bảo",
+      "website_url": "https://thptvinhbao.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptvinhbao.haiphong.edu.vn/Images/logohp.png",
+      "sha256": "d56f993cd61ed57d2fbae912e4c7d41283f1373eed4c5f357a79e7912196403c",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/a65fd90ed1cd4bb596acc4c0dc167900-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/a65fd90ed1cd4bb596acc4c0dc167900-avatar.webp"
+    },
+    {
+      "provider_id": "cc117ae0-71ab-4756-b3f0-4d7149e860f5",
+      "name": "Luyện thi CLC",
+      "website_url": "https://luyenthiclc.edu.vn/",
+      "directory_source": "https://luyenthiclc.edu.vn/",
+      "status": "no_valid_raster_logo"
+    },
+    {
+      "provider_id": "5314a6dc-1857-4803-8239-8face9377feb",
+      "name": "THPT Thụy Hương",
+      "website_url": "https://thptthuyhuong.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptthuyhuong.haiphong.edu.vn/Images/logohp.png",
+      "sha256": "d56f993cd61ed57d2fbae912e4c7d41283f1373eed4c5f357a79e7912196403c",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/2aa10cdc73b646daa97c099e9c069400-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/2aa10cdc73b646daa97c099e9c069400-avatar.webp"
+    },
+    {
+      "provider_id": "608f7e6a-5237-41e0-b25a-88c69d8276de",
+      "name": "THPT Cát Bà",
+      "website_url": "https://thptcatba.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "666f42f4-11ad-498b-a202-6bf2bc46f4de",
+      "name": "THPT Cầu Xe",
+      "website_url": "https://thptcauxe.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "74d89e77-8449-4a13-a5ae-1b5885937da5",
+      "name": "THPT Thanh Miện",
+      "website_url": "https://thptthanhmien.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "173130cc-abab-4522-9814-fcad6084975c",
+      "name": "THPT Lê Quý Đôn-Đống Đa",
+      "website_url": "http://thptlequydon-dd.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "candidate_errors": [
+        {
+          "url": "https://file2.hanoi.edu.vn/UploadFolder/config/2024/thptlequydon-dd/logo-vang_782024829.png",
+          "error": "HTTPException"
+        }
+      ],
+      "status": "no_valid_raster_logo"
+    },
+    {
+      "provider_id": "806b547b-cbe5-4432-96f7-8b875d50ea96",
+      "name": "Trường THPT Tân Trào",
+      "website_url": "https://thpttantrao.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "9721ed6d-a299-4e9f-a8d1-a6126f84beb8",
+      "name": "Trường THPT Phan Chu Trinh",
+      "website_url": "https://thptphanchutrinh.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "54cddb4c-b097-43fe-83ff-586d9a5629b7",
+      "name": "THPT Quang Trung-Hà Đông",
+      "website_url": "http://c3quangtrunghadong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "candidate_errors": [
+        {
+          "url": "https://file2.hanoi.edu.vn/UploadFolder/config/2025/c3quangtrunghadong/logo_20420251150.png",
+          "error": "HTTPException"
+        }
+      ],
+      "status": "no_valid_raster_logo"
+    },
+    {
+      "provider_id": "6eff5234-54e9-4c25-b7dd-4c0941f22a4e",
+      "name": "THPT Gia Lộc II",
+      "website_url": "https://thptgialocii.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptgialocii.haiphong.edu.vn/Images/logohp.png",
+      "sha256": "d56f993cd61ed57d2fbae912e4c7d41283f1373eed4c5f357a79e7912196403c",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/5fa29bd802d04086bb22e771cbb1584d-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/5fa29bd802d04086bb22e771cbb1584d-avatar.webp"
+    },
+    {
+      "provider_id": "ac5b52dc-dc84-468e-879a-94711363b968",
+      "name": "THPT Phạm Ngũ Lão",
+      "website_url": "https://thptphamngulao.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "af0094b5-fe11-4e3e-a290-85136b80af93",
+      "name": "THPT 25-10",
+      "website_url": "https://thpt25-10.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "8ea8f4b9-b747-4659-a741-53800bffb132",
+      "name": "THPT Nguyễn Trãi",
+      "website_url": "https://thptnguyentrai.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptnguyentrai.haiphong.edu.vn/Images/logohp.png",
+      "sha256": "d56f993cd61ed57d2fbae912e4c7d41283f1373eed4c5f357a79e7912196403c",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/8aeb69403acb463b9df83c54f63fa3fa-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/8aeb69403acb463b9df83c54f63fa3fa-avatar.webp"
+    },
+    {
+      "provider_id": "5a0a9a98-fcea-4667-bcf4-2d7599e0b6fa",
+      "name": "THPT Marie Curie",
+      "website_url": "https://thptmariecurie.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "candidate_errors": [
+        {
+          "url": "https://admintruong.haiphong.shieldix.app/UploadImages/haiphong/thptmariecurie/Config/2022_6_1/logo-mari_16202216.png",
+          "error": "ValueError"
+        }
+      ],
+      "status": "no_valid_raster_logo"
+    },
+    {
+      "provider_id": "a04d0ef0-3481-4bb0-8005-8993471ddf33",
+      "name": "THPT Xuân Phương",
+      "website_url": "https://c3xuanphuong.hanoi.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "candidate_errors": [
+        {
+          "url": "https://file2.hanoi.edu.vn/UploadFolder/hnedu/c3xuanphuong/UploadImages/2021_9_image/Logo%20XP2.png",
+          "error": "HTTPException"
+        }
+      ],
+      "status": "no_valid_raster_logo"
+    },
+    {
+      "provider_id": "c082ebd7-3273-4cb4-b2b3-16aad2f88ddf",
+      "name": "THPT Cát Hải",
+      "website_url": "https://thptcathai.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptcathai.haiphong.edu.vn/Images/logohp.png",
+      "sha256": "d56f993cd61ed57d2fbae912e4c7d41283f1373eed4c5f357a79e7912196403c",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/5d1d1cfe1c7448c38051a99dbe2119b5-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/5d1d1cfe1c7448c38051a99dbe2119b5-avatar.webp"
+    },
+    {
+      "provider_id": "c6495ca7-766a-4a32-8445-77ffc052749e",
+      "name": "THPT Nhị Chiểu",
+      "website_url": "https://thptnhichieu.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "cbac5041-c202-45b3-aa01-9dde137b0491",
+      "name": "THPT Hồng Bàng",
+      "website_url": "https://thpthongbang.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "d5714635-2956-4ff7-b233-44387a76796a",
+      "name": "THPT Quốc Oai",
+      "website_url": "http://thptquocoai.hanoi.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "c0820ce7-8590-4d98-8892-080935c810a4",
+      "name": "THPT Liên Hà",
+      "website_url": "http://thptlienha.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "candidate_errors": [
+        {
+          "url": "https://file2.hanoi.edu.vn/UploadFolder/hnedu/thptlienha/UploadImages/logo%20lien%20ha%20Chuan.png",
+          "error": "HTTPException"
+        },
+        {
+          "url": "https://file2.hanoi.edu.vn/UploadFolder/hnedu/thptlienha/UploadImages/M%C3%80U_XANH-removebg-preview.png?w=500",
+          "error": "HTTPException"
+        }
+      ],
+      "status": "no_valid_raster_logo"
+    },
+    {
+      "provider_id": "d53d4e0d-6ab7-487f-91d9-393e398648c0",
+      "name": "THPT Bến Tắm",
+      "website_url": "https://thptbentam.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptbentam.haiphong.edu.vn/Images/logohp.png",
+      "sha256": "d56f993cd61ed57d2fbae912e4c7d41283f1373eed4c5f357a79e7912196403c",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/cb7c1a556d824cd590a2eec68f8bbd63-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/cb7c1a556d824cd590a2eec68f8bbd63-avatar.webp"
+    },
+    {
+      "provider_id": "e93f26b3-ab5a-4cb0-a9c5-a7d24cf77f59",
+      "name": "THPT Mỹ Đình",
+      "website_url": "http://thptmydinh.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "bd75e4b1-0326-427c-9dca-466203016282",
+      "name": "THPT Cổ Loa",
+      "website_url": "https://thptcoloa.hanoi.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "candidate_errors": [
+        {
+          "url": "https://file2.hanoi.edu.vn/UploadFolder/hnedu/thptcoloa/UploadImages/logo_23032020.png",
+          "error": "HTTPException"
+        },
+        {
+          "url": "https://file2.hanoi.edu.vn/UploadFolder/hnedu/thptcoloa/UploadImages/logofooter_23032020.png",
+          "error": "HTTPException"
+        }
+      ],
+      "status": "no_valid_raster_logo"
+    },
+    {
+      "provider_id": "c90faa2f-369b-4a51-b570-7b0666498f7c",
+      "name": "THPT Đồng Gia",
+      "website_url": "https://thptdonggia.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "candidate_errors": [
+        {
+          "url": "https://admintruong.haiphong.shieldix.app/UploadImages/config/haiphong/2025/thptdonggia/1760544368569frame_15102025232.jpeg",
+          "error": "ValueError"
+        }
+      ],
+      "status": "no_valid_raster_logo"
+    },
+    {
+      "provider_id": "f799136b-b36b-4c5a-b5f5-a9e854657d99",
+      "name": "Trường THPT Nhữ Văn Lan",
+      "website_url": "https://thptnhuvanlan.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "fa4d6716-cbbc-4ca7-be15-e75fd34ebafc",
+      "name": "THPT Thanh Hà",
+      "website_url": "https://thptthanhha.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "fdb63cb3-aef3-46b3-b246-d4c7002311a4",
+      "name": "THPT Nam Sách II",
+      "website_url": "https://thptnamsachii.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "fd57e603-2ed5-418f-81ad-ca9d045f8369",
+      "name": "THPT Hồng Quang",
+      "website_url": "https://thpthongquang.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "e542a1ae-fd83-4622-8ae7-5935938b4536",
+      "name": "THPT Quang Trung",
+      "website_url": "https://thptquangtrung.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptquangtrung.haiphong.edu.vn/Images/logohp.png",
+      "sha256": "d56f993cd61ed57d2fbae912e4c7d41283f1373eed4c5f357a79e7912196403c",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/3cebbd2b1e8e4d3bbe382285436720db-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/3cebbd2b1e8e4d3bbe382285436720db-avatar.webp"
+    },
+    {
+      "provider_id": "3ecab3d3-7719-43a4-adaa-3dad3511abd9",
+      "name": "THPT Hàng hải 1",
+      "website_url": "http://thpthanghai1.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "0835d29d-773c-4cab-8f7b-ff0d05b80fcc",
+      "name": "THPT Thượng Cát",
+      "website_url": "http://thptthuongcat.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "1b2a0c2d-f2ce-471d-b9b1-335428ba05c3",
+      "name": "THPT Chí Linh",
+      "website_url": "https://thptchilinh.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "221395b8-2b6e-4412-bf30-ac22a275fa75",
+      "name": "THPT An Dương",
+      "website_url": "https://thptanduong.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "453c5321-5709-456b-ba3a-a77be83d9548",
+      "name": "THPT  Lương Thế Vinh",
+      "website_url": "https://thptluongthevinh.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "45b4566b-60a7-43a2-9092-baea6902a4ca",
+      "name": "THPT Hoàng Cầu",
+      "website_url": "http://thpthoangcau.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "4d01f2b7-dc8b-45e6-baa8-5b24480486f7",
+      "name": "Trường THPT Thanh Miện II",
+      "website_url": "https://thptthanhmienii.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "53ec1c71-ba13-4fb7-aaad-ce89faea273f",
+      "name": "THPT Vân Cốc",
+      "website_url": "http://thptvancoc.hanoi.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "648b8ec0-ee4b-42a8-abeb-1697d4d88cf8",
+      "name": "THPT Tân An",
+      "website_url": "https://thpttanan.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "67f0fad8-d91a-4039-8557-c263f07465b3",
+      "name": "THPT Phan Đăng Lưu",
+      "website_url": "https://thptphandangluu.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "7d1cc3e9-147c-4e4f-a021-65f07c5bd1fb",
+      "name": "THPT Gia Lộc",
+      "website_url": "https://thptgialoc.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "6355624c-9860-4ff1-9469-65a5ba9fe8ce",
+      "name": "THPT Toàn Thắng",
+      "website_url": "https://thpttoanthang.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "83d9de66-5bd2-40a0-83f3-8198a7998392",
+      "name": "Trường THPT Bạch Đằng",
+      "website_url": "https://thptbachdang.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "afd7d13f-2456-4151-8d88-c148c78a0f6a",
+      "name": "THPT Nguyễn Văn Cừ",
+      "website_url": "https://thptnguyenvancu.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "b4fbbaa9-d148-44bd-a203-7b8d1b912cc7",
+      "name": "THPT Thủy Sơn",
+      "website_url": "https://thptthuyson.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "c409bd33-a0bf-4382-9a9b-4817e7e4921c",
+      "name": "THPT Nguyễn Khuyến",
+      "website_url": "https://thptnguyenkhuyen.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "c41f8f34-94c3-4095-b20f-93547044e896",
+      "name": "Trường THPT Hùng Vương",
+      "website_url": "https://thpthungvuong.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "c9d4ad11-d193-4876-8080-8b65905319c9",
+      "name": "THPT Trần Phú-Hoàn Kiếm",
+      "website_url": "https://thpttranphuhk.hanoi.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "ccbb42bb-2524-4271-9591-d32c67b210f3",
+      "name": "THPT Hùng Thắng",
+      "website_url": "https://thpthungthang.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "d30b1a55-c0dc-4de7-be8f-26e4471480f7",
+      "name": "THPT Tiên Lãng",
+      "website_url": "https://thpttienlang.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "eb07895d-befc-40d8-b1af-5606b1d3f729",
+      "name": "THPT Hà Bắc",
+      "website_url": "https://thpthabac.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "e41436f3-dcd1-4e16-b129-393af6ead29c",
+      "name": "THPT Nguyễn Đức Cảnh",
+      "website_url": "https://thptnguyenduccanh.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "ddeb407a-ab03-4ccc-9022-ac00e53ede1d",
+      "name": "THPT Thăng Long",
+      "website_url": "https://thptthanglong.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "f744539f-300c-4973-bafe-a877749a0fff",
+      "name": "THPT Trần Phú",
+      "website_url": "https://thpttranphu.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "f82ca3c7-1434-45a7-9180-b840784d9e4e",
+      "name": "THPT Lê Ích Mộc",
+      "website_url": "https://thptleichmoc.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "faea8e9f-e09c-4398-91d5-e6c78106cd53",
+      "name": "Trường THPT Trần Quang Khải",
+      "website_url": "https://thpttranquangkhai.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "existing_image_preserved"
+    },
+    {
+      "provider_id": "d8b140ba-d895-420a-b961-5a7154f7f35c",
+      "name": "THPT Khương Đình",
+      "website_url": "http://thptkhuongdinh.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "candidate_errors": [
+        {
+          "url": "https://file2.hanoi.edu.vn/UploadFolder/config/2025/thptkhuongdinh/3-file-logo-chuan_17420251550.png",
+          "error": "HTTPException"
+        }
+      ],
+      "status": "no_valid_raster_logo"
+    },
+    {
+      "provider_id": "ebda3686-1c17-4341-b9f5-606a7c6edb0f",
+      "name": "THPT Nguyễn Văn Cừ",
+      "website_url": "http://c3nguyenvancu.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "candidate_errors": [
+        {
+          "url": "https://file2.hanoi.edu.vn/UploadFolder/hnedu/c3nguyenvancu/Image/Thu_muc_chung/download.png",
+          "error": "HTTPException"
+        }
+      ],
+      "status": "no_valid_raster_logo"
+    },
+    {
+      "provider_id": "fe0e2563-ff44-4ba9-85e6-3bf3ddc25b43",
+      "name": "THPT Phú Thái",
+      "website_url": "https://thptphuthai.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptphuthai.haiphong.edu.vn/Images/logohp.png",
+      "sha256": "d56f993cd61ed57d2fbae912e4c7d41283f1373eed4c5f357a79e7912196403c",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/2d3c964da7fe4f8f8f322578a75797a2-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/2d3c964da7fe4f8f8f322578a75797a2-avatar.webp"
+    },
+    {
+      "provider_id": "34b1f789-69b4-4fa4-b7ce-4d736c5470ce",
+      "name": "Trường THPT Mạc Đĩnh Chi - Nam Sách",
+      "website_url": "https://thptmacdinhchi-namsach.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptmacdinhchi-namsach.haiphong.edu.vn/Images/logohp.png",
+      "sha256": "d56f993cd61ed57d2fbae912e4c7d41283f1373eed4c5f357a79e7912196403c",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/7a06818ef0db4d268db85050433a00b1-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/7a06818ef0db4d268db85050433a00b1-avatar.webp"
+    },
+    {
+      "provider_id": "2070f547-7a89-4db6-ab8d-9358182da220",
+      "name": "THPT Kim Thành",
+      "website_url": "https://thptkimthanh.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptkimthanh.haiphong.edu.vn/Images/logohp.png",
+      "sha256": "d56f993cd61ed57d2fbae912e4c7d41283f1373eed4c5f357a79e7912196403c",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/1ca1029fab5e4e08af5855084cf65c6a-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/1ca1029fab5e4e08af5855084cf65c6a-avatar.webp"
+    },
+    {
+      "provider_id": "3ced54ed-2275-42d1-86dc-38fd9e44a1b3",
+      "name": "THPT Kinh Môn II",
+      "website_url": "https://thptkinhmonii.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptkinhmonii.haiphong.edu.vn/Images/logohp.png",
+      "sha256": "d56f993cd61ed57d2fbae912e4c7d41283f1373eed4c5f357a79e7912196403c",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/afbaeed72376434b99c1d7d547a83a69-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/afbaeed72376434b99c1d7d547a83a69-avatar.webp"
+    },
+    {
+      "provider_id": "bb5613c9-ecfe-45e1-9ec4-b7c0f2c7056e",
+      "name": "THPT Hồng Thái",
+      "website_url": "http://thpthongthai.hanoi.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thpthongthai.hanoi.edu.vn/Images/logohanoi.png",
+      "sha256": "da7479adb2113787618649ba32ef368dd4b689765e6a27ad6abeaa6b9343c6cc",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/6687fb06dd884181b22e473815883c98-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/6687fb06dd884181b22e473815883c98-avatar.webp"
+    },
+    {
+      "provider_id": "3f4273cb-8026-485f-bcf0-96a52d2fb04b",
+      "name": "THPT Tứ Kỳ",
+      "website_url": "https://thpttuky.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thpttuky.haiphong.edu.vn/Images/logohp.png",
+      "sha256": "d56f993cd61ed57d2fbae912e4c7d41283f1373eed4c5f357a79e7912196403c",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/bbe075b5b0b846b4b2a63914675523cd-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/bbe075b5b0b846b4b2a63914675523cd-avatar.webp"
+    },
+    {
+      "provider_id": "5d711fc4-f2af-4b7e-a2b0-03f6553bffd5",
+      "name": "THPT Hưng Đạo",
+      "website_url": "https://thpthungdao.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thpthungdao.haiphong.edu.vn/Images/logohp.png",
+      "sha256": "d56f993cd61ed57d2fbae912e4c7d41283f1373eed4c5f357a79e7912196403c",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/ecde1d9e2df243348e9458a883299ee8-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/ecde1d9e2df243348e9458a883299ee8-avatar.webp"
+    },
+    {
+      "provider_id": "9aa3dc19-dbaf-459f-849b-452f6da8cbd9",
+      "name": "THPT Tiền Phong",
+      "website_url": "http://thpttienphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "http://thpttienphong.edu.vn/Images/logohanoi.png",
+      "sha256": "da7479adb2113787618649ba32ef368dd4b689765e6a27ad6abeaa6b9343c6cc",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/610c8ae0bb564619bb7e6d2ec1827a62-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/610c8ae0bb564619bb7e6d2ec1827a62-avatar.webp"
+    },
+    {
+      "provider_id": "d10a41a8-a405-4edf-a108-3d13e32e19dd",
+      "name": "THPT Hồng Đức",
+      "website_url": "https://thpthongduc.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thpthongduc.haiphong.edu.vn/Images/logohp.png",
+      "sha256": "d56f993cd61ed57d2fbae912e4c7d41283f1373eed4c5f357a79e7912196403c",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/abf6045aa6d4434d9ab36ac4c5ba7436-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/abf6045aa6d4434d9ab36ac4c5ba7436-avatar.webp"
+    },
+    {
+      "provider_id": "fcae3ba4-ed2e-44b3-8e18-1cc8123017ff",
+      "name": "THPT Đồng Hoà",
+      "website_url": "https://thptdonghoa.haiphong.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "https://thptdonghoa.haiphong.edu.vn/Images/logohp.png",
+      "sha256": "d56f993cd61ed57d2fbae912e4c7d41283f1373eed4c5f357a79e7912196403c",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/906ca94065b944e08fdbaaaa7f2cf85a-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/906ca94065b944e08fdbaaaa7f2cf85a-avatar.webp"
+    },
+    {
+      "provider_id": "5ef64666-4a17-418b-9559-90fa1815f393",
+      "name": "VTED",
+      "website_url": "https://vted.vn/",
+      "directory_source": "https://vted.vn/khoa-hoc.html",
+      "status": "source_unavailable",
+      "error": "ConnectTimeout"
+    },
+    {
+      "provider_id": "ae2a7d5c-0246-4466-a3d0-fee014c7623e",
+      "name": "THPT Nguyễn Du-Thanh Oai",
+      "website_url": "http://nguyenduthanhoai.edu.vn",
+      "directory_source": "https://tuyensinh.qui.edu.vn/about/Danh-sach-truong-THPT-theo-dia-gioi-hanh-chinh-moi.html",
+      "status": "ambiguous_shared_logo_removed",
+      "source_image_url": "http://nguyenduthanhoai.edu.vn/Images/logohanoi.png",
+      "sha256": "da7479adb2113787618649ba32ef368dd4b689765e6a27ad6abeaa6b9343c6cc",
+      "dimensions": [
+        512,
+        512
+      ],
+      "asset_url": "/api/storage/files/public/providers/catalog/avatars/24f030c3f4f04301ac307784bfae5164-avatar.webp",
+      "logo_url": "/api/storage/files/public/providers/catalog/avatars/24f030c3f4f04301ac307784bfae5164-avatar.webp"
+    }
+  ],
+  "directory_index_source": "https://vqa.moet.gov.vn/vi/news/tin-tuc-su-kien/huong-dan-tra-cuu-va-danh-sach-cac-trang-tra-cuu-diem-thi-tot-nghiep-thpt-nam-2026-274.html",
+  "ambiguous_removed": 64,
+  "counts": {
+    "existing_image_preserved": 140,
+    "source_unavailable": 49,
+    "no_valid_raster_logo": 30,
+    "ambiguous_shared_logo_removed": 64,
+    "uploaded": 38
+  },
+  "without_declared_website": 3019
+}

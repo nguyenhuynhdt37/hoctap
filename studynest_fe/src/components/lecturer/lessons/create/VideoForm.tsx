@@ -1,7 +1,8 @@
 "use client";
 
+import { Card } from "@/components/ui";
+import { Check, Play, Upload, X } from "lucide-react";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
-import { HiCheck, HiPlay, HiUpload, HiX } from "react-icons/hi";
 
 interface VideoFormProps {
   onVideoUrlChange: (url: string) => void;
@@ -99,47 +100,55 @@ const VideoForm = memo(
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-md">
-            <HiPlay className="h-6 w-6 text-white" />
+          <div className="w-12 h-12 bg-primary-light border border-primary-pastel rounded-xl flex items-center justify-center text-primary">
+            <Play className="h-6 w-6" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Tải lên video</h2>
-            <p className="text-gray-600 mt-1">
+            <h2 className="font-display text-2xl font-bold text-foreground">
+              Tải lên video
+            </h2>
+            <p className="text-muted-foreground mt-1 text-sm">
               Chọn một trong hai cách: tải lên file video hoặc dán link YouTube
             </p>
           </div>
         </div>
 
         {/* Tabs Container */}
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <Card className="overflow-hidden p-0">
           {/* Tab Buttons */}
-          <div className="flex border-b border-gray-200">
+          <div className="flex border-b border-border">
             <button
               type="button"
               onClick={() => handleTabChange("file")}
-              className={`flex-1 px-6 py-4 text-center font-semibold transition-colors ${
+              className={`flex-1 px-6 py-4 text-center font-semibold transition-colors cursor-pointer ${
                 activeTab === "file"
-                  ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white"
-                  : "bg-gray-50 text-gray-700 hover:bg-gray-100"
+                  ? "bg-primary text-white"
+                  : "bg-background/60 text-muted-foreground hover:bg-primary-light/50 hover:text-primary"
               }`}
             >
               <div className="flex items-center justify-center gap-2">
-                <HiUpload className="h-5 w-5" />
+                <Upload className="h-5 w-5" />
                 <span>Tải lên video</span>
               </div>
             </button>
             <button
               type="button"
               onClick={() => handleTabChange("url")}
-              className={`flex-1 px-6 py-4 text-center font-semibold transition-colors ${
+              className={`flex-1 px-6 py-4 text-center font-semibold transition-colors cursor-pointer ${
                 activeTab === "url"
-                  ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white"
-                  : "bg-gray-50 text-gray-700 hover:bg-gray-100"
+                  ? "bg-primary text-white"
+                  : "bg-background/60 text-muted-foreground hover:bg-primary-light/50 hover:text-primary"
               }`}
             >
               <div className="flex items-center justify-center gap-2">
-                <div className="w-5 h-5 bg-red-500 rounded flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">YT</span>
+                <div
+                  className={`w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold ${
+                    activeTab === "url"
+                      ? "bg-white/20 text-white"
+                      : "bg-destructive-bg text-destructive-foreground border border-destructive-border"
+                  }`}
+                >
+                  YT
                 </div>
                 <span>Link YouTube</span>
               </div>
@@ -166,34 +175,34 @@ const VideoForm = memo(
                 />
                 <label
                   htmlFor="video-file-input"
-                  className="flex flex-col items-center justify-center p-8 bg-gray-50 rounded-lg transition-colors cursor-pointer border-2 border-dashed border-gray-300 hover:border-green-400 hover:bg-gray-100"
+                  className="flex flex-col items-center justify-center p-8 bg-background/50 rounded-xl transition-colors cursor-pointer border-2 border-dashed border-border hover:border-primary hover:bg-primary-light/30"
                 >
-                  <HiUpload className="h-10 w-10 text-gray-400 mb-3" />
-                  <p className="text-sm font-medium text-gray-700 mb-1">
+                  <Upload className="h-10 w-10 text-primary mb-3" />
+                  <p className="text-sm font-medium text-foreground mb-1">
                     {videoFile ? videoFile.name : "Chọn file video để tải lên"}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted-foreground">
                     MP4, AVI, MOV hoặc các định dạng video khác
                   </p>
                 </label>
 
                 {videoFile && (
-                  <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg p-3">
+                  <div className="flex items-center justify-between bg-success-bg border border-success-border rounded-xl p-3">
                     <div className="flex items-center gap-2">
-                      <HiCheck className="h-5 w-5 text-green-600" />
-                      <span className="text-sm font-medium text-green-700">
+                      <Check className="h-5 w-5 text-success-foreground" />
+                      <span className="text-sm font-medium text-success-foreground">
                         {videoFile.name}
                       </span>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-muted-foreground">
                         ({(videoFile.size / 1024 / 1024).toFixed(2)} MB)
                       </span>
                     </div>
                     <button
                       type="button"
                       onClick={() => handleFileChange(null)}
-                      className="text-red-600 hover:text-red-700 cursor-pointer transition-colors"
+                      className="text-destructive-foreground hover:opacity-80 cursor-pointer transition-opacity"
                     >
-                      <HiX className="h-5 w-5" />
+                      <X className="h-5 w-5" />
                     </button>
                   </div>
                 )}
@@ -201,8 +210,9 @@ const VideoForm = memo(
             ) : (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Link YouTube <span className="text-red-500">*</span>
+                  <label className="block text-sm font-semibold text-foreground mb-2">
+                    Link YouTube{" "}
+                    <span className="text-destructive-foreground">*</span>
                   </label>
                   <input
                     type="text"
@@ -211,25 +221,25 @@ const VideoForm = memo(
                       handleUrlChange(e.target.value);
                     }}
                     placeholder="https://www.youtube.com/watch?v=..."
-                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all text-gray-900 ${
+                    className={`w-full px-4 py-3 bg-surface border rounded-xl focus:outline-none focus:ring-2 transition-all text-foreground placeholder:text-muted-foreground ${
                       errors.video_url
-                        ? "border-red-300 focus:ring-red-500"
-                        : "border-gray-300 focus:ring-green-500 focus:border-transparent"
+                        ? "border-destructive-border focus:ring-destructive-border/40 focus:border-destructive-foreground"
+                        : "border-border focus:ring-primary/25 focus:border-primary"
                     }`}
                   />
                   {errors.video_url && (
-                    <p className="text-red-600 text-sm mt-1">
+                    <p className="text-destructive-foreground text-sm mt-1">
                       {errors.video_url}
                     </p>
                   )}
                 </div>
 
                 {previewUrl && (
-                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                    <p className="text-sm font-medium text-gray-700 mb-3">
+                  <div className="bg-background rounded-xl p-4 border border-border">
+                    <p className="text-sm font-medium text-foreground mb-3">
                       Preview video:
                     </p>
-                    <div className="aspect-video rounded-lg overflow-hidden bg-black">
+                    <div className="aspect-video rounded-xl overflow-hidden bg-black">
                       <iframe
                         src={previewUrl}
                         className="w-full h-full"
@@ -243,7 +253,7 @@ const VideoForm = memo(
               </div>
             )}
           </div>
-        </div>
+        </Card>
       </div>
     );
   }

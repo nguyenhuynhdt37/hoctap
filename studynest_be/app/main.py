@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi_pagination import add_pagination
 
 # --- ADMIN ROUTES ---
-from app.api.v1 import catalog, learning_paths
+from app.api.v1 import catalog, learning_paths, bundle_management
 from app.api.v1.admin import category as admin_category
 from app.api.v1.admin import discounts as admin_discounts
 from app.api.v1.admin import lecturer as admin_lecturer
@@ -170,6 +170,7 @@ prefix = "/api/v1"
 # ===== REGISTER ROUTERS =====
 app.include_router(catalog.router, prefix=prefix)
 app.include_router(learning_paths.router, prefix=prefix)
+app.include_router(bundle_management.router, prefix=prefix)
 # --- Share ---
 app.include_router(auth.router, prefix=prefix)
 app.include_router(location.router, prefix=prefix)

@@ -1,12 +1,13 @@
 "use client";
 
-import api from "@/lib/utils/fetcher/client/axios";
-import { useRealtimeNotiStore } from "@/stores/notifications";
-import { Notification } from "@/types/user/notification";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { HiBell, HiClock } from "react-icons/hi";
+import { Bell, Clock } from "lucide-react";
+import { Badge } from "@/components/ui";
+import api from "@/lib/utils/fetcher/client/axios";
+import { useRealtimeNotiStore } from "@/stores/notifications";
+import { Notification } from "@/types/user/notification";
 
 export function NotificationButton({ role }: { role: string }) {
   const router = useRouter();
@@ -62,6 +63,7 @@ export function NotificationButton({ role }: { role: string }) {
       wallet: "Ví",
       course: "Khóa học",
       system: "Hệ thống",
+      provider: "Đơn vị cung cấp",
       learning: "Học tập",
     };
     return labels[type] || type;
@@ -91,13 +93,14 @@ export function NotificationButton({ role }: { role: string }) {
       <button
         ref={buttonRef}
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 rounded-lg hover:bg-green-50 transition-colors"
-        aria-label="Thông báo"
+        onClick={() => setIsOpen((prev) => !prev)}
+        className="relative p-2 rounded-xl hover:bg-primary-light/70 text-muted-foreground hover:text-primary transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        aria-label="Thông báo giảng viên"
+        aria-expanded={isOpen}
       >
-        <HiBell className="h-6 w-6 text-gray-600" />
+        <Bell className="h-5 w-5" />
         {unread > 0 && (
-          <span className="absolute top-0 right-0 bg-green-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+          <span className="absolute -top-0.5 -right-0.5 bg-primary text-primary-foreground text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center ring-2 ring-surface shadow-2xs">
             {unread > 99 ? "99+" : unread}
           </span>
         )}
@@ -106,51 +109,58 @@ export function NotificationButton({ role }: { role: string }) {
       {isOpen && (
         <div
           ref={popupRef}
-          className="absolute right-0 top-full mt-2 w-80 bg-white border-2 border-green-100 rounded-xl shadow-2xl z-50 max-h-[500px] flex flex-col overflow-hidden"
+          className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-surface border border-border rounded-[20px] shadow-ambient-lg z-50 max-h-[500px] flex flex-col overflow-hidden"
         >
-          <div className="p-4 border-b-2 border-green-100 bg-gradient-to-r from-green-50 to-emerald-50">
-            <h3 className="font-semibold text-gray-900 flex items-center justify-between">
+          <div className="px-4 py-3.5 border-b border-border bg-gradient-to-r from-primary-light/60 to-secondary-light/40">
+            <h3 className="text-sm font-semibold text-foreground flex items-center justify-between">
               <span>Thông báo</span>
               {unread > 0 && (
-                <span className="bg-green-600 text-white text-xs px-2 py-1 rounded-full">
+                <Badge variant="primary" size="sm">
                   {unread} mới
-                </span>
+                </Badge>
               )}
             </h3>
           </div>
 
           <div className="flex-1 overflow-y-auto">
             {top10.length === 0 ? (
-              <div className="px-6 py-16 text-center">
-                <HiBell className="h-10 w-10 text-gray-300 mx-auto mb-2" />
-                <p className="text-sm text-gray-500">Chưa có thông báo nào</p>
+              <div className="px-6 py-14 text-center">
+                <div className="w-12 h-12 rounded-2xl bg-primary-light text-primary flex items-center justify-center mx-auto mb-3">
+                  <Bell className="h-6 w-6" />
+                </div>
+                <p className="text-sm font-medium text-foreground">
+                  Chưa có thông báo nào
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Các cập nhật mới về khóa học và học viên sẽ hiển thị tại đây.
+                </p>
               </div>
             ) : (
-              <div className="divide-y divide-gray-100">
+              <div className="divide-y divide-border/70">
                 {top10.map((notification) => (
                   <button
                     key={notification.id}
                     type="button"
                     onClick={() => handleNotificationClick(notification)}
-                    className={`w-full text-left px-4 py-3 hover:bg-green-50 transition-colors ${
+                    className={`w-full text-left px-4 py-3.5 hover:bg-primary-light/40 transition-colors cursor-pointer ${
                       !notification.is_read
-                        ? "bg-green-50/30 border-l-2 border-l-green-500"
-                        : "bg-white"
+                        ? "bg-primary-light/25 border-l-2 border-l-primary"
+                        : "bg-surface"
                     }`}
                   >
-                    <div className="flex items-start gap-3">
-                      <div className="mt-1 flex-shrink-0">
+                    <div className="flex items-start gap-2.5">
+                      <div className="mt-1.5 flex-shrink-0 w-2">
                         {!notification.is_read && (
-                          <div className="h-2 w-2 rounded-full bg-green-500" />
+                          <div className="h-2 w-2 rounded-full bg-primary" />
                         )}
                       </div>
 
                       <div className="flex-1 min-w-0">
                         <h4
-                          className={`text-sm font-medium mb-1.5 leading-snug ${
+                          className={`text-sm mb-1 leading-snug ${
                             notification.is_read
-                              ? "text-gray-600"
-                              : "text-gray-900"
+                              ? "font-medium text-muted-foreground"
+                              : "font-semibold text-foreground"
                           }`}
                         >
                           {notification.title}
@@ -158,21 +168,23 @@ export function NotificationButton({ role }: { role: string }) {
                         <p
                           className={`text-xs mb-2 line-clamp-2 leading-relaxed ${
                             notification.is_read
-                              ? "text-gray-500"
-                              : "text-gray-700"
+                              ? "text-subtle-foreground"
+                              : "text-muted-foreground"
                           }`}
                         >
                           {notification.content}
                         </p>
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="inline-flex items-center gap-1 text-xs text-gray-400">
-                            <HiClock className="h-3 w-3" />
+                          <span className="inline-flex items-center gap-1 text-[11px] text-subtle-foreground">
+                            <Clock className="h-3 w-3" />
                             {formatDate(notification.created_at)}
                           </span>
-                          <span className="text-xs text-gray-400">•</span>
-                          <span className="text-xs text-green-600 font-medium">
-                            {getTypeLabel(notification.type)}
+                          <span className="text-[11px] text-subtle-foreground">
+                            •
                           </span>
+                          <Badge variant="default" size="sm" className="text-[10px]">
+                            {getTypeLabel(notification.type)}
+                          </Badge>
                         </div>
                       </div>
                     </div>
@@ -183,11 +195,11 @@ export function NotificationButton({ role }: { role: string }) {
           </div>
 
           {top10.length > 0 && (
-            <div className="border-t-2 border-green-100 px-4 py-3 bg-gray-50">
+            <div className="border-t border-border px-4 py-3 bg-background/60">
               <Link
                 href="/lecturer/notifications"
                 onClick={() => setIsOpen(false)}
-                className="block w-full text-center text-green-600 hover:text-green-700 font-medium text-sm transition-colors"
+                className="block w-full text-center text-primary hover:text-primary-hover font-semibold text-xs transition-colors"
               >
                 Xem tất cả thông báo
               </Link>

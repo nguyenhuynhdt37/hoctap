@@ -1,19 +1,22 @@
-from uuid import UUID
 import asyncio
 import json
 import uuid
+from uuid import UUID
 
-from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
-from loguru import logger
-
-from app.core.settings import settings
 from app.core.deps import AuthorizationService
+from app.core.settings import settings
 from app.core.ws_manager import ws_manager
 from app.db.models.database import User
 from app.schemas.shares.notification import PushTokenRegisterRequest
-from app.schemas.shares.presence import PresenceBulkRequest, PresenceBulkResponse, PresenceResponse
+from app.schemas.shares.presence import (
+    PresenceBulkRequest,
+    PresenceBulkResponse,
+    PresenceResponse,
+)
 from app.services.shares.notification import NotificationService
 from app.services.shares.presence import PresenceService
+from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
+from loguru import logger
 
 router = APIRouter(prefix="/notifications", tags=["Notifications"])
 
@@ -229,7 +232,8 @@ async def read_notification(
     authorization_service: AuthorizationService = Depends(AuthorizationService),
 ):
     user = await authorization_service.get_current_user()
-    updated = await service.mark_as_read(notification_id, user.id)
+    roles = await authorization_service.get_list_role_in_user(user)
+    updated = await service.mark_as_read(notification_id, user.id, admin="ADMIN" in roles)
     return updated
 
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { Button, Card } from "@/components/ui";
 import api from "@/lib/utils/fetcher/client/axios";
 import { getImageUrl } from "@/lib/utils/helpers/image";
 import { showToast } from "@/lib/utils/helpers/toast";
@@ -8,16 +9,16 @@ import {
   DiscountCoursesResponse,
   DiscountFormData,
 } from "@/types/lecturer/discount";
+import {
+  ArrowLeft,
+  Check,
+  DollarSign,
+  Search,
+  Tag,
+  X,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import {
-  HiArrowLeft,
-  HiCheck,
-  HiCurrencyDollar,
-  HiSearch,
-  HiTag,
-  HiX,
-} from "react-icons/hi";
 import useSWR from "swr";
 
 export default function CreateDiscount() {
@@ -192,37 +193,39 @@ export default function CreateDiscount() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-background">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
         {/* Header */}
         <div className="mb-6">
           <button
+            type="button"
             onClick={() => router.back()}
-            className="flex items-center gap-2 text-gray-600 hover:text-teal-600 transition-colors mb-4"
+            className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors mb-4"
           >
-            <HiArrowLeft className="h-5 w-5" />
-            <span className="font-medium">Quay lại</span>
+            <ArrowLeft className="h-4 w-4" />
+            <span>Quay lại</span>
           </button>
-          <h1 className="text-3xl font-black text-gray-900 mb-2">
+          <h1 className="font-display text-2xl sm:text-3xl font-semibold text-foreground tracking-tight mb-1.5">
             Tạo mã giảm giá mới
           </h1>
-          <p className="text-gray-600">
+          <p className="text-sm text-muted-foreground">
             Tạo mã giảm giá để thu hút học viên đăng ký khóa học
           </p>
         </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-6">
+          <Card variant="surface" className="p-6 sm:p-8 space-y-6">
             {/* Basic Info */}
             <div>
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
+              <h2 className="text-lg font-semibold text-foreground mb-4">
                 Thông tin cơ bản
               </h2>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Tên mã giảm giá <span className="text-red-500">*</span>
+                  <label className="block text-sm font-semibold text-foreground mb-2">
+                    Tên mã giảm giá{" "}
+                    <span className="text-destructive-foreground">*</span>
                   </label>
                   <input
                     type="text"
@@ -230,14 +233,15 @@ export default function CreateDiscount() {
                     value={formData.name}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                    className="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
                     placeholder="Ví dụ: Giảm 50K cho khóa học"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Mã giảm giá <span className="text-red-500">*</span>
+                  <label className="block text-sm font-semibold text-foreground mb-2">
+                    Mã giảm giá{" "}
+                    <span className="text-destructive-foreground">*</span>
                   </label>
                   <input
                     type="text"
@@ -245,16 +249,16 @@ export default function CreateDiscount() {
                     value={formData.discount_code}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 uppercase"
+                    className="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 uppercase font-mono transition-colors"
                     placeholder="Ví dụ: GIAM50K"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1.5">
                     Mã sẽ được chuyển thành chữ hoa tự động
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-foreground mb-2">
                     Mô tả
                   </label>
                   <textarea
@@ -262,7 +266,7 @@ export default function CreateDiscount() {
                     value={formData.description}
                     onChange={handleInputChange}
                     rows={3}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                    className="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
                     placeholder="Mô tả về mã giảm giá..."
                   />
                 </div>
@@ -270,20 +274,21 @@ export default function CreateDiscount() {
             </div>
 
             {/* Discount Type */}
-            <div className="border-t border-gray-200 pt-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
+            <div className="border-t border-border pt-6">
+              <h2 className="text-lg font-semibold text-foreground mb-4">
                 Loại giảm giá
               </h2>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Loại <span className="text-red-500">*</span>
+                  <label className="block text-sm font-semibold text-foreground mb-2">
+                    Loại{" "}
+                    <span className="text-destructive-foreground">*</span>
                   </label>
                   <select
                     name="discount_type"
                     value={formData.discount_type}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                    className="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-xl text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
                   >
                     <option value="fixed">Giảm trực tiếp (VND)</option>
                     <option value="percent">Giảm theo phần trăm (%)</option>
@@ -292,8 +297,9 @@ export default function CreateDiscount() {
 
                 {formData.discount_type === "percent" ? (
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Phần trăm giảm <span className="text-red-500">*</span>
+                    <label className="block text-sm font-semibold text-foreground mb-2">
+                      Phần trăm giảm{" "}
+                      <span className="text-destructive-foreground">*</span>
                     </label>
                     <div className="relative">
                       <input
@@ -304,21 +310,22 @@ export default function CreateDiscount() {
                         min="1"
                         max="100"
                         required
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                        className="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
                         placeholder="Ví dụ: 20"
                       />
-                      <span className="absolute right-4 top-2 text-gray-500">
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
                         %
                       </span>
                     </div>
                   </div>
                 ) : (
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Số tiền giảm (VND) <span className="text-red-500">*</span>
+                    <label className="block text-sm font-semibold text-foreground mb-2">
+                      Số tiền giảm (VND){" "}
+                      <span className="text-destructive-foreground">*</span>
                     </label>
                     <div className="relative">
-                      <HiCurrencyDollar className="absolute left-4 top-2.5 h-5 w-5 text-gray-400" />
+                      <DollarSign className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <input
                         type="number"
                         name="fixed_value"
@@ -326,7 +333,7 @@ export default function CreateDiscount() {
                         onChange={handleInputChange}
                         min="1"
                         required
-                        className="w-full pl-12 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                        className="w-full pl-10 pr-4 py-2.5 text-sm bg-surface border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
                         placeholder="Ví dụ: 50000"
                       />
                     </div>
@@ -336,14 +343,15 @@ export default function CreateDiscount() {
             </div>
 
             {/* Applies To */}
-            <div className="border-t border-gray-200 pt-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
+            <div className="border-t border-border pt-6">
+              <h2 className="text-lg font-semibold text-foreground mb-4">
                 Áp dụng cho
               </h2>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Phạm vi áp dụng <span className="text-red-500">*</span>
+                  <label className="block text-sm font-semibold text-foreground mb-2">
+                    Phạm vi áp dụng{" "}
+                    <span className="text-destructive-foreground">*</span>
                   </label>
                   <select
                     name="applies_to"
@@ -355,7 +363,7 @@ export default function CreateDiscount() {
                         setFormData((prev) => ({ ...prev, targets: [] }));
                       }
                     }}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                    className="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-xl text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
                   >
                     <option value="course">Khóa học cụ thể</option>
                     <option value="global">Toàn bộ</option>
@@ -364,8 +372,9 @@ export default function CreateDiscount() {
 
                 {formData.applies_to === "course" && (
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Chọn khóa học <span className="text-red-500">*</span>
+                    <label className="block text-sm font-semibold text-foreground mb-2">
+                      Chọn khóa học{" "}
+                      <span className="text-destructive-foreground">*</span>
                     </label>
 
                     {/* Selected Courses */}
@@ -374,16 +383,14 @@ export default function CreateDiscount() {
                         {selectedCourses.map((course) => (
                           <div
                             key={course.id}
-                            className="flex items-center justify-between p-3 bg-teal-50 border border-teal-200 rounded-lg"
+                            className="flex items-center justify-between p-3 bg-primary-light/60 border border-primary-pastel rounded-xl"
                           >
                             <div className="flex items-center gap-3">
                               {course.thumbnail_url && (
                                 <img
-                                  src={getImageUrl(
-                                    course.thumbnail_url
-                                  )}
+                                  src={getImageUrl(course.thumbnail_url)}
                                   alt={course.title}
-                                  className="h-10 w-10 rounded object-cover"
+                                  className="h-10 w-10 rounded-lg object-cover border border-border"
                                   onError={(e) => {
                                     (
                                       e.target as HTMLImageElement
@@ -392,7 +399,7 @@ export default function CreateDiscount() {
                                 />
                               )}
                               <div>
-                                <p className="font-medium text-gray-900">
+                                <p className="text-sm font-medium text-foreground">
                                   {course.title}
                                 </p>
                               </div>
@@ -400,9 +407,9 @@ export default function CreateDiscount() {
                             <button
                               type="button"
                               onClick={() => handleRemoveCourse(course.id)}
-                              className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                              className="p-1.5 text-destructive-foreground hover:bg-destructive-bg rounded-lg transition-colors"
                             >
-                              <HiX className="h-5 w-5" />
+                              <X className="h-4 w-4" />
                             </button>
                           </div>
                         ))}
@@ -416,14 +423,14 @@ export default function CreateDiscount() {
                         onClick={() =>
                           setShowCourseSelector(!showCourseSelector)
                         }
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg text-left flex items-center justify-between hover:border-teal-500 transition-colors"
+                        className="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-xl text-left flex items-center justify-between hover:border-primary transition-colors"
                       >
-                        <span className="text-gray-500">
+                        <span className="text-muted-foreground">
                           {selectedCourses.length > 0
                             ? `Đã chọn ${selectedCourses.length} khóa học`
                             : "Tìm kiếm và chọn khóa học..."}
                         </span>
-                        <HiSearch className="h-5 w-5 text-gray-400" />
+                        <Search className="h-4 w-4 text-muted-foreground" />
                       </button>
 
                       {showCourseSelector && (
@@ -432,39 +439,39 @@ export default function CreateDiscount() {
                             className="fixed inset-0 z-[5]"
                             onClick={() => setShowCourseSelector(false)}
                           />
-                          <div className="absolute z-10 w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-96 overflow-hidden">
-                            <div className="p-3 border-b border-gray-200">
+                          <div className="absolute z-10 w-full mt-2 bg-surface border border-border rounded-2xl shadow-soft-md max-h-96 overflow-hidden">
+                            <div className="p-3 border-b border-border">
                               <div className="relative">
-                                <HiSearch className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <input
                                   type="text"
                                   value={search}
                                   onChange={(e) => setSearch(e.target.value)}
                                   placeholder="Tìm kiếm khóa học..."
-                                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                                  className="w-full pl-9 pr-4 py-2 text-sm bg-background border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                                   autoFocus
                                 />
                               </div>
                             </div>
                             <div className="overflow-y-auto max-h-80">
                               {isLoadingCourses ? (
-                                <div className="p-4 text-center text-gray-500">
+                                <div className="p-4 text-center text-sm text-muted-foreground">
                                   Đang tải...
                                 </div>
                               ) : availableCourses.length === 0 ? (
-                                <div className="p-4 text-center text-gray-500">
+                                <div className="p-4 text-center text-sm text-muted-foreground">
                                   {search
                                     ? "Không tìm thấy khóa học"
                                     : "Đang tải danh sách khóa học..."}
                                 </div>
                               ) : (
-                                <div className="divide-y divide-gray-100">
+                                <div className="divide-y divide-border/70">
                                   {availableCourses.map((course) => (
                                     <button
                                       key={course.id}
                                       type="button"
                                       onClick={() => handleSelectCourse(course)}
-                                      className="w-full p-3 text-left hover:bg-gray-50 transition-colors"
+                                      className="w-full p-3 text-left hover:bg-primary-light/40 transition-colors"
                                     >
                                       <div className="flex items-center gap-3">
                                         {course.thumbnail_url && (
@@ -473,7 +480,7 @@ export default function CreateDiscount() {
                                               course.thumbnail_url
                                             )}
                                             alt={course.title}
-                                            className="h-12 w-12 rounded object-cover"
+                                            className="h-12 w-12 rounded-lg object-cover border border-border"
                                             onError={(e) => {
                                               (
                                                 e.target as HTMLImageElement
@@ -481,11 +488,11 @@ export default function CreateDiscount() {
                                             }}
                                           />
                                         )}
-                                        <div className="flex-1">
-                                          <p className="font-medium text-gray-900">
+                                        <div className="flex-1 min-w-0">
+                                          <p className="text-sm font-medium text-foreground truncate">
                                             {course.title}
                                           </p>
-                                          <p className="text-xs text-teal-600 mt-1">
+                                          <p className="text-xs font-medium text-primary mt-1">
                                             {course.base_price > 0
                                               ? new Intl.NumberFormat("vi-VN", {
                                                   style: "currency",
@@ -494,7 +501,7 @@ export default function CreateDiscount() {
                                               : "Miễn phí"}
                                           </p>
                                         </div>
-                                        <HiCheck className="h-5 w-5 text-teal-600" />
+                                        <Check className="h-4 w-4 text-primary shrink-0" />
                                       </div>
                                     </button>
                                   ))}
@@ -511,13 +518,13 @@ export default function CreateDiscount() {
             </div>
 
             {/* Limits */}
-            <div className="border-t border-gray-200 pt-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
+            <div className="border-t border-border pt-6">
+              <h2 className="text-lg font-semibold text-foreground mb-4">
                 Giới hạn sử dụng
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-foreground mb-2">
                     Giới hạn tổng số lần sử dụng
                   </label>
                   <input
@@ -526,13 +533,14 @@ export default function CreateDiscount() {
                     value={formData.usage_limit || ""}
                     onChange={handleInputChange}
                     min="1"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                    className="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
                     placeholder="Để trống = không giới hạn"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Giới hạn/người dùng <span className="text-red-500">*</span>
+                  <label className="block text-sm font-semibold text-foreground mb-2">
+                    Giới hạn/người dùng{" "}
+                    <span className="text-destructive-foreground">*</span>
                   </label>
                   <input
                     type="number"
@@ -541,21 +549,22 @@ export default function CreateDiscount() {
                     onChange={handleInputChange}
                     min="1"
                     required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                    className="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-xl text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
                   />
                 </div>
               </div>
             </div>
 
             {/* Date Range */}
-            <div className="border-t border-gray-200 pt-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
+            <div className="border-t border-border pt-6">
+              <h2 className="text-lg font-semibold text-foreground mb-4">
                 Thời gian hiệu lực
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Bắt đầu <span className="text-red-500">*</span>
+                  <label className="block text-sm font-semibold text-foreground mb-2">
+                    Bắt đầu{" "}
+                    <span className="text-destructive-foreground">*</span>
                   </label>
                   <input
                     type="datetime-local"
@@ -563,12 +572,13 @@ export default function CreateDiscount() {
                     value={formData.start_at}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                    className="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-xl text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Kết thúc <span className="text-red-500">*</span>
+                  <label className="block text-sm font-semibold text-foreground mb-2">
+                    Kết thúc{" "}
+                    <span className="text-destructive-foreground">*</span>
                   </label>
                   <input
                     type="datetime-local"
@@ -576,15 +586,17 @@ export default function CreateDiscount() {
                     value={formData.end_at}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                    className="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-xl text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
                   />
                 </div>
               </div>
             </div>
 
             {/* Options */}
-            <div className="border-t border-gray-200 pt-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Tùy chọn</h2>
+            <div className="border-t border-border pt-6">
+              <h2 className="text-lg font-semibold text-foreground mb-4">
+                Tùy chọn
+              </h2>
               <div className="space-y-3">
                 <label className="flex items-center gap-3 cursor-pointer">
                   <input
@@ -592,42 +604,36 @@ export default function CreateDiscount() {
                     name="is_hidden"
                     checked={formData.is_hidden}
                     onChange={handleInputChange}
-                    className="w-5 h-5 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
+                    className="w-4 h-4 accent-primary rounded border-border focus:ring-primary"
                   />
-                  <span className="text-gray-700">
+                  <span className="text-sm text-foreground">
                     Ẩn mã giảm giá (chỉ có thể sử dụng khi biết mã)
                   </span>
                 </label>
               </div>
             </div>
-          </div>
+          </Card>
 
           {/* Actions */}
-          <div className="flex items-center justify-end gap-4">
-            <button
+          <div className="flex items-center justify-end gap-3">
+            <Button
               type="button"
+              variant="outline"
+              size="lg"
               onClick={() => router.back()}
-              className="px-6 py-3 border border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
             >
               Hủy
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              disabled={isSubmitting}
-              className="px-6 py-3 bg-gradient-to-r from-teal-500 to-emerald-600 text-white font-semibold rounded-lg hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              variant="primary"
+              size="lg"
+              isLoading={isSubmitting}
+              loadingText="Đang tạo..."
+              leftIcon={<Tag className="h-4 w-4" />}
             >
-              {isSubmitting ? (
-                <>
-                  <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span>Đang tạo...</span>
-                </>
-              ) : (
-                <>
-                  <HiTag className="h-5 w-5" />
-                  <span>Tạo mã giảm giá</span>
-                </>
-              )}
-            </button>
+              Tạo mã giảm giá
+            </Button>
           </div>
         </form>
       </div>

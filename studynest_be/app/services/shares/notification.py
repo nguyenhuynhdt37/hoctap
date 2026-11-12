@@ -3,18 +3,16 @@ import uuid
 from typing import Optional
 
 import httpx
-from fastapi import Depends, HTTPException
-from loguru import logger
-from sqlalchemy import func, or_, select, update
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.core.embedding import EmbeddingService, get_embedding_service
 from app.core.ws_manager import ws_manager
 from app.db.models.database import Notifications, UserPushTokens
 from app.db.sesson import get_session
 from app.libs.formats.datetime import now as get_now
 from app.libs.formats.datetime import serialize, to_utc_naive
 from app.schemas.shares.notification import NotificationCreateSchema
+from fastapi import Depends, HTTPException
+from loguru import logger
+from sqlalchemy import func, or_, select, update
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 async def send_expo_push_notifications_async(
@@ -34,24 +32,30 @@ async def send_expo_push_notifications_async(
     for token in tokens:
         if not token.startswith("ExponentPushToken"):
             continue
-        messages.append({
-            "to": token,
-            "title": title,
-            "body": body,
-            "data": data or {},
-            "sound": "default",
-        })
+        messages.append(
+            {
+                "to": token,
+                "title": title,
+                "body": body,
+                "data": data or {},
+                "sound": "default",
+            }
+        )
 
     if not messages:
         return
 
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.post(url, headers=headers, json=messages, timeout=10.0)
+            response = await client.post(
+                url, headers=headers, json=messages, timeout=10.0
+            )
             if response.status_code != 200:
                 logger.error(f"[ExpoPush] Failed to send push: {response.text}")
             else:
-                logger.info(f"[ExpoPush] Sent {len(messages)} push notifications successfully.")
+                logger.info(
+                    f"[ExpoPush] Sent {len(messages)} push notifications successfully."
+                )
     except Exception as e:
         logger.error(f"[ExpoPush] Exception during push: {e}")
 
@@ -60,7 +64,6 @@ class NotificationService:
     def __init__(
         self,
         db: AsyncSession = Depends(get_session),
-        embedding: EmbeddingService = Depends(get_embedding_service),
     ):
         self.db = db
 
@@ -169,46 +172,46 @@ class NotificationService:
     # ==========================================================================
     # 📨 Tạo thông báo + WS (đã thêm try/catch)
     # ==========================================================================
+    async def stage_notification_async(
+        self, schema: NotificationCreateSchema
+    ) -> Notifications:
+        """Add a durable notification to the caller's transaction; do not commit/send."""
+        roles = schema.role_target or ["USER"]
+        if isinstance(roles, str):
+            roles = [roles]
+        notif = Notifications(
+            id=uuid.uuid4(),
+            user_id=schema.user_id or None,
+            title=schema.title,
+            content=schema.content,
+            url=schema.url,
+            type=schema.type or "system",
+            role_target=roles,
+            metadata_=schema.metadata or {},
+            action=schema.action or "open_url",
+            is_read=False,
+            created_at=await to_utc_naive(get_now()),
+        )
+        self.db.add(notif)
+        await self.db.flush()
+        return notif
+
     async def create_notification_async(
-        self,
-        schema: NotificationCreateSchema,
+        self, schema: NotificationCreateSchema
     ) -> Notifications:
         try:
-            # ----------------------------------
-            # Chuẩn hóa role_target
-            # ----------------------------------
-            if not schema.role_target:
-                roles = ["USER"]
-            else:
-                roles = (
-                    [schema.role_target]
-                    if isinstance(schema.role_target, str)
-                    else schema.role_target
-                )
-
-            notif = Notifications(
-                id=uuid.uuid4(),
-                user_id=schema.user_id or None,
-                title=schema.title,
-                content=schema.content,
-                url=schema.url,
-                type=schema.type or "system",
-                role_target=roles,
-                metadata_=schema.metadata or {},
-                action=schema.action or "open_url",
-                is_read=False,
-                created_at=await to_utc_naive(get_now()),
-            )
-
-            self.db.add(notif)
+            notif = await self.stage_notification_async(schema)
             await self.db.commit()
             await self.db.refresh(notif)
-
         except Exception as e:
             logger.exception(f"[Notifications][Create] Lỗi tạo thông báo: {e}")
             await self.db.rollback()
             raise HTTPException(500, "Lỗi hệ thống khi tạo thông báo.")
+        return await self.publish_notification_async(notif)
 
+    async def publish_notification_async(self, notif: Notifications) -> Notifications:
+        """Best-effort realtime delivery for an already committed notification."""
+        roles = notif.role_target or ["USER"]
         # ==========================================================================
         # 🛰 Gửi WebSocket (KHÔNG ảnh hưởng DB nếu lỗi)
         # ==========================================================================
@@ -288,17 +291,20 @@ class NotificationService:
 
     async def mark_all_as_read(self, user_id: str, role: str):
         try:
+            scope = (
+                Notifications.role_target.op("@>")(["ADMIN"])
+                if role == "ADMIN"
+                else (
+                    (Notifications.user_id == user_id)
+                    & or_(
+                        func.cardinality(Notifications.role_target) == 0,
+                        Notifications.role_target.op("&&")([role, "all"]),
+                    )
+                )
+            )
             stmt = (
                 update(Notifications)
-                .where(
-                    Notifications.user_id == user_id,
-                    Notifications.is_read.is_(False),
-                    or_(
-                        func.cardinality(Notifications.role_target)
-                        == 0,  # thông báo chung
-                        Notifications.role_target.op("@>")([role]),  # chứa role
-                    ),
-                )
+                .where(scope, Notifications.is_read.is_(False))
                 .values(
                     is_read=True,
                     read_at=get_now(),
@@ -307,18 +313,24 @@ class NotificationService:
 
             await self.db.execute(stmt)
             await self.db.commit()
+            return True
 
         except Exception as e:
             await self.db.rollback()
             raise e
 
-    async def mark_as_read(self, notification_id: uuid.UUID, user_id: uuid.UUID):
+    async def mark_as_read(
+        self, notification_id: uuid.UUID, user_id: uuid.UUID, admin=False
+    ):
         try:
+            scope = Notifications.user_id == user_id
+            if admin:
+                scope = or_(scope, Notifications.role_target.op("@>")(["ADMIN"]))
             stmt = (
                 update(Notifications)
                 .where(
                     Notifications.id == notification_id,
-                    Notifications.user_id == user_id,
+                    scope,
                     Notifications.is_read.is_(False),  # chỉ update khi chưa đọc
                 )
                 .values(
@@ -352,8 +364,7 @@ class NotificationService:
         try:
             # Check if token exists for this user
             stmt = select(UserPushTokens).where(
-                UserPushTokens.user_id == user_id,
-                UserPushTokens.token == token
+                UserPushTokens.user_id == user_id, UserPushTokens.token == token
             )
             existing = (await self.db.execute(stmt)).scalar_one_or_none()
 

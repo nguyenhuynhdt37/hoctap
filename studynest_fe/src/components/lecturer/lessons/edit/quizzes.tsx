@@ -11,16 +11,21 @@ import {
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  HiCheckCircle,
-  HiChevronLeft,
-  HiChevronRight,
-  HiPlus,
-  HiCloud,
-  HiTrash,
-  HiVideoCamera,
-  HiXCircle,
-} from "react-icons/hi";
+  ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Sparkles,
+  Trash2,
+  Video,
+  XCircle,
+  CheckCircle2,
+} from "lucide-react";
 import useSWR from "swr";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Alert } from "@/components/ui/states";
+import { Badge } from "@/components/ui/badge";
 
 // ============================================
 // HELPER FUNCTIONS
@@ -751,26 +756,31 @@ const EditQuizLesson = () => {
 
   if (!lessonId) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-4xl mx-auto px-4 py-16">
-          <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-            <p className="text-red-800 font-medium">
-              Thiếu thông tin lesson ID. Vui lòng quay lại trang trước.
-            </p>
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="max-w-md w-full p-6 border border-border text-center">
+          <Alert variant="destructive" title="Thiếu thông tin cần thiết">
+            Thiếu thông tin lesson ID. Vui lòng quay lại trang trước.
+          </Alert>
+          <div className="mt-4">
+            <Button
+              variant="outline"
+              onClick={() => router.back()}
+              leftIcon={<ArrowLeft className="h-4 w-4" />}
+            >
+              Quay lại
+            </Button>
           </div>
-        </div>
+        </Card>
       </div>
     );
   }
 
   if (isLoading || !mounted || !lessonDetail) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-4xl mx-auto px-4 py-12">
-          <div className="flex items-center justify-center">
-            <div className="w-6 h-6 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
-            <span className="ml-2 text-sm text-gray-600">Đang tải...</span>
-          </div>
+      <div className="min-h-screen bg-background">
+        <div className="max-w-4xl mx-auto px-4 py-16 flex items-center justify-center">
+          <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <span className="ml-3 text-sm text-muted-foreground">Đang tải...</span>
         </div>
       </div>
     );
@@ -781,11 +791,13 @@ const EditQuizLesson = () => {
   // ============================================
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => {
               if (lessonDetail?.course_id) {
                 router.push(
@@ -795,101 +807,98 @@ const EditQuizLesson = () => {
                 router.push("/lecturer/chapters");
               }
             }}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition-colors cursor-pointer"
+            leftIcon={<ArrowLeft className="h-4 w-4" />}
+            className="mb-4 text-muted-foreground hover:text-foreground"
           >
-            <HiChevronLeft className="h-5 w-5" />
-            <span className="font-medium">Quay lại danh sách bài học</span>
-          </button>
-          <h1 className="text-3xl font-black text-gray-900 mb-2">
+            Quay lại danh sách bài học
+          </Button>
+          <h1 className="text-3xl font-bold font-display text-foreground mb-2">
             Chỉnh sửa bài học Quiz
           </h1>
-          <p className="text-gray-600">
+          <p className="text-sm text-muted-foreground">
             Cập nhật thông tin và quiz cho bài học
           </p>
         </div>
 
         {/* Progress Bar */}
-        <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm mb-6">
-          <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
-            <span className="font-medium">
+        <Card className="p-6 border border-border bg-surface shadow-xs mb-6">
+          <div className="flex items-center justify-between text-sm mb-3">
+            <span className="font-medium text-foreground">
               Bước {currentStep + 1} / {totalSteps}
             </span>
-            <span className="font-semibold text-green-600">
+            <span className="font-semibold text-primary">
               {Math.round(progressPercentage)}%
             </span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+          <div className="w-full bg-primary-light/50 rounded-full h-2.5 overflow-hidden">
             <div
-              className="bg-gradient-to-r from-green-500 to-emerald-600 h-3 rounded-full transition-all duration-500 ease-out"
+              className="bg-primary h-2.5 rounded-full transition-all duration-500 ease-out"
               style={{ width: `${progressPercentage}%` }}
             />
           </div>
-          <div className="flex items-center justify-between mt-4 text-xs text-gray-500">
+          <div className="flex items-center justify-between mt-4 text-xs">
             <span
-              className={currentStep >= 0 ? "text-green-600 font-medium" : ""}
+              className={
+                currentStep >= 0
+                  ? "text-primary font-semibold"
+                  : "text-muted-foreground"
+              }
             >
               Thông tin cơ bản
             </span>
             <span
-              className={currentStep >= 1 ? "text-green-600 font-medium" : ""}
+              className={
+                currentStep >= 1
+                  ? "text-primary font-semibold"
+                  : "text-muted-foreground"
+              }
             >
               Chỉnh sửa quiz
             </span>
             <span
-              className={currentStep >= 2 ? "text-green-600 font-medium" : ""}
+              className={
+                currentStep >= 2
+                  ? "text-primary font-semibold"
+                  : "text-muted-foreground"
+              }
             >
               Xem lại
             </span>
           </div>
-        </div>
+        </Card>
 
         {/* Success Message */}
         {successMessage && (
-          <div className="bg-green-50 border-2 border-green-500 rounded-xl p-6 mb-6 shadow-lg">
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0">
-                <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-                  <HiCheckCircle className="h-6 w-6 text-white" />
+          <div className="mb-6">
+            <Alert variant="success" title="Thành công!">
+              <p>{successMessage}</p>
+              {successMessage.includes("chuyển hướng") && (
+                <div className="mt-2 flex items-center gap-2 text-xs">
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                  <span>Đang chuyển hướng về trang quản lý bài học...</span>
                 </div>
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-bold text-green-900 mb-1">
-                  Thành công!
-                </h3>
-                <p className="text-sm text-green-800 font-medium leading-relaxed">
-                  {successMessage}
-                </p>
-                {successMessage.includes("chuyển hướng") && (
-                  <div className="mt-3 flex items-center gap-2 text-xs text-green-700">
-                    <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
-                    <span>Đang chuyển hướng về trang quản lý bài học...</span>
-                  </div>
-                )}
-              </div>
-            </div>
+              )}
+            </Alert>
           </div>
         )}
 
         {/* Error Message */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
-            <div className="flex items-center gap-2">
-              <HiXCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
-              <p className="text-sm text-red-800">{error}</p>
-            </div>
+          <div className="mb-6">
+            <Alert variant="destructive">{error}</Alert>
           </div>
         )}
 
         {/* Step Content */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-8 mb-6">
+        <Card className="border border-border bg-surface shadow-xs p-8 mb-6">
           {/* Step 0: Basic Info */}
           {currentStep === 0 && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                <h2 className="text-2xl font-bold font-display text-foreground mb-1">
                   Thông tin cơ bản về bài học
                 </h2>
-                <p className="text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   Cập nhật thông tin cơ bản để mô tả bài học quiz của bạn
                 </p>
               </div>
@@ -898,27 +907,22 @@ const EditQuizLesson = () => {
                 {/* Title */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm font-semibold text-gray-700">
-                      Tiêu đề bài học <span className="text-red-500">*</span>
+                    <label className="block text-sm font-semibold text-foreground">
+                      Tiêu đề bài học <span className="text-destructive">*</span>
                     </label>
-                    <button
+                    <Button
                       type="button"
+                      variant="outline"
+                      size="sm"
                       onClick={handleGenerateTitle}
                       disabled={isGeneratingTitle || !formData.title.trim()}
-                      className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-lg transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm hover:shadow-md"
+                      isLoading={isGeneratingTitle}
+                      loadingText="Đang tạo..."
+                      leftIcon={<Sparkles className="h-4 w-4" />}
+                      className="border-primary text-primary hover:bg-primary-light/50"
                     >
-                      {isGeneratingTitle ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                          Đang tạo...
-                        </>
-                      ) : (
-                        <>
-                          <span>🤖</span>
-                          Tạo tiêu đề tự động
-                        </>
-                      )}
-                    </button>
+                      Tạo tiêu đề tự động
+                    </Button>
                   </div>
                   <input
                     type="text"
@@ -930,17 +934,19 @@ const EditQuizLesson = () => {
                       }))
                     }
                     placeholder="Ví dụ: Quiz kiểm tra kiến thức Python"
-                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${
+                    className={`w-full px-4 py-3 border rounded-xl bg-surface text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 transition-all ${
                       errors.title
-                        ? "border-red-300 focus:ring-red-500"
-                        : "border-gray-300 focus:ring-green-500 focus:border-transparent"
+                        ? "border-destructive focus:ring-destructive"
+                        : "border-border focus:ring-primary focus:border-transparent"
                     }`}
                   />
                   {errors.title && (
-                    <p className="text-red-600 text-sm mt-1">{errors.title}</p>
+                    <p className="text-destructive text-sm mt-1">
+                      {errors.title}
+                    </p>
                   )}
-                  <p className="text-xs text-gray-500 mt-1">
-                    💡 Nhập tiêu đề và nhấn "Tạo tiêu đề tự động" để AI tối ưu
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Nhập tiêu đề và nhấn &ldquo;Tạo tiêu đề tự động&rdquo; để AI tối ưu
                     tiêu đề cho bạn
                   </p>
                 </div>
@@ -948,37 +954,32 @@ const EditQuizLesson = () => {
                 {/* Description */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm font-semibold text-gray-700">
-                      Mô tả bài học <span className="text-red-500">*</span>
+                    <label className="block text-sm font-semibold text-foreground">
+                      Mô tả bài học <span className="text-destructive">*</span>
                     </label>
-                    <button
+                    <Button
                       type="button"
+                      variant="outline"
+                      size="sm"
                       onClick={handleGenerateDescription}
                       disabled={
                         isGeneratingDescription ||
                         !formData.title.trim() ||
                         !sectionName
                       }
-                      className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-lg transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm hover:shadow-md"
+                      isLoading={isGeneratingDescription}
+                      loadingText="Đang tạo..."
+                      leftIcon={<Sparkles className="h-4 w-4" />}
+                      className="border-primary text-primary hover:bg-primary-light/50"
                     >
-                      {isGeneratingDescription ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                          Đang tạo...
-                        </>
-                      ) : (
-                        <>
-                          <span>🤖</span>
-                          Tạo mô tả tự động
-                        </>
-                      )}
-                    </button>
+                      Tạo mô tả tự động
+                    </Button>
                   </div>
                   <div
-                    className={`rounded-lg overflow-hidden ${
+                    className={`rounded-xl overflow-hidden ${
                       errors.description
-                        ? "border-2 border-red-300"
-                        : "border border-gray-300"
+                        ? "border-2 border-destructive"
+                        : "border border-border"
                     }`}
                   >
                     <TiptapEditor
@@ -994,12 +995,12 @@ const EditQuizLesson = () => {
                     />
                   </div>
                   {errors.description && (
-                    <p className="text-red-600 text-sm mt-1">
+                    <p className="text-destructive text-sm mt-1">
                       {errors.description}
                     </p>
                   )}
-                  <p className="text-xs text-gray-500 mt-1">
-                    💡 Nhập tiêu đề và nhấn "Tạo mô tả tự động" để AI tạo mô tả
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Nhập tiêu đề và nhấn &ldquo;Tạo mô tả tự động&rdquo; để AI tạo mô tả
                     chi tiết cho bạn
                   </p>
                 </div>
@@ -1011,10 +1012,10 @@ const EditQuizLesson = () => {
           {currentStep === 1 && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                <h2 className="text-2xl font-bold font-display text-foreground mb-1">
                   Chỉnh sửa câu hỏi quiz
                 </h2>
-                <p className="text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   Chỉnh sửa các câu hỏi trắc nghiệm cho bài học. Chọn tab để
                   chuyển đổi giữa các câu hỏi
                 </p>
@@ -1022,18 +1023,18 @@ const EditQuizLesson = () => {
 
               {/* AI Generate Quizzes from Videos */}
               {videoLessons.length > 0 && (
-                <div className="bg-green-50 border-2 border-green-200 rounded-xl p-6">
+                <Card variant="pastel-blue" className="p-6 border border-border">
                   <div className="flex items-start gap-3 mb-4">
                     <div className="flex-1">
                       <div className="flex items-center mb-4 gap-3">
-                        <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
-                          <HiCloud className="h-6 w-6 text-white" />
+                        <div className="w-10 h-10 bg-primary text-white rounded-xl flex items-center justify-center flex-shrink-0 shadow-xs">
+                          <Sparkles className="h-5 w-5" />
                         </div>
                         <div>
-                          <h3 className="text-lg font-bold text-green-900 mb-1">
+                          <h3 className="text-lg font-bold text-foreground mb-0.5">
                             Tạo quiz tự động từ bài học video
                           </h3>
-                          <p className="text-sm text-green-800">
+                          <p className="text-sm text-muted-foreground">
                             Chọn một hoặc nhiều bài học video để AI tự động tạo
                             câu hỏi quiz dựa trên nội dung video
                           </p>
@@ -1041,25 +1042,25 @@ const EditQuizLesson = () => {
                       </div>
 
                       {/* Video Lessons List */}
-                      <div className="space-y-2 mb-4 max-h-48 overflow-y-auto">
+                      <div className="space-y-2 mb-4 max-h-48 overflow-y-auto pr-1">
                         {videoLessons.map((lesson: any) => (
                           <label
                             key={lesson.id}
-                            className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50/50 transition-all cursor-pointer"
+                            className="flex items-center gap-3 p-3 bg-surface border border-border rounded-xl hover:border-primary-pastel hover:bg-primary-light/30 transition-all cursor-pointer"
                           >
                             <input
                               type="checkbox"
                               checked={selectedLessonIds.includes(lesson.id)}
                               onChange={() => handleToggleLesson(lesson.id)}
-                              className="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500 cursor-pointer"
+                              className="w-4 h-4 text-primary border-border rounded focus:ring-primary cursor-pointer"
                             />
-                            <div className="flex items-center gap-2 flex-1">
-                              <HiVideoCamera className="h-5 w-5 text-green-600 flex-shrink-0" />
+                            <div className="flex items-center gap-2.5 flex-1">
+                              <Video className="h-5 w-5 text-primary flex-shrink-0" />
                               <div className="flex-1">
-                                <p className="text-sm font-medium text-gray-900">
+                                <p className="text-sm font-medium text-foreground">
                                   {lesson.title}
                                 </p>
-                                <p className="text-xs text-gray-500">
+                                <p className="text-xs text-muted-foreground">
                                   {lesson.chunk_count} phần nội dung
                                 </p>
                               </div>
@@ -1068,40 +1069,27 @@ const EditQuizLesson = () => {
                         ))}
                       </div>
 
-                      <button
+                      <Button
                         type="button"
+                        variant="primary"
                         onClick={handleGenerateQuizzesFromVideos}
                         disabled={
                           isGeneratingQuizzes || selectedLessonIds.length === 0
                         }
-                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-lg font-medium transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                        isLoading={isGeneratingQuizzes}
+                        loadingText="Đang tạo quiz từ AI..."
+                        leftIcon={<Sparkles className="h-4 w-4" />}
+                        className="w-full"
                       >
-                        {isGeneratingQuizzes ? (
-                          <>
-                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                            Đang tạo quiz từ AI...
-                          </>
-                        ) : (
-                          <>
-                            <HiCloud className="h-5 w-5" />
-                            Tạo quiz tự động từ {selectedLessonIds.length}{" "}
-                            {selectedLessonIds.length === 1
-                              ? "bài học"
-                              : "bài học"}
-                          </>
-                        )}
-                      </button>
+                        Tạo quiz tự động từ {selectedLessonIds.length} bài học
+                      </Button>
                     </div>
                   </div>
-                </div>
+                </Card>
               )}
 
               {errors.quizzes && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                  <p className="text-red-800 text-sm font-medium">
-                    {errors.quizzes}
-                  </p>
-                </div>
+                <Alert variant="destructive">{errors.quizzes}</Alert>
               )}
 
               {/* Quiz Tabs Navigation */}
@@ -1113,15 +1101,16 @@ const EditQuizLesson = () => {
                     );
                     const questionText = stripMarkdown(quiz.question);
                     const hasQuestion = questionText.length > 0;
+                    const isActive = activeQuizIndex === quizIndex;
                     return (
                       <button
                         key={quizIndex}
                         type="button"
                         onClick={() => setActiveQuizIndex(quizIndex)}
-                        className={`flex items-center gap-2 px-4 py-3 rounded-lg font-medium transition-all whitespace-nowrap flex-shrink-0 ${
-                          activeQuizIndex === quizIndex
-                            ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md"
-                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-all whitespace-nowrap flex-shrink-0 cursor-pointer border ${
+                          isActive
+                            ? "bg-primary text-white border-primary shadow-xs"
+                            : "bg-surface border-border text-foreground hover:bg-primary-light/40"
                         }`}
                       >
                         <span className="font-bold">{quizIndex + 1}</span>
@@ -1129,18 +1118,14 @@ const EditQuizLesson = () => {
                           {hasQuestion && (
                             <div
                               className={`w-2 h-2 rounded-full ${
-                                activeQuizIndex === quizIndex
-                                  ? "bg-white"
-                                  : "bg-green-500"
+                                isActive ? "bg-white" : "bg-primary"
                               }`}
                             />
                           )}
                           {hasCorrectAnswer && (
-                            <HiCheckCircle
+                            <CheckCircle2
                               className={`h-4 w-4 ${
-                                activeQuizIndex === quizIndex
-                                  ? "text-white"
-                                  : "text-green-600"
+                                isActive ? "text-white" : "text-success-foreground"
                               }`}
                             />
                           )}
@@ -1148,31 +1133,32 @@ const EditQuizLesson = () => {
                       </button>
                     );
                   })}
-                  <button
+                  <Button
                     type="button"
+                    variant="outline"
                     onClick={addQuiz}
-                    className="flex items-center gap-2 px-4 py-3 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-lg font-medium transition-all whitespace-nowrap flex-shrink-0"
+                    leftIcon={<Plus className="h-4 w-4" />}
+                    className="whitespace-nowrap flex-shrink-0"
                     title="Thêm câu hỏi mới"
                   >
-                    <HiPlus className="h-5 w-5" />
-                    <span>Thêm</span>
-                  </button>
+                    Thêm
+                  </Button>
                 </div>
               </div>
 
               {/* Active Quiz Content */}
               {quizzes.length > 0 && (
-                <div className="border-2 border-gray-200 rounded-xl p-6 bg-white shadow-sm">
-                  <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
+                <Card className="border border-border rounded-2xl p-6 bg-surface shadow-xs">
+                  <div className="flex items-center justify-between mb-6 pb-4 border-b border-border">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-md">
+                      <div className="w-10 h-10 bg-primary-light text-primary rounded-xl flex items-center justify-center font-bold text-lg">
                         {activeQuizIndex + 1}
                       </div>
                       <div>
-                        <h3 className="text-lg font-bold text-gray-900">
+                        <h3 className="text-lg font-bold text-foreground">
                           Câu hỏi {activeQuizIndex + 1}
                         </h3>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-muted-foreground">
                           {quizzes[activeQuizIndex].options.filter(
                             (opt) => opt.is_correct
                           ).length > 0
@@ -1186,10 +1172,10 @@ const EditQuizLesson = () => {
                         <button
                           type="button"
                           onClick={() => removeQuiz(activeQuizIndex)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive-bg rounded-lg transition-colors"
                           title="Xóa câu hỏi"
                         >
-                          <HiTrash className="h-5 w-5" />
+                          <Trash2 className="h-5 w-5" />
                         </button>
                       )}
                     </div>
@@ -1201,11 +1187,11 @@ const EditQuizLesson = () => {
                       <div className="space-y-4">
                         {/* Question */}
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          <label className="block text-sm font-semibold text-foreground mb-2">
                             Nội dung câu hỏi{" "}
-                            <span className="text-red-500">*</span>
+                            <span className="text-destructive">*</span>
                           </label>
-                          <div className="rounded-lg overflow-hidden border border-gray-300">
+                          <div className="rounded-xl overflow-hidden border border-border">
                             <TiptapEditor
                               value={quiz.question}
                               onChange={(markdown) =>
@@ -1224,7 +1210,7 @@ const EditQuizLesson = () => {
 
                         {/* Difficulty Level */}
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          <label className="block text-sm font-semibold text-foreground mb-2">
                             Độ khó
                           </label>
                           <select
@@ -1236,7 +1222,7 @@ const EditQuizLesson = () => {
                                 parseInt(e.target.value)
                               )
                             }
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                            className="w-full px-4 py-3 border border-border bg-surface text-foreground rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                           >
                             <option value={1}>Dễ</option>
                             <option value={2}>Trung bình</option>
@@ -1246,10 +1232,10 @@ const EditQuizLesson = () => {
 
                         {/* Explanation */}
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          <label className="block text-sm font-semibold text-foreground mb-2">
                             Giải thích
                           </label>
-                          <div className="rounded-lg overflow-hidden border border-gray-300">
+                          <div className="rounded-xl overflow-hidden border border-border">
                             <TiptapEditor
                               value={quiz.explanation}
                               onChange={(markdown) =>
@@ -1269,19 +1255,20 @@ const EditQuizLesson = () => {
                         {/* Options */}
                         <div className="mt-6">
                           <div className="flex items-center justify-between mb-4">
-                            <label className="block text-sm font-semibold text-gray-700">
+                            <label className="block text-sm font-semibold text-foreground">
                               Phương án trả lời{" "}
-                              <span className="text-red-500">*</span>
+                              <span className="text-destructive">*</span>
                             </label>
                             {quiz.options.length < 4 && (
-                              <button
+                              <Button
                                 type="button"
+                                variant="outline"
+                                size="sm"
                                 onClick={() => addOption(activeQuizIndex)}
-                                className="flex items-center gap-1 px-3 py-1.5 text-sm bg-green-50 text-green-600 hover:bg-green-100 rounded-lg transition-colors font-medium border border-green-200"
+                                leftIcon={<Plus className="h-4 w-4" />}
                               >
-                                <HiPlus className="h-4 w-4" />
                                 Thêm phương án
-                              </button>
+                              </Button>
                             )}
                           </div>
 
@@ -1289,10 +1276,10 @@ const EditQuizLesson = () => {
                             {quiz.options.map((option, optionIndex) => (
                               <div
                                 key={optionIndex}
-                                className={`p-4 rounded-lg border-2 transition-all ${
+                                className={`p-4 rounded-xl border-2 transition-all ${
                                   option.is_correct
-                                    ? "bg-green-50 border-green-400 shadow-sm"
-                                    : "bg-gray-50 border-gray-200 hover:border-gray-300"
+                                    ? "bg-success-bg/50 border-success-border shadow-xs"
+                                    : "bg-surface-muted/50 border-border hover:border-primary-pastel"
                                 }`}
                               >
                                 <div className="flex items-start gap-3">
@@ -1309,12 +1296,12 @@ const EditQuizLesson = () => {
                                           e.target.checked
                                         )
                                       }
-                                      className="w-5 h-5 text-green-600 border-gray-300 focus:ring-green-500 cursor-pointer"
+                                      className="w-5 h-5 text-primary border-border focus:ring-primary cursor-pointer"
                                     />
                                   </div>
                                   <div className="flex-1 space-y-2">
                                     <div className="flex items-center gap-2">
-                                      <span className="text-xs font-semibold text-gray-500 bg-gray-200 px-2 py-1 rounded">
+                                      <span className="text-xs font-semibold text-primary bg-primary-light px-2.5 py-1 rounded-md">
                                         {String.fromCharCode(65 + optionIndex)}
                                       </span>
                                       <input
@@ -1331,10 +1318,10 @@ const EditQuizLesson = () => {
                                         placeholder={`Nhập nội dung phương án ${
                                           optionIndex + 1
                                         }...`}
-                                        className={`flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-all ${
+                                        className={`flex-1 px-3 py-2 border rounded-lg bg-surface text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 transition-all ${
                                           option.is_correct
-                                            ? "border-green-300 focus:ring-green-500 bg-white"
-                                            : "border-gray-300 focus:ring-green-500"
+                                            ? "border-success-border focus:ring-primary"
+                                            : "border-border focus:ring-primary"
                                         }`}
                                       />
                                     </div>
@@ -1350,7 +1337,7 @@ const EditQuizLesson = () => {
                                         )
                                       }
                                       placeholder="Phản hồi khi chọn phương án này (tùy chọn)"
-                                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all text-sm bg-white"
+                                      className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm bg-surface text-foreground placeholder:text-muted-foreground"
                                     />
                                   </div>
                                   {quiz.options.length > 2 && (
@@ -1362,17 +1349,19 @@ const EditQuizLesson = () => {
                                           optionIndex
                                         )
                                       }
-                                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors mt-1 flex-shrink-0"
+                                      className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive-bg rounded-lg transition-colors mt-1 flex-shrink-0"
                                       title="Xóa phương án"
                                     >
-                                      <HiXCircle className="h-5 w-5" />
+                                      <XCircle className="h-5 w-5" />
                                     </button>
                                   )}
                                 </div>
                                 {option.is_correct && (
-                                  <div className="mt-3 flex items-center gap-2 text-xs text-green-700 font-medium bg-green-100 px-3 py-1.5 rounded-lg">
-                                    <HiCheckCircle className="h-4 w-4" />
-                                    <span>Đây là đáp án đúng</span>
+                                  <div className="mt-3">
+                                    <Badge variant="success" size="sm">
+                                      <CheckCircle2 className="h-3.5 w-3.5 mr-1 inline" />
+                                      Đây là đáp án đúng
+                                    </Badge>
                                   </div>
                                 )}
                               </div>
@@ -1382,14 +1371,16 @@ const EditQuizLesson = () => {
                       </div>
                     );
                   })()}
-                </div>
+                </Card>
               )}
 
               {/* Navigation between quizzes */}
               {quizzes.length > 1 && (
-                <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
-                  <button
+                <div className="flex items-center justify-between mt-6 pt-4 border-t border-border">
+                  <Button
                     type="button"
+                    variant="outline"
+                    size="sm"
                     onClick={() =>
                       setActiveQuizIndex(
                         activeQuizIndex > 0
@@ -1397,16 +1388,17 @@ const EditQuizLesson = () => {
                           : quizzes.length - 1
                       )
                     }
-                    className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                    leftIcon={<ChevronLeft className="h-4 w-4" />}
                   >
-                    <HiChevronLeft className="h-5 w-5" />
                     Câu trước
-                  </button>
-                  <span className="text-sm text-gray-500">
+                  </Button>
+                  <span className="text-sm text-muted-foreground font-medium">
                     {activeQuizIndex + 1} / {quizzes.length}
                   </span>
-                  <button
+                  <Button
                     type="button"
+                    variant="outline"
+                    size="sm"
                     onClick={() =>
                       setActiveQuizIndex(
                         activeQuizIndex < quizzes.length - 1
@@ -1414,11 +1406,10 @@ const EditQuizLesson = () => {
                           : 0
                       )
                     }
-                    className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                    rightIcon={<ChevronRight className="h-4 w-4" />}
                   >
                     Câu sau
-                    <HiChevronRight className="h-5 w-5" />
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
@@ -1428,34 +1419,34 @@ const EditQuizLesson = () => {
           {currentStep === 2 && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                <h2 className="text-2xl font-bold font-display text-foreground mb-1">
                   Xem lại và hoàn tất
                 </h2>
-                <p className="text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   Kiểm tra lại thông tin trước khi cập nhật bài học quiz
                 </p>
               </div>
 
               <div className="space-y-6">
                 {/* Basic Info Review */}
-                <div className="border border-gray-200 rounded-xl p-6 bg-gray-50">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">
+                <Card variant="muted" className="border border-border p-6">
+                  <h3 className="text-lg font-bold text-foreground mb-4">
                     Thông tin cơ bản
                   </h3>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <div>
-                      <span className="text-sm font-semibold text-gray-700">
+                      <span className="text-sm font-semibold text-muted-foreground">
                         Tiêu đề:
                       </span>
-                      <p className="text-sm text-gray-900 mt-1">
+                      <p className="text-sm text-foreground font-medium mt-1">
                         {formData.title}
                       </p>
                     </div>
                     <div>
-                      <span className="text-sm font-semibold text-gray-700">
+                      <span className="text-sm font-semibold text-muted-foreground">
                         Mô tả:
                       </span>
-                      <div className="text-sm text-gray-900 mt-1 prose max-w-none">
+                      <div className="text-sm text-foreground mt-1 prose max-w-none">
                         <div
                           dangerouslySetInnerHTML={{
                             __html: formData.description
@@ -1467,39 +1458,39 @@ const EditQuizLesson = () => {
                       </div>
                     </div>
                   </div>
-                </div>
+                </Card>
 
                 {/* Quizzes Review */}
-                <div className="border border-gray-200 rounded-xl p-6 bg-gray-50">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">
+                <Card variant="muted" className="border border-border p-6">
+                  <h3 className="text-lg font-bold text-foreground mb-4">
                     Câu hỏi ({quizzes.length})
                   </h3>
                   <div className="space-y-4">
                     {quizzes.map((quiz, quizIndex) => (
-                      <div
+                      <Card
                         key={quizIndex}
-                        className="bg-white border border-gray-200 rounded-lg p-4"
+                        className="bg-surface border border-border p-4"
                       >
                         <div className="flex items-start gap-3 mb-3">
-                          <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                          <div className="w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0">
                             {quizIndex + 1}
                           </div>
                           <div className="flex-1">
-                            <p className="font-medium text-gray-900 mb-2">
+                            <p className="font-medium text-foreground mb-2">
                               {quiz.question}
                             </p>
                             <div className="flex items-center gap-2 mb-2">
-                              <span className="text-xs px-2 py-1 bg-gray-100 rounded text-gray-700">
+                              <Badge variant="outline" size="sm">
                                 {quiz.difficulty_level === 1
                                   ? "Dễ"
                                   : quiz.difficulty_level === 2
                                   ? "Trung bình"
                                   : "Khó"}
-                              </span>
+                              </Badge>
                             </div>
                             {quiz.explanation && (
-                              <p className="text-sm text-gray-600 mb-3">
-                                <span className="font-medium">
+                              <p className="text-sm text-muted-foreground mb-3">
+                                <span className="font-medium text-foreground">
                                   Giải thích:{" "}
                                 </span>
                                 {quiz.explanation}
@@ -1511,104 +1502,91 @@ const EditQuizLesson = () => {
                           {quiz.options.map((option, optionIndex) => (
                             <div
                               key={optionIndex}
-                              className={`p-2 rounded border ${
+                              className={`p-3 rounded-lg border ${
                                 option.is_correct
-                                  ? "bg-green-50 border-green-300"
-                                  : "bg-gray-50 border-gray-200"
+                                  ? "bg-success-bg/50 border-success-border"
+                                  : "bg-surface-muted/50 border-border"
                               }`}
                             >
                               <div className="flex items-center gap-2">
                                 {option.is_correct && (
-                                  <HiCheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                                  <CheckCircle2 className="h-4 w-4 text-success-foreground flex-shrink-0" />
                                 )}
                                 <p
                                   className={`text-sm ${
                                     option.is_correct
-                                      ? "text-green-900 font-medium"
-                                      : "text-gray-900"
+                                      ? "text-success-foreground font-medium"
+                                      : "text-foreground"
                                   }`}
                                 >
                                   {option.text}
                                 </p>
                               </div>
                               {option.feedback && (
-                                <p className="text-xs text-gray-600 mt-1 ml-6">
+                                <p className="text-xs text-muted-foreground mt-1 ml-6">
                                   Phản hồi: {option.feedback}
                                 </p>
                               )}
                             </div>
                           ))}
                         </div>
-                      </div>
+                      </Card>
                     ))}
                   </div>
-                </div>
+                </Card>
               </div>
             </div>
           )}
-        </div>
+        </Card>
 
         {/* Navigation Buttons */}
-        <div className="flex items-center justify-between bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-          <button
+        <Card className="flex items-center justify-between border border-border bg-surface shadow-xs p-6">
+          <Button
             type="button"
+            variant="outline"
             onClick={handleBack}
             disabled={currentStep === 0 || isSubmitting}
-            className="flex items-center gap-2 px-6 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            leftIcon={<ChevronLeft className="h-4 w-4" />}
           >
-            <HiChevronLeft className="h-5 w-5" />
             Quay lại
-          </button>
+          </Button>
 
           {currentStep < totalSteps - 1 ? (
-            <button
+            <Button
               type="button"
+              variant="primary"
               onClick={handleNext}
               disabled={isSubmitting}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-lg font-medium transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              rightIcon={<ChevronRight className="h-4 w-4" />}
             >
               Tiếp theo
-              <HiChevronRight className="h-5 w-5" />
-            </button>
+            </Button>
           ) : (
-            <div className="flex flex-col items-end gap-2">
+            <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3">
               {!hasChanges && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg px-4 py-2 text-sm text-yellow-800">
-                  <div className="flex items-center gap-2">
-                    <span>⚠️</span>
-                    <span className="font-medium">
-                      Chưa có thay đổi nào. Vui lòng chỉnh sửa thông tin trước
-                      khi lưu.
-                    </span>
-                  </div>
-                </div>
+                <Alert variant="warning" className="py-2 px-3 text-xs">
+                  Chưa có thay đổi nào. Vui lòng chỉnh sửa thông tin trước khi lưu.
+                </Alert>
               )}
-              <button
+              <Button
                 type="button"
+                variant="primary"
                 onClick={handleSubmit}
                 disabled={isSubmitting || !hasChanges}
-                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-lg font-medium transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                isLoading={isSubmitting}
+                loadingText="Đang xử lý..."
+                leftIcon={<CheckCircle2 className="h-4 w-4" />}
                 title={
                   !hasChanges
                     ? "Vui lòng thay đổi thông tin trước khi lưu"
                     : undefined
                 }
               >
-                {isSubmitting ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Đang xử lý...
-                  </>
-                ) : (
-                  <>
-                    <HiCheckCircle className="h-5 w-5" />
-                    Hoàn tất
-                  </>
-                )}
-              </button>
+                Hoàn tất
+              </Button>
             </div>
           )}
-        </div>
+        </Card>
       </div>
     </div>
   );

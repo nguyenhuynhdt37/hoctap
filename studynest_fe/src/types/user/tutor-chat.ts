@@ -70,6 +70,7 @@ export interface ThreadsResponse {
 
 // Response từ API get active thread
 export interface ActiveThreadResponse {
+  can_read_lesson?: boolean;
   thread: {
     id: string;
     title: string;

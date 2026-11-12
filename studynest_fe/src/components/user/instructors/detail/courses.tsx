@@ -1,183 +1,305 @@
 "use client";
 
+import { useEffect, useId, useMemo, useRef, useState } from "react";
+import useSWR from "swr";
+import Link from "next/link";
+import { BookOpen, RotateCcw, Search, Star } from "lucide-react";
+import { Badge, Button, Card, EmptyState, Input, Skeleton } from "@/components/ui";
 import api from "@/lib/utils/fetcher/client/axios";
-import { Course } from "@/types/user/course";
-import {
+import { handleImageError } from "@/lib/utils/helpers/image";
+import { useUserStore } from "@/stores/user";
+import type {
   InstructorCourseItem,
   InstructorCoursesResponse,
+  InstructorFilterOptions,
 } from "@/types/user/instructor";
-import { CategoryListItem } from "@/types/user/category";
-import CourseCard from "@/components/user/home/CourseCard";
-import SkeletonCard from "@/components/user/home/SkeletonCard";
-import useSWR from "swr";
-import { useState, useEffect, useMemo, useCallback } from "react";
-import { HiOutlineRefresh } from "react-icons/hi";
 
-const fetcher = (url: string) => api.get(url).then((res) => res.data);
+const fetcher = <T,>(url: string) => api.get<T>(url).then((res) => res.data);
 
-const transformCourse = (item: InstructorCourseItem): Course => ({
-  id: item.id,
-  slug: item.slug,
-  title: item.title,
-  instructor: undefined,
-  rating: item.rating_avg || 0,
-  students: item.total_enrolls || 0,
-  price: item.base_price ?? null,
-  image: item.thumbnail,
-  tags: [],
-});
+function formatPrice(amount: number, currency?: string | null): string {
+  if (amount === 0) return "Miễn phí";
+  const validCurrency = currency || "VND";
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: validCurrency === "USD" ? "USD" : "VND",
+    maximumFractionDigits: validCurrency === "USD" ? 2 : 0,
+  }).format(amount);
+}
 
 interface InstructorCoursesProps {
   instructorId: string;
 }
 
-const InstructorCourses = ({ instructorId }: InstructorCoursesProps) => {
-  const [allCourses, setAllCourses] = useState<InstructorCourseItem[]>([]);
-  const [cursor, setCursor] = useState<string | null>(null);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [categorySlug, setCategorySlug] = useState<string>("");
-  const [level, setLevel] = useState<string>("");
-  const [sort, setSort] = useState<string>("created_at_desc");
-  const [keyword, setKeyword] = useState<string>("");
-  const [debouncedKeyword, setDebouncedKeyword] = useState<string>("");
+export default function InstructorCourses({ instructorId }: InstructorCoursesProps) {
+  const user = useUserStore((s) => s.user);
+  const viewerScope = user?.id || "guest";
 
-  const { data: categoriesData } = useSWR<CategoryListItem[]>(
-    "/categories/all",
+  const searchInputId = useId();
+  const subjectSelectId = useId();
+  const gradeSelectId = useId();
+  const sortSelectId = useId();
+
+  const [keyword, setKeyword] = useState("");
+  const [debouncedKeyword, setDebouncedKeyword] = useState("");
+  const [subject, setSubject] = useState("");
+  const [grade, setGrade] = useState("");
+  const [sort, setSort] = useState("rating_desc");
+
+  // Nạp danh mục taxonomy từ filter-options thay vì API /categories/all legacy
+  const { data: options } = useSWR<InstructorFilterOptions>(
+    "/users/instructors/filter-options",
     fetcher,
     { revalidateOnFocus: false }
   );
 
+  // Debounce tìm kiếm 350ms
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedKeyword(keyword.trim()), 300);
+    const timer = setTimeout(() => setDebouncedKeyword(keyword.trim()), 350);
     return () => clearTimeout(timer);
   }, [keyword]);
 
-  const url = useMemo(() => {
-    const params = new URLSearchParams({
-      limit: "20",
-      sort,
-    });
-    if (debouncedKeyword) params.set("keyword", debouncedKeyword);
-    if (categorySlug) params.set("category_slug", categorySlug);
-    if (level) params.set("level", level);
-    return `/users/instructors/${instructorId}/courses?${params.toString()}`;
-  }, [instructorId, sort, debouncedKeyword, categorySlug, level]);
+  const queryParams = useMemo(() => {
+    const p = new URLSearchParams({ limit: "12", sort });
+    if (debouncedKeyword) p.set("keyword", debouncedKeyword);
+    if (subject) p.set("subject", subject);
+    if (grade) p.set("grade", grade);
+    return p.toString();
+  }, [sort, debouncedKeyword, subject, grade]);
 
-  const { data, isLoading } = useSWR<InstructorCoursesResponse>(url, fetcher, {
-    revalidateOnFocus: false,
+  // Scope SWR key bao gồm user.id hoặc guest để bảo vệ trạng thái viewer (is_purchased / is_favorite)
+  const swrKey = [
+    "/users/instructors",
+    instructorId,
+    "courses",
+    viewerScope,
+    queryParams,
+  ];
+
+  const httpUrl = `/users/instructors/${encodeURIComponent(instructorId)}/courses?${queryParams}`;
+
+  const { data, isLoading, error, mutate } = useSWR<InstructorCoursesResponse>(
+    swrKey,
+    () => api.get<InstructorCoursesResponse>(httpUrl).then((res) => res.data),
+    { revalidateOnFocus: false }
+  );
+
+  // Quản lý phân trang keyset an toàn, chống stale / race condition
+  const activeQueryKey = `${queryParams}::${viewerScope}::${instructorId}`;
+  const activeQueryKeyRef = useRef(activeQueryKey);
+  const loadingMoreKeyRef = useRef<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const loadMoreGenRef = useRef(0);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [moreError, setMoreError] = useState(false);
+
+  const [extraState, setExtraState] = useState<{
+    queryKey: string;
+    items: InstructorCourseItem[];
+    cursor: string | null;
+    hasLoadedMore: boolean;
+  }>({
+    queryKey: activeQueryKey,
+    items: [],
+    cursor: null,
+    hasLoadedMore: false,
   });
 
+  // Khi queryParams, viewerScope hoặc instructorId thay đổi: abort request cũ, reset generation và extraState
   useEffect(() => {
-    setAllCourses([]);
-    setCursor(null);
-  }, [url]);
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
 
+    activeQueryKeyRef.current = activeQueryKey;
+    loadMoreGenRef.current += 1;
+    loadingMoreKeyRef.current = null;
+    setIsLoadingMore(false);
+    setMoreError(false);
+    setExtraState({
+      queryKey: activeQueryKey,
+      items: [],
+      cursor: null,
+      hasLoadedMore: false,
+    });
+  }, [activeQueryKey]);
+
+  // Dọn dẹp controller khi unmount
   useEffect(() => {
-    if (data?.items) {
-      setAllCourses(data.items);
-      setCursor(data.next_cursor);
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, []);
+
+  const items = useMemo(() => {
+    const first = data?.items ?? [];
+    const extra = extraState.queryKey === activeQueryKey ? extraState.items : [];
+    return [...first, ...extra];
+  }, [data?.items, extraState.queryKey, extraState.items, activeQueryKey]);
+
+  const nextCursor = useMemo(() => {
+    if (extraState.queryKey === activeQueryKey && extraState.hasLoadedMore) {
+      return extraState.cursor;
     }
-  }, [data]);
+    return data?.next_cursor ?? null;
+  }, [extraState.queryKey, extraState.hasLoadedMore, extraState.cursor, data?.next_cursor, activeQueryKey]);
 
-  const loadMore = useCallback(async () => {
-    if (!cursor || isLoadingMore) return;
+  const handleLoadMore = async () => {
+    if (!nextCursor || loadingMoreKeyRef.current === activeQueryKey) return;
+
+    const requestKey = activeQueryKey;
+    const currentGen = ++loadMoreGenRef.current;
+
+    loadingMoreKeyRef.current = requestKey;
     setIsLoadingMore(true);
+    setMoreError(false);
+
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     try {
-      const params = new URLSearchParams({
-        limit: "20",
-        sort,
-        cursor,
-      });
-      if (debouncedKeyword) params.set("keyword", debouncedKeyword);
-      if (categorySlug) params.set("category_slug", categorySlug);
-      if (level) params.set("level", level);
       const res = await api.get<InstructorCoursesResponse>(
-        `/users/instructors/${instructorId}/courses?${params.toString()}`
+        `/users/instructors/${encodeURIComponent(instructorId)}/courses?${queryParams}&cursor=${encodeURIComponent(
+          nextCursor
+        )}`,
+        { signal: controller.signal }
       );
-      setAllCourses((prev) => [...prev, ...res.data.items]);
-      setCursor(res.data.next_cursor);
-    } catch (error) {
-      console.error("Error loading more courses:", error);
+
+      // Bỏ qua nếu generation hoặc query key đã thay đổi
+      if (
+        currentGen !== loadMoreGenRef.current ||
+        requestKey !== activeQueryKeyRef.current
+      ) {
+        return;
+      }
+
+      const firstPageItems = data?.items ?? [];
+      const newItems = res.data.items ?? [];
+
+      setExtraState((prev) => {
+        if (prev.queryKey !== requestKey) {
+          return {
+            queryKey: requestKey,
+            items: newItems,
+            cursor: res.data.next_cursor ?? null,
+            hasLoadedMore: true,
+          };
+        }
+        const existingIds = new Set([
+          ...firstPageItems.map((c) => c.id),
+          ...prev.items.map((c) => c.id),
+        ]);
+        const uniqueNew = newItems.filter((c) => !existingIds.has(c.id));
+        return {
+          queryKey: requestKey,
+          items: [...prev.items, ...uniqueNew],
+          cursor: res.data.next_cursor ?? null,
+          hasLoadedMore: true,
+        };
+      });
+    } catch (err: unknown) {
+      const isCanceled =
+        (err as { name?: string })?.name === "CanceledError" ||
+        (err as { name?: string })?.name === "AbortError" ||
+        (err as { code?: string })?.code === "ERR_CANCELED";
+
+      if (
+        !isCanceled &&
+        currentGen === loadMoreGenRef.current &&
+        requestKey === activeQueryKeyRef.current
+      ) {
+        setMoreError(true);
+      }
     } finally {
-      setIsLoadingMore(false);
+      if (currentGen === loadMoreGenRef.current) {
+        loadingMoreKeyRef.current = null;
+        setIsLoadingMore(false);
+      }
     }
-  }, [
-    cursor,
-    instructorId,
-    sort,
-    debouncedKeyword,
-    categorySlug,
-    level,
-    isLoadingMore,
-  ]);
-
-  const courses = allCourses.map(transformCourse);
-
-  const hasFilters = categorySlug || level;
-  const clearFilters = () => {
-    setCategorySlug("");
-    setLevel("");
   };
+
+  const hasFilter = Boolean(keyword || subject || grade || sort !== "rating_desc");
+  const handleResetFilters = () => {
+    setKeyword("");
+    setDebouncedKeyword("");
+    setSubject("");
+    setGrade("");
+    setSort("rating_desc");
+  };
+
+  const selectStyle =
+    "w-full h-10 px-3 rounded-xl border border-input bg-surface text-xs font-medium text-foreground transition-colors hover:border-primary-pastel focus:outline-none focus:border-ring focus:ring-2 focus:ring-ring/15 cursor-pointer";
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-xl p-6 border border-green-100">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Thanh lọc & tìm kiếm khóa học */}
+      <Card className="rounded-[24px] border border-border/80 bg-surface p-5 space-y-4 shadow-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          {/* Ô tìm kiếm */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Tìm kiếm
+            <label htmlFor={searchInputId} className="block text-xs font-semibold text-foreground mb-1.5 uppercase tracking-wider">
+              Tìm khóa học
             </label>
-            <input
-              type="text"
+            <Input
+              id={searchInputId}
+              name="keyword"
+              maxLength={160}
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
               placeholder="Nhập tên khóa học..."
-              className="w-full px-4 py-2 border border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+              leftIcon={<Search className="w-4 h-4 text-muted-foreground" />}
             />
           </div>
 
+          {/* Môn học */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Danh mục
+            <label htmlFor={subjectSelectId} className="block text-xs font-semibold text-foreground mb-1.5 uppercase tracking-wider">
+              Môn học
             </label>
             <select
-              value={categorySlug}
-              onChange={(e) => setCategorySlug(e.target.value)}
-              className="w-full px-4 py-2 border border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white text-sm"
+              id={subjectSelectId}
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              className={selectStyle}
             >
-              <option value="">Tất cả</option>
-              {categoriesData?.map((cat) => (
-                <option key={cat.id} value={cat.slug}>
-                  {cat.name}
+              <option value="">Tất cả môn học</option>
+              {options?.subjects?.map((sub) => (
+                <option key={sub.id} value={sub.slug ?? sub.code}>
+                  {sub.name}
                 </option>
               ))}
             </select>
           </div>
 
+          {/* Khối lớp */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Cấp độ
+            <label htmlFor={gradeSelectId} className="block text-xs font-semibold text-foreground mb-1.5 uppercase tracking-wider">
+              Khối lớp
             </label>
             <select
-              value={level}
-              onChange={(e) => setLevel(e.target.value)}
-              className="w-full px-4 py-2 border border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white text-sm"
+              id={gradeSelectId}
+              value={grade}
+              onChange={(e) => setGrade(e.target.value)}
+              className={selectStyle}
             >
-              <option value="">Tất cả</option>
-              <option value="beginner">Cơ bản</option>
-              <option value="intermediate">Trung bình</option>
-              <option value="advanced">Nâng cao</option>
+              <option value="">Tất cả khối lớp</option>
+              {options?.grades?.map((g) => (
+                <option key={g.id} value={String(g.grade_number ?? g.name)}>
+                  {g.grade_number ? `Lớp ${g.grade_number}` : g.name}
+                </option>
+              ))}
             </select>
           </div>
 
+          {/* Sắp xếp */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor={sortSelectId} className="block text-xs font-semibold text-foreground mb-1.5 uppercase tracking-wider">
               Sắp xếp
             </label>
             <select
+              id={sortSelectId}
               value={sort}
               onChange={(e) => setSort(e.target.value)}
-              className="w-full px-4 py-2 border border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white text-sm"
+              className={selectStyle}
             >
               <option value="created_at_desc">Mới nhất</option>
               <option value="created_at_asc">Cũ nhất</option>
@@ -188,56 +310,180 @@ const InstructorCourses = ({ instructorId }: InstructorCoursesProps) => {
           </div>
         </div>
 
-        {hasFilters && (
-          <div className="mt-4 pt-4 border-t border-green-100">
-            <button
-              onClick={clearFilters}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-yellow-600 bg-yellow-50 border border-yellow-200 rounded-lg hover:bg-yellow-100 transition-colors"
+        {hasFilter && (
+          <div className="pt-2 border-t border-border flex justify-end">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleResetFilters}
+              leftIcon={<RotateCcw className="w-3.5 h-3.5" />}
+              className="text-xs text-muted-foreground hover:text-foreground"
             >
-              <HiOutlineRefresh className="w-4 h-4" />
-              Xóa bộ lọc
-            </button>
+              Đặt lại bộ lọc
+            </Button>
           </div>
         )}
-      </div>
+      </Card>
 
-      {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <SkeletonCard key={i} />
+      {/* Danh sách hiển thị khóa học */}
+      {isLoading && items.length === 0 ? (
+        <div role="status" className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div
+              key={i}
+              className="rounded-[20px] border border-border bg-surface p-0 overflow-hidden shadow-xs animate-pulse"
+            >
+              <Skeleton variant="rect" className="aspect-video w-full rounded-none" />
+              <div className="p-5 space-y-3">
+                <Skeleton variant="text" className="h-4 w-3/4" />
+                <Skeleton variant="text" className="h-4 w-1/2" />
+                <div className="pt-3 border-t border-border/70 flex justify-between">
+                  <Skeleton variant="text" className="h-3 w-16" />
+                  <Skeleton variant="text" className="h-4 w-20" />
+                </div>
+              </div>
+            </div>
           ))}
         </div>
-      ) : courses.length > 0 ? (
+      ) : error && items.length === 0 ? (
+        <Card className="rounded-[24px] border-destructive-border bg-destructive-bg/30 p-8 text-center">
+          <h3 className="text-base font-semibold text-destructive-foreground mb-1">
+            Không thể tải danh sách khóa học
+          </h3>
+          <p className="text-xs text-muted-foreground mb-4">
+            Đã xảy ra lỗi khi kết nối. Vui lòng thử lại.
+          </p>
+          <Button variant="outline" size="sm" onClick={() => mutate()}>
+            Thử tải lại
+          </Button>
+        </Card>
+      ) : items.length === 0 ? (
+        <EmptyState
+          title="Chưa có khóa học nào phù hợp"
+          description="Giáo viên hiện chưa có khóa học công khai phù hợp với điều kiện tìm kiếm của bạn."
+          action={
+            hasFilter ? (
+              <Button
+                variant="primary"
+                size="md"
+                onClick={handleResetFilters}
+                leftIcon={<RotateCcw className="w-4 h-4" />}
+              >
+                Đặt lại bộ lọc
+              </Button>
+            ) : null
+          }
+        />
+      ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {courses.map((course) => (
-              <CourseCard
-                key={course.id}
-                course={course}
-                section="recommended"
-              />
-            ))}
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {items.map((course) => {
+              const isFree = course.base_price === 0;
+              const hasReviews = course.rating_count > 0 && course.rating_avg > 0;
+
+              return (
+                <Card
+                  key={course.id}
+                  interactive
+                  className="group flex h-full flex-col overflow-hidden rounded-[20px] border border-border bg-surface p-0 shadow-xs transition-all duration-200 hover:-translate-y-1 hover:border-primary-pastel hover:shadow-ambient-md"
+                >
+                  <Link
+                    href={`/course/${course.slug}`}
+                    className="flex h-full flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  >
+                    {/* Thumbnail */}
+                    <div className="relative aspect-video w-full overflow-hidden bg-primary-light/40">
+                      {course.thumbnail ? (
+                        <img
+                          src={course.thumbnail}
+                          alt={course.title}
+                          loading="lazy"
+                          onError={handleImageError}
+                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center bg-primary-light text-primary">
+                          <BookOpen className="h-10 w-10" />
+                        </div>
+                      )}
+
+                      {course.category?.name && (
+                        <div className="absolute left-3 top-3">
+                          <Badge variant="primary" className="text-[11px] shadow-2xs font-medium backdrop-blur-xs">
+                            {course.category.name}
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Nội dung */}
+                    <div className="flex flex-1 flex-col p-5">
+                      <h4 className="text-base font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2 leading-snug mb-3">
+                        {course.title}
+                      </h4>
+
+                      <div className="mt-auto flex items-center justify-between pt-3 border-t border-border/70 text-xs">
+                        <div>
+                          {hasReviews ? (
+                            <div className="flex items-center gap-1 font-medium">
+                              <Star className="h-3.5 w-3.5 fill-warning text-warning" />
+                              <span className="text-foreground">{course.rating_avg.toFixed(1)}</span>
+                              <span className="text-muted-foreground font-normal">
+                                ({course.rating_count})
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-[11px] text-muted-foreground">Chưa có đánh giá</span>
+                          )}
+                        </div>
+
+                        <div className="text-right">
+                          <span
+                            className={
+                              isFree
+                                ? "text-sm font-bold text-success-foreground"
+                                : "text-base font-bold text-primary"
+                            }
+                          >
+                            {formatPrice(course.base_price, course.currency)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                </Card>
+              );
+            })}
           </div>
 
-          {cursor && (
-            <div className="text-center">
-              <button
-                onClick={loadMore}
-                disabled={isLoadingMore}
-                className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          {nextCursor && (
+            <div className="mt-8 flex flex-col items-center justify-center gap-3">
+              <Button
+                variant="outline"
+                size="md"
+                onClick={handleLoadMore}
+                isLoading={isLoadingMore}
+                loadingText="Đang tải thêm..."
+                className="min-w-[160px] shadow-xs"
               >
-                {isLoadingMore ? "Đang tải..." : "Xem thêm"}
-              </button>
+                Xem thêm khóa học
+              </Button>
+              {moreError && (
+                <div className="flex items-center gap-2 text-xs text-destructive-foreground">
+                  <span>Không thể tải thêm khóa học.</span>
+                  <button
+                    type="button"
+                    onClick={handleLoadMore}
+                    className="font-semibold underline hover:text-foreground cursor-pointer"
+                  >
+                    Thử lại
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </>
-      ) : (
-        <div className="text-center py-12">
-          <p className="text-gray-500">Không có khóa học nào</p>
-        </div>
       )}
     </div>
   );
-};
-
-export default InstructorCourses;
+}

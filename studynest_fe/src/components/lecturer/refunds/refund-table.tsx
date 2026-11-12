@@ -1,14 +1,16 @@
 "use client";
 
+import { Badge, Card } from "@/components/ui";
+import type { BadgeVariant } from "@/components/ui/badge";
 import { getImageUrl } from "@/lib/utils/helpers/image";
 import {
   LecturerRefundRequestItem,
   LecturerRefundRequestsQuery,
 } from "@/types/lecturer/refund";
+import { ArrowDown, ArrowUp } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import { HiArrowDown, HiArrowUp } from "react-icons/hi";
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("vi-VN", {
@@ -51,24 +53,24 @@ const getStatusLabel = (
   }
 };
 
-const getStatusBadgeClass = (
+const getStatusVariant = (
   status: LecturerRefundRequestItem["status"]
-): string => {
+): BadgeVariant => {
   switch (status) {
     case "requested":
-      return "bg-yellow-100 text-yellow-700 border-yellow-300";
+      return "warning";
     case "instructor_approved":
-      return "bg-blue-100 text-blue-700 border-blue-300";
+      return "info";
     case "instructor_rejected":
-      return "bg-red-100 text-red-700 border-red-300";
+      return "destructive";
     case "admin_approved":
-      return "bg-green-100 text-green-700 border-green-300";
+      return "success";
     case "admin_rejected":
-      return "bg-red-100 text-red-700 border-red-300";
+      return "destructive";
     case "refunded":
-      return "bg-green-100 text-green-700 border-green-300";
+      return "success";
     default:
-      return "bg-gray-100 text-gray-700 border-gray-300";
+      return "neutral";
   }
 };
 
@@ -107,54 +109,53 @@ export function RefundRequestsTable({
   ];
 
   return (
-    <>
-      <div className="bg-white rounded-xl border border-green-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-green-50">
-              <tr>
-                {columns.map((col) => (
-                  <th
-                    key={col.key}
-                    scope="col"
-                    className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider"
-                  >
-                    {col.sortable ? (
-                      <button
-                        onClick={() => handleSort(col.key as any)}
-                        className="flex items-center gap-2 hover:text-green-600 transition-colors"
-                      >
-                        <span>{col.title}</span>
-                        {sortBy === col.key && (
-                          <span className="text-green-600">
-                            {orderDir === "asc" ? (
-                              <HiArrowUp className="h-4 w-4" />
-                            ) : (
-                              <HiArrowDown className="h-4 w-4" />
-                            )}
-                          </span>
-                        )}
-                      </button>
-                    ) : (
-                      col.title
-                    )}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-green-100">
-              {data.map((item) => (
-                <RefundRequestRow
-                  key={item.refund_id}
-                  item={item}
-                  onContextMenu={onContextMenu}
-                />
+    <Card variant="surface" className="overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead className="bg-background border-b border-border">
+            <tr>
+              {columns.map((col) => (
+                <th
+                  key={col.key}
+                  scope="col"
+                  className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider"
+                >
+                  {col.sortable ? (
+                    <button
+                      type="button"
+                      onClick={() => handleSort(col.key as any)}
+                      className="flex items-center gap-1.5 hover:text-primary transition-colors"
+                    >
+                      <span>{col.title}</span>
+                      {sortBy === col.key && (
+                        <span className="text-primary">
+                          {orderDir === "asc" ? (
+                            <ArrowUp className="h-3.5 w-3.5" />
+                          ) : (
+                            <ArrowDown className="h-3.5 w-3.5" />
+                          )}
+                        </span>
+                      )}
+                    </button>
+                  ) : (
+                    col.title
+                  )}
+                </th>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border bg-surface">
+            {data.map((item) => (
+              <RefundRequestRow
+                key={item.refund_id}
+                item={item}
+                onContextMenu={onContextMenu}
+              />
+            ))}
+          </tbody>
+        </table>
       </div>
-    </>
+    </Card>
   );
 }
 
@@ -189,13 +190,13 @@ function RefundRequestRow({
 
   return (
     <tr
-      className="hover:bg-green-50/50 transition-colors cursor-pointer"
+      className="hover:bg-background/70 transition-colors cursor-pointer"
       onClick={handleRowClick}
       onContextMenu={(e) => onContextMenu?.(e, item.refund_id, item)}
     >
       <td className="px-4 py-4">
         <div className="flex items-start gap-4">
-          <div className="relative w-20 h-14 shrink-0 rounded-lg overflow-hidden bg-gray-100">
+          <div className="relative w-20 h-14 shrink-0 rounded-xl overflow-hidden bg-background border border-border">
             {thumbnailSrc && !thumbnailError ? (
               <Image
                 src={thumbnailSrc}
@@ -206,8 +207,8 @@ function RefundRequestRow({
                 unoptimized
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                <span className="text-gray-400 text-xs">No img</span>
+              <div className="w-full h-full flex items-center justify-center bg-primary-light/40">
+                <span className="text-muted-foreground text-xs">No img</span>
               </div>
             )}
           </div>
@@ -215,7 +216,7 @@ function RefundRequestRow({
             <Link
               href={`/learning/${item.course.id}`}
               onClick={(e) => e.stopPropagation()}
-              className="text-sm font-semibold text-gray-900 hover:text-green-600 transition-colors line-clamp-2 mb-2"
+              className="text-sm font-semibold text-foreground hover:text-primary transition-colors line-clamp-2 mb-2"
             >
               {item.course.title}
             </Link>
@@ -227,12 +228,12 @@ function RefundRequestRow({
                     alt={item.student.fullname}
                     width={20}
                     height={20}
-                    className="rounded-full object-cover object-center aspect-square border border-green-200"
+                    className="rounded-full object-cover object-center aspect-square border border-border"
                     onError={() => setStudentAvatarError(true)}
                     unoptimized
                   />
                 ) : (
-                  <div className="w-5 h-5 rounded-full bg-green-100 text-green-700 text-xs font-bold flex items-center justify-center border border-green-200">
+                  <div className="w-5 h-5 rounded-full bg-primary-light text-primary text-[10px] font-bold flex items-center justify-center border border-primary-pastel">
                     {item.student.fullname
                       .split(" ")
                       .map((n) => n[0])
@@ -241,11 +242,11 @@ function RefundRequestRow({
                       .toUpperCase()}
                   </div>
                 )}
-                <span className="text-xs text-gray-600">
+                <span className="text-xs text-muted-foreground">
                   {item.student.fullname}
                 </span>
               </div>
-              <div className="text-xs text-gray-500 line-clamp-2">
+              <div className="text-xs text-muted-foreground line-clamp-2">
                 {item.reason}
               </div>
             </div>
@@ -253,31 +254,27 @@ function RefundRequestRow({
         </div>
       </td>
       <td className="px-4 py-4">
-        <span
-          className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${getStatusBadgeClass(
-            item.status
-          )}`}
-        >
+        <Badge variant={getStatusVariant(item.status)} size="sm" dot>
           {getStatusLabel(item.status)}
-        </span>
+        </Badge>
       </td>
       <td className="px-4 py-4">
-        <div className="text-sm font-semibold text-gray-900">
+        <div className="text-sm font-semibold text-foreground tabular-nums">
           {formatCurrency(item.refund_amount)}
         </div>
         {item.earnings?.amount_instructor !== null &&
           item.earnings?.amount_instructor !== undefined && (
-            <div className="text-xs text-gray-500 mt-0.5">
+            <div className="text-xs text-muted-foreground mt-0.5 tabular-nums">
               Thu nhập GV: {formatCurrency(item.earnings.amount_instructor)}
             </div>
           )}
       </td>
       <td className="px-4 py-4">
-        <div className="text-sm text-gray-900">
+        <div className="text-sm text-foreground">
           {formatDateTime(item.created_at)}
         </div>
         {item.earnings?.hold_until && (
-          <div className="text-xs text-gray-500 mt-0.5">
+          <div className="text-xs text-muted-foreground mt-0.5">
             Hold đến: {formatDateTime(item.earnings.hold_until)}
           </div>
         )}

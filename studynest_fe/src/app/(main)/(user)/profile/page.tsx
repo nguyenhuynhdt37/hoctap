@@ -1,45 +1,15 @@
-import ProfileEdit from "@/components/user/profile/edit";
-import { fetcher } from "@/lib/utils/fetcher/server/fetcher";
-import { UserProfile } from "@/types/user/profile";
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+import ErrorState from "@/components/user/profile/edit/error-state";
+import ProfileScreen from "@/components/user/profile/profile-screen";
+import { loadOwnProfile } from "@/lib/server/load-own-profile";
+
+export const metadata = {
+  title: "Hồ sơ | Mây Mây",
+};
 
 export default async function ProfilePage() {
-  const stores = await cookies();
-  const result = await fetcher("/auth/check_is_login", stores);
-
-  if (!result.ok) {
-    redirect("/login?redirect=/profile");
+  const result = await loadOwnProfile("/profile");
+  if ("error" in result) {
+    return <ErrorState message={result.error} />;
   }
-
-  try {
-    const profileResponse = await fetcher("/profile", stores);
-
-    if (profileResponse.ok) {
-      const profileData: UserProfile = await profileResponse.json();
-      return <ProfileEdit profileData={profileData} />;
-    } else {
-      const errorData = await profileResponse.json().catch(() => ({}));
-      return (
-        <ProfileEdit
-          profileData={null as any}
-          error={{
-            status: profileResponse.status,
-            message: errorData.detail || errorData.message || "Có lỗi xảy ra",
-          }}
-        />
-      );
-    }
-  } catch (error) {
-    console.error("Error fetching profile data:", error);
-    return (
-      <ProfileEdit
-        profileData={null as any}
-        error={{
-          status: 500,
-          message: "Không thể kết nối đến server. Vui lòng thử lại sau.",
-        }}
-      />
-    );
-  }
+  return <ProfileScreen profile={result.profile} />;
 }

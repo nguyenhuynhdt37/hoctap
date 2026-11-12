@@ -88,7 +88,7 @@ export const VideoLesson = forwardRef<VideoLessonRef, VideoLessonProps>(({
   const isFastForwardingRef = useRef(false)
 
   const duration = lesson.duration ?? 0
-  const requiredWatchTime = Math.floor(duration * 0.1)
+  const requiredWatchTime = Math.ceil(duration * 0.3)
   const hasQuizzes = (lesson.quizzes ?? []).length > 0
 
   // ─────────────────────────────────────────────────────────────────────────────

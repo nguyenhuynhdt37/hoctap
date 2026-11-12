@@ -25,6 +25,13 @@ class Settings(BaseSettings):
     NINEROUTER_AUTO_MODEL: str = "mixed"
     NINEROUTER_TIMEOUT_SECONDS: float = 120.0
     NINEROUTER_STREAM: bool = True
+    # Optional server-side route for interactive tutoring. Empty follows admin selection.
+    TUTOR_CHAT_MODEL: str = ""
+    TUTOR_VOICE_ENABLED: bool = True
+    TUTOR_VOICE_MODEL: str = "gemini-3.8-live"
+    TUTOR_VOICE_NAME: str = "Aoede"
+    TUTOR_VOICE_MAX_SECONDS: int = 600
+    TUTOR_VOICE_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000"
     EMBEDDING_PROVIDER: str = "gemini"
     EMBEDDING_MODEL: str = "gemini-embedding-001"
     EMBEDDING_DIMENSIONS: int = 1536
@@ -67,6 +74,7 @@ class Settings(BaseSettings):
     HF_TOKEN: str = ""
 
     PISTON_URL: str = ""
+    PISTON_API_KEY: str = ""
 
     # PayPal
     PAYPAL_CLIENT_ID: str = ""

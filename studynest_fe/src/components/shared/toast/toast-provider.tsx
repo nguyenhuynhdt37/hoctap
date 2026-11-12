@@ -1,8 +1,20 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Toaster } from "react-hot-toast";
 
 export function ToastProvider() {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Tránh render container toast trong SSR HTML để không bị browser extension chèn attribute gây Hydration Mismatch
+  if (!mounted) {
+    return null;
+  }
+
   return (
     <Toaster
       position="bottom-right"

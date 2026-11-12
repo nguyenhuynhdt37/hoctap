@@ -70,7 +70,7 @@ async def get_lesson_active(
         )
     )
     match lesson_type:
-        case "video":
+        case "video" | "article":
             return await learning_service.get_lesson_video_async(lesson_id, user)
         case "quiz":
             return await learning_service.get_lesson_quiz_async(lesson_id, user)

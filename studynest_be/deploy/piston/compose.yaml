@@ -1,0 +1,67 @@
+name: studynest-code-runner
+
+services:
+  piston:
+    image: ghcr.io/engineer-man/piston@sha256:2f66b7456189c4d713aa986d98eccd0b6ee16d26c7ec5f21b30e942756fd127a
+    container_name: studynest_piston
+    restart: unless-stopped
+    privileged: true
+    cpus: 2
+    mem_limit: 2g
+    pids_limit: 512
+    ports:
+      - "127.0.0.1:14001:2000"
+    environment:
+      PISTON_DISABLE_NETWORKING: "true"
+      PISTON_MAX_CONCURRENT_JOBS: "2"
+      PISTON_MAX_PROCESS_COUNT: "64"
+      PISTON_MAX_OPEN_FILES: "256"
+      PISTON_MAX_FILE_SIZE: "10000000"
+      PISTON_OUTPUT_MAX_SIZE: "65536"
+      PISTON_COMPILE_TIMEOUT: "10000"
+      PISTON_COMPILE_CPU_TIME: "10000"
+      PISTON_RUN_TIMEOUT: "3000"
+      PISTON_RUN_CPU_TIME: "3000"
+      PISTON_COMPILE_MEMORY_LIMIT: "805306368"
+      PISTON_RUN_MEMORY_LIMIT: "268435456"
+    volumes:
+      - piston_packages:/piston/packages
+    tmpfs:
+      - /tmp:exec,size=512m
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:2000/api/v2/runtimes',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  gateway:
+    image: nginx@sha256:583b7f2fce1cdb8da5ad5c39ebd3c33b98b87d493190e548bdee1fa8c619c311
+    container_name: studynest_piston_gateway
+    restart: unless-stopped
+    cpus: 0.5
+    mem_limit: 64m
+    ports:
+      - "10.10.10.100:14000:8080"
+    environment:
+      PISTON_API_KEY: ${PISTON_API_KEY:?Set a private runner API key}
+      NGINX_ENVSUBST_FILTER: "^PISTON_API_KEY$$"
+      NGINX_ENTRYPOINT_WORKER_PROCESSES_AUTOTUNE: "1"
+    volumes:
+      - ./nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
+    depends_on:
+      piston:
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  piston_packages:

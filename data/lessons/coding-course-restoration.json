@@ -1,0 +1,138 @@
+{
+  "database": "studynest",
+  "applied": true,
+  "courses": [
+    {
+      "id": "075522a0-adb5-4816-9593-da0d254acf45",
+      "slug": "lap-trinh-c-co-ban-nang-cao",
+      "title": "Tin học THPT · Nền tảng lập trình C++",
+      "sections": 11,
+      "lessons": 13,
+      "exercises": 12,
+      "testcases": 33,
+      "price_preserved": "1299000.00",
+      "mode": "already_restored"
+    },
+    {
+      "id": "e03af09c-57cc-4eec-b16d-47ccf745aa25",
+      "slug": "lap-trinh-javascript-co-ban",
+      "title": "Tin học THPT · JavaScript và lập trình web",
+      "sections": 14,
+      "lessons": 63,
+      "exercises": 14,
+      "testcases": 44,
+      "price_preserved": "999999.00",
+      "mode": "already_restored"
+    }
+  ],
+  "preservation_checks": {
+    "content": {
+      "lessons": {
+        "count": 82,
+        "md5": "8f6a59b2bc96a707d182408a954fa177"
+      },
+      "course_sections": {
+        "count": 31,
+        "md5": "602e1f7b2c89963d153af4c1b802b84e"
+      },
+      "lesson_active": {
+        "count": 17,
+        "md5": "72f936298cde0c705ee317dcaa320660"
+      },
+      "lesson_code_files": {
+        "count": 72,
+        "md5": "60d1bb10dd9593e5d9867e195d93da78"
+      },
+      "lesson_chunks": {
+        "count": 390,
+        "md5": "7f4afd68e038af3db549cf8566c5f67a"
+      },
+      "lesson_code_testcases": {
+        "count": 77,
+        "md5": "9ea46c0a2ef700c349a8e8a384838592"
+      },
+      "lesson_codes": {
+        "count": 26,
+        "md5": "f66857fd150bd8d102e7ecba621d92f6"
+      },
+      "lesson_notes": {
+        "count": 11,
+        "md5": "36c160acdeae410f57e906a9ffe59fa0"
+      },
+      "lesson_progress": {
+        "count": 10,
+        "md5": "060df83d93974b2cc0afe0dd7d593fb2"
+      },
+      "lesson_resources": {
+        "count": 4,
+        "md5": "d4684c0cb42f6f6736ab8539ba92833f"
+      },
+      "lesson_videos": {
+        "count": 58,
+        "md5": "b37bb5439940ffdfd8eb4715571a76e4"
+      },
+      "lesson_comments": {
+        "count": 42,
+        "md5": "39fe4ef5f76709a11c69cd61f6f226be"
+      },
+      "lesson_tutor_memory": {
+        "count": 0,
+        "md5": "d751713988987e9331980363e24189ce"
+      },
+      "lesson_quizzes": {
+        "count": 83,
+        "md5": "6578d0aafdd08d364d511b52aa8d56be"
+      },
+      "lesson_quiz_options": {
+        "count": 332,
+        "md5": "58a980b4b164e568fda19e8abd462d2a"
+      },
+      "resource_chunks": {
+        "count": 8,
+        "md5": "b138fe2dc174faf72e507a1d36da6668"
+      },
+      "tutor_chat_threads": {
+        "count": 30,
+        "md5": "8840602b04431271044bb61bc0c1ee9a"
+      }
+    },
+    "financial_and_access": {
+      "purchase_items": {
+        "count": 16,
+        "md5": "2069a113d627dd44b9ddd83c5f619a2c"
+      },
+      "transactions": {
+        "count": 16,
+        "md5": "380bfa507af8c34e4161543c6211ee4c"
+      },
+      "course_enrollments": {
+        "count": 9,
+        "md5": "52c16344d740a0171aa75f1398cd8a40"
+      },
+      "course_favourites": {
+        "count": 0,
+        "md5": "d751713988987e9331980363e24189ce"
+      },
+      "course_reviews": {
+        "count": 0,
+        "md5": "d751713988987e9331980363e24189ce"
+      },
+      "discount_targets": {
+        "count": 4,
+        "md5": "f71c3714bcda952fbfcb270c05decad5"
+      },
+      "course_bundle_items": {
+        "count": 0,
+        "md5": "d751713988987e9331980363e24189ce"
+      },
+      "bundle_order_lines": {
+        "count": 0,
+        "md5": "d751713988987e9331980363e24189ce"
+      },
+      "stage_course_options": {
+        "count": 0,
+        "md5": "d751713988987e9331980363e24189ce"
+      }
+    }
+  }
+}

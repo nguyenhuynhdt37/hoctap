@@ -1,0 +1,30 @@
+{
+  "target_database": "studynest",
+  "apply": true,
+  "courses": [
+    {
+      "id": "f59f1e47-6f7d-4671-a7f8-ed4f442faf95",
+      "title": "Tiếng Việt lớp 1 · Học vần cùng VTV7",
+      "slug": "vtv7-tieng-viet-lop-1-hoc-van-cung-vtv7-4055f62410",
+      "status": "draft_created",
+      "lessons": 36,
+      "price": "0",
+      "published": false
+    },
+    {
+      "id": "7962cb7c-8610-4a1d-a7ab-8f005d4ffbfe",
+      "title": "Toán lớp 1 · Bộ bài giảng VTV7",
+      "slug": "vtv7-toan-lop-1-bo-bai-giang-vtv7-bdb9b4af54",
+      "status": "draft_created",
+      "lessons": 35,
+      "price": "0",
+      "published": false
+    }
+  ],
+  "publication": {
+    "published": true,
+    "approved": true,
+    "published_at": "2026-11-12T08:32:39.818686+00:00",
+    "scope": "two imported VTV7 courses"
+  }
+}

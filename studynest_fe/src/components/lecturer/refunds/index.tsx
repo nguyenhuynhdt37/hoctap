@@ -182,16 +182,16 @@ export default function LecturerRefundRequests() {
   const isEmpty = !isInitialLoading && data && data.items.length === 0;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-background">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         {/* Page Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-black text-gray-900 mb-2">
+              <h1 className="font-display text-2xl sm:text-3xl font-semibold text-foreground tracking-tight mb-1.5">
                 Yêu cầu hoàn tiền
               </h1>
-              <p className="text-gray-600">
+              <p className="text-sm text-muted-foreground">
                 Quản lý và xử lý các yêu cầu hoàn tiền từ học viên
               </p>
             </div>

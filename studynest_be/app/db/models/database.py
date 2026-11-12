@@ -852,6 +852,7 @@ class UserPushTokens(Base):
 class UserRoles(Base):
     __tablename__ = 'user_roles'
     __table_args__ = (
+        Index("ix_user_roles_user_role", "user_id", "role_id"),
     ForeignKeyConstraint(['role_id'], ['public.role.id'], name='user_roles_role_fk'),
     ForeignKeyConstraint(['user_id'], ['public.user.id'], ondelete='CASCADE', name='user_roles_user_fk'),
         PrimaryKeyConstraint('id', name='user_roles_pk'),
@@ -938,6 +939,7 @@ class XpTransactions(Base):
 class Courses(Base):
     __tablename__ = 'courses'
     __table_args__ = (
+        Index("ix_courses_public_instructor", "instructor_id", text("created_at DESC"), text("id DESC"), postgresql_where=text("is_published=true AND approval_status='approved' AND deleted_at IS NULL")),
         CheckConstraint("level = ANY (ARRAY['beginner'::text, 'intermediate'::text, 'advanced'::text, 'all'::text])", name='courses_level_check'),
     ForeignKeyConstraint(['approved_by'], ['public.user.id'], ondelete='SET NULL', name='courses_approved_by_fkey'),
     ForeignKeyConstraint(['category_id'], ['public.categories.id'], name='courses_categories_fk'),
@@ -1181,6 +1183,7 @@ class UserMissions(Base):
 class CourseEnrollments(Base):
     __tablename__ = 'course_enrollments'
     __table_args__ = (
+        Index("ix_enrollments_active_course_user", "course_id", "user_id", postgresql_where=text("status='active'")),
     ForeignKeyConstraint(['course_id'], ['public.courses.id'], ondelete='CASCADE', name='course_enrollments_course_id_fkey'),
     ForeignKeyConstraint(['user_id'], ['public.user.id'], ondelete='CASCADE', name='course_enrollments_user_id_fkey'),
         PrimaryKeyConstraint('id', name='course_enrollments_pkey'),
@@ -1219,6 +1222,7 @@ class CourseFavourites(Base):
 class CourseReviews(Base):
     __tablename__ = 'course_reviews'
     __table_args__ = (
+        Index("ix_reviews_course_user", "course_id", "user_id"),
         CheckConstraint('rating >= 1 AND rating <= 5', name='course_reviews_rating_check'),
     ForeignKeyConstraint(['course_id'], ['public.courses.id'], ondelete='CASCADE', name='course_reviews_course_id_fkey'),
     ForeignKeyConstraint(['user_id'], ['public.user.id'], ondelete='CASCADE', name='course_reviews_user_id_fkey'),
@@ -2103,3 +2107,7 @@ class TutorChatImages(Base):
 from app.db.models import catalog as _catalog  # noqa: E402,F401
 
 from app.db.models import learning_paths as _learning_paths  # noqa: E402,F401
+
+from app.db.models import instructor_favourites as _instructor_favourites  # noqa: E402,F401
+
+from app.db.models import bundle_commerce as _bundle_commerce  # noqa: E402,F401

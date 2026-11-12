@@ -1468,16 +1468,19 @@ class LearningService:
                         stdin=tc.input or "",
                     )
 
-                    run = run_result.get("run", {}) or {}
+                    run = run_result.get("run") or run_result.get("compile") or {}
                     stdout = (run.get("stdout") or "").strip()
                     stderr = (run.get("stderr") or "").strip()
-                    exit_code = int(run.get("code", 0))
-                    cpu_time = float(run.get("cpu_time", 0))
-                    memory = int(run.get("memory", 0))
+                    raw_exit_code = run.get("code")
+                    exit_code = int(raw_exit_code) if raw_exit_code is not None else -1
+                    cpu_time = float(run.get("cpu_time") or 0)
+                    memory = int(run.get("memory") or 0)
                     expected = (tc.expected_output or "").strip()
 
                     # Phân loại kết quả
-                    if exit_code != 0 or stderr:
+                    if run.get("status") == "TO":
+                        verdict = "time_limit_exceeded"
+                    elif exit_code != 0 or stderr:
                         verdict = "runtime_error"
                     elif cpu_time > time_limit:
                         verdict = "time_limit_exceeded"

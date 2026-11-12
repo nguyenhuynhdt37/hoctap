@@ -17,7 +17,8 @@ logger = logging.getLogger(__name__)
 class LLMService:
     """Chat service with selectable Gemini and 9Router providers."""
 
-    def __init__(self) -> None:
+    def __init__(self, *, model_override: str | None = None) -> None:
+        self.model_override = model_override
         self.provider = settings.LLM_PROVIDER.strip().lower()
         if self.provider not in {"gemini", "9router"}:
             raise ValueError("LLM_PROVIDER must be gemini or 9router")
@@ -131,7 +132,7 @@ class LLMService:
 
         from app.services.admin.ai_settings import get_chat_model
 
-        model = await get_chat_model()
+        model = self.model_override or await get_chat_model()
 
         messages = []
         if mime_type == "application/json":
@@ -209,7 +210,7 @@ class LLMService:
         if mime_type == "application/json":
             messages.append({"role": "system", "content": "Return only valid JSON matching the requested structure, without Markdown fences. Objects and arrays are allowed."})
         messages.append({"role": "user", "content": prompt})
-        payload = {"model": await get_chat_model(), "messages": messages,
+        payload = {"model": self.model_override or await get_chat_model(), "messages": messages,
                    "temperature": temperature, "max_tokens": max_output_tokens, "stream": True}
         emitted = False
         error = "incomplete response"

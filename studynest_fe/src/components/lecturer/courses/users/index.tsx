@@ -1,23 +1,26 @@
 "use client";
 
+import { Button, Card } from "@/components/ui";
 import api from "@/lib/utils/fetcher/client/axios";
 import { getImageUrl } from "@/lib/utils/helpers/image";
 import {
   CourseStudentItem,
   CourseStudentsResponse,
 } from "@/types/lecturer/student";
+import {
+  ArrowUpDown,
+  BarChart3,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Download,
+  ExternalLink,
+  RefreshCw,
+  Search,
+  UserCircle,
+} from "lucide-react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import {
-  HiChevronLeft,
-  HiChevronRight,
-  HiClock,
-  HiOutlineExternalLink,
-  HiRefresh,
-  HiSearch,
-  HiSortAscending,
-  HiUserCircle,
-} from "react-icons/hi";
 import useSWR from "swr";
 
 const formatCurrency = (value: number) =>
@@ -201,87 +204,70 @@ export default function LecturerCourseStudents() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <div className="max-w-screen-2xl mx-auto px-2 md:px-4 lg:px-6 py-6 md:py-8">
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-black text-gray-900">
+            <h1 className="font-display text-3xl font-bold tracking-tight text-foreground">
               Học viên đăng ký
             </h1>
-            <p className="text-gray-600">
+            <p className="text-muted-foreground mt-1">
               Theo dõi danh sách học viên và tiến độ học tập
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <button
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
               type="button"
+              variant="outline"
               onClick={() => {
                 if (courseId) {
                   router.push(`/lecturer/courses/${courseId}/stats`);
                 }
               }}
-              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+              leftIcon={<BarChart3 className="w-4 h-4" />}
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                className="w-5 h-5"
-              >
-                <path d="M3 3a1 1 0 011-1h1a1 1 0 011 1v14H4a1 1 0 01-1-1V3zM8 7a1 1 0 011-1h1a1 1 0 011 1v10H9a1 1 0 01-1-1V7zM13 11a1 1 0 011-1h1a1 1 0 011 1v6h-2a1 1 0 01-1-1v-5z" />
-              </svg>
               Thống kê
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="pastel"
               onClick={handleExport}
               disabled={exporting}
-              className="inline-flex items-center gap-2 px-4 py-2 border border-green-200 text-green-700 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-60"
+              isLoading={exporting}
+              loadingText="Đang xuất..."
+              leftIcon={!exporting ? <Download className="w-4 h-4" /> : undefined}
             >
-              {exporting ? (
-                <span className="inline-block h-4 w-4 border-2 border-green-600 border-top-transparent rounded-full animate-spin"></span>
-              ) : (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  className="w-5 h-5"
-                >
-                  <path d="M3 3a1 1 0 011-1h6a1 1 0 110 2H5v12h10V9a1 1 0 112 0v7a2 2 0 01-2 2H5a2 2 0 01-2-2V3z" />
-                  <path d="M13 3a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 11-2 0V4.414l-7.293 7.293a1 1 0 01-1.414-1.414L14.586 3H14a1 1 0 01-1-1z" />
-                </svg>
-              )}
               Xuất Excel
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="primary"
               onClick={() => mutate()}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+              leftIcon={<RefreshCw className="w-4 h-4" />}
             >
-              <HiRefresh className="w-5 h-5" />
               Tải lại
-            </button>
+            </Button>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-3 md:p-4 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2  gap-3">
+        <Card className="p-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="md:col-span-2">
               <div className="relative">
-                <HiSearch className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <input
                   type="text"
                   placeholder="Tìm theo họ tên hoặc email..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  className="w-full pl-10 pr-4 py-2.5 bg-surface border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary"
                 />
               </div>
             </div>
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              className="w-full px-3.5 py-2.5 bg-surface border border-border rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary"
             >
               <option value="">Trạng thái học</option>
               <option value="not_started">Chưa học</option>
@@ -290,11 +276,11 @@ export default function LecturerCourseStudents() {
               <option value="completed">Hoàn thành</option>
             </select>
             <div className="flex items-center gap-2 md:justify-end">
-              <HiSortAscending className="w-5 h-5 text-gray-500" />
+              <ArrowUpDown className="w-4 h-4 text-muted-foreground shrink-0" />
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                className="px-3.5 py-2.5 bg-surface border border-border rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary"
               >
                 <option value="enrolled_at">Ngày đăng ký</option>
                 <option value="last_activity">Hoạt động cuối</option>
@@ -306,7 +292,7 @@ export default function LecturerCourseStudents() {
                 onChange={(e) =>
                   setOrderDir(e.target.value === "asc" ? "asc" : "desc")
                 }
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                className="px-3.5 py-2.5 bg-surface border border-border rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary"
               >
                 <option value="desc">Giảm dần</option>
                 <option value="asc">Tăng dần</option>
@@ -315,7 +301,7 @@ export default function LecturerCourseStudents() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-3 mt-3">
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">Tiến độ từ</span>
+              <span className="text-sm text-muted-foreground">Tiến độ từ</span>
               <input
                 type="number"
                 min={0}
@@ -323,12 +309,12 @@ export default function LecturerCourseStudents() {
                 value={minProgress}
                 onChange={(e) => setMinProgress(e.target.value)}
                 placeholder="0"
-                className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                className="w-24 px-3 py-2 bg-surface border border-border rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary"
               />
-              <span className="text-sm text-gray-600">%</span>
+              <span className="text-sm text-muted-foreground">%</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">Đến</span>
+              <span className="text-sm text-muted-foreground">Đến</span>
               <input
                 type="number"
                 min={0}
@@ -336,55 +322,55 @@ export default function LecturerCourseStudents() {
                 value={maxProgress}
                 onChange={(e) => setMaxProgress(e.target.value)}
                 placeholder="100"
-                className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                className="w-24 px-3 py-2 bg-surface border border-border rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary"
               />
-              <span className="text-sm text-gray-600">%</span>
+              <span className="text-sm text-muted-foreground">%</span>
             </div>
             <div className="flex items-center gap-2 md:col-span-2 lg:col-span-1 md:justify-end">
-              <span className="text-sm text-gray-600">Hiển thị</span>
+              <span className="text-sm text-muted-foreground">Hiển thị</span>
               <select
                 value={limit}
                 onChange={(e) => setLimit(parseInt(e.target.value, 10))}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                className="px-3 py-2 bg-surface border border-border rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary"
               >
                 <option value={10}>10</option>
                 <option value={20}>20</option>
                 <option value={50}>50</option>
                 <option value={100}>100</option>
               </select>
-              <span className="text-sm text-gray-600">mục</span>
+              <span className="text-sm text-muted-foreground">mục</span>
             </div>
           </div>
-        </div>
+        </Card>
 
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <Card className="overflow-hidden p-0">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50">
+              <thead className="bg-background/80 border-b border-border">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     Học viên
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     Tiến độ
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     Giá đã mua
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     Đăng ký lúc
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     Hoạt động cuối
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-border/70">
                 {isLoading ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-12">
-                      <div className="flex items-center justify-center gap-3 text-gray-600">
-                        <div className="inline-block h-6 w-6 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
+                      <div className="flex items-center justify-center gap-3 text-muted-foreground">
+                        <div className="inline-block h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
                         Đang tải dữ liệu...
                       </div>
                     </td>
@@ -393,7 +379,7 @@ export default function LecturerCourseStudents() {
                   <tr>
                     <td
                       colSpan={5}
-                      className="px-6 py-12 text-center text-gray-600"
+                      className="px-6 py-12 text-center text-muted-foreground"
                     >
                       Chưa có học viên nào đăng ký
                     </td>
@@ -402,7 +388,7 @@ export default function LecturerCourseStudents() {
                   data.students.map((s: CourseStudentItem) => (
                     <tr
                       key={s.user_id}
-                      className="hover:bg-gray-50 transition-colors"
+                      className="hover:bg-primary-light/30 transition-colors"
                       onContextMenu={(e) => openContextMenu(e, s)}
                     >
                       <td className="px-6 py-4">
@@ -411,22 +397,22 @@ export default function LecturerCourseStudents() {
                             <img
                               src={getImageUrl(s.avatar)}
                               alt={s.fullname}
-                              className="h-9 w-9 rounded-full object-cover"
+                              className="h-9 w-9 rounded-full object-cover border border-border"
                               onError={(e) => {
                                 (e.target as HTMLImageElement).style.display =
                                   "none";
                               }}
                             />
                           ) : (
-                            <div className="h-9 w-9 rounded-full bg-green-100 flex items-center justify-center">
-                              <HiUserCircle className="w-6 h-6 text-green-600" />
+                            <div className="h-9 w-9 rounded-full bg-primary-light flex items-center justify-center">
+                              <UserCircle className="w-6 h-6 text-primary" />
                             </div>
                           )}
                           <div className="min-w-0">
-                            <p className="text-sm font-semibold text-gray-900">
+                            <p className="text-sm font-semibold text-foreground">
                               {s.fullname}
                             </p>
-                            <p className="text-xs text-gray-500 truncate">
+                            <p className="text-xs text-muted-foreground truncate">
                               {s.email}
                             </p>
                           </div>
@@ -434,9 +420,9 @@ export default function LecturerCourseStudents() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-full max-w-[220px] h-2 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="w-full max-w-[220px] h-2 bg-primary-light rounded-full overflow-hidden">
                             <div
-                              className="h-2 bg-green-500"
+                              className="h-2 bg-primary rounded-full"
                               style={{
                                 width: `${Math.min(
                                   100,
@@ -445,28 +431,28 @@ export default function LecturerCourseStudents() {
                               }}
                             />
                           </div>
-                          <span className="text-sm font-medium text-gray-900 min-w-[56px]">
+                          <span className="text-sm font-medium text-foreground min-w-[56px]">
                             {s.progress_percent.toFixed(2)}%
                           </span>
                         </div>
-                        <div className="text-xs text-gray-500 mt-1">
+                        <div className="text-xs text-muted-foreground mt-1">
                           {s.completed_lessons}/{s.total_lessons} bài
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-sm font-semibold text-gray-900">
+                        <span className="text-sm font-semibold text-foreground">
                           {formatCurrency(s.price_paid || 0)}
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex items-center gap-2 text-sm text-gray-700">
-                          <HiClock className="w-4 h-4 text-gray-400" />
+                        <div className="flex items-center gap-2 text-sm text-foreground">
+                          <Clock className="w-4 h-4 text-muted-foreground" />
                           <span>{formatDateTime(s.enrolled_at)}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex items-center gap-2 text-sm text-gray-700">
-                          <HiClock className="w-4 h-4 text-gray-400" />
+                        <div className="flex items-center gap-2 text-sm text-foreground">
+                          <Clock className="w-4 h-4 text-muted-foreground" />
                           <span>{formatDateTime(s.last_activity)}</span>
                         </div>
                       </td>
@@ -477,47 +463,49 @@ export default function LecturerCourseStudents() {
             </table>
           </div>
 
-          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-white">
-            <div className="text-sm text-gray-600">
+          <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-surface">
+            <div className="text-sm text-muted-foreground">
               Tổng:{" "}
-              <span className="font-semibold">{data ? data.total : 0}</span> học
-              viên
+              <span className="font-semibold text-foreground">
+                {data ? data.total : 0}
+              </span>{" "}
+              học viên
             </div>
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50"
+                className="px-3 py-2 border border-border bg-surface text-foreground hover:bg-primary-light/60 rounded-xl text-sm disabled:opacity-50 cursor-pointer transition-colors"
               >
-                <HiChevronLeft className="w-5 h-5" />
+                <ChevronLeft className="w-5 h-5" />
               </button>
-              <span className="text-sm text-gray-700">
+              <span className="text-sm text-foreground font-medium">
                 {page} / {totalPages}
               </span>
               <button
                 type="button"
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50"
+                className="px-3 py-2 border border-border bg-surface text-foreground hover:bg-primary-light/60 rounded-xl text-sm disabled:opacity-50 cursor-pointer transition-colors"
               >
-                <HiChevronRight className="w-5 h-5" />
+                <ChevronRight className="w-5 h-5" />
               </button>
             </div>
           </div>
-        </div>
+        </Card>
       </div>
 
       {/* Context Menu */}
       {menuOpen && menuItem && (
         <div
-          className="fixed z-50 min-w-[220px] bg-white border border-gray-200 rounded-lg shadow-lg p-1"
+          className="fixed z-50 min-w-[220px] bg-surface border border-border rounded-xl shadow-lg p-1.5"
           style={{ left: menuPos.x, top: menuPos.y }}
           onContextMenu={(e) => e.preventDefault()}
         >
           <button
             type="button"
-            className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-50 flex items-center gap-2"
+            className="w-full text-left px-3 py-2 text-sm text-foreground rounded-lg hover:bg-primary-light/60 hover:text-primary flex items-center gap-2 cursor-pointer transition-colors"
             onClick={() => {
               router.push(
                 `/lecturer/courses/${courseId}/users/detail?user_id=${menuItem.user_id}`
@@ -525,13 +513,13 @@ export default function LecturerCourseStudents() {
               setMenuOpen(false);
             }}
           >
-            <HiOutlineExternalLink className="w-4 h-4 text-green-600" />
+            <ExternalLink className="w-4 h-4 text-primary" />
             Xem chi tiết học viên
           </button>
-          <div className="h-px bg-gray-200 my-1" />
+          <div className="h-px bg-border my-1" />
           <button
             type="button"
-            className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-50"
+            className="w-full text-left px-3 py-2 text-sm text-foreground rounded-lg hover:bg-primary-light/60 hover:text-primary cursor-pointer transition-colors"
             onClick={async () => {
               try {
                 await navigator.clipboard.writeText(menuItem.email);
@@ -543,7 +531,7 @@ export default function LecturerCourseStudents() {
           </button>
           <button
             type="button"
-            className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-50"
+            className="w-full text-left px-3 py-2 text-sm text-foreground rounded-lg hover:bg-primary-light/60 hover:text-primary cursor-pointer transition-colors"
             onClick={async () => {
               try {
                 await navigator.clipboard.writeText(menuItem.user_id);

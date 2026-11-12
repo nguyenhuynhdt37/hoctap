@@ -78,6 +78,8 @@ export default function LearningHeader({
             {onToggleChat && (
               <button
                 onClick={onToggleChat}
+                aria-label={chatOpen ? "Đóng chat" : "Hỏi trợ giảng"}
+                title={chatOpen ? "Đóng chat" : "Hỏi trợ giảng"}
                 className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl transition-colors cursor-pointer text-sm font-semibold ${
                   chatOpen
                     ? "bg-primary text-white shadow-xs"

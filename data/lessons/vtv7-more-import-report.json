@@ -1,0 +1,87 @@
+{
+  "target_database": "studynest",
+  "apply": true,
+  "courses": [
+    {
+      "id": "3e04125f-22f2-479d-81da-4f993f6d157e",
+      "title": "Toán lớp 2 · Bộ bài giảng VTV7",
+      "slug": "vtv7-toan-lop-2-bo-bai-giang-vtv7-133a8725f3",
+      "status": "published_created",
+      "lessons": 70,
+      "price": "0",
+      "published": true
+    },
+    {
+      "id": "6a98e6ce-344f-4fd7-b637-65126873eda5",
+      "title": "Tiếng Việt lớp 2 · Bộ bài giảng VTV7",
+      "slug": "vtv7-tieng-viet-lop-2-bo-bai-giang-vtv7-95fb7feef6",
+      "status": "published_created",
+      "lessons": 70,
+      "price": "0",
+      "published": true
+    },
+    {
+      "id": "54406315-fd74-4bea-b548-d43da789c753",
+      "title": "Toán ôn thi vào lớp 10 · VTV7 2023 (tư liệu)",
+      "slug": "vtv7-toan-on-thi-vao-lop-10-vtv7-2023-tu-lieu-1670eca3a8",
+      "status": "published_created",
+      "lessons": 10,
+      "price": "0",
+      "published": true
+    },
+    {
+      "id": "a69a9f5d-57cc-4dd5-905c-fe38dbd23205",
+      "title": "Ngữ văn ôn thi vào lớp 10 · VTV7 2023 (tư liệu)",
+      "slug": "vtv7-ngu-van-on-thi-vao-lop-10-vtv7-2023-tu-lieu-ae3f3d5b23",
+      "status": "published_created",
+      "lessons": 10,
+      "price": "0",
+      "published": true
+    },
+    {
+      "id": "abb03117-5a67-4e1f-a96c-056a857ead61",
+      "title": "Ôn tập Vật lí THPT · Sơ đồ tư duy VTV7 (tư liệu)",
+      "slug": "vtv7-on-tap-vat-li-thpt-so-do-tu-duy-vtv7-tu-lieu-fbc919790a",
+      "status": "published_created",
+      "lessons": 81,
+      "price": "0",
+      "published": true
+    },
+    {
+      "id": "085140c0-b84f-40fd-916f-466f302b5462",
+      "title": "4 chuyên đề Hóa học THPT · VTV7 2021 (tư liệu)",
+      "slug": "vtv7-4-chuyen-de-hoa-hoc-thpt-vtv7-2021-tu-lieu-41d8752046",
+      "status": "published_created",
+      "lessons": 4,
+      "price": "0",
+      "published": true
+    },
+    {
+      "id": "9082ab04-1df7-4cf5-9196-528c8af758d2",
+      "title": "4 chuyên đề Sinh học THPT · VTV7 2021 (tư liệu)",
+      "slug": "vtv7-4-chuyen-de-sinh-hoc-thpt-vtv7-2021-tu-lieu-41d8752046",
+      "status": "published_created",
+      "lessons": 4,
+      "price": "0",
+      "published": true
+    },
+    {
+      "id": "a0ee076e-f136-439a-8391-bbb4443f762c",
+      "title": "Ôn tập Lịch sử THPT · Sơ đồ tư duy VTV7 (tư liệu)",
+      "slug": "vtv7-on-tap-lich-su-thpt-so-do-tu-duy-vtv7-tu-lieu-11a762e5e7",
+      "status": "published_created",
+      "lessons": 40,
+      "price": "0",
+      "published": true
+    },
+    {
+      "id": "4ab83ddd-f588-4fda-ae5d-a726640913a1",
+      "title": "5 chuyên đề Địa lí THPT · VTV7 2021 (tư liệu)",
+      "slug": "vtv7-5-chuyen-de-dia-li-thpt-vtv7-2021-tu-lieu-41d8752046",
+      "status": "published_created",
+      "lessons": 5,
+      "price": "0",
+      "published": true
+    }
+  ]
+}

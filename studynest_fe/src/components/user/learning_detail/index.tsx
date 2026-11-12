@@ -547,6 +547,8 @@ function LearningDetail(props: LearningDetailProps) {
                 }
               >
                 <TutorChatPanel
+                  key={initialActiveLesson.id}
+                  accessToken={accessToken}
                   lessonId={initialActiveLesson.id}
                   lessonTitle={initialActiveLesson.title || "Bài học"}
                   courseId={courseData.id}
@@ -556,6 +558,7 @@ function LearningDetail(props: LearningDetailProps) {
                       s.lessons.some((l) => l.id === initialActiveLesson.id)
                     )?.id
                   }
+                  onNavigateToLesson={selectLesson}
                   onSeekToTime={(timeSeconds: number) => {
                     const seekFn = (window as any)[
                       `seekVideo_${initialActiveLesson.id}`

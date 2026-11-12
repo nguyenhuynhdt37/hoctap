@@ -1,0 +1,66 @@
+[
+  {
+    "subject": "toan",
+    "generated_source": "/Users/huynh/.codex/generated_images/01a1cb7e-4f74-70b3-a593-0d7ac829d5d4/exec-3c7a9c1e-94f5-4d0d-ba17-de3af43ae320.png",
+    "file": "toan-may-may-v1.jpg",
+    "generator": "built-in image_gen",
+    "width": 1600,
+    "height": 900
+  },
+  {
+    "subject": "tieng-viet",
+    "generated_source": "/Users/huynh/.codex/generated_images/01a1cb7e-4f74-70b3-a593-0d7ac829d5d4/exec-d496b830-b512-4956-8173-7428bc99b913.png",
+    "file": "tieng-viet-may-may-v1.jpg",
+    "generator": "built-in image_gen",
+    "width": 1600,
+    "height": 900
+  },
+  {
+    "subject": "ngu-van",
+    "generated_source": "/Users/huynh/.codex/generated_images/01a1cb7e-4f74-70b3-a593-0d7ac829d5d4/exec-14762ec6-89cb-4517-9c6f-050a27fed393.png",
+    "file": "ngu-van-may-may-v1.jpg",
+    "generator": "built-in image_gen",
+    "width": 1600,
+    "height": 900
+  },
+  {
+    "subject": "vat-ly",
+    "generated_source": "/Users/huynh/.codex/generated_images/01a1cb7e-4f74-70b3-a593-0d7ac829d5d4/exec-a2f5b587-162b-4d13-85a3-be02b5cf717d.png",
+    "file": "vat-ly-may-may-v1.jpg",
+    "generator": "built-in image_gen",
+    "width": 1600,
+    "height": 900
+  },
+  {
+    "subject": "hoa-hoc",
+    "generated_source": "/Users/huynh/.codex/generated_images/01a1cb7e-4f74-70b3-a593-0d7ac829d5d4/exec-a8df5cbf-cfbc-44a8-be8d-f1f1dad0ac2f.png",
+    "file": "hoa-hoc-may-may-v1.jpg",
+    "generator": "built-in image_gen",
+    "width": 1600,
+    "height": 900
+  },
+  {
+    "subject": "sinh-hoc",
+    "generated_source": "/Users/huynh/.codex/generated_images/01a1cb7e-4f74-70b3-a593-0d7ac829d5d4/exec-73ecc962-9111-4401-999b-8f609c9356c9.png",
+    "file": "sinh-hoc-may-may-v1.jpg",
+    "generator": "built-in image_gen",
+    "width": 1600,
+    "height": 900
+  },
+  {
+    "subject": "lich-su",
+    "generated_source": "/Users/huynh/.codex/generated_images/01a1cb7e-4f74-70b3-a593-0d7ac829d5d4/exec-18554691-1fea-418a-8e76-ff15cbe44d3b.png",
+    "file": "lich-su-may-may-v1.jpg",
+    "generator": "built-in image_gen",
+    "width": 1600,
+    "height": 900
+  },
+  {
+    "subject": "dia-ly",
+    "generated_source": "/Users/huynh/.codex/generated_images/01a1cb7e-4f74-70b3-a593-0d7ac829d5d4/exec-d2635160-d1a8-4cb6-baba-400923a73e09.png",
+    "file": "dia-ly-may-may-v1.jpg",
+    "generator": "built-in image_gen",
+    "width": 1600,
+    "height": 900
+  }
+]

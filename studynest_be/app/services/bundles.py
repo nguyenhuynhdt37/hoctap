@@ -73,7 +73,23 @@ class BundleService:
     def __init__(self, db):
         self.db = db
 
-    async def create(self, data, admin_id, version_id=None):
+    async def require_sales_policy(self, bundle_id):
+        # Staged rollout: management can be tested before V2 financial settlement.
+        # Old databases and legacy products retain their verified sales workflow.
+        if await self.db.scalar(
+            text("SELECT to_regclass('public.bundle_version_reviews')")
+        ):
+            origin = await self.db.scalar(
+                text("SELECT origin FROM public.course_bundles WHERE id=:id"),
+                {"id": bundle_id},
+            )
+            if origin == "lecturer":
+                raise HTTPException(
+                    503,
+                    "Combo giảng viên đang chờ kích hoạt chính sách thanh toán và hoàn tiền toàn đơn",
+                )
+
+    async def create(self, data, admin_id, version_id=None, *, commit=True):
         version = None
         if version_id:
             version = await self.db.scalar(
@@ -153,7 +169,10 @@ class BundleService:
                     allocated_price=0,
                 )
             )
-        await self.db.commit()
+        if commit:
+            await self.db.commit()
+        else:
+            await self.db.flush()
         return await self.detail(version.id, admin=True)
 
     async def listing(
@@ -275,7 +294,7 @@ class BundleService:
             "refund_policy": "Hoàn theo phần tiền thực trả của từng khóa và trong thời hạn giữ doanh thu; không tính lại theo giá lẻ hiện tại.",
         }
 
-    async def publish(self, version_id):
+    async def publish(self, version_id, *, commit=True):
         version = await self.db.scalar(
             select(BundleVersion)
             .where(BundleVersion.id == version_id)
@@ -291,6 +310,7 @@ class BundleService:
         )
         if not root or root.deleted_at:
             raise HTTPException(404, "Combo đã lưu trữ")
+        await self.require_sales_policy(root.id)
         latest_published = await self.db.scalar(
             select(func.max(BundleVersion.version)).where(
                 BundleVersion.bundle_id == root.id, BundleVersion.status == "published"
@@ -359,7 +379,10 @@ class BundleService:
         await self.db.flush()
         version.status = "published"
         version.published_at = datetime.now(UTC)
-        await self.db.commit()
+        if commit:
+            await self.db.commit()
+        else:
+            await self.db.flush()
         return await self.detail(version.id, admin=True)
 
     async def quote(self, version_id, user_id=None, lock=False, coupon_code=None):
@@ -371,6 +394,7 @@ class BundleService:
         if lock:
             root_stmt = root_stmt.with_for_update(read=True)
         root = await self.db.scalar(root_stmt)
+        await self.require_sales_policy(root.id)
         latest = await self.db.scalar(
             select(func.max(BundleVersion.version)).where(
                 BundleVersion.bundle_id == root.id, BundleVersion.status == "published"

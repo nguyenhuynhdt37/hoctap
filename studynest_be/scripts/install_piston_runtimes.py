@@ -1,15 +1,20 @@
 """Install the Piston runtimes used by the seeded lessons (safe to rerun)."""
 
+import argparse
 import json
 import os
 from urllib.request import Request, urlopen
 
-from dotenv import load_dotenv
 
+def main(base_url=None):
+    # dotenv is available in the app venv; a deployed host can use stdlib only.
+    if base_url is None:
+        from dotenv import load_dotenv
 
-def main():
-    load_dotenv()
-    base_url = os.getenv("PISTON_URL", "http://localhost:4000").rstrip("/")
+        load_dotenv()
+    base_url = (base_url or os.getenv("PISTON_URL", "http://localhost:4000")).rstrip(
+        "/"
+    )
     packages = [
         ("python", "3.11.0"),
         ("node", "20.11.1"),
@@ -18,6 +23,10 @@ def main():
         ("java", "15.0.2"),
         ("go", "1.16.2"),
         ("rust", "1.68.2"),
+        ("bash", "5.1.0"),
+        ("kotlin", "1.8.20"),
+        ("php", "8.2.3"),
+        ("ruby", "3.0.1"),
     ]
     with urlopen(f"{base_url}/api/v2/packages", timeout=30) as response:
         installed = {
@@ -40,4 +49,9 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--base-url",
+        help="Local admin URL; package APIs are blocked on the public domain",
+    )
+    main(parser.parse_args().base_url)

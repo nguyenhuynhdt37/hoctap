@@ -6,6 +6,7 @@ import numpy as np
 from app.core.event_bus.base import BaseEvent
 from app.core.event_bus.redis_bus import event_bus
 from fastapi import BackgroundTasks, Depends, HTTPException
+from loguru import logger
 from sqlalchemy import cast, func, literal_column, select
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -42,6 +43,51 @@ class CoursePublicService:
     ):
         self.db = db
         self.embedding = embedding
+
+    async def _public_instructor_stats(self, instructor_id):
+        """Public profile metrics come from records, excluding private drafts."""
+        owned = select(Courses.id).where(
+            Courses.instructor_id == instructor_id, public_course()
+        )
+        course_count = (
+            select(func.count(Courses.id))
+            .where(Courses.instructor_id == instructor_id, public_course())
+            .scalar_subquery()
+        )
+        students = (
+            select(func.count(func.distinct(CourseEnrollments.user_id)))
+            .where(
+                CourseEnrollments.course_id.in_(owned),
+                CourseEnrollments.status == "active",
+            )
+            .scalar_subquery()
+        )
+        reviews = (
+            select(func.count(CourseReviews.id))
+            .where(CourseReviews.course_id.in_(owned))
+            .scalar_subquery()
+        )
+        rating = (
+            select(func.avg(CourseReviews.rating))
+            .where(CourseReviews.course_id.in_(owned))
+            .scalar_subquery()
+        )
+        row = (
+            await self.db.execute(
+                select(
+                    course_count.label("course_count"),
+                    students.label("student_count"),
+                    reviews.label("evaluated_count"),
+                    rating.label("rating_avg"),
+                )
+            )
+        ).mappings().one()
+        return {
+            "course_count": row["course_count"],
+            "student_count": row["student_count"],
+            "evaluated_count": row["evaluated_count"],
+            "rating_avg": float(row["rating_avg"]) if row["rating_avg"] is not None else None,
+        }
 
     async def review_course_async(
         self,
@@ -366,6 +412,11 @@ class CoursePublicService:
                 }
 
             # 7️⃣ Trả dữ liệu chi tiết
+            instructor_stats = (
+                await self._public_instructor_stats(course.instructor_id)
+                if course.instructor
+                else {}
+            )
             return {
                 "status": "ok",
                 "course": {
@@ -394,10 +445,7 @@ class CoursePublicService:
                             "fullname": course.instructor.fullname,
                             "avatar": course.instructor.avatar,
                             "instructor_description": course.instructor.instructor_description,
-                            "student_count": course.instructor.student_count,
-                            "course_count": course.instructor.course_count,
-                            "rating_avg": course.instructor.rating_avg,
-                            "evaluated_count": course.instructor.evaluated_count,
+                            **instructor_stats,
                         }
                         if course.instructor
                         else None

@@ -1,5 +1,7 @@
 "use client";
 
+import { prepareImageUpload } from "@/lib/prepare-image-upload";
+import { Alert, Button, Card } from "@/components/ui";
 import CourseTaxonomyForm from "@/components/catalog/course-taxonomy-form";
 import { emptyTaxonomy, taxonomyInput, type CourseTaxonomyInput, type CourseEducation } from "@/types/catalog";
 import TiptapEditor from "@/components/shared/tiptap_editor";
@@ -8,22 +10,23 @@ import { getImageUrl } from "@/lib/utils/helpers/image";
 import { CategoriesPaginatedResponse } from "@/types/admin/category";
 import { TopicsResponse } from "@/types/admin/topic";
 import { CourseDetailResponse, CourseFormData } from "@/types/lecturer/course";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  CircleDollarSign,
+  GraduationCap,
+  Image as ImageIcon,
+  Lightbulb,
+  Lock,
+  Plus,
+  Sparkles,
+  Trash2,
+  Users,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import {
-  HiAcademicCap,
-  HiCheckCircle,
-  HiChevronLeft,
-  HiChevronRight,
-  HiCurrencyDollar,
-  HiLightBulb,
-  HiLockClosed,
-  HiPhotograph,
-  HiPlus,
-  HiTrash,
-  HiUsers,
-  HiXCircle,
-} from "react-icons/hi";
 import useSWR from "swr";
 
 interface EditCourseProps {
@@ -75,7 +78,7 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
   const totalSteps = 4;
 
   // Fetch course details
-  const { data: courseData, mutate: mutateCourse } =
+  const { data: courseData, error: courseLoadError, mutate: mutateCourse } =
     useSWR<CourseDetailResponse>(
       courseId ? `/lecturer/courses/${courseId}` : null,
       async (url: string) => {
@@ -127,7 +130,7 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
       setFormData({
         title: courseData.title || "",
         subtitle: courseData.subtitle || "",
-        category_id: courseData.category.id || "",
+        category_id: courseData.category?.id || "",
         topic_id: courseData.topic?.id || "",
         description: courseData.description || "",
         level: courseData.level || "all",
@@ -151,13 +154,6 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
       isInitialLoadRef.current = false;
     }
   }, [courseData]);
-
-  // Reset topic when category changes
-  useEffect(() => {
-    if (formData.category_id) {
-      setFormData((prev) => ({ ...prev, topic_id: "" }));
-    }
-  }, [formData.category_id]);
 
   // Validation functions
   const validateStep = (step: number): boolean => {
@@ -641,7 +637,10 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
 
     try {
       const formDataUpload = new FormData();
-      formDataUpload.append("file", thumbnailFile);
+      formDataUpload.append(
+        "file",
+        await prepareImageUpload(thumbnailFile, "courseThumbnail"),
+      );
 
       const response = await api.post(
         `/lecturer/courses/upload-thumbnail/${courseId}`,
@@ -673,14 +672,30 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
 
   const progressPercentage = ((currentStep + 1) / totalSteps) * 100;
 
+  if (courseLoadError && !courseData) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-12">
+        <Alert variant="destructive" title="Không thể tải thông tin khóa học">
+          <p>Khóa học không tồn tại, bạn không có quyền truy cập hoặc dịch vụ đang gián đoạn.</p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Button onClick={() => mutateCourse()}>Thử lại</Button>
+            <Button variant="outline" onClick={() => router.push("/lecturer/courses")}>
+              Danh sách khóa học
+            </Button>
+          </div>
+        </Alert>
+      </div>
+    );
+  }
+
   if (isLoadingCourse) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         <div className="max-w-4xl mx-auto px-4 py-20">
           <div className="flex items-center justify-center">
-            <div className="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+            <div className="w-14 h-14 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
           </div>
-          <p className="text-center text-gray-600 mt-4">
+          <p className="text-center text-muted-foreground mt-4">
             Đang tải thông tin khóa học...
           </p>
         </div>
@@ -689,113 +704,108 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
           <button
             onClick={() => router.push("/lecturer/courses")}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition-colors"
+            className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-4 transition-colors cursor-pointer text-sm font-medium"
           >
-            <HiChevronLeft className="h-5 w-5" />
-            <span className="font-medium">Quay lại danh sách khóa học</span>
+            <ChevronLeft className="h-4 w-4" />
+            <span>Quay lại danh sách khóa học</span>
           </button>
-          <h1 className="text-3xl font-black text-gray-900 mb-2">
+          <h1 className="font-display text-3xl font-bold tracking-tight text-foreground mb-2">
             Chỉnh sửa khóa học
           </h1>
-          <p className="text-gray-600">Cập nhật thông tin khóa học của bạn</p>
+          <p className="text-muted-foreground">
+            Cập nhật thông tin khóa học của bạn
+          </p>
         </div>
 
         {/* Progress Bar */}
-        <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm mb-6">
-          <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
-            <span className="font-medium">
+        <Card className="p-6 mb-6">
+          <div className="flex items-center justify-between text-sm text-muted-foreground mb-3">
+            <span className="font-medium text-foreground">
               Bước {currentStep + 1} / {totalSteps}
             </span>
-            <span className="font-semibold text-green-600">
+            <span className="font-semibold text-primary">
               {Math.round(progressPercentage)}%
             </span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+          <div className="w-full bg-primary-light rounded-full h-3 overflow-hidden">
             <div
-              className="bg-gradient-to-r from-green-500 to-emerald-600 h-3 rounded-full transition-all duration-500 ease-out"
+              className="bg-primary h-3 rounded-full transition-all duration-500 ease-out"
               style={{ width: `${progressPercentage}%` }}
             />
           </div>
-          <div className="flex items-center justify-between mt-4 text-xs text-gray-500">
+          <div className="flex items-center justify-between mt-4 text-xs text-muted-foreground">
             <span
-              className={currentStep >= 0 ? "text-green-600 font-medium" : ""}
+              className={currentStep >= 0 ? "text-primary font-semibold" : ""}
             >
               Thông tin cơ bản
             </span>
             <span
-              className={currentStep >= 1 ? "text-green-600 font-medium" : ""}
+              className={currentStep >= 1 ? "text-primary font-semibold" : ""}
             >
               Mô tả chi tiết
             </span>
             <span
-              className={currentStep >= 2 ? "text-green-600 font-medium" : ""}
+              className={currentStep >= 2 ? "text-primary font-semibold" : ""}
             >
               Mục tiêu & Đối tượng
             </span>
             <span
-              className={currentStep >= 3 ? "text-green-600 font-medium" : ""}
+              className={currentStep >= 3 ? "text-primary font-semibold" : ""}
             >
               Giá & Xuất bản
             </span>
           </div>
-        </div>
+        </Card>
 
         {/* Success Message */}
         {successMessage && (
-          <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6">
-            <div className="flex items-center gap-2">
-              <HiCheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
-              <p className="text-sm text-green-800 font-medium">
-                {successMessage}
-              </p>
-            </div>
-          </div>
+          <Alert variant="success" className="mb-6">
+            {successMessage}
+          </Alert>
         )}
 
         {/* Error Message */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
-            <div className="flex items-center gap-2">
-              <HiXCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
-              <p className="text-sm text-red-800">{error}</p>
-            </div>
-          </div>
+          <Alert variant="destructive" className="mb-6">
+            {error}
+          </Alert>
         )}
 
         {/* Upload Error Message */}
         {uploadError && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
-            <div className="flex items-center gap-2">
-              <HiXCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
-              <p className="text-sm text-red-800">{uploadError}</p>
-            </div>
-          </div>
+          <Alert variant="destructive" className="mb-6">
+            {uploadError}
+          </Alert>
         )}
 
         {/* Thumbnail Section */}
-        {currentStep === 0 && <CourseTaxonomyForm value={education} onChange={setEducation} />}
-          {currentStep === 0 && (
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-8 mb-6">
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
-              <HiPhotograph className="inline h-5 w-5 text-green-600 mr-1" />
-              Banner khóa học
+        {currentStep === 0 && (
+          <div className="mb-6">
+            <CourseTaxonomyForm value={education} onChange={setEducation} />
+          </div>
+        )}
+        {currentStep === 0 && (
+          <Card className="p-8 mb-6">
+            <label className="flex items-center gap-1.5 text-sm font-semibold text-foreground mb-3">
+              <ImageIcon className="h-4 w-4 text-primary" />
+              <span>Banner khóa học</span>
             </label>
-            <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-green-400 transition-colors">
+            <div className="border-2 border-dashed border-border rounded-xl p-6 text-center hover:border-primary transition-colors bg-background/40">
               {thumbnailPreview ? (
                 <div className="space-y-4">
                   <img
                     src={thumbnailPreview}
                     alt="Preview"
-                    className="max-h-48 mx-auto rounded-lg object-cover"
+                    className="max-h-48 mx-auto rounded-xl object-cover border border-border"
                   />
-                  <div className="flex items-center justify-center gap-3">
-                    <label className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 cursor-pointer transition-colors font-medium">
+                  <div className="flex flex-wrap items-center justify-center gap-3">
+                    <label className="px-4 py-2 bg-primary text-white rounded-xl hover:bg-primary-hover cursor-pointer transition-colors font-medium text-sm">
                       Chọn ảnh khác
                       <input
                         type="file"
@@ -822,50 +832,49 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
                         disabled={isUploading}
                       />
                     </label>
-                    <button
+                    <Button
                       type="button"
+                      variant="outline"
+                      size="sm"
                       onClick={() => {
                         setThumbnailFile(null);
                         setThumbnailPreview(null);
                       }}
                       disabled={isUploading}
-                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium disabled:opacity-50"
                     >
                       Xóa
-                    </button>
+                    </Button>
                     {thumbnailFile && (
-                      <button
+                      <Button
                         type="button"
+                        variant="primary"
+                        size="sm"
                         onClick={handleUploadThumbnail}
                         disabled={isUploading}
-                        className="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:shadow-lg transition-all font-medium disabled:opacity-50 flex items-center gap-2"
+                        isLoading={isUploading}
+                        loadingText="Đang tải..."
+                        leftIcon={
+                          !isUploading ? (
+                            <CheckCircle2 className="h-4 w-4" />
+                          ) : undefined
+                        }
                       >
-                        {isUploading ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                            Đang tải...
-                          </>
-                        ) : (
-                          <>
-                            <HiCheckCircle className="h-5 w-5" />
-                            Tải lên banner
-                          </>
-                        )}
-                      </button>
+                        Tải lên banner
+                      </Button>
                     )}
                   </div>
                 </div>
               ) : (
-                <label className="cursor-pointer">
+                <label className="cursor-pointer block">
                   <div className="space-y-4">
-                    <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                      <HiPhotograph className="h-8 w-8 text-green-600" />
+                    <div className="mx-auto w-16 h-16 bg-primary-light rounded-full flex items-center justify-center text-primary">
+                      <ImageIcon className="h-8 w-8" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-700">
+                      <p className="text-sm font-medium text-foreground">
                         Nhấp để chọn hình ảnh
                       </p>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-muted-foreground mt-1">
                         PNG, JPG, GIF (tối đa 10MB)
                       </p>
                     </div>
@@ -897,19 +906,19 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
                 </label>
               )}
             </div>
-          </div>
+          </Card>
         )}
 
         {/* Step Content */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-8 mb-6">
+        <Card className="p-8 mb-6">
           {/* Step 0: Basic Info */}
           {currentStep === 0 && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                <h2 className="font-display text-2xl font-bold text-foreground mb-2">
                   Thông tin cơ bản về khóa học
                 </h2>
-                <p className="text-gray-600">
+                <p className="text-muted-foreground">
                   Cập nhật thông tin cơ bản để học viên có thể tìm thấy khóa học
                   của bạn
                 </p>
@@ -918,8 +927,9 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
               <div className="space-y-5">
                 {/* Title */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Tiêu đề khóa học <span className="text-red-500">*</span>
+                  <label className="block text-sm font-semibold text-foreground mb-2">
+                    Tiêu đề khóa học{" "}
+                    <span className="text-destructive-foreground">*</span>
                   </label>
                   <input
                     type="text"
@@ -931,42 +941,43 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
                       }))
                     }
                     placeholder="Ví dụ: Lập trình Python từ cơ bản đến nâng cao"
-                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${
+                    className={`w-full px-4 py-3 bg-surface border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 transition-all ${
                       errors.title
-                        ? "border-red-300 focus:ring-red-500"
-                        : "border-gray-300 focus:ring-green-500 focus:border-transparent"
+                        ? "border-destructive-border focus:ring-destructive-border/40 focus:border-destructive-foreground"
+                        : "border-border focus:ring-primary/25 focus:border-primary"
                     }`}
                   />
                   {errors.title && (
-                    <p className="text-red-600 text-sm mt-1">{errors.title}</p>
+                    <p className="text-destructive-foreground text-sm mt-1">
+                      {errors.title}
+                    </p>
                   )}
                 </div>
 
                 {/* Subtitle */}
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm font-semibold text-gray-700">
-                      Mô tả ngắn <span className="text-red-500">*</span>
+                  <div className="flex items-center justify-between gap-3 mb-2">
+                    <label className="block text-sm font-semibold text-foreground">
+                      Mô tả ngắn{" "}
+                      <span className="text-destructive-foreground">*</span>
                     </label>
-                    <button
+                    <Button
                       type="button"
+                      variant="pastel"
+                      size="sm"
                       onClick={handleGenerateSubtitle}
                       disabled={isGeneratingSubtitle || !formData.title.trim()}
-                      className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-lg transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+                      isLoading={isGeneratingSubtitle}
+                      loadingText="Đang tạo..."
+                      leftIcon={
+                        !isGeneratingSubtitle ? (
+                          <Sparkles className="h-4 w-4" />
+                        ) : undefined
+                      }
                       title="Tự động tạo mô tả ngắn từ AI"
                     >
-                      {isGeneratingSubtitle ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                          Đang tạo...
-                        </>
-                      ) : (
-                        <>
-                          <span>🤖</span>
-                          Tạo mô tả tự động
-                        </>
-                      )}
-                    </button>
+                      Tạo mô tả tự động
+                    </Button>
                   </div>
                   <input
                     type="text"
@@ -978,27 +989,31 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
                       }))
                     }
                     placeholder="Một câu mô tả ngắn gọn về khóa học của bạn"
-                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${
+                    className={`w-full px-4 py-3 bg-surface border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 transition-all ${
                       errors.subtitle
-                        ? "border-red-300 focus:ring-red-500"
-                        : "border-gray-300 focus:ring-green-500 focus:border-transparent"
+                        ? "border-destructive-border focus:ring-destructive-border/40 focus:border-destructive-foreground"
+                        : "border-border focus:ring-primary/25 focus:border-primary"
                     }`}
                   />
                   {errors.subtitle && (
-                    <p className="text-red-600 text-sm mt-1">
+                    <p className="text-destructive-foreground text-sm mt-1">
                       {errors.subtitle}
                     </p>
                   )}
-                  <p className="text-xs text-gray-500 mt-1">
-                    💡 Nhập tiêu đề khóa học và nhấn "Tạo mô tả tự động" để AI
-                    tạo mô tả ngắn cho bạn
+                  <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1.5">
+                    <Lightbulb className="h-3.5 w-3.5 text-primary shrink-0" />
+                    <span>
+                      Nhập tiêu đề khóa học và nhấn &ldquo;Tạo mô tả tự động&rdquo; để AI
+                      tạo mô tả ngắn cho bạn
+                    </span>
                   </p>
                 </div>
 
                 {/* Category */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Danh mục <span className="text-red-500">*</span>
+                  <label className="block text-sm font-semibold text-foreground mb-2">
+                    Danh mục{" "}
+                    <span className="text-destructive-foreground">*</span>
                   </label>
                   <select
                     value={formData.category_id}
@@ -1006,12 +1021,13 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
                       setFormData((prev) => ({
                         ...prev,
                         category_id: e.target.value,
+                        topic_id: "",
                       }))
                     }
-                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${
+                    className={`w-full px-4 py-3 bg-surface border rounded-xl text-foreground focus:outline-none focus:ring-2 transition-all ${
                       errors.category_id
-                        ? "border-red-300 focus:ring-red-500"
-                        : "border-gray-300 focus:ring-green-500 focus:border-transparent"
+                        ? "border-destructive-border focus:ring-destructive-border/40 focus:border-destructive-foreground"
+                        : "border-border focus:ring-primary/25 focus:border-primary"
                     }`}
                   >
                     <option value="">-- Chọn danh mục --</option>
@@ -1023,7 +1039,7 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
                     ))}
                   </select>
                   {errors.category_id && (
-                    <p className="text-red-600 text-sm mt-1">
+                    <p className="text-destructive-foreground text-sm mt-1">
                       {errors.category_id}
                     </p>
                   )}
@@ -1031,9 +1047,11 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
 
                 {/* Topic */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-foreground mb-2">
                     Chủ đề{" "}
-                    <span className="text-gray-400 text-xs">(Tùy chọn)</span>
+                    <span className="text-muted-foreground text-xs font-normal">
+                      (Tùy chọn)
+                    </span>
                   </label>
                   <select
                     value={formData.topic_id}
@@ -1044,14 +1062,14 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
                       }))
                     }
                     disabled={!formData.category_id || allTopics.length === 0}
-                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${
+                    className={`w-full px-4 py-3 border rounded-xl text-foreground focus:outline-none focus:ring-2 transition-all ${
                       errors.topic_id
-                        ? "border-red-300 focus:ring-red-500"
-                        : "border-gray-300 focus:ring-green-500 focus:border-transparent"
+                        ? "border-destructive-border focus:ring-destructive-border/40 focus:border-destructive-foreground"
+                        : "border-border focus:ring-primary/25 focus:border-primary"
                     } ${
                       !formData.category_id
-                        ? "bg-gray-100 cursor-not-allowed"
-                        : ""
+                        ? "bg-surface-muted cursor-not-allowed opacity-70"
+                        : "bg-surface"
                     }`}
                   >
                     <option value="">
@@ -1066,9 +1084,12 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
                     ))}
                   </select>
                   {formData.category_id && allTopics.length === 0 && (
-                    <p className="text-yellow-600 text-sm mt-1">
-                      ⚠️ Danh mục này chưa có chủ đề nào. Bạn có thể bỏ qua bước
-                      này.
+                    <p className="text-warning-foreground text-sm mt-1.5 flex items-center gap-1.5">
+                      <AlertTriangle className="h-4 w-4 shrink-0" />
+                      <span>
+                        Danh mục này chưa có chủ đề nào. Bạn có thể bỏ qua bước
+                        này.
+                      </span>
                     </p>
                   )}
                 </div>
@@ -1076,7 +1097,7 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
                 {/* Level & Language */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-foreground mb-2">
                       Cấp độ
                     </label>
                     <select
@@ -1087,7 +1108,7 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
                           level: e.target.value as CourseFormData["level"],
                         }))
                       }
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                      className="w-full px-4 py-3 bg-surface border border-border rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition-all"
                     >
                       <option value="all">Tất cả cấp độ</option>
                       <option value="beginner">Người mới bắt đầu</option>
@@ -1096,7 +1117,7 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-foreground mb-2">
                       Ngôn ngữ
                     </label>
                     <select
@@ -1107,7 +1128,7 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
                           language: e.target.value,
                         }))
                       }
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                      className="w-full px-4 py-3 bg-surface border border-border rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition-all"
                     >
                       <option value="vi">Tiếng Việt</option>
                       <option value="en">English</option>
@@ -1122,22 +1143,25 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
           {currentStep === 1 && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                <h2 className="font-display text-2xl font-bold text-foreground mb-2">
                   Mô tả chi tiết khóa học
                 </h2>
-                <p className="text-gray-600">
+                <p className="text-muted-foreground">
                   Cập nhật mô tả chi tiết sẽ giúp học viên hiểu rõ hơn về nội
                   dung và giá trị của khóa học
                 </p>
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-semibold text-gray-700">
-                    Mô tả chi tiết <span className="text-red-500">*</span>
+                <div className="flex items-center justify-between gap-3 mb-2">
+                  <label className="block text-sm font-semibold text-foreground">
+                    Mô tả chi tiết{" "}
+                    <span className="text-destructive-foreground">*</span>
                   </label>
-                  <button
+                  <Button
                     type="button"
+                    variant="pastel"
+                    size="sm"
                     onClick={handleGenerateDescription}
                     disabled={
                       isGeneratingDescription ||
@@ -1145,21 +1169,17 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
                       !formData.subtitle.trim() ||
                       !formData.category_id
                     }
-                    className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-lg transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+                    isLoading={isGeneratingDescription}
+                    loadingText="Đang tạo..."
+                    leftIcon={
+                      !isGeneratingDescription ? (
+                        <Sparkles className="h-4 w-4" />
+                      ) : undefined
+                    }
                     title="Tự động tạo mô tả chi tiết từ AI"
                   >
-                    {isGeneratingDescription ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        Đang tạo...
-                      </>
-                    ) : (
-                      <>
-                        <span>🤖</span>
-                        Tạo mô tả tự động
-                      </>
-                    )}
-                  </button>
+                    Tạo mô tả tự động
+                  </Button>
                 </div>
                 <TiptapEditor
                   value={formData.description}
@@ -1169,14 +1189,17 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
                   placeholder="Nhập mô tả chi tiết về khóa học của bạn..."
                 />
                 {errors.description && (
-                  <p className="text-red-600 text-sm mt-1">
+                  <p className="text-destructive-foreground text-sm mt-1">
                     {errors.description}
                   </p>
                 )}
-                <p className="text-xs text-gray-500 mt-2">
-                  💡 Nhập tiêu đề, mô tả ngắn và chọn danh mục, sau đó nhấn "Tạo
-                  mô tả tự động" để AI tạo mô tả chi tiết cho bạn. Bạn có thể
-                  chỉnh sửa sau.
+                <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1.5">
+                  <Lightbulb className="h-3.5 w-3.5 text-primary shrink-0" />
+                  <span>
+                    Nhập tiêu đề, mô tả ngắn và chọn danh mục, sau đó nhấn &ldquo;Tạo
+                    mô tả tự động&rdquo; để AI tạo mô tả chi tiết cho bạn. Bạn có thể
+                    chỉnh sửa sau.
+                  </span>
                 </p>
               </div>
             </div>
@@ -1186,10 +1209,10 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
           {currentStep === 2 && (
             <div className="space-y-8">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                <h2 className="font-display text-2xl font-bold text-foreground mb-2">
                   Mục tiêu và đối tượng học viên
                 </h2>
-                <p className="text-gray-600">
+                <p className="text-muted-foreground">
                   Cập nhật thông tin để giúp học viên hiểu rõ những gì họ sẽ đạt
                   được sau khi hoàn thành khóa học
                 </p>
@@ -1197,13 +1220,16 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
 
               {/* Outcomes */}
               <div>
-                <div className="flex items-center justify-between mb-3">
-                  <label className="flex items-center text-sm font-semibold text-gray-700">
-                    <HiLightBulb className="inline h-5 w-5 text-yellow-500 mr-1" />
-                    Mục tiêu học tập <span className="text-red-500">*</span>
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <label className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                    <Lightbulb className="h-4 w-4 text-warning-foreground" />
+                    <span>Mục tiêu học tập</span>
+                    <span className="text-destructive-foreground">*</span>
                   </label>
-                  <button
+                  <Button
                     type="button"
+                    variant="pastel"
+                    size="sm"
                     onClick={handleGenerateOutcomes}
                     disabled={
                       isGeneratingOutcomes ||
@@ -1211,21 +1237,17 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
                       !formData.subtitle.trim() ||
                       !formData.category_id
                     }
-                    className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-lg transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+                    isLoading={isGeneratingOutcomes}
+                    loadingText="Đang tạo..."
+                    leftIcon={
+                      !isGeneratingOutcomes ? (
+                        <Sparkles className="h-4 w-4" />
+                      ) : undefined
+                    }
                     title="Tự động tạo mục tiêu học tập từ AI"
                   >
-                    {isGeneratingOutcomes ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        Đang tạo...
-                      </>
-                    ) : (
-                      <>
-                        <span>🤖</span>
-                        Tạo mục tiêu tự động
-                      </>
-                    )}
-                  </button>
+                    Tạo mục tiêu tự động
+                  </Button>
                 </div>
                 {formData.outcomes.map((outcome, index) => (
                   <div key={index} className="flex gap-2 mb-2">
@@ -1236,45 +1258,55 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
                         handleUpdateItem("outcomes", index, e.target.value)
                       }
                       placeholder={`Mục tiêu ${index + 1}...`}
-                      className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                      className="flex-1 px-4 py-3 bg-surface border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition-all"
                     />
                     {formData.outcomes.length > 1 && (
                       <button
                         type="button"
                         onClick={() => handleRemoveItem("outcomes", index)}
-                        className="px-4 py-3 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                        className="px-4 py-3 bg-destructive-bg text-destructive-foreground border border-destructive-border/60 rounded-xl hover:bg-destructive-bg/80 transition-colors cursor-pointer"
                       >
-                        <HiTrash className="h-5 w-5" />
+                        <Trash2 className="h-5 w-5" />
                       </button>
                     )}
                   </div>
                 ))}
-                <button
+                <Button
                   type="button"
+                  variant="pastel"
+                  size="sm"
                   onClick={() => handleAddItem("outcomes")}
-                  className="flex items-center gap-2 px-4 py-2 text-green-600 bg-green-50 rounded-lg hover:bg-green-100 transition-colors mt-2"
+                  leftIcon={<Plus className="h-4 w-4" />}
+                  className="mt-2"
                 >
-                  <HiPlus className="h-5 w-5" />
                   Thêm mục tiêu
-                </button>
+                </Button>
                 {errors.outcomes && (
-                  <p className="text-red-600 text-sm mt-2">{errors.outcomes}</p>
+                  <p className="text-destructive-foreground text-sm mt-2">
+                    {errors.outcomes}
+                  </p>
                 )}
-                <p className="text-xs text-gray-500 mt-2">
-                  💡 Nhấn "Tạo mục tiêu tự động" để AI tạo các mục tiêu học tập
-                  cho bạn. Bạn có thể chỉnh sửa hoặc thêm mục tiêu sau.
+                <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1.5">
+                  <Lightbulb className="h-3.5 w-3.5 text-primary shrink-0" />
+                  <span>
+                    Nhấn &ldquo;Tạo mục tiêu tự động&rdquo; để AI tạo các mục tiêu học tập
+                    cho bạn. Bạn có thể chỉnh sửa hoặc thêm mục tiêu sau.
+                  </span>
                 </p>
               </div>
 
               {/* Requirements */}
               <div>
-                <div className="flex items-center justify-between mb-3">
-                  <label className="flex items-center text-sm font-semibold text-gray-700">
-                    <HiAcademicCap className="inline h-5 w-5 text-blue-500 mr-1" />
-                    Yêu cầu <span className="text-red-500">*</span>
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <label className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                    <GraduationCap className="h-4 w-4 text-primary" />
+                    <span>Yêu cầu</span>
+                    <span className="text-destructive-foreground">*</span>
                   </label>
-                  <button
+                  <Button
                     type="button"
+                    variant="pastel"
+                    size="sm"
                     onClick={handleGenerateRequirements}
                     disabled={
                       isGeneratingRequirements ||
@@ -1282,21 +1314,17 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
                       !formData.subtitle.trim() ||
                       !formData.category_id
                     }
-                    className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-lg transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+                    isLoading={isGeneratingRequirements}
+                    loadingText="Đang tạo..."
+                    leftIcon={
+                      !isGeneratingRequirements ? (
+                        <Sparkles className="h-4 w-4" />
+                      ) : undefined
+                    }
                     title="Tự động tạo yêu cầu từ AI"
                   >
-                    {isGeneratingRequirements ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        Đang tạo...
-                      </>
-                    ) : (
-                      <>
-                        <span>🤖</span>
-                        Tạo yêu cầu tự động
-                      </>
-                    )}
-                  </button>
+                    Tạo yêu cầu tự động
+                  </Button>
                 </div>
                 {formData.requirements.map((requirement, index) => (
                   <div key={index} className="flex gap-2 mb-2">
@@ -1307,47 +1335,55 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
                         handleUpdateItem("requirements", index, e.target.value)
                       }
                       placeholder={`Yêu cầu ${index + 1}...`}
-                      className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                      className="flex-1 px-4 py-3 bg-surface border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition-all"
                     />
                     {formData.requirements.length > 1 && (
                       <button
                         type="button"
                         onClick={() => handleRemoveItem("requirements", index)}
-                        className="px-4 py-3 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                        className="px-4 py-3 bg-destructive-bg text-destructive-foreground border border-destructive-border/60 rounded-xl hover:bg-destructive-bg/80 transition-colors cursor-pointer"
                       >
-                        <HiTrash className="h-5 w-5" />
+                        <Trash2 className="h-5 w-5" />
                       </button>
                     )}
                   </div>
                 ))}
-                <button
+                <Button
                   type="button"
+                  variant="pastel"
+                  size="sm"
                   onClick={() => handleAddItem("requirements")}
-                  className="flex items-center gap-2 px-4 py-2 text-green-600 bg-green-50 rounded-lg hover:bg-green-100 transition-colors mt-2"
+                  leftIcon={<Plus className="h-4 w-4" />}
+                  className="mt-2"
                 >
-                  <HiPlus className="h-5 w-5" />
                   Thêm yêu cầu
-                </button>
+                </Button>
                 {errors.requirements && (
-                  <p className="text-red-600 text-sm mt-2">
+                  <p className="text-destructive-foreground text-sm mt-2">
                     {errors.requirements}
                   </p>
                 )}
-                <p className="text-xs text-gray-500 mt-2">
-                  💡 Nhấn "Tạo yêu cầu tự động" để AI tạo các yêu cầu cho bạn.
-                  Bạn có thể chỉnh sửa hoặc thêm yêu cầu sau.
+                <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1.5">
+                  <Lightbulb className="h-3.5 w-3.5 text-primary shrink-0" />
+                  <span>
+                    Nhấn &ldquo;Tạo yêu cầu tự động&rdquo; để AI tạo các yêu cầu cho bạn.
+                    Bạn có thể chỉnh sửa hoặc thêm yêu cầu sau.
+                  </span>
                 </p>
               </div>
 
               {/* Target Audience */}
               <div>
-                <div className="flex items-center justify-between mb-3">
-                  <label className="flex items-center text-sm font-semibold text-gray-700">
-                    <HiUsers className="inline h-5 w-5 text-purple-500 mr-1" />
-                    Đối tượng học viên <span className="text-red-500">*</span>
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <label className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                    <Users className="h-4 w-4 text-info-foreground" />
+                    <span>Đối tượng học viên</span>
+                    <span className="text-destructive-foreground">*</span>
                   </label>
-                  <button
+                  <Button
                     type="button"
+                    variant="pastel"
+                    size="sm"
                     onClick={handleGenerateTargetAudience}
                     disabled={
                       isGeneratingTargetAudience ||
@@ -1355,21 +1391,17 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
                       !formData.subtitle.trim() ||
                       !formData.category_id
                     }
-                    className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-lg transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+                    isLoading={isGeneratingTargetAudience}
+                    loadingText="Đang tạo..."
+                    leftIcon={
+                      !isGeneratingTargetAudience ? (
+                        <Sparkles className="h-4 w-4" />
+                      ) : undefined
+                    }
                     title="Tự động tạo đối tượng học viên từ AI"
                   >
-                    {isGeneratingTargetAudience ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        Đang tạo...
-                      </>
-                    ) : (
-                      <>
-                        <span>🤖</span>
-                        Tạo đối tượng tự động
-                      </>
-                    )}
-                  </button>
+                    Tạo đối tượng tự động
+                  </Button>
                 </div>
                 {formData.target_audience.map((audience, index) => (
                   <div key={index} className="flex gap-2 mb-2">
@@ -1384,7 +1416,7 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
                         )
                       }
                       placeholder={`Đối tượng ${index + 1}...`}
-                      className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                      className="flex-1 px-4 py-3 bg-surface border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition-all"
                     />
                     {formData.target_audience.length > 1 && (
                       <button
@@ -1392,29 +1424,34 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
                         onClick={() =>
                           handleRemoveItem("target_audience", index)
                         }
-                        className="px-4 py-3 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                        className="px-4 py-3 bg-destructive-bg text-destructive-foreground border border-destructive-border/60 rounded-xl hover:bg-destructive-bg/80 transition-colors cursor-pointer"
                       >
-                        <HiTrash className="h-5 w-5" />
+                        <Trash2 className="h-5 w-5" />
                       </button>
                     )}
                   </div>
                 ))}
-                <button
+                <Button
                   type="button"
+                  variant="pastel"
+                  size="sm"
                   onClick={() => handleAddItem("target_audience")}
-                  className="flex items-center gap-2 px-4 py-2 text-green-600 bg-green-50 rounded-lg hover:bg-green-100 transition-colors mt-2"
+                  leftIcon={<Plus className="h-4 w-4" />}
+                  className="mt-2"
                 >
-                  <HiPlus className="h-5 w-5" />
                   Thêm đối tượng
-                </button>
+                </Button>
                 {errors.target_audience && (
-                  <p className="text-red-600 text-sm mt-2">
+                  <p className="text-destructive-foreground text-sm mt-2">
                     {errors.target_audience}
                   </p>
                 )}
-                <p className="text-xs text-gray-500 mt-2">
-                  💡 Nhấn "Tạo đối tượng tự động" để AI tạo các đối tượng học
-                  viên cho bạn. Bạn có thể chỉnh sửa hoặc thêm đối tượng sau.
+                <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1.5">
+                  <Lightbulb className="h-3.5 w-3.5 text-primary shrink-0" />
+                  <span>
+                    Nhấn &ldquo;Tạo đối tượng tự động&rdquo; để AI tạo các đối tượng học
+                    viên cho bạn. Bạn có thể chỉnh sửa hoặc thêm đối tượng sau.
+                  </span>
                 </p>
               </div>
             </div>
@@ -1424,10 +1461,10 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
           {currentStep === 3 && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                <h2 className="font-display text-2xl font-bold text-foreground mb-2">
                   Giá và xuất bản
                 </h2>
-                <p className="text-gray-600">
+                <p className="text-muted-foreground">
                   Cập nhật giá cho khóa học và quyết định có xuất bản ngay hay
                   không
                 </p>
@@ -1436,9 +1473,9 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
               <div className="space-y-5">
                 {/* Price */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    <HiCurrencyDollar className="inline h-5 w-5 text-green-600 mr-1" />
-                    Giá khóa học (VND)
+                  <label className="flex items-center gap-1.5 text-sm font-semibold text-foreground mb-2">
+                    <CircleDollarSign className="h-4 w-4 text-primary" />
+                    <span>Giá khóa học (VND)</span>
                   </label>
                   <div className="flex gap-3">
                     <input
@@ -1451,10 +1488,10 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
                       min="0"
                       step="1000"
                       placeholder="0"
-                      className={`flex-1 px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${
+                      className={`flex-1 px-4 py-3 bg-surface border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 transition-all ${
                         errors.base_price
-                          ? "border-red-300 focus:ring-red-500"
-                          : "border-gray-300 focus:ring-green-500 focus:border-transparent"
+                          ? "border-destructive-border focus:ring-destructive-border/40 focus:border-destructive-foreground"
+                          : "border-border focus:ring-primary/25 focus:border-primary"
                       }`}
                     />
                     <select
@@ -1465,31 +1502,32 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
                           currency: e.target.value,
                         }))
                       }
-                      className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white"
+                      className="px-4 py-3 bg-surface border border-border rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition-all"
                     >
                       <option value="VND">VND</option>
                       <option value="USD">USD</option>
                     </select>
                   </div>
                   {errors.base_price && (
-                    <p className="text-red-600 text-sm mt-1">
+                    <p className="text-destructive-foreground text-sm mt-1">
                       {errors.base_price}
                     </p>
                   )}
-                  <p className="text-xs text-gray-500 mt-2">
-                    💡 Nhập 0 để tạo khóa học miễn phí
+                  <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1.5">
+                    <Lightbulb className="h-3.5 w-3.5 text-primary shrink-0" />
+                    <span>Nhập 0 để tạo khóa học miễn phí</span>
                   </p>
                 </div>
 
                 {/* Lock Lessons Toggle */}
-                <div className="bg-blue-50 rounded-xl p-6 border border-blue-200">
-                  <div className="flex items-center justify-between">
+                <div className="bg-info-bg/70 rounded-xl p-6 border border-info-border">
+                  <div className="flex items-center justify-between gap-4">
                     <div>
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-1">
-                        <HiLockClosed className="h-5 w-5 text-blue-600" />
+                      <label className="flex items-center gap-2 text-sm font-semibold text-foreground mb-1">
+                        <Lock className="h-4 w-4 text-info-foreground" />
                         Khóa bài học
                       </label>
-                      <p className="text-xs text-gray-600 mt-1">
+                      <p className="text-xs text-muted-foreground mt-1">
                         {formData.is_lock_lesson
                           ? "Học viên phải xem bài học theo thứ tự, không thể nhảy bài"
                           : "Học viên có thể xem bất kỳ bài học nào trong khóa học"}
@@ -1507,19 +1545,19 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
                         }
                         className="sr-only peer"
                       />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                      <div className="w-11 h-6 bg-border peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                     </label>
                   </div>
                 </div>
 
                 {/* Publish Toggle */}
-                <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
-                  <div className="flex items-center justify-between">
+                <div className="bg-background/80 rounded-xl p-6 border border-border">
+                  <div className="flex items-center justify-between gap-4">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                      <label className="block text-sm font-semibold text-foreground mb-1">
                         Xuất bản khóa học
                       </label>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-muted-foreground">
                         {formData.is_published
                           ? "Khóa học sẽ được xuất bản và hiển thị công khai sau khi được duyệt"
                           : "Khóa học sẽ được lưu ở chế độ nháp"}
@@ -1537,34 +1575,34 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
                         }
                         className="sr-only peer"
                       />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                      <div className="w-11 h-6 bg-border peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                     </label>
                   </div>
                 </div>
 
                 {/* Summary */}
-                <div className="bg-green-50 border border-green-200 rounded-xl p-6">
-                  <h3 className="font-semibold text-gray-900 mb-4">
+                <div className="bg-primary-light/60 border border-primary-pastel rounded-xl p-6">
+                  <h3 className="font-semibold text-foreground mb-4">
                     Tóm tắt khóa học
                   </h3>
                   <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Tiêu đề:</span>
-                      <span className="font-medium text-gray-900">
+                    <div className="flex justify-between gap-4">
+                      <span className="text-muted-foreground">Tiêu đề:</span>
+                      <span className="font-medium text-foreground text-right">
                         {formData.title || "Chưa có"}
                       </span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Danh mục:</span>
-                      <span className="font-medium text-gray-900">
+                    <div className="flex justify-between gap-4">
+                      <span className="text-muted-foreground">Danh mục:</span>
+                      <span className="font-medium text-foreground text-right">
                         {allCategories.find(
                           (c) => c.id === formData.category_id
                         )?.name || "Chưa chọn"}
                       </span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Giá:</span>
-                      <span className="font-medium text-gray-900">
+                    <div className="flex justify-between gap-4">
+                      <span className="text-muted-foreground">Giá:</span>
+                      <span className="font-medium text-foreground text-right">
                         {formData.base_price === 0
                           ? "Miễn phí"
                           : new Intl.NumberFormat("vi-VN", {
@@ -1574,13 +1612,13 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
                             }).format(formData.base_price)}
                       </span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Trạng thái:</span>
+                    <div className="flex justify-between gap-4">
+                      <span className="text-muted-foreground">Trạng thái:</span>
                       <span
                         className={`font-medium ${
                           formData.is_published
-                            ? "text-green-600"
-                            : "text-gray-500"
+                            ? "text-primary"
+                            : "text-muted-foreground"
                         }`}
                       >
                         {formData.is_published ? "Xuất bản" : "Nháp"}
@@ -1591,52 +1629,52 @@ const EditCourse = ({ courseId }: EditCourseProps) => {
               </div>
             </div>
           )}
-        </div>
+        </Card>
 
         {/* Navigation Buttons */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <button
+        <Card className="p-6">
+          <div className="flex items-center justify-between gap-4">
+            <Button
               type="button"
+              variant="outline"
+              size="lg"
               onClick={handleBack}
               disabled={currentStep === 0 || isSubmitting}
-              className="flex items-center gap-2 px-6 py-3 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              leftIcon={<ChevronLeft className="h-5 w-5" />}
             >
-              <HiChevronLeft className="h-5 w-5" />
               Quay lại
-            </button>
+            </Button>
 
             {currentStep < totalSteps - 1 ? (
-              <button
+              <Button
                 type="button"
+                variant="primary"
+                size="lg"
                 onClick={handleNext}
-                className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:shadow-lg transition-all duration-200 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                rightIcon={<ChevronRight className="h-5 w-5" />}
               >
                 Tiếp theo
-                <HiChevronRight className="h-5 w-5" />
-              </button>
+              </Button>
             ) : (
-              <button
+              <Button
                 type="button"
+                variant="primary"
+                size="lg"
                 onClick={handleSubmit}
                 disabled={isSubmitting}
-                className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:shadow-lg transition-all duration-200 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                isLoading={isSubmitting}
+                loadingText="Đang cập nhật..."
+                leftIcon={
+                  !isSubmitting ? (
+                    <CheckCircle2 className="h-5 w-5" />
+                  ) : undefined
+                }
               >
-                {isSubmitting ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Đang cập nhật...
-                  </>
-                ) : (
-                  <>
-                    <HiCheckCircle className="h-5 w-5" />
-                    Cập nhật khóa học
-                  </>
-                )}
-              </button>
+                Cập nhật khóa học
+              </Button>
             )}
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   );

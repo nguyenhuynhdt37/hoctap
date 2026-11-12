@@ -6,7 +6,7 @@ import { StudentAnalyticsResponse } from "@/types/lecturer/statistics";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
 import useSWR from "swr";
-import { HiUserAdd, HiUserCircle, HiChartPie } from "react-icons/hi";
+import { PieChart, UserCircle2, UserPlus } from "lucide-react";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -64,7 +64,7 @@ export default function StudentAnalytics() {
 
   if (error) return <LoadError error={error} retry={() => mutate()} />;
   return (
-    <div className="bg-white rounded-[20px] p-6 border border-border shadow-xs h-full flex flex-col">
+    <div className="bg-surface rounded-[20px] p-6 border border-border shadow-xs h-full flex flex-col">
       <div className="mb-6">
         <h3 className="text-lg font-semibold text-foreground">
           Phân Tích Học Viên
@@ -77,7 +77,7 @@ export default function StudentAnalytics() {
       <div className="grid grid-cols-2 gap-4 mb-6">
         <div className="bg-primary-light/70 border border-primary-pastel/60 p-4 rounded-xl">
           <div className="flex items-center gap-2 mb-2">
-            <HiUserAdd className="text-primary" />
+            <UserPlus className="h-4 w-4 text-primary" />
             <span className="text-xs font-semibold text-primary">
               Học viên mới
             </span>
@@ -88,7 +88,7 @@ export default function StudentAnalytics() {
         </div>
         <div className="bg-secondary-light/70 border border-secondary-pastel/60 p-4 rounded-xl">
           <div className="flex items-center gap-2 mb-2">
-            <HiUserCircle className="text-secondary-foreground" />
+            <UserCircle2 className="h-4 w-4 text-secondary-foreground" />
             <span className="text-xs font-semibold text-secondary-foreground">
               Đang hoạt động
             </span>
@@ -106,7 +106,7 @@ export default function StudentAnalytics() {
           </div>
         ) : data?.students_by_course.length === 0 ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center text-subtle-foreground">
-            <HiChartPie className="w-12 h-12 mb-2 opacity-50" />
+            <PieChart className="w-12 h-12 mb-2 opacity-50" />
             <p className="text-sm">Chưa có dữ liệu phân bố</p>
           </div>
         ) : (

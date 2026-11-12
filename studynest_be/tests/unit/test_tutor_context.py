@@ -125,3 +125,43 @@ class TutorContextTests(unittest.IsolatedAsyncioTestCase):
         llm = SimpleNamespace(call_model=AsyncMock(return_value='REUSE'))
         self.assertEqual(await llm_classify_mode('vậy sao', ['Dây nylon'], llm), 'REUSE')
         llm.call_model.assert_awaited_once()
+
+    async def test_ambiguous_question_does_not_call_an_extra_classifier_model(self):
+        await self.send('tời')
+        self.classifier.classify_message.assert_not_awaited()
+        self.service._rag_search.assert_awaited_once()
+
+    async def test_missing_sources_are_disclosed_in_persisted_and_streamed_answer(self):
+        self.service._rag_search.return_value = []
+        self.service._call_llm.return_value = json.dumps({'content': 'Giải thích thêm', 'sources_used': []})
+        result = await self.send('Bài này nói gì?')
+        self.assertEqual(result['sources'], [])
+        self.assertIn('Chưa có nguồn bài học/tài liệu được đối chiếu', result['content'])
+
+    async def test_retrieval_timeout_still_answers_without_fabricated_sources(self):
+        self.service._rag_search.side_effect = TimeoutError()
+        result = await self.send('Bài này nói gì?')
+        self.assertEqual(result['sources'], [])
+        self.assertIn('Chưa có nguồn', result['content'])
+
+    def test_compact_citation_preserves_original_source_number(self):
+        second = dict(self.source, chunk_id=str(uuid4()), content='- `01:09` Giải thích dây nylon')
+        sources = self.service._ground_sources([{'index': 2, 'timestamp_seconds': 999}], [self.source, second])
+        self.assertEqual(sources[0]['index'], 2)
+        self.assertEqual(sources[0]['chunk_id'], second['chunk_id'])
+        self.assertEqual(sources[0]['timestamp_seconds'], 69)
+        self.assertEqual(self.service._ground_sources([{'index': 1, 'chunk_id': 'forged'}], [self.source]), [])
+
+    def test_timestamp_without_transcript_evidence_is_discarded(self):
+        sources = self.service._ground_sources([{'index': 1, 'timestamp_seconds': 99}], [self.source])
+        self.assertNotIn('timestamp_seconds', sources[0])
+
+    async def test_preview_does_not_unlock_private_course_scope(self):
+        self.thread_service.get_thread_by_id.return_value['scope'] = 'course'
+        self.thread_service.validate_lesson_access.return_value['course'].id = uuid4()
+        self.thread_service.validate_enrollment = AsyncMock(side_effect=HTTPException(403, 'Enroll first'))
+        with self.assertRaises(HTTPException) as exc:
+            await self.send('Tóm tắt toàn khóa')
+        self.assertEqual(exc.exception.status_code, 403)
+        self.service._rag_search.assert_not_awaited()
+        self.service._call_llm.assert_not_awaited()

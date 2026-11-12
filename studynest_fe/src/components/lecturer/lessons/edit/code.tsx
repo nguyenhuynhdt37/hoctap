@@ -16,21 +16,28 @@ import {
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  HiCheckCircle,
-  HiChevronLeft,
-  HiChevronRight,
-  HiCode,
-  HiLightningBolt,
-  HiPencil,
-  HiPlay,
-  HiPlus,
-  HiCloud,
-  HiTrash,
-  HiVideoCamera,
-  HiX,
-  HiXCircle,
-} from "react-icons/hi";
+  ArrowLeft,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Code2,
+  Lightbulb,
+  Loader2,
+  Pencil,
+  Play,
+  Plus,
+  Sparkles,
+  Terminal,
+  Trash2,
+  Video,
+  X,
+  Zap,
+} from "lucide-react";
 import useSWR from "swr";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Alert } from "@/components/ui/states";
 
 // ============================================
 // HELPER FUNCTIONS
@@ -2284,13 +2291,11 @@ const EditCodeLesson = () => {
 
   if (!lessonId) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         <div className="max-w-4xl mx-auto px-4 py-16">
-          <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-            <p className="text-red-800 font-medium">
-              Thiếu thông tin lesson ID. Vui lòng quay lại trang trước.
-            </p>
-          </div>
+          <Alert variant="destructive" title="Thiếu thông tin">
+            Thiếu thông tin lesson ID. Vui lòng quay lại trang trước.
+          </Alert>
         </div>
       </div>
     );
@@ -2304,11 +2309,13 @@ const EditCodeLesson = () => {
     !activeExercise
   ) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         <div className="max-w-4xl mx-auto px-4 py-12">
-          <div className="flex items-center justify-center">
-            <div className="w-6 h-6 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
-            <span className="ml-2 text-sm text-gray-600">Đang tải...</span>
+          <div className="flex items-center justify-center gap-2.5">
+            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+            <span className="text-sm font-medium text-muted-foreground">
+              Đang tải...
+            </span>
           </div>
         </div>
       </div>
@@ -2320,11 +2327,14 @@ const EditCodeLesson = () => {
   // ============================================
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
             onClick={() => {
               if (lessonDetail?.course_id) {
                 router.push(
@@ -2334,106 +2344,95 @@ const EditCodeLesson = () => {
                 router.push("/lecturer/chapters");
               }
             }}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition-colors cursor-pointer"
+            leftIcon={<ArrowLeft className="h-4 w-4" />}
+            className="mb-4 -ml-2 text-muted-foreground hover:text-foreground"
           >
-            <HiChevronLeft className="h-5 w-5" />
-            <span className="font-medium">Quay lại danh sách bài học</span>
-          </button>
-          <h1 className="text-3xl font-black text-gray-900 mb-2">
+            Quay lại danh sách bài học
+          </Button>
+          <h1 className="font-display text-3xl font-bold text-foreground mb-2">
             Chỉnh sửa bài học Code
           </h1>
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             Cập nhật thông tin và code exercises cho bài học
           </p>
         </div>
 
         {/* Progress Bar */}
-        <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm mb-6">
-          <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
-            <span className="font-medium">
+        <Card className="p-6 mb-6">
+          <div className="flex items-center justify-between text-sm text-muted-foreground mb-3">
+            <span className="font-medium text-foreground">
               Bước {currentStep + 1} / {totalSteps}
             </span>
-            <span className="font-semibold text-green-600">
+            <Badge variant="primary" size="sm">
               {Math.round(progressPercentage)}%
-            </span>
+            </Badge>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+          <div className="w-full bg-surface-muted rounded-full h-2.5 overflow-hidden">
             <div
-              className="bg-gradient-to-r from-green-500 to-emerald-600 h-3 rounded-full transition-all duration-500 ease-out"
+              className="bg-primary h-2.5 rounded-full transition-all duration-500 ease-out"
               style={{ width: `${progressPercentage}%` }}
             />
           </div>
-          <div className="flex items-center justify-between mt-4 text-xs text-gray-500">
+          <div className="flex items-center justify-between mt-4 text-xs text-muted-foreground">
             <span
-              className={currentStep >= 0 ? "text-green-600 font-medium" : ""}
+              className={
+                currentStep >= 0 ? "text-foreground font-semibold" : ""
+              }
             >
               Thông tin cơ bản
             </span>
             <span
-              className={currentStep >= 1 ? "text-green-600 font-medium" : ""}
+              className={
+                currentStep >= 1 ? "text-foreground font-semibold" : ""
+              }
             >
               Code Editor
             </span>
           </div>
-        </div>
+        </Card>
 
         {/* Success Message */}
         {successMessage && (
-          <div className="bg-green-50 border-2 border-green-500 rounded-xl p-6 mb-6 shadow-lg">
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0">
-                <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-                  <HiCheckCircle className="h-6 w-6 text-white" />
+          <Alert
+            variant="success"
+            title="Thành công!"
+            className="mb-6 animate-in fade-in slide-in-from-top-2 duration-300"
+          >
+            <div className="space-y-2">
+              <p className="leading-relaxed">{successMessage}</p>
+              {successMessage.includes("chuyển hướng") && (
+                <div className="flex items-center gap-2 text-xs text-success-foreground/80">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Đang chuyển hướng về trang quản lý bài học...</span>
                 </div>
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-bold text-green-900 mb-1">
-                  Thành công!
-                </h3>
-                <p className="text-sm text-green-800 font-medium leading-relaxed">
-                  {successMessage}
-                </p>
-                {successMessage.includes("chuyển hướng") && (
-                  <div className="mt-3 flex items-center gap-2 text-xs text-green-700">
-                    <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
-                    <span>Đang chuyển hướng về trang quản lý bài học...</span>
-                  </div>
-                )}
-              </div>
+              )}
             </div>
-          </div>
+          </Alert>
         )}
 
         {/* Error Message */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
-            <div className="flex items-start gap-2">
-              <HiXCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-              <div className="flex-1">
-                {typeof error === "string" ? (
-                  <p className="text-sm text-red-800 whitespace-pre-line">
-                    {error}
-                  </p>
-                ) : (
-                  <pre className="text-sm text-red-800 whitespace-pre-wrap">
-                    {JSON.stringify(error, null, 2)}
-                  </pre>
-                )}
-              </div>
-            </div>
-          </div>
+          <Alert variant="destructive" className="mb-6">
+            {typeof error === "string" ? (
+              <p className="whitespace-pre-line">{error}</p>
+            ) : (
+              <pre className="whitespace-pre-wrap text-xs">
+                {JSON.stringify(error, null, 2)}
+              </pre>
+            )}
+          </Alert>
         )}
 
         {/* Step Content */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-8 mb-6">
+        <Card className="p-6 sm:p-8 mb-6">
           {/* Step 0: Basic Info */}
           {currentStep === 0 && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                <h2 className="font-display text-2xl font-bold text-foreground mb-2">
                   Thông tin cơ bản về bài học
                 </h2>
-                <p className="text-gray-600">
+                <p className="text-muted-foreground">
                   Nhập thông tin cơ bản để mô tả bài học code của bạn
                 </p>
               </div>
@@ -2441,47 +2440,47 @@ const EditCodeLesson = () => {
               <div className="space-y-5">
                 {/* Title */}
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm font-semibold text-gray-700">
-                      Tiêu đề bài học <span className="text-red-500">*</span>
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                    <label className="block text-sm font-semibold text-foreground">
+                      Tiêu đề bài học{" "}
+                      <span className="text-destructive-foreground">*</span>
                     </label>
-                    <button
+                    <Button
                       type="button"
+                      variant="pastel"
+                      size="sm"
                       onClick={handleGenerateTitle}
                       disabled={isGeneratingTitle || !lessonTitle.trim()}
-                      className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-lg transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm hover:shadow-md"
+                      isLoading={isGeneratingTitle}
+                      loadingText="Đang tạo..."
+                      leftIcon={<Sparkles className="h-4 w-4" />}
                       title="Tự động tạo tiêu đề từ AI"
                     >
-                      {isGeneratingTitle ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                          Đang tạo...
-                        </>
-                      ) : (
-                        <>
-                          <span>🤖</span>
-                          Tạo tiêu đề tự động
-                        </>
-                      )}
-                    </button>
+                      Tạo tiêu đề tự động
+                    </Button>
                   </div>
                   <input
                     type="text"
                     value={lessonTitle}
                     onChange={(e) => setLessonTitle(e.target.value)}
                     placeholder="Ví dụ: Bài tập tính tổng hai số"
-                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${
+                    className={`w-full px-4 py-3 bg-surface border rounded-xl text-foreground placeholder:text-subtle-foreground focus:outline-none focus:ring-2 transition-all ${
                       errors.title
-                        ? "border-red-300 focus:ring-red-500"
-                        : "border-gray-300 focus:ring-green-500 focus:border-transparent"
+                        ? "border-destructive-border focus:ring-destructive-border/40"
+                        : "border-border focus:ring-primary/30 focus:border-primary"
                     }`}
                   />
                   {errors.title && (
-                    <p className="text-red-600 text-sm mt-1">{errors.title}</p>
+                    <p className="text-destructive-foreground text-sm mt-1.5">
+                      {errors.title}
+                    </p>
                   )}
-                  <p className="text-xs text-gray-500 mt-1">
-                    💡 Nhập tiêu đề và nhấn "Tạo tiêu đề tự động" để AI tối ưu
-                    tiêu đề cho bạn
+                  <p className="flex items-center gap-1.5 text-xs text-muted-foreground mt-2">
+                    <Lightbulb className="h-3.5 w-3.5 text-warning-foreground flex-shrink-0" />
+                    <span>
+                      Nhập tiêu đề và nhấn &quot;Tạo tiêu đề tự động&quot; để AI
+                      tối ưu tiêu đề cho bạn
+                    </span>
                   </p>
                 </div>
               </div>
@@ -2492,51 +2491,53 @@ const EditCodeLesson = () => {
           {currentStep === 1 && (
             <div className="space-y-6">
               {/* Exercises List - Horizontal */}
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+              <div className="bg-surface-muted/60 rounded-xl p-4 border border-border">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-semibold text-gray-700">
+                  <h3 className="text-sm font-semibold text-foreground">
                     Danh sách bài code ({exercises.length})
                   </h3>
-                  <button
+                  <Button
                     type="button"
+                    variant="primary"
+                    size="sm"
                     onClick={addExercise}
-                    className="flex items-center gap-2 px-3 py-1.5 text-sm bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors font-medium"
+                    leftIcon={<Plus className="h-4 w-4" />}
                   >
-                    <HiPlus className="h-4 w-4" />
                     Thêm bài code
-                  </button>
+                  </Button>
                 </div>
                 <div className="flex items-center gap-2 overflow-x-auto pb-2">
                   {exercises.map((ex, index) => (
                     <div
                       key={ex.id}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all cursor-pointer min-w-[200px] flex-shrink-0 ${
+                      className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-all cursor-pointer min-w-[200px] flex-shrink-0 ${
                         activeExerciseIndex === index
-                          ? "border-green-500 bg-green-50"
-                          : "border-gray-300 bg-white hover:border-gray-400"
+                          ? "border-primary bg-primary-light/60 shadow-xs"
+                          : "border-border bg-surface hover:border-border-strong"
                       }`}
                       onClick={() => setActiveExerciseIndex(index)}
                     >
                       <div className="flex-1 min-w-0">
-                        <div className="text-xs font-semibold text-gray-600 mb-1">
+                        <div className="text-xs font-semibold text-muted-foreground mb-1">
                           Bài {index + 1}
                         </div>
-                        <div className="text-sm font-medium text-gray-900 truncate">
+                        <div className="text-sm font-medium text-foreground truncate">
                           {ex.title || `Bài code ${index + 1}`}
                         </div>
                         {ex.testResult && (
-                          <div className="mt-1">
-                            <span
-                              className={`text-xs px-2 py-0.5 rounded ${
+                          <div className="mt-1.5">
+                            <Badge
+                              variant={
                                 ex.testResult.status === "passed"
-                                  ? "bg-green-600 text-white"
-                                  : "bg-red-600 text-white"
-                              }`}
+                                  ? "success"
+                                  : "destructive"
+                              }
+                              size="sm"
                             >
                               {ex.testResult.status === "passed"
                                 ? "PASSED"
                                 : "FAILED"}
-                            </span>
+                            </Badge>
                           </div>
                         )}
                       </div>
@@ -2547,9 +2548,10 @@ const EditCodeLesson = () => {
                             e.stopPropagation();
                             removeExercise(index);
                           }}
-                          className="text-gray-400 hover:text-red-600 transition-colors flex-shrink-0"
+                          className="p-1 rounded-md text-muted-foreground hover:text-destructive-foreground hover:bg-destructive-bg/60 transition-colors flex-shrink-0 cursor-pointer"
+                          title="Xóa bài code"
                         >
-                          <HiX className="h-4 w-4" />
+                          <X className="h-4 w-4" />
                         </button>
                       )}
                     </div>
@@ -2559,18 +2561,21 @@ const EditCodeLesson = () => {
 
               {/* AI Generate Code from Videos */}
               {videoLessons.length > 0 && (
-                <div className="bg-green-50 border-2 border-green-200 rounded-xl p-6">
-                  <div className="flex items-start gap-3 mb-4">
+                <Card
+                  variant="pastel-blue"
+                  className="p-6 border-primary-pastel"
+                >
+                  <div className="flex items-start gap-3">
                     <div className="flex-1">
                       <div className="flex items-center mb-4 gap-3">
-                        <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
-                          <HiCloud className="h-6 w-6 text-white" />
+                        <div className="w-10 h-10 bg-primary text-primary-foreground rounded-xl flex items-center justify-center flex-shrink-0 shadow-xs">
+                          <Sparkles className="h-5 w-5" />
                         </div>
                         <div>
-                          <h3 className="text-lg font-bold text-green-900 mb-1">
+                          <h3 className="text-lg font-bold text-foreground mb-1">
                             Tạo code exercises tự động từ bài học video
                           </h3>
-                          <p className="text-sm text-green-800">
+                          <p className="text-sm text-muted-foreground">
                             Chọn một hoặc nhiều bài học video để AI tự động tạo
                             code exercises dựa trên nội dung video
                           </p>
@@ -2578,12 +2583,18 @@ const EditCodeLesson = () => {
                       </div>
 
                       {/* Mode Selection */}
-                      <div className="mb-4 p-4 bg-white border border-gray-200 rounded-lg">
-                        <label className="block text-sm font-semibold text-gray-700 mb-3">
+                      <div className="mb-4 p-4 bg-surface border border-border rounded-xl">
+                        <label className="block text-sm font-semibold text-foreground mb-3">
                           Chọn cách xử lý:
                         </label>
                         <div className="space-y-2">
-                          <label className="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-colors hover:bg-gray-50">
+                          <label
+                            className={`flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-all ${
+                              generateMode === "add"
+                                ? "border-primary bg-primary-light/40"
+                                : "border-border bg-surface hover:bg-surface-muted/50"
+                            }`}
+                          >
                             <input
                               type="radio"
                               name="generateMode"
@@ -2594,19 +2605,25 @@ const EditCodeLesson = () => {
                                   e.target.value as "add" | "replace"
                                 )
                               }
-                              className="w-4 h-4 text-green-600 focus:ring-green-500 cursor-pointer"
+                              className="w-4 h-4 accent-primary cursor-pointer"
                             />
                             <div className="flex-1">
-                              <div className="font-medium text-gray-900">
+                              <div className="font-medium text-foreground">
                                 Thêm vào danh sách hiện có
                               </div>
-                              <div className="text-xs text-gray-600">
+                              <div className="text-xs text-muted-foreground">
                                 Thêm các bài code mới vào cuối danh sách hiện
                                 tại
                               </div>
                             </div>
                           </label>
-                          <label className="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-colors hover:bg-gray-50">
+                          <label
+                            className={`flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-all ${
+                              generateMode === "replace"
+                                ? "border-primary bg-primary-light/40"
+                                : "border-border bg-surface hover:bg-surface-muted/50"
+                            }`}
+                          >
                             <input
                               type="radio"
                               name="generateMode"
@@ -2617,13 +2634,13 @@ const EditCodeLesson = () => {
                                   e.target.value as "add" | "replace"
                                 )
                               }
-                              className="w-4 h-4 text-green-600 focus:ring-green-500 cursor-pointer"
+                              className="w-4 h-4 accent-primary cursor-pointer"
                             />
                             <div className="flex-1">
-                              <div className="font-medium text-gray-900">
+                              <div className="font-medium text-foreground">
                                 Làm lại từ đầu
                               </div>
-                              <div className="text-xs text-gray-600">
+                              <div className="text-xs text-muted-foreground">
                                 Xóa tất cả bài code hiện có và tạo mới từ video
                                 lessons
                               </div>
@@ -2637,21 +2654,21 @@ const EditCodeLesson = () => {
                         {videoLessons.map((lesson: any) => (
                           <label
                             key={lesson.id}
-                            className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50/50 transition-all cursor-pointer"
+                            className="flex items-center gap-3 p-3 bg-surface border border-border rounded-xl hover:border-primary hover:bg-primary-light/30 transition-all cursor-pointer"
                           >
                             <input
                               type="checkbox"
                               checked={selectedLessonIds.includes(lesson.id)}
                               onChange={() => handleToggleLesson(lesson.id)}
-                              className="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500 cursor-pointer"
+                              className="w-4 h-4 accent-primary rounded border-border cursor-pointer"
                             />
-                            <div className="flex items-center gap-2 flex-1">
-                              <HiVideoCamera className="h-5 w-5 text-green-600 flex-shrink-0" />
+                            <div className="flex items-center gap-2.5 flex-1">
+                              <Video className="h-5 w-5 text-primary-hover flex-shrink-0" />
                               <div className="flex-1">
-                                <p className="text-sm font-medium text-gray-900">
+                                <p className="text-sm font-medium text-foreground">
                                   {lesson.title}
                                 </p>
-                                <p className="text-xs text-gray-500">
+                                <p className="text-xs text-muted-foreground">
                                   {lesson.chunk_count} phần nội dung
                                 </p>
                               </div>
@@ -2660,41 +2677,33 @@ const EditCodeLesson = () => {
                         ))}
                       </div>
 
-                      <button
+                      <Button
                         type="button"
+                        variant="primary"
                         onClick={handleGenerateCodeFromVideos}
                         disabled={
                           isGeneratingCode || selectedLessonIds.length === 0
                         }
-                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-lg font-medium transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                        isLoading={isGeneratingCode}
+                        loadingText="Đang tạo code exercises từ AI..."
+                        leftIcon={<Sparkles className="h-4 w-4" />}
+                        className="w-full"
                       >
-                        {isGeneratingCode ? (
-                          <>
-                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                            Đang tạo code exercises từ AI...
-                          </>
-                        ) : (
-                          <>
-                            <HiCloud className="h-5 w-5" />
-                            {generateMode === "replace"
-                              ? "Làm lại từ đầu với"
-                              : "Thêm vào danh sách từ"}{" "}
-                            {selectedLessonIds.length}{" "}
-                            {selectedLessonIds.length === 1
-                              ? "bài học"
-                              : "bài học"}
-                          </>
-                        )}
-                      </button>
+                        {generateMode === "replace"
+                          ? "Làm lại từ đầu với"
+                          : "Thêm vào danh sách từ"}{" "}
+                        {selectedLessonIds.length} bài học
+                      </Button>
                     </div>
                   </div>
-                </div>
+                </Card>
               )}
 
               {/* Exercise Title */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Tiêu đề bài code <span className="text-red-500">*</span>
+                <label className="block text-sm font-semibold text-foreground mb-2">
+                  Tiêu đề bài code{" "}
+                  <span className="text-destructive-foreground">*</span>
                 </label>
                 <input
                   type="text"
@@ -2706,16 +2715,16 @@ const EditCodeLesson = () => {
                     }))
                   }
                   placeholder="Ví dụ: Tính tổng hai số"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-4 py-3 bg-surface border border-border rounded-xl text-foreground placeholder:text-subtle-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                 />
               </div>
 
               {/* Exercise Description */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-foreground mb-2">
                   Mô tả chi tiết bài code
                 </label>
-                <div className="border border-gray-300 rounded-lg overflow-hidden">
+                <div className="border border-border rounded-xl overflow-hidden bg-surface">
                   <TiptapEditor
                     value={activeExercise.description}
                     onChange={(value) =>
@@ -2728,22 +2737,26 @@ const EditCodeLesson = () => {
                     minHeight="200px"
                   />
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  💡 Mô tả chi tiết giúp học viên hiểu rõ yêu cầu và cách giải
-                  quyết bài tập
+                <p className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1.5">
+                  <Lightbulb className="h-3.5 w-3.5 text-warning-foreground flex-shrink-0" />
+                  <span>
+                    Mô tả chi tiết giúp học viên hiểu rõ yêu cầu và cách giải
+                    quyết bài tập
+                  </span>
                 </p>
               </div>
 
               {/* Language & Difficulty */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Ngôn ngữ lập trình <span className="text-red-500">*</span>
+                  <label className="block text-sm font-semibold text-foreground mb-2">
+                    Ngôn ngữ lập trình{" "}
+                    <span className="text-destructive-foreground">*</span>
                   </label>
                   {isLoadingLanguages ? (
-                    <div className="flex items-center justify-center py-8">
-                      <div className="w-6 h-6 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
-                      <span className="ml-2 text-sm text-gray-600">
+                    <div className="flex items-center justify-center gap-2 py-8">
+                      <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                      <span className="text-sm text-muted-foreground">
                         Đang tải danh sách ngôn ngữ...
                       </span>
                     </div>
@@ -2751,7 +2764,7 @@ const EditCodeLesson = () => {
                     <select
                       value={selectedLanguageId}
                       onChange={(e) => handleLanguageChange(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 bg-white"
+                      className="w-full px-4 py-3 bg-surface border border-border rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                     >
                       <option value="">-- Chọn ngôn ngữ --</option>
                       {codeLanguages.map((lang) => (
@@ -2763,7 +2776,7 @@ const EditCodeLesson = () => {
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-foreground mb-2">
                     Độ khó
                   </label>
                   <select
@@ -2777,7 +2790,7 @@ const EditCodeLesson = () => {
                           | "hard",
                       }))
                     }
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 bg-white"
+                    className="w-full px-4 py-3 bg-surface border border-border rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                   >
                     <option value="easy">Dễ</option>
                     <option value="medium">Trung bình</option>
@@ -2788,22 +2801,22 @@ const EditCodeLesson = () => {
 
               {/* Code Files Editor */}
               <div
-                className={`border border-gray-300 rounded-t-lg overflow-hidden bg-white ${
+                className={`border border-border overflow-hidden bg-surface ${
                   activeExercise.testResult
-                    ? "rounded-b-none mb-0"
-                    : "rounded-lg"
+                    ? "rounded-t-xl rounded-b-none mb-0"
+                    : "rounded-xl"
                 }`}
               >
                 {/* Tabs */}
-                <div className="bg-gray-50 border-b border-gray-300">
+                <div className="bg-surface-muted/70 border-b border-border">
                   <div className="flex items-center overflow-x-auto">
                     {activeExercise.codeFiles.map((file) => (
                       <div
                         key={file.id}
-                        className={`group flex items-center gap-2 px-4 py-2 cursor-pointer border-r border-gray-300 transition-colors min-w-[150px] ${
+                        className={`group flex items-center gap-2 px-4 py-2.5 cursor-pointer border-r border-border transition-colors min-w-[150px] ${
                           activeExercise.activeFileId === file.id
-                            ? "bg-white border-t-2 border-t-green-500 text-gray-900"
-                            : "bg-gray-50 hover:bg-gray-100 text-gray-600"
+                            ? "bg-surface border-t-2 border-t-primary text-foreground"
+                            : "bg-surface-muted/50 hover:bg-surface-muted text-muted-foreground"
                         }`}
                         onClick={() =>
                           handleExerciseChange(activeExerciseIndex, (ex) => ({
@@ -2812,20 +2825,24 @@ const EditCodeLesson = () => {
                           }))
                         }
                       >
-                        <HiCode
+                        <Code2
                           className={`h-4 w-4 flex-shrink-0 ${
                             activeExercise.activeFileId === file.id
-                              ? "text-green-600"
-                              : "text-gray-400"
+                              ? "text-primary-hover"
+                              : "text-subtle-foreground"
                           }`}
                         />
                         <span className="text-sm font-medium truncate flex-1">
                           {file.filename}
                         </span>
                         {file.is_main && (
-                          <span className="text-xs bg-green-500 text-white px-1.5 py-0.5 rounded flex-shrink-0">
+                          <Badge
+                            variant="primary"
+                            size="sm"
+                            className="flex-shrink-0"
+                          >
                             Main
-                          </span>
+                          </Badge>
                         )}
                         {activeExercise.codeFiles.length > 1 && (
                           <button
@@ -2834,9 +2851,9 @@ const EditCodeLesson = () => {
                               e.stopPropagation();
                               removeCodeFile(file.id);
                             }}
-                            className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-600 transition-opacity ml-1 flex-shrink-0"
+                            className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive-foreground transition-opacity ml-1 flex-shrink-0 cursor-pointer"
                           >
-                            <HiX className="h-4 w-4" />
+                            <X className="h-4 w-4" />
                           </button>
                         )}
                       </div>
@@ -2847,18 +2864,18 @@ const EditCodeLesson = () => {
                 {/* Editor Area */}
                 <div className="flex" style={{ minHeight: "400px" }}>
                   {/* Sidebar */}
-                  <div className="w-64 bg-gray-50 border-r border-gray-300 flex flex-col">
-                    <div className="px-4 py-3 bg-white border-b border-gray-300 flex items-center justify-between">
-                      <span className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                  <div className="w-64 bg-surface-muted/50 border-r border-border flex flex-col">
+                    <div className="px-4 py-3 bg-surface border-b border-border flex items-center justify-between">
+                      <span className="text-xs font-semibold text-foreground uppercase tracking-wider">
                         Explorer
                       </span>
                       <button
                         type="button"
                         onClick={addCodeFile}
-                        className="text-gray-600 hover:text-gray-900 transition-colors"
+                        className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                         title="New File"
                       >
-                        <HiPlus className="h-4 w-4" />
+                        <Plus className="h-4 w-4" />
                       </button>
                     </div>
 
@@ -2869,8 +2886,8 @@ const EditCodeLesson = () => {
                             key={file.id}
                             className={`group relative flex items-center gap-2 px-4 py-1.5 cursor-pointer transition-colors ${
                               activeExercise.activeFileId === file.id
-                                ? "bg-green-50 text-gray-900 border-r-2 border-r-green-500"
-                                : "text-gray-700 hover:bg-gray-100"
+                                ? "bg-primary-light/70 text-foreground border-r-2 border-r-primary"
+                                : "text-muted-foreground hover:bg-surface-muted hover:text-foreground"
                             }`}
                             onClick={() =>
                               handleExerciseChange(
@@ -2882,11 +2899,11 @@ const EditCodeLesson = () => {
                               )
                             }
                           >
-                            <HiCode
+                            <Code2
                               className={`h-4 w-4 flex-shrink-0 ${
                                 activeExercise.activeFileId === file.id
-                                  ? "text-green-600"
-                                  : "text-gray-500"
+                                  ? "text-primary-hover"
+                                  : "text-subtle-foreground"
                               }`}
                             />
                             {activeExercise.renamingFileId === file.id ? (
@@ -2908,7 +2925,7 @@ const EditCodeLesson = () => {
                                   if (e.key === "Escape") cancelRenamingFile();
                                 }}
                                 autoFocus
-                                className="flex-1 bg-white text-gray-900 px-1 py-0.5 rounded text-sm border border-green-500 focus:outline-none"
+                                className="flex-1 bg-surface text-foreground px-1.5 py-0.5 rounded text-sm border border-primary focus:outline-none"
                                 onClick={(e) => e.stopPropagation()}
                               />
                             ) : (
@@ -2917,9 +2934,13 @@ const EditCodeLesson = () => {
                                   {file.filename}
                                 </span>
                                 {file.is_main && (
-                                  <span className="text-xs bg-green-500 text-white px-1.5 py-0.5 rounded flex-shrink-0">
+                                  <Badge
+                                    variant="primary"
+                                    size="sm"
+                                    className="flex-shrink-0"
+                                  >
                                     M
-                                  </span>
+                                  </Badge>
                                 )}
                                 <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 flex-shrink-0">
                                   <button
@@ -2928,10 +2949,10 @@ const EditCodeLesson = () => {
                                       e.stopPropagation();
                                       startRenamingFile(file.id);
                                     }}
-                                    className="text-gray-500 hover:text-gray-900 transition-colors"
+                                    className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                                     title="Rename"
                                   >
-                                    <HiPencil className="h-3 w-3" />
+                                    <Pencil className="h-3.5 w-3.5" />
                                   </button>
                                   {activeExercise.codeFiles.length > 1 && (
                                     <button
@@ -2940,10 +2961,10 @@ const EditCodeLesson = () => {
                                         e.stopPropagation();
                                         removeCodeFile(file.id);
                                       }}
-                                      className="text-gray-500 hover:text-red-600 transition-colors"
+                                      className="text-muted-foreground hover:text-destructive-foreground transition-colors cursor-pointer"
                                       title="Delete"
                                     >
-                                      <HiTrash className="h-3 w-3" />
+                                      <Trash2 className="h-3.5 w-3.5" />
                                     </button>
                                   )}
                                 </div>
@@ -2953,26 +2974,26 @@ const EditCodeLesson = () => {
                         ))}
                       </div>
 
-                      <div className="px-4 py-2 border-t border-gray-300">
+                      <div className="px-4 py-2 border-t border-border">
                         <button
                           type="button"
                           onClick={addCodeFile}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded transition-colors"
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-surface-muted rounded-lg transition-colors cursor-pointer"
                         >
-                          <HiPlus className="h-4 w-4" />
+                          <Plus className="h-4 w-4 text-primary-hover" />
                           <span>New File</span>
                         </button>
                       </div>
 
-                      <div className="px-4 py-2 border-t border-gray-300">
-                        <div className="text-xs text-gray-600 mb-2 px-2 font-semibold">
+                      <div className="px-4 py-2 border-t border-border">
+                        <div className="text-xs text-muted-foreground mb-2 px-2 font-semibold">
                           Main File
                         </div>
                         <div className="space-y-1">
                           {activeExercise.codeFiles.map((file) => (
                             <label
                               key={file.id}
-                              className="flex items-center gap-2 px-2 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer transition-colors"
+                              className="flex items-center gap-2 px-2 py-1.5 text-sm text-foreground hover:bg-surface-muted rounded-lg cursor-pointer transition-colors"
                               onClick={(e) => e.stopPropagation()}
                             >
                               <input
@@ -2980,7 +3001,7 @@ const EditCodeLesson = () => {
                                 name="mainFile"
                                 checked={file.is_main}
                                 onChange={() => setMainFile(file.id)}
-                                className="w-4 h-4 text-green-500 focus:ring-green-500"
+                                className="w-4 h-4 accent-primary cursor-pointer"
                               />
                               <span className="truncate">{file.filename}</span>
                             </label>
@@ -2991,38 +3012,33 @@ const EditCodeLesson = () => {
                   </div>
 
                   {/* Code Editor */}
-                  <div className="flex-1 flex flex-col bg-white">
-                    <div className="bg-gray-50 border-b border-gray-300 px-4 py-2 flex items-center justify-between">
-                      <button
+                  <div className="flex-1 flex flex-col bg-surface">
+                    <div className="bg-surface-muted/70 border-b border-border px-4 py-2 flex items-center justify-between gap-2">
+                      <Button
                         type="button"
+                        variant="primary"
+                        size="sm"
                         onClick={handleTestCode}
                         disabled={isTestingCode || !selectedLanguageId}
-                        className="flex items-center gap-2 px-6 py-2 text-xs bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+                        isLoading={isTestingCode}
+                        loadingText="Đang test..."
+                        leftIcon={<Play className="h-3.5 w-3.5" />}
                       >
-                        {isTestingCode ? (
-                          <>
-                            <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                            Đang test...
-                          </>
-                        ) : (
-                          <>
-                            <HiPlay className="h-3 w-3" />
-                            Test Code
-                          </>
-                        )}
-                      </button>
-                      <span className="text-xs text-gray-600 font-medium">
+                        Test Code
+                      </Button>
+                      <span className="text-xs text-muted-foreground font-medium truncate">
                         {activeFile?.filename || "No file selected"}
                       </span>
-                      <button
+                      <Button
                         type="button"
+                        variant="pastel"
+                        size="sm"
                         onClick={handleInsertTemplate}
-                        className="flex items-center gap-2 px-3 py-1.5 text-xs bg-green-500 hover:bg-green-600 text-white rounded transition-colors"
+                        leftIcon={<Zap className="h-3.5 w-3.5" />}
                         title="Insert Template"
                       >
-                        <HiLightningBolt className="h-3 w-3" />
-                        <span>Template</span>
-                      </button>
+                        Template
+                      </Button>
                     </div>
                     {activeFile && (
                       <div className="flex-1" style={{ minHeight: "300px" }}>
@@ -3049,26 +3065,27 @@ const EditCodeLesson = () => {
               {/* Test Results */}
               {activeExercise.testResult && (
                 <div
-                  className="border border-gray-300 rounded-b-lg bg-white"
+                  className="border border-t-0 border-border rounded-b-xl bg-surface"
                   style={{ maxHeight: "400px", overflow: "auto" }}
                 >
-                  <div className="bg-gray-50 px-4 py-2 flex items-center justify-between border-b border-gray-300">
+                  <div className="bg-surface-muted/70 px-4 py-2.5 flex items-center justify-between border-b border-border">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold text-gray-700 uppercase">
+                      <span className="text-xs font-semibold text-foreground uppercase tracking-wider">
                         Test Results
                       </span>
-                      <span
-                        className={`text-xs px-2 py-0.5 rounded ${
+                      <Badge
+                        variant={
                           activeExercise.testResult.status === "passed"
-                            ? "bg-green-600 text-white"
-                            : "bg-red-600 text-white"
-                        }`}
+                            ? "success"
+                            : "destructive"
+                        }
+                        size="sm"
                       >
                         {activeExercise.testResult.status === "passed"
                           ? "PASSED"
                           : "FAILED"}
-                      </span>
-                      <span className="text-xs text-gray-600">
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
                         {activeExercise.testResult.passed}/
                         {activeExercise.testResult.total} tests
                       </span>
@@ -3081,25 +3098,26 @@ const EditCodeLesson = () => {
                           testResult: null,
                         }))
                       }
-                      className="text-gray-600 hover:text-gray-900 transition-colors"
+                      className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-surface-muted transition-colors cursor-pointer"
                     >
-                      <HiX className="h-4 w-4" />
+                      <X className="h-4 w-4" />
                     </button>
                   </div>
 
                   <div className="p-4 space-y-4">
                     <div>
-                      <div className="text-green-600 mb-2 font-semibold">
-                        $ Test Results Summary
+                      <div className="flex items-center gap-1.5 text-primary-hover mb-2 font-semibold text-sm">
+                        <Terminal className="h-4 w-4" />
+                        <span>Test Results Summary</span>
                       </div>
-                      <div className="ml-4 space-y-1 text-gray-700">
+                      <div className="ml-4 space-y-1.5 text-sm text-foreground">
                         <div>
                           Status:{" "}
                           <span
                             className={
                               activeExercise.testResult.status === "passed"
-                                ? "text-green-600 font-semibold"
-                                : "text-red-600 font-semibold"
+                                ? "text-success-foreground font-semibold"
+                                : "text-destructive-foreground font-semibold"
                             }
                           >
                             {activeExercise.testResult.status.toUpperCase()}
@@ -3107,35 +3125,35 @@ const EditCodeLesson = () => {
                         </div>
                         <div>
                           Language:{" "}
-                          <span className="text-green-600 font-medium">
+                          <span className="text-primary-hover font-medium">
                             {activeExercise.testResult.language} (
                             {activeExercise.testResult.version})
                           </span>
                         </div>
                         <div>
                           Passed:{" "}
-                          <span className="text-green-600 font-semibold">
+                          <span className="text-success-foreground font-semibold">
                             {activeExercise.testResult.passed}
                           </span>{" "}
                           / Failed:{" "}
-                          <span className="text-red-600 font-semibold">
+                          <span className="text-destructive-foreground font-semibold">
                             {activeExercise.testResult.failed}
                           </span>{" "}
                           / Total:{" "}
-                          <span className="text-yellow-600 font-semibold">
+                          <span className="text-warning-foreground font-semibold">
                             {activeExercise.testResult.total}
                           </span>
                         </div>
                         {activeExercise.testResult.time_limit &&
                           activeExercise.testResult.memory_limit && (
-                            <div className="mt-2 pt-2 border-t border-gray-200">
-                              <div className="text-xs text-gray-600 mb-1">
+                            <div className="mt-2 pt-2 border-t border-border">
+                              <div className="text-xs text-muted-foreground mb-1">
                                 Giới hạn đã được tính toán tự động:
                               </div>
                               <div className="flex items-center gap-4 text-sm">
                                 <span>
                                   Time Limit:{" "}
-                                  <span className="text-yellow-600 font-semibold">
+                                  <span className="text-warning-foreground font-semibold">
                                     {(
                                       activeExercise.testResult.time_limit /
                                       1000
@@ -3145,7 +3163,7 @@ const EditCodeLesson = () => {
                                 </span>
                                 <span>
                                   Memory Limit:{" "}
-                                  <span className="text-yellow-600 font-semibold">
+                                  <span className="text-warning-foreground font-semibold">
                                     {(
                                       activeExercise.testResult.memory_limit /
                                       (1024 * 1024)
@@ -3154,10 +3172,13 @@ const EditCodeLesson = () => {
                                   </span>
                                 </span>
                               </div>
-                              <p className="text-xs text-gray-500 mt-1">
-                                💡 Các giới hạn này được tính từ kết quả test để
-                                đảm bảo code của học viên không chạy quá lâu
-                                hoặc tốn quá nhiều bộ nhớ
+                              <p className="flex items-start gap-1.5 text-xs text-muted-foreground mt-1.5">
+                                <Lightbulb className="h-3.5 w-3.5 text-warning-foreground flex-shrink-0 mt-0.5" />
+                                <span>
+                                  Các giới hạn này được tính từ kết quả test để
+                                  đảm bảo code của học viên không chạy quá lâu
+                                  hoặc tốn quá nhiều bộ nhớ
+                                </span>
                               </p>
                             </div>
                           )}
@@ -3167,43 +3188,52 @@ const EditCodeLesson = () => {
                     {activeExercise.testResult.details.map((detail, index) => (
                       <div
                         key={index}
-                        className="border-t border-gray-200 pt-4"
+                        className="border-t border-border pt-4"
                       >
-                        <div className="text-green-600 mb-2 font-semibold">
-                          $ Test Case {detail.index}
+                        <div className="flex items-center gap-1.5 text-primary-hover mb-2 font-semibold text-sm">
+                          <Terminal className="h-3.5 w-3.5" />
+                          <span>Test Case {detail.index}</span>
                         </div>
-                        <div className="ml-4 space-y-2 text-gray-700">
+                        <div className="ml-4 space-y-2 text-sm text-foreground">
                           <div>
-                            <span className="text-gray-600">Result:</span>{" "}
+                            <span className="text-muted-foreground">
+                              Result:
+                            </span>{" "}
                             <span
                               className={
                                 detail.result === "passed"
-                                  ? "text-green-600 font-semibold"
-                                  : "text-red-600 font-semibold"
+                                  ? "text-success-foreground font-semibold"
+                                  : "text-destructive-foreground font-semibold"
                               }
                             >
                               {detail.result.toUpperCase()}
                             </span>
                           </div>
                           <div>
-                            <span className="text-gray-600">Input:</span>
-                            <pre className="mt-1 p-2 bg-gray-50 rounded border border-gray-200 text-gray-900 overflow-x-auto font-mono text-sm">
+                            <span className="text-muted-foreground">
+                              Input:
+                            </span>
+                            <pre className="mt-1 p-2.5 bg-surface-muted/60 rounded-lg border border-border text-foreground overflow-x-auto font-mono text-sm">
                               {detail.input || "(empty)"}
                             </pre>
                           </div>
                           <div>
-                            <span className="text-gray-600">Expected:</span>
-                            <pre className="mt-1 p-2 bg-green-50 rounded border border-green-200 text-green-800 overflow-x-auto font-mono text-sm">
+                            <span className="text-muted-foreground">
+                              Expected:
+                            </span>
+                            <pre className="mt-1 p-2.5 bg-success-bg rounded-lg border border-success-border text-success-foreground overflow-x-auto font-mono text-sm">
                               {detail.expected}
                             </pre>
                           </div>
                           <div>
-                            <span className="text-gray-600">Output:</span>
+                            <span className="text-muted-foreground">
+                              Output:
+                            </span>
                             <pre
-                              className={`mt-1 p-2 rounded border overflow-x-auto font-mono text-sm ${
+                              className={`mt-1 p-2.5 rounded-lg border overflow-x-auto font-mono text-sm ${
                                 detail.result === "passed"
-                                  ? "bg-green-50 border-green-200 text-green-800"
-                                  : "bg-red-50 border-red-200 text-red-800"
+                                  ? "bg-success-bg border-success-border text-success-foreground"
+                                  : "bg-destructive-bg border-destructive-border text-destructive-foreground"
                               }`}
                             >
                               {detail.output || "(empty)"}
@@ -3211,24 +3241,24 @@ const EditCodeLesson = () => {
                           </div>
                           {detail.stderr && (
                             <div>
-                              <span className="text-red-600 font-semibold">
+                              <span className="text-destructive-foreground font-semibold">
                                 Error:
                               </span>
-                              <pre className="mt-1 p-2 bg-red-50 rounded border border-red-200 text-red-800 overflow-x-auto font-mono text-sm">
+                              <pre className="mt-1 p-2.5 bg-destructive-bg rounded-lg border border-destructive-border text-destructive-foreground overflow-x-auto font-mono text-sm">
                                 {detail.stderr}
                               </pre>
                             </div>
                           )}
-                          <div className="flex items-center gap-4 text-xs text-gray-600 pt-1">
+                          <div className="flex items-center gap-4 text-xs text-muted-foreground pt-1">
                             <span>
                               CPU:{" "}
-                              <span className="text-yellow-600 font-medium">
+                              <span className="text-warning-foreground font-medium">
                                 {detail.cpu_time}ms
                               </span>
                             </span>
                             <span>
                               Memory:{" "}
-                              <span className="text-yellow-600 font-medium">
+                              <span className="text-warning-foreground font-medium">
                                 {(detail.memory / 1000000).toFixed(2)} MB
                               </span>
                             </span>
@@ -3237,8 +3267,8 @@ const EditCodeLesson = () => {
                               <span
                                 className={
                                   detail.exit_code === 0
-                                    ? "text-green-600 font-medium"
-                                    : "text-red-600 font-medium"
+                                    ? "text-success-foreground font-medium"
+                                    : "text-destructive-foreground font-medium"
                                 }
                               >
                                 {detail.exit_code}
@@ -3255,26 +3285,26 @@ const EditCodeLesson = () => {
               {/* Starter Code Editor */}
               <div>
                 <div className="mb-4">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-foreground mb-1.5">
                     Code mẫu (Starter Code)
                   </label>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted-foreground">
                     Code ban đầu để học viên có thể viết thêm vào. Tên file và
                     main file được đồng bộ tự động từ Code Files (không thể sửa
                     tên file).
                   </p>
                 </div>
-                <div className="border border-gray-300 rounded-lg overflow-hidden bg-white">
+                <div className="border border-border rounded-xl overflow-hidden bg-surface">
                   {/* Tabs */}
-                  <div className="bg-gray-50 border-b border-gray-300">
+                  <div className="bg-surface-muted/70 border-b border-border">
                     <div className="flex items-center overflow-x-auto">
                       {activeExercise.starterCodeFiles.map((file) => (
                         <div
                           key={file.id}
-                          className={`flex items-center gap-2 px-4 py-2 border-r border-gray-300 transition-colors min-w-[150px] ${
+                          className={`flex items-center gap-2 px-4 py-2.5 cursor-pointer border-r border-border transition-colors min-w-[150px] ${
                             activeExercise.activeStarterFileId === file.id
-                              ? "bg-white border-t-2 border-t-green-500 text-gray-900"
-                              : "bg-gray-50 text-gray-600"
+                              ? "bg-surface border-t-2 border-t-primary text-foreground"
+                              : "bg-surface-muted/50 hover:bg-surface-muted text-muted-foreground"
                           }`}
                           onClick={() =>
                             handleExerciseChange(activeExerciseIndex, (ex) => ({
@@ -3283,20 +3313,24 @@ const EditCodeLesson = () => {
                             }))
                           }
                         >
-                          <HiCode
+                          <Code2
                             className={`h-4 w-4 flex-shrink-0 ${
                               activeExercise.activeStarterFileId === file.id
-                                ? "text-green-600"
-                                : "text-gray-400"
+                                ? "text-primary-hover"
+                                : "text-subtle-foreground"
                             }`}
                           />
                           <span className="text-sm font-medium truncate flex-1">
                             {file.filename}
                           </span>
                           {file.is_main && (
-                            <span className="text-xs bg-green-500 text-white px-1.5 py-0.5 rounded flex-shrink-0">
+                            <Badge
+                              variant="primary"
+                              size="sm"
+                              className="flex-shrink-0"
+                            >
                               Main
-                            </span>
+                            </Badge>
                           )}
                         </div>
                       ))}
@@ -3306,9 +3340,9 @@ const EditCodeLesson = () => {
                   {/* Editor Area */}
                   <div className="flex" style={{ minHeight: "300px" }}>
                     {/* Sidebar */}
-                    <div className="w-64 bg-gray-50 border-r border-gray-300 flex flex-col">
-                      <div className="px-4 py-3 bg-white border-b border-gray-300">
-                        <span className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    <div className="w-64 bg-surface-muted/50 border-r border-border flex flex-col">
+                      <div className="px-4 py-3 bg-surface border-b border-border">
+                        <span className="text-xs font-semibold text-foreground uppercase tracking-wider">
                           Starter Code
                         </span>
                       </div>
@@ -3320,8 +3354,8 @@ const EditCodeLesson = () => {
                               key={file.id}
                               className={`flex items-center gap-2 px-4 py-1.5 cursor-pointer transition-colors ${
                                 activeExercise.activeStarterFileId === file.id
-                                  ? "bg-green-50 text-gray-900 border-r-2 border-r-green-500"
-                                  : "text-gray-700 hover:bg-gray-100"
+                                  ? "bg-primary-light/70 text-foreground border-r-2 border-r-primary"
+                                  : "text-muted-foreground hover:bg-surface-muted hover:text-foreground"
                               }`}
                               onClick={() =>
                                 handleExerciseChange(
@@ -3333,27 +3367,31 @@ const EditCodeLesson = () => {
                                 )
                               }
                             >
-                              <HiCode
+                              <Code2
                                 className={`h-4 w-4 flex-shrink-0 ${
                                   activeExercise.activeStarterFileId === file.id
-                                    ? "text-green-600"
-                                    : "text-gray-500"
+                                    ? "text-primary-hover"
+                                    : "text-subtle-foreground"
                                 }`}
                               />
                               <span className="text-sm truncate flex-1">
                                 {file.filename}
                               </span>
                               {file.is_main && (
-                                <span className="text-xs bg-green-500 text-white px-1.5 py-0.5 rounded flex-shrink-0">
+                                <Badge
+                                  variant="primary"
+                                  size="sm"
+                                  className="flex-shrink-0"
+                                >
                                   M
-                                </span>
+                                </Badge>
                               )}
                             </div>
                           ))}
                         </div>
 
-                        <div className="px-4 py-2 border-t border-gray-300">
-                          <div className="text-xs text-gray-500 italic">
+                        <div className="px-4 py-2 border-t border-border">
+                          <div className="text-xs text-muted-foreground italic">
                             Tên file và main file được đồng bộ tự động từ Code
                             Files
                           </div>
@@ -3362,21 +3400,22 @@ const EditCodeLesson = () => {
                     </div>
 
                     {/* Code Editor */}
-                    <div className="flex-1 flex flex-col bg-white">
-                      <div className="bg-gray-50 border-b border-gray-300 px-4 py-2 flex items-center justify-between">
-                        <span className="text-xs text-gray-600 font-medium">
+                    <div className="flex-1 flex flex-col bg-surface">
+                      <div className="bg-surface-muted/70 border-b border-border px-4 py-2 flex items-center justify-between gap-2">
+                        <span className="text-xs text-muted-foreground font-medium truncate">
                           {activeStarterFile?.filename || "No file selected"}
                         </span>
-                        <button
+                        <Button
                           type="button"
+                          variant="pastel"
+                          size="sm"
                           onClick={handleInsertStarterTemplate}
                           disabled={!selectedLang}
-                          className="flex items-center gap-2 px-3 py-1.5 text-xs bg-green-500 hover:bg-green-600 text-white rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          leftIcon={<Zap className="h-3.5 w-3.5" />}
                           title="Insert Template"
                         >
-                          <HiLightningBolt className="h-3 w-3" />
-                          <span>Template</span>
-                        </button>
+                          Template
+                        </Button>
                       </div>
                       {activeStarterFile && (
                         <div className="flex-1" style={{ minHeight: "300px" }}>
@@ -3403,31 +3442,33 @@ const EditCodeLesson = () => {
               {/* Test Cases */}
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <label className="block text-sm font-semibold text-gray-700">
-                    Test Cases <span className="text-red-500">*</span>
+                  <label className="block text-sm font-semibold text-foreground">
+                    Test Cases{" "}
+                    <span className="text-destructive-foreground">*</span>
                   </label>
-                  <button
+                  <Button
                     type="button"
+                    variant="primary"
+                    size="sm"
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
                       addTestCase();
                     }}
-                    className="flex items-center gap-2 px-4 py-2 text-sm bg-green-500 hover:bg-green-600 text-white font-medium rounded-lg transition-colors cursor-pointer"
+                    leftIcon={<Plus className="h-4 w-4" />}
                   >
-                    <HiPlus className="h-4 w-4" />
                     Thêm test case
-                  </button>
+                  </Button>
                 </div>
 
                 <div className="space-y-4">
                   {activeExercise.testCases.map((testCase, index) => (
                     <div
                       key={testCase.id}
-                      className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-3"
+                      className="bg-surface-muted/50 border border-border rounded-xl p-4 space-y-3"
                     >
                       <div className="flex items-center justify-between">
-                        <h4 className="font-semibold text-gray-900">
+                        <h4 className="font-semibold text-foreground">
                           Test Case {index + 1}
                         </h4>
                         <div className="flex items-center gap-4">
@@ -3444,9 +3485,9 @@ const EditCodeLesson = () => {
                                 );
                               }}
                               onClick={(e) => e.stopPropagation()}
-                              className="w-4 h-4 text-green-600 rounded focus:ring-green-500 cursor-pointer"
+                              className="w-4 h-4 accent-primary rounded cursor-pointer"
                             />
-                            <span className="text-sm text-gray-700">
+                            <span className="text-sm text-foreground">
                               Sample
                             </span>
                           </label>
@@ -3454,19 +3495,20 @@ const EditCodeLesson = () => {
                             <button
                               type="button"
                               onClick={() => removeTestCase(testCase.id)}
-                              className="text-red-600 hover:text-red-700 transition-colors"
+                              className="p-1.5 rounded-lg text-destructive-foreground hover:bg-destructive-bg transition-colors cursor-pointer"
+                              title="Xóa test case"
                             >
-                              <HiTrash className="h-5 w-5" />
+                              <Trash2 className="h-4 w-4" />
                             </button>
                           )}
                         </div>
                       </div>
                       <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        <label className="block text-sm font-semibold text-foreground mb-2">
                           Input
                         </label>
                         <div
-                          className="border border-gray-300 rounded-lg overflow-hidden"
+                          className="border border-border rounded-xl overflow-hidden bg-surface"
                           style={{ height: "150px" }}
                         >
                           <CodeEditor
@@ -3483,12 +3525,12 @@ const EditCodeLesson = () => {
                         </div>
                       </div>
                       <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        <label className="block text-sm font-semibold text-foreground mb-2">
                           Expected Output{" "}
-                          <span className="text-red-500">*</span>
+                          <span className="text-destructive-foreground">*</span>
                         </label>
                         <div
-                          className="border border-gray-300 rounded-lg overflow-hidden"
+                          className="border border-border rounded-xl overflow-hidden bg-surface"
                           style={{ height: "150px" }}
                         >
                           <CodeEditor
@@ -3514,45 +3556,50 @@ const EditCodeLesson = () => {
               </div>
             </div>
           )}
-        </div>
+        </Card>
 
         {/* Navigation Buttons */}
-        <div className="flex items-center justify-between bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-          <button
+        <Card className="p-6 flex items-center justify-between gap-4">
+          <Button
             type="button"
+            variant="outline"
             onClick={handleBack}
             disabled={currentStep === 0 || isSubmitting}
-            className="flex items-center gap-2 px-6 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            leftIcon={<ChevronLeft className="h-4 w-4" />}
           >
-            <HiChevronLeft className="h-5 w-5" />
             Quay lại
-          </button>
+          </Button>
 
           {currentStep < totalSteps - 1 ? (
-            <button
+            <Button
               type="button"
+              variant="primary"
               onClick={handleNext}
               disabled={isSubmitting}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-lg font-medium transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              rightIcon={<ChevronRight className="h-4 w-4" />}
             >
               Tiếp theo
-              <HiChevronRight className="h-5 w-5" />
-            </button>
+            </Button>
           ) : (
             <div className="flex flex-col items-end gap-2">
               {!canSave.canSave && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg px-4 py-2 text-sm text-yellow-800">
-                  <div className="flex items-center gap-2">
-                    <span>⚠️</span>
-                    <span className="font-medium">{canSave.reason}</span>
-                  </div>
-                </div>
+                <Alert variant="warning" className="text-sm">
+                  {canSave.reason}
+                </Alert>
               )}
-              <button
+              {canSave.canSave && !hasChanges && (
+                <p className="text-xs text-muted-foreground">
+                  Chưa có thay đổi nào để lưu
+                </p>
+              )}
+              <Button
                 type="button"
+                variant="primary"
                 onClick={handleSubmit}
                 disabled={isSubmitting || !hasChanges || !canSave.canSave}
-                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-lg font-medium transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                isLoading={isSubmitting}
+                loadingText="Đang lưu..."
+                leftIcon={<CheckCircle2 className="h-4 w-4" />}
                 title={
                   !hasChanges
                     ? "Không có thay đổi nào để lưu"
@@ -3561,21 +3608,11 @@ const EditCodeLesson = () => {
                     : "Lưu các thay đổi"
                 }
               >
-                {isSubmitting ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Đang lưu...
-                  </>
-                ) : (
-                  <>
-                    <HiCheckCircle className="h-5 w-5" />
-                    Lưu thay đổi
-                  </>
-                )}
-              </button>
+                Lưu thay đổi
+              </Button>
             </div>
           )}
-        </div>
+        </Card>
       </div>
     </div>
   );

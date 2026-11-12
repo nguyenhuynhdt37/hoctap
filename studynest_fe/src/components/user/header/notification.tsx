@@ -62,6 +62,7 @@ export function NotificationButton({ role }: { role: string }) {
       wallet: "Ví",
       course: "Khóa học",
       system: "Hệ thống",
+      provider: "Đơn vị cung cấp",
       learning: "Học tập",
     };
     return labels[type] || type;

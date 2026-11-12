@@ -1,25 +1,31 @@
 "use client";
 
-import api from "@/lib/utils/fetcher/client/axios";
-import { getImageUrl } from "@/lib/utils/helpers/image";
-import { HoldEarningsResponse } from "@/types/lecturer/hold";
-import { useRealtimeNotiStore } from "@/stores/notifications";
-import { useUserStore } from "@/stores/user";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useRef, useState } from "react";
-import {
-  HiAcademicCap,
-  HiChartBar,
-  HiCurrencyDollar,
-  HiMenu,
-  HiOutlineLogout,
-  HiSearch,
-  HiTag,
-  HiVideoCamera,
-  HiX,
-} from "react-icons/hi";
+import React, { useRef, useState } from "react";
 import useSWR from "swr";
+import {
+  BarChart3,
+  BookOpen,
+  Building2,
+  Clock,
+  GraduationCap,
+  Home,
+  LogOut,
+  Menu,
+  RotateCcw,
+  Search,
+  Tag,
+  User,
+  Wallet,
+  X,
+} from "lucide-react";
+import { Badge } from "@/components/ui";
+import api from "@/lib/utils/fetcher/client/axios";
+import { getImageUrl } from "@/lib/utils/helpers/image";
+import { useRealtimeNotiStore } from "@/stores/notifications";
+import { useUserStore } from "@/stores/user";
+import { HoldEarningsResponse } from "@/types/lecturer/hold";
 import { NotificationButton } from "./notification";
 
 const LecturerHeader = () => {
@@ -33,15 +39,15 @@ const LecturerHeader = () => {
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   const navLinks = [
-    { href: "/lecturer/providers", label: "Đơn vị", icon: HiAcademicCap },
-    { href: "/lecturer", label: "Trang chủ", icon: HiAcademicCap },
-    { href: "/lecturer/courses", label: "Khóa học", icon: HiVideoCamera },
-    { href: "/lecturer/discounts", label: "Mã giảm giá", icon: HiTag },
-    { href: "/lecturer/wallets", label: "Ví", icon: HiCurrencyDollar },
-    { href: "/lecturer/dashboard", label: "Thống kê", icon: HiChartBar },
+    { href: "/lecturer", label: "Trang chủ", icon: Home },
+    { href: "/lecturer/courses", label: "Khóa học", icon: BookOpen },
+    { href: "/lecturer/providers", label: "Đơn vị", icon: Building2 },
+    { href: "/lecturer/discounts", label: "Mã giảm giá", icon: Tag },
+    { href: "/lecturer/wallets", label: "Ví", icon: Wallet },
+    { href: "/lecturer/dashboard", label: "Thống kê", icon: BarChart3 },
   ];
 
-  // Get user initials
+  // Lấy chữ cái đầu tên giảng viên
   const getUserInitials = () => {
     if (user?.fullname) {
       return user.fullname
@@ -54,15 +60,16 @@ const LecturerHeader = () => {
     return "GV";
   };
 
-  // Handle logout
+  // Xử lý đăng xuất an toàn
   const handleLogout = async () => {
     try {
       await api.post("/auth/logout");
+    } catch {
+      // Bỏ qua lỗi mạng khi đăng xuất để luôn giữ trải nghiệm sạch
+    } finally {
       clearUser();
       clearNotifications();
       router.push("/login");
-    } catch (error) {
-      // Suppress console error
     }
   };
 
@@ -71,7 +78,18 @@ const LecturerHeader = () => {
     setIsMobileMenuOpen(false);
   };
 
-  // Fetch hold earnings count
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = searchQuery.trim();
+    if (trimmed) {
+      router.push(`/lecturer/courses?search=${encodeURIComponent(trimmed)}`);
+    } else {
+      router.push("/lecturer/courses");
+    }
+    setIsMobileMenuOpen(false);
+  };
+
+  // Lấy số lượng giao dịch đang hold
   const { data: holdData } = useSWR<HoldEarningsResponse>(
     "/lecturer/transactions/earnings/holding?page=1&limit=1",
     async (url) => {
@@ -80,31 +98,46 @@ const LecturerHeader = () => {
     },
     {
       revalidateOnFocus: true,
-      refreshInterval: 30000, // Refresh every 30 seconds
+      refreshInterval: 30000,
     }
   );
 
   const holdCount = holdData?.total || 0;
 
   return (
-    <header className="sticky top-0 z-50 bg-white border-b border-green-100 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link href="/lecturer" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-emerald-500 rounded-xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300">
-              <HiAcademicCap className="h-6 w-6 text-white" />
+    <header className="sticky top-0 z-50 bg-surface/90 backdrop-blur-xl border-b border-border shadow-2xs">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16 gap-4">
+          {/* Logo Thương Hiệu Mây Mây */}
+          <Link
+            href="/lecturer"
+            className="flex items-center gap-2.5 group shrink-0"
+            aria-label="Trang chủ Giảng viên Mây Mây"
+          >
+            <div className="w-10 h-10 bg-primary-light border border-primary-pastel/70 rounded-xl flex items-center justify-center shadow-2xs group-hover:scale-105 group-hover:bg-primary-pastel/60 transition-all duration-200">
+              <img
+                src="/logo/studynest-logo.svg"
+                alt="Mây Mây"
+                width={24}
+                height={24}
+                className="w-6 h-6 object-contain"
+              />
             </div>
-            <div className="hidden sm:block">
-              <span className="text-xl font-bold text-primary font-display">
-                Mây Mây
+            <div className="hidden sm:flex flex-col">
+              <span className="text-lg font-bold text-foreground font-display leading-none tracking-tight">
+                Mây <span className="text-primary">Mây</span>
               </span>
-              <p className="text-xs text-muted-foreground -mt-1">Giảng viên</p>
+              <span className="text-[10px] font-semibold text-subtle-foreground tracking-widest uppercase mt-0.5">
+                Giảng viên
+              </span>
             </div>
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-1">
+          <nav
+            aria-label="Điều hướng Giảng viên"
+            className="hidden lg:flex items-center gap-1"
+          >
             {navLinks.map((link) => {
               const Icon = link.icon;
               const isActive =
@@ -114,13 +147,13 @@ const LecturerHeader = () => {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-medium transition-all duration-150 ${
                     isActive
-                      ? "bg-green-50 text-green-700 shadow-sm"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                      ? "bg-primary-light text-primary font-semibold shadow-2xs"
+                      : "text-muted-foreground hover:bg-primary-light/50 hover:text-foreground"
                   }`}
                 >
-                  <Icon className="h-5 w-5" />
+                  <Icon className="h-4 w-4 shrink-0" />
                   <span>{link.label}</span>
                 </Link>
               );
@@ -128,20 +161,23 @@ const LecturerHeader = () => {
           </nav>
 
           {/* Right Actions */}
-          <div className="flex items-center gap-3">
-            {/* Search */}
-            <div className="hidden sm:block flex-1 max-w-md">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            {/* Search Input */}
+            <form
+              onSubmit={handleSearchSubmit}
+              className="hidden md:block w-52 xl:w-64"
+            >
               <div className="relative group">
-                <HiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-green-500 group-focus-within:text-green-600 w-5 h-5" />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary w-4 h-4 transition-colors" />
                 <input
                   type="text"
-                  placeholder="Tìm kiếm..."
+                  placeholder="Tìm khóa học..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-gray-50 border-2 border-green-200 rounded-full hover:border-green-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all text-sm"
+                  className="w-full h-9 pl-9 pr-4 bg-background border border-input rounded-full hover:border-primary-pastel focus:outline-none focus:border-ring focus:ring-2 focus:ring-ring/15 transition-all text-xs text-foreground placeholder:text-subtle-foreground"
                 />
               </div>
-            </div>
+            </form>
 
             {/* Notifications */}
             <NotificationButton role="LECTURER" />
@@ -150,230 +186,177 @@ const LecturerHeader = () => {
             <div className="relative group" ref={userMenuRef}>
               <button
                 type="button"
-                className="flex items-center gap-2 p-1 rounded-full hover:bg-green-50 focus:outline-none transition-all duration-200 ring-2 ring-transparent hover:ring-green-200"
-                aria-label="User menu"
+                className="flex items-center gap-2 p-1 rounded-full hover:bg-primary-light/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all duration-200 cursor-pointer"
+                aria-label="Menu tài khoản giảng viên"
               >
                 {user?.avatar ? (
                   <img
                     src={getImageUrl(user.avatar)}
-                    alt={user.fullname || "User"}
-                    className="w-9 h-9 rounded-full object-cover border-2 border-green-200"
+                    alt={user.fullname || "Giảng viên"}
+                    className="w-9 h-9 rounded-full object-cover ring-2 ring-primary-pastel"
                   />
                 ) : (
-                  <span className="w-9 h-9 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 text-white text-sm font-bold flex items-center justify-center shadow-md">
+                  <span className="w-9 h-9 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shadow-2xs ring-2 ring-primary-pastel">
                     {getUserInitials()}
                   </span>
                 )}
               </button>
 
-              {/* Invisible bridge to connect button and dropdown */}
-              <div className="absolute right-0 top-full w-80 h-2 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto z-40"></div>
+              {/* Vùng cầu nối chống mất hover */}
+              <div className="absolute right-0 top-full w-72 h-2 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto z-40" />
 
-              {/* Beautiful Dropdown Menu */}
-              <div className="absolute right-0 top-full w-80 bg-white rounded-xl shadow-2xl border-2 border-green-100 opacity-0 group-hover:opacity-100 transform scale-95 group-hover:scale-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto z-50">
-                {/* User Info Section - Green Theme */}
-                <div className="px-6 py-4 border-b-2 border-green-100 bg-gradient-to-r from-green-50 to-emerald-50">
-                  <div className="flex items-center space-x-3">
+              {/* Dropdown Menu */}
+              <div className="absolute right-0 top-full mt-1 w-72 sm:w-80 bg-surface rounded-[20px] shadow-ambient-lg border border-border opacity-0 group-hover:opacity-100 transform scale-95 group-hover:scale-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto z-50 overflow-hidden">
+                {/* User Info Header */}
+                <div className="px-5 py-4 border-b border-border bg-gradient-to-r from-primary-light/70 to-secondary-light/40">
+                  <div className="flex items-center gap-3">
                     {user?.avatar ? (
-                      <div className="relative">
+                      <div className="relative shrink-0">
                         <img
                           src={getImageUrl(user.avatar)}
-                          alt={user.fullname || "User Avatar"}
-                          className="w-14 h-14 rounded-full object-cover ring-2 ring-green-200"
+                          alt={user.fullname || "Avatar giảng viên"}
+                          className="w-12 h-12 rounded-full object-cover ring-2 ring-primary-pastel"
                         />
-                        <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-2 border-white" />
+                        <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-success-foreground rounded-full border-2 border-surface" />
                       </div>
                     ) : (
-                      <div className="relative">
-                        <span className="w-14 h-14 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 text-white text-lg font-bold flex items-center justify-center shadow-lg ring-2 ring-green-200">
+                      <div className="relative shrink-0">
+                        <span className="w-12 h-12 rounded-full bg-primary text-primary-foreground text-sm font-bold flex items-center justify-center shadow-xs ring-2 ring-primary-pastel">
                           {getUserInitials()}
                         </span>
-                        <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-2 border-white" />
+                        <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-success-foreground rounded-full border-2 border-surface" />
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <p className="text-base font-bold text-gray-900 truncate">
+                      <p className="text-sm font-bold text-foreground truncate">
                         {user?.fullname || "Giảng viên"}
                       </p>
-                      <p className="text-sm text-emerald-600 truncate font-medium">
+                      <p className="text-xs text-muted-foreground truncate mt-0.5">
                         {user?.email || "lecturer@maymay.edu.vn"}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Menu Items */}
-                <div className="py-2">
+                {/* Menu Items: Tài khoản */}
+                <div className="py-1.5">
                   <button
                     type="button"
                     onClick={() => handleNavigation("/lecturer/profile")}
-                    className="flex w-full items-center px-6 py-3 text-sm text-gray-700 hover:bg-green-50 hover:text-green-600 transition-colors duration-150 text-left"
+                    className="flex w-full items-center gap-3 px-5 py-2.5 text-sm text-foreground hover:bg-primary-light/50 hover:text-primary transition-colors text-left cursor-pointer"
                   >
-                    <svg
-                      className="w-5 h-5 mr-3 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                      />
-                    </svg>
-                    Hồ sơ
+                    <User className="w-4 h-4 text-muted-foreground shrink-0" />
+                    <span>Hồ sơ giảng viên</span>
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => handleNavigation("/lecturer/settings")}
-                    className="flex w-full items-center px-6 py-3 text-sm text-gray-700 hover:bg-green-50 hover:text-green-600 transition-colors duration-150 text-left"
+                    onClick={() => handleNavigation("/lecturer/providers")}
+                    className="flex w-full items-center gap-3 px-5 py-2.5 text-sm text-foreground hover:bg-primary-light/50 hover:text-primary transition-colors text-left cursor-pointer"
                   >
-                    <svg
-                      className="w-5 h-5 mr-3 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                    </svg>
-                    Cài đặt
+                    <Building2 className="w-4 h-4 text-muted-foreground shrink-0" />
+                    <span>Đơn vị giảng dạy</span>
                   </button>
                 </div>
 
-                {/* Divider */}
-                <div className="border-t border-gray-100"></div>
+                <div className="border-t border-border/80" />
 
-                {/* Wallet Section */}
-                <div className="py-2">
+                {/* Menu Items: Tài chính & Vận hành */}
+                <div className="py-1.5">
                   <button
                     type="button"
                     onClick={() => handleNavigation("/lecturer/wallets")}
-                    className="flex w-full items-center px-6 py-3 text-sm text-gray-700 hover:bg-green-50 hover:text-green-600 transition-colors duration-150 text-left"
+                    className="flex w-full items-center gap-3 px-5 py-2.5 text-sm text-foreground hover:bg-primary-light/50 hover:text-primary transition-colors text-left cursor-pointer"
                   >
-                    <svg
-                      className="w-5 h-5 mr-3 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
-                      />
-                    </svg>
-                    Ví của giảng viên
+                    <Wallet className="w-4 h-4 text-muted-foreground shrink-0" />
+                    <span>Ví của giảng viên</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => handleNavigation("/lecturer/hold")}
-                    className="flex w-full items-center justify-between px-6 py-3 text-sm text-gray-700 hover:bg-green-50 hover:text-green-600 transition-colors duration-150 text-left"
+                    className="flex w-full items-center justify-between px-5 py-2.5 text-sm text-foreground hover:bg-primary-light/50 hover:text-primary transition-colors text-left cursor-pointer"
                   >
-                    <div className="flex items-center">
-                      <svg
-                        className="w-5 h-5 mr-3 text-gray-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                      Giao dịch đang hold
+                    <div className="flex items-center gap-3">
+                      <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
+                      <span>Giao dịch đang hold</span>
                     </div>
                     {holdCount > 0 && (
-                      <span className="bg-green-600 text-white text-xs font-semibold rounded-full px-2 py-0.5 min-w-[20px] text-center">
+                      <Badge variant="primary" size="sm">
                         {holdCount > 99 ? "99+" : holdCount}
-                      </span>
+                      </Badge>
                     )}
                   </button>
 
                   <button
                     type="button"
                     onClick={() => handleNavigation("/lecturer/refund")}
-                    className="flex w-full items-center px-6 py-3 text-sm text-gray-700 hover:bg-green-50 hover:text-green-600 transition-colors duration-150 text-left"
+                    className="flex w-full items-center gap-3 px-5 py-2.5 text-sm text-foreground hover:bg-primary-light/50 hover:text-primary transition-colors text-left cursor-pointer"
                   >
-                    <svg
-                      className="w-5 h-5 mr-3 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
-                      />
-                    </svg>
-                    Yêu cầu hoàn tiền
+                    <RotateCcw className="w-4 h-4 text-muted-foreground shrink-0" />
+                    <span>Yêu cầu hoàn tiền</span>
                   </button>
                 </div>
 
-                {/* Divider */}
-                <div className="border-t border-gray-100"></div>
+                <div className="border-t border-border/80" />
 
-                {/* Logout */}
-                <div className="py-2">
+                {/* Chuyển chế độ & Đăng xuất */}
+                <div className="py-1.5">
                   <button
-                    onClick={handleLogout}
-                    className="w-full flex items-center px-6 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
+                    type="button"
+                    onClick={() => handleNavigation("/")}
+                    className="flex w-full items-center gap-3 px-5 py-2.5 text-sm text-foreground hover:bg-primary-light/50 hover:text-primary transition-colors text-left cursor-pointer"
                   >
-                    <svg
-                      className="w-5 h-5 mr-3 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                      />
-                    </svg>
-                    Đăng xuất
+                    <GraduationCap className="w-4 h-4 text-muted-foreground shrink-0" />
+                    <span>Về giao diện học viên</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="w-full flex items-center gap-3 px-5 py-2.5 text-sm text-destructive-foreground hover:bg-destructive-bg/50 transition-colors text-left cursor-pointer"
+                  >
+                    <LogOut className="w-4 h-4 shrink-0" />
+                    <span>Đăng xuất</span>
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* Mobile Menu Button */}
+            {/* Mobile Menu Toggle Button */}
             <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden p-2 hover:bg-green-50 rounded-lg transition-colors"
+              type="button"
+              onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+              className="lg:hidden p-2 rounded-xl text-muted-foreground hover:bg-primary-light/60 hover:text-primary transition-colors cursor-pointer"
+              aria-label="Mở menu điều hướng"
+              aria-expanded={isMobileMenuOpen}
             >
               {isMobileMenuOpen ? (
-                <HiX className="h-6 w-6 text-gray-600" />
+                <X className="h-5 w-5" />
               ) : (
-                <HiMenu className="h-6 w-6 text-gray-600" />
+                <Menu className="h-5 w-5" />
               )}
             </button>
           </div>
         </div>
 
-        {/* Mobile Menu */}
+        {/* Mobile Menu Dropdown */}
         {isMobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-gray-100">
+          <div className="lg:hidden py-4 border-t border-border space-y-3">
+            {/* Search trên Mobile */}
+            <form onSubmit={handleSearchSubmit} className="md:hidden">
+              <div className="relative">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm khóa học..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full h-10 pl-10 pr-4 bg-background border border-input rounded-xl focus:outline-none focus:border-ring text-sm text-foreground"
+                />
+              </div>
+            </form>
+
             <nav className="flex flex-col gap-1">
               {navLinks.map((link) => {
                 const Icon = link.icon;
@@ -385,80 +368,52 @@ const LecturerHeader = () => {
                     key={link.href}
                     href={link.href}
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
+                    className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                       isActive
-                        ? "bg-green-50 text-green-700"
-                        : "text-gray-600 hover:bg-gray-50"
+                        ? "bg-primary-light text-primary font-semibold"
+                        : "text-muted-foreground hover:bg-primary-light/50 hover:text-foreground"
                     }`}
                   >
-                    <Icon className="h-5 w-5" />
+                    <Icon className="h-4 w-4 shrink-0" />
                     <span>{link.label}</span>
                   </Link>
                 );
               })}
+
+              <div className="border-t border-border/70 my-1" />
+
               <button
-                onClick={() => handleNavigation("/lecturer/wallets")}
-                className="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 text-gray-600 hover:bg-gray-50"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
-                  />
-                </svg>
-                <span>Ví của giảng viên</span>
-              </button>
-              <button
+                type="button"
                 onClick={() => handleNavigation("/lecturer/hold")}
-                className="flex items-center justify-between gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 text-gray-600 hover:bg-gray-50"
+                className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:bg-primary-light/50 hover:text-foreground transition-colors cursor-pointer"
               >
                 <div className="flex items-center gap-3">
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
+                  <Clock className="h-4 w-4 shrink-0" />
                   <span>Giao dịch đang hold</span>
                 </div>
                 {holdCount > 0 && (
-                  <span className="bg-green-600 text-white text-xs font-semibold rounded-full px-2 py-0.5 min-w-[20px] text-center">
+                  <Badge variant="primary" size="sm">
                     {holdCount > 99 ? "99+" : holdCount}
-                  </span>
+                  </Badge>
                 )}
               </button>
+
               <button
+                type="button"
                 onClick={() => handleNavigation("/lecturer/refund")}
-                className="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 text-gray-600 hover:bg-gray-50"
+                className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:bg-primary-light/50 hover:text-foreground transition-colors cursor-pointer"
               >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
-                  />
-                </svg>
+                <RotateCcw className="h-4 w-4 shrink-0" />
                 <span>Yêu cầu hoàn tiền</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleNavigation("/")}
+                className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-primary hover:bg-primary-light/60 transition-colors cursor-pointer"
+              >
+                <GraduationCap className="h-4 w-4 shrink-0" />
+                <span>Về giao diện học viên</span>
               </button>
             </nav>
           </div>

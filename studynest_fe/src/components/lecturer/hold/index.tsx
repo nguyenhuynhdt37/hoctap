@@ -1,6 +1,7 @@
 "use client";
 
 import Pagination from "@/components/shared/pagination";
+import { Alert } from "@/components/ui";
 import api from "@/lib/utils/fetcher/client/axios";
 import { HoldEarningsQuery, HoldEarningsResponse } from "@/types/lecturer/hold";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -148,15 +149,15 @@ export default function HoldEarningsManagement() {
   const isEmpty = !isInitialLoading && data && data.items.length === 0;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-background">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         {/* Page Header */}
         <div className="mb-8">
           <div>
-            <h1 className="text-3xl font-black text-gray-900 mb-2">
+            <h1 className="font-display text-2xl sm:text-3xl font-semibold text-foreground tracking-tight mb-1.5">
               Giao dịch đang chờ hold
             </h1>
-            <p className="text-gray-600">
+            <p className="text-sm text-muted-foreground">
               Danh sách các khoản tiền đang được hệ thống giữ và có yêu cầu hoàn
               tiền
             </p>
@@ -186,9 +187,9 @@ export default function HoldEarningsManagement() {
 
         {/* Error */}
         {error && (
-          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+          <Alert variant="destructive" className="mb-6">
             Không thể tải dữ liệu. Vui lòng thử lại.
-          </div>
+          </Alert>
         )}
 
         {/* Content */}

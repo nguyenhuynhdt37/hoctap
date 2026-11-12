@@ -1,0 +1,10 @@
+.stage { position: relative; display: grid; place-items: center; height: 220px; isolation: isolate; }
+.aura { position: absolute; width: 176px; height: 176px; border-radius: 45% 55% 63% 37%; background: conic-gradient(from 35deg, var(--color-primary-pastel), var(--color-accent), var(--color-secondary-pastel), var(--color-primary-light)); filter: blur(18px); opacity: .7; transform: scale(calc(1 + var(--voice-level, 0) * .48)); transition: transform 100ms ease-out; }
+.orb { position: relative; width: 128px; height: 128px; display: grid; place-items: center; border-radius: 44% 56% 49% 51%; background: radial-gradient(circle at 30% 25%, var(--color-surface) 0%, var(--color-primary-light) 45%, var(--color-primary-pastel) 100%); border: 1px solid var(--color-primary-pastel); box-shadow: 0 14px 40px color-mix(in srgb, var(--color-primary) 15%, transparent); transform: scale(calc(1 + var(--voice-level, 0) * .12)); transition: transform 100ms ease-out; }
+.active .aura { animation: drift 9s linear infinite; }
+.active .orb { animation: breathe 5s ease-in-out infinite; }
+.wave { position: absolute; bottom: 10px; display: flex; align-items: center; gap: 4px; height: 22px; }
+.bar { width: 4px; border-radius: 4px; background: var(--color-primary); opacity: .65; transition: height 100ms ease-out; }
+@keyframes drift { 0%,100% { rotate: 0deg; } 50% { rotate: 180deg; } }
+@keyframes breathe { 0%,100% { border-radius: 44% 56% 49% 51%; } 50% { border-radius: 58% 42% 40% 60%; } }
+@media (prefers-reduced-motion: reduce) { .active .aura, .active .orb { animation: none; } .orb, .aura, .bar { transition: none; } }

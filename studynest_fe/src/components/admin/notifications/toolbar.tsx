@@ -20,6 +20,7 @@ const types = [
   { value: "wallet", label: "Ví" },
   { value: "course", label: "Khóa học" },
   { value: "system", label: "Hệ thống" },
+  { value: "provider", label: "Đơn vị cung cấp" },
   { value: "learning", label: "Học tập" },
 ];
 

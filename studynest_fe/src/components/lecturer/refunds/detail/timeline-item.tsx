@@ -19,23 +19,23 @@ export function TimelineItem({
     <div className="flex gap-4 relative">
       <div className="flex flex-col items-center">
         <div
-          className={`w-4 h-4 rounded-full border-2 ${
+          className={`w-3.5 h-3.5 rounded-full border-2 mt-1 ${
             isDone
-              ? "border-green-500 bg-green-500"
+              ? "border-primary bg-primary"
               : isActive
-                ? "border-yellow-500 bg-yellow-100"
-                : "border-gray-300 bg-white"
+                ? "border-warning-foreground bg-warning-bg"
+                : "border-border bg-surface"
           }`}
         />
-        {!isLast && <div className="flex-1 w-px bg-gray-200 mt-1" />}
+        {!isLast && <div className="flex-1 w-px bg-border mt-1" />}
       </div>
       <div className="pb-6">
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-gray-900">{title}</span>
-          <span className="text-xs text-gray-500">{timeLabel}</span>
+          <span className="text-sm font-semibold text-foreground">{title}</span>
+          <span className="text-xs text-muted-foreground">{timeLabel}</span>
         </div>
         {description && (
-          <p className="text-sm text-gray-600 mt-1 whitespace-pre-line">
+          <p className="text-sm text-muted-foreground mt-1 whitespace-pre-line">
             {description}
           </p>
         )}

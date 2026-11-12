@@ -14,17 +14,21 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import { useRef, useState } from "react";
 import {
-  HiAcademicCap,
-  HiCheck,
-  HiChevronLeft,
-  HiLightningBolt,
-  HiPencil,
-  HiPlus,
-  HiCloud,
-  HiTrash,
-  HiX,
-} from "react-icons/hi";
+  ArrowLeft,
+  Check,
+  GraduationCap,
+  Pencil,
+  Plus,
+  Sparkles,
+  Trash2,
+  X,
+  Zap,
+} from "lucide-react";
 import useSWR from "swr";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Alert, EmptyState } from "@/components/ui/states";
 
 const QuizzesLesson = () => {
   const router = useRouter();
@@ -274,16 +278,18 @@ const QuizzesLesson = () => {
     }
   };
 
-  const getDifficultyColor = (level: number): string => {
+  const getDifficultyVariant = (
+    level: number
+  ): "success" | "warning" | "destructive" | "neutral" => {
     switch (level) {
       case 1:
-        return "bg-green-100 text-green-700";
+        return "success";
       case 2:
-        return "bg-amber-100 text-amber-700";
+        return "warning";
       case 3:
-        return "bg-red-100 text-red-700";
+        return "destructive";
       default:
-        return "bg-gray-100 text-gray-700";
+        return "neutral";
     }
   };
 
@@ -430,24 +436,28 @@ const QuizzesLesson = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Header */}
         <div className="mb-6">
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => router.back()}
-            className="text-gray-600 hover:text-gray-900 mb-4 flex items-center gap-2 transition-colors"
+            leftIcon={<ArrowLeft className="h-4 w-4" />}
+            className="mb-4 text-muted-foreground hover:text-foreground"
           >
-            <HiChevronLeft className="h-5 w-5" />
-            <span>Quay lại</span>
-          </button>
+            Quay lại
+          </Button>
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-500 rounded-lg">
-              <HiAcademicCap className="h-5 w-5 text-white" />
+            <div className="w-12 h-12 rounded-2xl bg-primary-light text-primary flex items-center justify-center shadow-xs">
+              <GraduationCap className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Quản lý Quiz</h1>
-              <p className="text-sm text-gray-600 mt-1">
+              <h1 className="text-2xl font-bold font-display text-foreground">
+                Quản lý Quiz
+              </h1>
+              <p className="text-sm text-muted-foreground mt-0.5">
                 Thêm và quản lý câu hỏi quiz cho bài học
               </p>
             </div>
@@ -456,7 +466,9 @@ const QuizzesLesson = () => {
 
         {/* Create Button */}
         <div className="mb-4">
-          <button
+          <Button
+            variant="primary"
+            size="sm"
             onClick={() => {
               setShowCreateForm(!showCreateForm);
               if (!showCreateForm) {
@@ -468,84 +480,81 @@ const QuizzesLesson = () => {
                 }, 100);
               }
             }}
-            className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition-colors flex items-center gap-2 text-sm"
+            leftIcon={<Plus className="h-4 w-4" />}
           >
-            <HiPlus className="h-4 w-4" />
             {showCreateForm ? "Ẩn form" : "Tạo quiz mới"}
-          </button>
+          </Button>
         </div>
 
         {/* Create Form */}
         {showCreateForm && (
-          <div
+          <Card
             ref={formRef}
-            className="bg-white rounded-xl border border-gray-200 shadow-sm mb-6"
+            className="border border-border bg-surface shadow-xs mb-6 overflow-hidden"
           >
             {/* Form Header */}
-            <div className="bg-green-500 px-4 py-3 rounded-t-xl">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <HiAcademicCap className="h-5 w-5 text-white" />
-                  <h2 className="text-lg font-bold text-white">
+            <div className="bg-primary-light/50 border-b border-border px-5 py-3.5">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-primary text-white flex items-center justify-center">
+                    <GraduationCap className="h-4 w-4" />
+                  </div>
+                  <h2 className="text-lg font-bold font-display text-foreground">
                     {editingQuiz ? "Chỉnh sửa quiz" : "Tạo quiz mới"}
                   </h2>
                 </div>
                 {!editingQuiz && (
                   <div className="flex items-center gap-2">
-                    <button
+                    <Button
+                      variant="secondary"
+                      size="sm"
                       onClick={() => setShowAiModal(true)}
                       disabled={isGeneratingAI || !lessonId}
-                      className="px-3 py-1.5 bg-purple-500 hover:bg-purple-600 text-white text-sm font-semibold rounded-lg transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                      isLoading={isGeneratingAI}
+                      loadingText="Đang tạo..."
+                      leftIcon={<Sparkles className="h-4 w-4" />}
                       title="Tạo quiz bằng AI"
                     >
-                      {isGeneratingAI ? (
-                        <>
-                          <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                          <span>Đang tạo...</span>
-                        </>
-                      ) : (
-                        <>
-                          <HiCloud className="h-4 w-4" />
-                          <span>Tạo bằng AI</span>
-                        </>
-                      )}
-                    </button>
-                    <button
+                      Tạo bằng AI
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={addQuiz}
-                      className="px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white text-sm font-semibold rounded-lg transition-colors flex items-center gap-1"
+                      leftIcon={<Plus className="h-4 w-4" />}
                     >
-                      <HiPlus className="h-4 w-4" />
                       Thêm quiz
-                    </button>
+                    </Button>
                   </div>
                 )}
               </div>
             </div>
 
-            <div className="p-4">
+            <div className="p-5">
               <div className="space-y-4">
                 {quizzes.map((quiz, quizIndex) => (
-                  <div
+                  <Card
                     key={quizIndex}
-                    className="p-4 bg-gray-50 rounded-lg border border-gray-200"
+                    variant="muted"
+                    className="p-5 border border-border"
                   >
                     {/* Quiz Header */}
-                    <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 bg-green-500 text-white text-xs font-bold rounded flex items-center justify-center">
+                    <div className="flex items-center justify-between mb-4 pb-3 border-b border-border">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-7 h-7 bg-primary text-white text-xs font-bold rounded-lg flex items-center justify-center">
                           {quizIndex + 1}
                         </div>
-                        <h3 className="text-base font-bold text-gray-900">
+                        <h3 className="text-base font-bold text-foreground">
                           Quiz {quizIndex + 1}
                         </h3>
                       </div>
                       {quizzes.length > 1 && (
                         <button
                           onClick={() => removeQuiz(quizIndex)}
-                          className="p-1.5 hover:bg-red-50 rounded transition-colors"
+                          className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive-bg rounded-lg transition-colors"
                           title="Xóa quiz"
                         >
-                          <HiTrash className="h-4 w-4 text-red-600" />
+                          <Trash2 className="h-4 w-4" />
                         </button>
                       )}
                     </div>
@@ -555,10 +564,10 @@ const QuizzesLesson = () => {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {/* Question */}
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                            Câu hỏi *
+                          <label className="block text-sm font-semibold text-foreground mb-1.5">
+                            Câu hỏi <span className="text-destructive">*</span>
                           </label>
-                          <div className="border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-green-500 focus-within:border-green-500 transition-all">
+                          <div className="border border-border rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-primary focus-within:border-primary transition-all bg-surface">
                             <TiptapEditor
                               value={quiz.question || ""}
                               onChange={(markdown) =>
@@ -577,10 +586,10 @@ const QuizzesLesson = () => {
 
                         {/* Explanation */}
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                          <label className="block text-sm font-semibold text-foreground mb-1.5">
                             Giải thích
                           </label>
-                          <div className="border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-green-500 focus-within:border-green-500 transition-all">
+                          <div className="border border-border rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-primary focus-within:border-primary transition-all bg-surface">
                             <TiptapEditor
                               value={quiz.explanation || ""}
                               onChange={(markdown) =>
@@ -600,8 +609,8 @@ const QuizzesLesson = () => {
 
                       {/* Difficulty Level */}
                       <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                          Độ khó *
+                        <label className="block text-sm font-semibold text-foreground mb-1.5">
+                          Độ khó <span className="text-destructive">*</span>
                         </label>
                         <select
                           value={quiz.difficulty_level}
@@ -612,7 +621,7 @@ const QuizzesLesson = () => {
                               parseInt(e.target.value)
                             )
                           }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white text-sm"
+                          className="w-full px-3 py-2.5 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all bg-surface text-foreground text-sm"
                         >
                           <option value={1}>Dễ</option>
                           <option value={2}>Trung bình</option>
@@ -623,30 +632,32 @@ const QuizzesLesson = () => {
                       {/* Options */}
                       <div>
                         <div className="flex items-center justify-between mb-3">
-                          <label className="block text-sm font-semibold text-gray-700">
+                          <label className="block text-sm font-semibold text-foreground">
                             Phương án trả lời * ({quiz.options.length}/4)
-                            <span className="text-xs text-gray-500 ml-2 font-normal">
+                            <span className="text-xs text-muted-foreground ml-2 font-normal">
                               (Tối thiểu 2, tối đa 4, chỉ 1 đáp án đúng)
                             </span>
                           </label>
-                          <button
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
                             onClick={() => addOption(quizIndex)}
                             disabled={quiz.options.length >= 4}
-                            className="px-3 py-1.5 bg-green-100 hover:bg-green-200 text-green-700 text-sm font-semibold rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                            leftIcon={<Plus className="h-4 w-4" />}
                           >
-                            <HiPlus className="h-4 w-4" />
                             Thêm
-                          </button>
+                          </Button>
                         </div>
 
                         <div className="space-y-3">
                           {quiz.options.map((option, optionIndex) => (
                             <div
                               key={optionIndex}
-                              className={`p-3 rounded-lg border transition-all ${
+                              className={`p-3.5 rounded-xl border transition-all ${
                                 option.is_correct
-                                  ? "bg-green-50 border-green-300"
-                                  : "bg-white border-gray-200"
+                                  ? "bg-success-bg/50 border-success-border"
+                                  : "bg-surface border-border"
                               }`}
                             >
                               <div className="flex items-start gap-3">
@@ -664,14 +675,14 @@ const QuizzesLesson = () => {
                                         e.target.checked
                                       )
                                     }
-                                    className="w-4 h-4 text-green-600 border-gray-300 focus:ring-green-500 cursor-pointer"
+                                    className="w-4 h-4 text-primary border-border focus:ring-primary cursor-pointer"
                                   />
                                 </div>
 
                                 {/* Input Fields */}
                                 <div className="flex-1 space-y-2">
                                   <div>
-                                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                                    <label className="block text-xs font-medium text-muted-foreground mb-1">
                                       Nội dung phương án *
                                     </label>
                                     <input
@@ -686,11 +697,11 @@ const QuizzesLesson = () => {
                                         )
                                       }
                                       placeholder="Nhập nội dung phương án..."
-                                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all text-sm"
+                                      className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all text-sm"
                                     />
                                   </div>
                                   <div>
-                                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                                    <label className="block text-xs font-medium text-muted-foreground mb-1">
                                       Phản hồi (tùy chọn)
                                     </label>
                                     <input
@@ -705,7 +716,7 @@ const QuizzesLesson = () => {
                                         )
                                       }
                                       placeholder="Nhập phản hồi..."
-                                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all text-sm"
+                                      className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all text-sm"
                                     />
                                   </div>
                                 </div>
@@ -716,19 +727,21 @@ const QuizzesLesson = () => {
                                     onClick={() =>
                                       removeOption(quizIndex, optionIndex)
                                     }
-                                    className="p-1.5 hover:bg-red-50 rounded transition-colors flex-shrink-0"
+                                    className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive-bg rounded-lg transition-colors flex-shrink-0"
                                     title="Xóa phương án"
                                   >
-                                    <HiX className="h-4 w-4 text-red-600" />
+                                    <X className="h-4 w-4" />
                                   </button>
                                 )}
                               </div>
 
                               {/* Correct Answer Badge */}
                               {option.is_correct && (
-                                <div className="mt-2 flex items-center gap-1 text-green-700 text-xs font-semibold">
-                                  <HiCheck className="h-3 w-3" />
-                                  <span>Đáp án đúng</span>
+                                <div className="mt-2">
+                                  <Badge variant="success" size="sm">
+                                    <Check className="h-3 w-3 mr-1 inline" />
+                                    Đáp án đúng
+                                  </Badge>
                                 </div>
                               )}
                             </div>
@@ -736,28 +749,26 @@ const QuizzesLesson = () => {
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </Card>
                 ))}
               </div>
             </div>
 
             {/* Form Actions */}
-            <div className="mt-4 p-4 border-t border-gray-200 flex gap-3">
-              <button
+            <div className="p-5 border-t border-border flex gap-3 bg-surface-muted/30">
+              <Button
+                variant="primary"
                 onClick={handleSubmit}
                 disabled={isSubmitting}
-                className="flex-1 px-4 py-2 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
+                isLoading={isSubmitting}
+                loadingText={editingQuiz ? "Đang cập nhật..." : "Đang tạo..."}
+                leftIcon={<Check className="h-4 w-4" />}
+                className="flex-1"
               >
-                <HiCheck className="h-4 w-4" />
-                {isSubmitting
-                  ? editingQuiz
-                    ? "Đang cập nhật..."
-                    : "Đang tạo..."
-                  : editingQuiz
-                  ? "Cập nhật quiz"
-                  : "Tạo quiz"}
-              </button>
-              <button
+                {editingQuiz ? "Cập nhật quiz" : "Tạo quiz"}
+              </Button>
+              <Button
+                variant="outline"
                 onClick={() => {
                   setShowCreateForm(false);
                   setEditingQuiz(null);
@@ -784,28 +795,27 @@ const QuizzesLesson = () => {
                   ]);
                 }}
                 disabled={isSubmitting}
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg transition-colors cursor-pointer disabled:opacity-50 text-sm"
               >
                 Hủy
-              </button>
+              </Button>
             </div>
-          </div>
+          </Card>
         )}
 
         {/* AI Modal */}
         {showAiModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 shadow-xl">
+          <div className="fixed inset-0 bg-foreground/30 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+            <Card className="bg-surface border border-border rounded-2xl p-6 max-w-md w-full shadow-xl">
               <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <HiCloud className="h-5 w-5 text-purple-600" />
+                <div className="w-10 h-10 bg-secondary-light text-secondary-foreground rounded-xl flex items-center justify-center">
+                  <Sparkles className="h-5 w-5" />
                 </div>
-                <h3 className="text-lg font-bold text-gray-900">
+                <h3 className="text-lg font-bold font-display text-foreground">
                   Tạo quiz bằng AI
                 </h3>
               </div>
 
-              <p className="text-sm text-gray-600 mb-6">
+              <p className="text-sm text-muted-foreground mb-6">
                 AI sẽ phân tích video bài học và tạo các câu hỏi quiz tự động.
                 Chọn cách bạn muốn thêm quiz:
               </p>
@@ -814,12 +824,12 @@ const QuizzesLesson = () => {
                 <button
                   onClick={() => handleGenerateQuizzesWithAI("new")}
                   disabled={isGeneratingAI}
-                  className="w-full px-4 py-3 bg-purple-500 hover:bg-purple-600 text-white font-semibold rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full px-4 py-3 bg-primary hover:bg-primary-hover text-primary-foreground font-semibold rounded-xl transition-colors flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-left"
                 >
-                  <HiLightningBolt className="h-5 w-5" />
-                  <div className="text-left flex-1">
+                  <Zap className="h-5 w-5 flex-shrink-0" />
+                  <div className="flex-1">
                     <div className="font-bold">Tạo mới hoàn toàn</div>
-                    <div className="text-xs text-purple-100">
+                    <div className="text-xs opacity-90">
                       Thay thế tất cả quiz hiện tại
                     </div>
                   </div>
@@ -828,80 +838,83 @@ const QuizzesLesson = () => {
                 <button
                   onClick={() => handleGenerateQuizzesWithAI("append")}
                   disabled={isGeneratingAI}
-                  className="w-full px-4 py-3 bg-purple-100 hover:bg-purple-200 text-purple-700 font-semibold rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full px-4 py-3 bg-primary-light hover:bg-primary-pastel/50 text-primary font-semibold rounded-xl transition-colors flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-left"
                 >
-                  <HiPlus className="h-5 w-5" />
-                  <div className="text-left flex-1">
+                  <Plus className="h-5 w-5 flex-shrink-0" />
+                  <div className="flex-1">
                     <div className="font-bold">Tạo thêm</div>
-                    <div className="text-xs text-purple-600">
+                    <div className="text-xs text-muted-foreground">
                       Thêm quiz mới vào danh sách hiện tại
                     </div>
                   </div>
                 </button>
               </div>
 
-              <button
+              <Button
+                variant="outline"
                 onClick={() => setShowAiModal(false)}
                 disabled={isGeneratingAI}
-                className="mt-4 w-full px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg transition-colors disabled:opacity-50"
+                className="mt-4 w-full"
               >
                 Hủy
-              </button>
-            </div>
+              </Button>
+            </Card>
           </div>
         )}
 
         {/* Quizzes List */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+        <Card className="border border-border bg-surface shadow-xs overflow-hidden">
           {/* List Header */}
-          <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
-            <div className="flex items-center gap-2">
-              <HiAcademicCap className="h-5 w-5 text-green-600" />
-              <h2 className="text-lg font-bold text-gray-900">
+          <div className="bg-surface-muted/50 px-5 py-4 border-b border-border">
+            <div className="flex items-center gap-2.5">
+              <GraduationCap className="h-5 w-5 text-primary" />
+              <h2 className="text-lg font-bold font-display text-foreground">
                 Danh sách quiz ({quizzesData?.length || 0})
               </h2>
             </div>
           </div>
 
-          <div className="p-4">
+          <div className="p-5">
             {/* Loading State */}
             {isLoading && (
               <div className="text-center py-8">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-green-500 border-t-transparent mb-3"></div>
-                <p className="text-sm text-gray-600">Đang tải...</p>
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent mb-3"></div>
+                <p className="text-sm text-muted-foreground">Đang tải...</p>
               </div>
             )}
 
             {/* Error State */}
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
-                <p className="text-red-700 text-sm font-medium mb-3">
+              <Alert variant="destructive" className="text-center">
+                <p className="text-sm font-medium mb-3">
                   Không thể tải danh sách quiz
                 </p>
-                <button
+                <Button
+                  variant="destructive"
+                  size="sm"
                   onClick={() => mutate()}
-                  className="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors"
                 >
                   Thử lại
-                </button>
-              </div>
+                </Button>
+              </Alert>
             )}
 
             {/* Quizzes List */}
             {!isLoading && !error && (
               <>
                 {quizzesData && quizzesData.length > 0 ? (
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     {quizzesData.map((quiz, index) => (
-                      <div
+                      <Card
                         key={quiz.id}
-                        className="p-4 bg-gray-50 rounded-lg border border-gray-200 hover:border-green-300 transition-colors"
+                        variant="muted"
+                        className="p-5 border border-border hover:border-primary-pastel transition-colors"
                       >
                         {/* Quiz Header */}
-                        <div className="flex items-start justify-between mb-3 pb-3 border-b border-gray-200">
+                        <div className="flex items-start justify-between mb-3 pb-3 border-b border-border">
                           <div className="flex-1">
-                            <div className="flex items-start gap-2 mb-2">
-                              <div className="w-5 h-5 bg-green-500 text-white text-xs font-bold rounded flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <div className="flex items-start gap-2.5 mb-2">
+                              <div className="w-6 h-6 bg-primary text-white text-xs font-bold rounded-md flex items-center justify-center flex-shrink-0 mt-0.5">
                                 {index + 1}
                               </div>
                               <div className="flex-1">
@@ -909,27 +922,28 @@ const QuizzesLesson = () => {
                                   <MarkdownRenderer
                                     content={quiz.question || ""}
                                     isHtml={false}
-                                    className="prose prose-sm max-w-none text-gray-900 font-semibold"
+                                    className="prose prose-sm max-w-none text-foreground font-semibold"
                                   />
                                 </div>
-                                <span
-                                  className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ${getDifficultyColor(
+                                <Badge
+                                  variant={getDifficultyVariant(
                                     quiz.difficulty_level
-                                  )}`}
+                                  )}
+                                  size="sm"
                                 >
                                   {getDifficultyLabel(quiz.difficulty_level)}
-                                </span>
+                                </Badge>
                               </div>
                             </div>
                             {quiz.explanation && (
-                              <div className="ml-7 mt-2 p-2 bg-blue-50 border-l-2 border-blue-400 rounded text-xs">
-                                <p className="font-semibold text-blue-700 mb-1">
+                              <div className="ml-8 mt-2 p-3 bg-info-bg/50 border-l-2 border-info-border rounded-r-lg text-xs">
+                                <p className="font-semibold text-info-foreground mb-1">
                                   Giải thích:
                                 </p>
                                 <MarkdownRenderer
                                   content={quiz.explanation}
                                   isHtml={false}
-                                  className="prose prose-xs max-w-none text-gray-700"
+                                  className="prose prose-xs max-w-none text-foreground"
                                 />
                               </div>
                             )}
@@ -937,62 +951,62 @@ const QuizzesLesson = () => {
                           <div className="flex items-start gap-1 ml-2">
                             <button
                               onClick={() => handleEditQuiz(quiz)}
-                              className="p-2 hover:bg-blue-50 rounded transition-colors text-blue-600"
+                              className="p-2 text-muted-foreground hover:text-primary hover:bg-primary-light/50 rounded-lg transition-colors"
                               title="Chỉnh sửa"
                             >
-                              <HiPencil className="h-4 w-4" />
+                              <Pencil className="h-4 w-4" />
                             </button>
                             <button
                               onClick={() => handleDeleteQuiz(quiz.id)}
                               disabled={deletingQuiz === quiz.id}
-                              className="p-2 hover:bg-red-50 rounded transition-colors text-red-600 disabled:opacity-50"
+                              className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive-bg rounded-lg transition-colors disabled:opacity-50"
                               title="Xóa"
                             >
-                              <HiTrash className="h-4 w-4" />
+                              <Trash2 className="h-4 w-4" />
                             </button>
                           </div>
                         </div>
                         {/* Options */}
                         <div className="space-y-2">
-                          <p className="text-xs font-semibold text-gray-600 mb-2 ml-7">
+                          <p className="text-xs font-semibold text-muted-foreground mb-2 ml-8">
                             Phương án ({quiz.options.length}):
                           </p>
                           {quiz.options.map((option, index) => (
                             <div
                               key={option.id || index}
-                              className={`p-2 rounded border transition-colors ml-7 ${
+                              className={`p-3 rounded-xl border transition-colors ml-8 ${
                                 option.is_correct
-                                  ? "bg-green-50 border-green-300"
-                                  : "bg-white border-gray-200"
+                                  ? "bg-success-bg/50 border-success-border"
+                                  : "bg-surface border-border"
                               }`}
                             >
-                              <div className="flex items-start gap-2">
+                              <div className="flex items-start gap-2.5">
                                 <div
                                   className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
                                     option.is_correct
-                                      ? "bg-green-500 text-white"
-                                      : "bg-gray-300 text-gray-600"
+                                      ? "bg-success-foreground text-white"
+                                      : "bg-surface-muted text-muted-foreground border border-border"
                                   }`}
                                 >
                                   {option.is_correct ? (
-                                    <HiCheck className="h-3 w-3" />
+                                    <Check className="h-3 w-3" />
                                   ) : (
-                                    <HiX className="h-3 w-3" />
+                                    <X className="h-3 w-3" />
                                   )}
                                 </div>
                                 <div className="flex-1">
                                   <p
                                     className={`text-sm font-medium ${
                                       option.is_correct
-                                        ? "text-green-900"
-                                        : "text-gray-900"
+                                        ? "text-success-foreground"
+                                        : "text-foreground"
                                     }`}
                                   >
                                     {option.text}
                                   </p>
                                   {option.feedback && (
-                                    <p className="text-xs text-gray-600 mt-1">
-                                      <span className="font-medium">
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                      <span className="font-medium text-foreground">
                                         Phản hồi:{" "}
                                       </span>
                                       {option.feedback}
@@ -1003,24 +1017,20 @@ const QuizzesLesson = () => {
                             </div>
                           ))}
                         </div>
-                      </div>
+                      </Card>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8">
-                    <HiAcademicCap className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-600 font-medium text-sm">
-                      Chưa có quiz nào
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Hãy tạo quiz mới để bắt đầu
-                    </p>
-                  </div>
+                  <EmptyState
+                    icon={<GraduationCap className="h-8 w-8" />}
+                    title="Chưa có quiz nào"
+                    description="Hãy tạo quiz mới để bắt đầu"
+                  />
                 )}
               </>
             )}
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   );

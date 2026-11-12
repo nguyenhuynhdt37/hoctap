@@ -7,6 +7,7 @@ interface RoleBucket {
 }
 
 interface RealtimeNotiState {
+  latestLiveNotification: { role: string; notification: Notification } | null;
   userId: string | null;
   activeRole: string | null;
 
@@ -21,6 +22,7 @@ interface RealtimeNotiState {
 }
 
 export const useRealtimeNotiStore = create<RealtimeNotiState>((set, get) => ({
+  latestLiveNotification: null,
   userId: null,
   activeRole: null,
   buckets: {},
@@ -33,6 +35,7 @@ export const useRealtimeNotiStore = create<RealtimeNotiState>((set, get) => ({
     if (state.userId !== userId) {
       set({
         userId,
+        latestLiveNotification: null,
         activeRole: role,
         buckets: {
           [role]: { top10: [], unread: 0 },
@@ -93,6 +96,7 @@ export const useRealtimeNotiStore = create<RealtimeNotiState>((set, get) => ({
     if (bucket.top10.some((n) => n.id === noti.id)) return;
 
     set({
+      latestLiveNotification: { role, notification: noti },
       buckets: {
         ...state.buckets,
         [role]: {
@@ -109,7 +113,7 @@ export const useRealtimeNotiStore = create<RealtimeNotiState>((set, get) => ({
     if (!bucket) return;
 
     const updatedTop10 = bucket.top10.map((n) =>
-      n.id === id ? { ...n, is_read: true } : n
+      n.id === id ? { ...n, is_read: true } : n,
     );
 
     const newUnread = Math.max(0, bucket.unread - 1);
@@ -149,6 +153,7 @@ export const useRealtimeNotiStore = create<RealtimeNotiState>((set, get) => ({
   clearAll: () =>
     set({
       userId: null,
+      latestLiveNotification: null,
       activeRole: null,
       buckets: {},
     }),

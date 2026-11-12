@@ -100,7 +100,7 @@ export default function ResizablePanel({
       <div
         ref={panelRef}
         className="relative flex-shrink-0 bg-surface border-l border-border"
-        style={{ width }}
+        style={{ width, maxWidth: "100vw" }}
       >
         {/* Resize handle */}
         <div

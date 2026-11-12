@@ -20,6 +20,7 @@ from app.db.models.database import (
     CourseEnrollments,
     Courses,
     Lessons,
+    LessonChunks,
     TutorChatMessages,
     TutorChatThreads,
 )
@@ -239,6 +240,21 @@ class TutorChatService:
             "course_id": str(thread.course_id),
             "lesson_id": str(thread.lesson_id),
         }
+
+    async def can_read_lesson(self, user_id: uuid.UUID, lesson_id: uuid.UUID) -> bool:
+        """Report actual lesson evidence, without an embedding/provider request."""
+        info = await self.validate_lesson_access(user_id, lesson_id)
+        # Quiz/code prompts are read directly rather than through vector search.
+        if info["lesson"].lesson_type in {"quiz", "code"}:
+            return True
+        return bool(await self.db.scalar(
+            select(select(LessonChunks.id).where(
+                LessonChunks.lesson_id == lesson_id,
+                LessonChunks.embedding.is_not(None),
+                LessonChunks.text_.is_not(None),
+                func.length(func.trim(LessonChunks.text_)) > 0,
+            ).exists())
+        ))
 
     async def get_thread_by_id(
         self,

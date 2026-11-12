@@ -1,3 +1,4 @@
+import { prepareImageUpload } from "@/lib/prepare-image-upload";
 import api from "@/lib/utils/fetcher/client/axios";
 
 export async function uploadFile(
@@ -6,7 +7,7 @@ export async function uploadFile(
   bucket?: string
 ): Promise<string> {
   const formData = new FormData();
-  formData.append("file", file);
+  formData.append("file", await prepareImageUpload(file, "editor"));
   if (folder) formData.append("folder", folder);
   if (bucket) formData.append("bucket", bucket);
 

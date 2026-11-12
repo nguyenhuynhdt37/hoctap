@@ -2,7 +2,15 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { HiX } from "react-icons/hi";
-import ChatSql from "./index";
+import dynamic from "next/dynamic";
+
+const ChatSql = dynamic(() => import("./index"), {
+  loading: () => (
+    <div role="status" className="flex h-full items-center justify-center rounded-2xl bg-surface text-sm text-muted-foreground">
+      Đang mở trợ lý…
+    </div>
+  ),
+});
 
 export default function FloatingChatButton() {
   const [isOpen, setIsOpen] = useState(false);

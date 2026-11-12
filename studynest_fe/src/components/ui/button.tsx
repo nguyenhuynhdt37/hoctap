@@ -133,11 +133,12 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             </span>
           )
         )}
-        {isLoading && loadingText ? (
-          <span>{loadingText}</span>
-        ) : (
-          children
-        )}
+        {/* Keep the label element stable when loading changes. Translation
+            tools may wrap its text nodes; React can safely replace the label's
+            content without removing a moved text node from the button. */}
+        <span className="inline-flex min-w-0 items-center justify-center gap-2">
+          {isLoading && loadingText ? loadingText : children}
+        </span>
         {!isLoading && rightIcon && (
           <span className="inline-flex shrink-0 items-center" aria-hidden="true">
             {rightIcon}

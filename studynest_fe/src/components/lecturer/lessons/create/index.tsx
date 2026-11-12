@@ -1,7 +1,8 @@
 "use client";
 
+import { Alert, Card } from "@/components/ui";
+import { ChevronRight, Code, HelpCircle, Video } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { HiCode, HiQuestionMarkCircle, HiVideoCamera } from "react-icons/hi";
 
 const LessonsCreate = () => {
   const router = useRouter();
@@ -14,25 +15,22 @@ const LessonsCreate = () => {
       id: "video",
       title: "Bài học Video",
       description: "Tạo bài học bằng video từ YouTube hoặc upload file video",
-      icon: HiVideoCamera,
-      color: "from-green-500 to-emerald-600",
-      hoverColor: "hover:from-green-600 hover:to-emerald-700",
+      icon: Video,
+      iconBg: "bg-primary-light border border-primary-pastel text-primary",
     },
     {
       id: "code",
       title: "Bài học Code",
       description: "Tạo bài học lập trình với code editor và test cases",
-      icon: HiCode,
-      color: "from-green-500 to-emerald-600",
-      hoverColor: "hover:from-green-600 hover:to-emerald-700",
+      icon: Code,
+      iconBg: "bg-info-bg border border-info-border text-info-foreground",
     },
     {
       id: "quiz",
       title: "Bài Quiz",
       description: "Tạo câu hỏi trắc nghiệm để kiểm tra kiến thức",
-      icon: HiQuestionMarkCircle,
-      color: "from-green-500 to-emerald-600",
-      hoverColor: "hover:from-green-600 hover:to-emerald-700",
+      icon: HelpCircle,
+      iconBg: "bg-warning-bg border border-warning-border text-warning-foreground",
     },
   ];
 
@@ -58,28 +56,26 @@ const LessonsCreate = () => {
 
   if (!sectionId || !courseId) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         <div className="max-w-4xl mx-auto px-4 py-16">
-          <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-            <p className="text-red-800 font-medium">
-              Thiếu thông tin section_id hoặc course_id. Vui lòng quay lại trang
-              trước.
-            </p>
-          </div>
+          <Alert variant="destructive" title="Thiếu thông tin">
+            Thiếu thông tin section_id hoặc course_id. Vui lòng quay lại trang
+            trước.
+          </Alert>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-black text-gray-900 mb-2">
+          <h1 className="font-display text-3xl font-bold tracking-tight text-foreground mb-2">
             Tạo bài học mới
           </h1>
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             Chọn loại bài học bạn muốn tạo cho khóa học
           </p>
         </div>
@@ -92,34 +88,22 @@ const LessonsCreate = () => {
               <button
                 key={type.id}
                 onClick={() => handleSelectType(type.id)}
-                className={`bg-white rounded-xl border border-gray-200 p-6 text-left transition-all duration-300 hover:shadow-lg hover:scale-105 group cursor-pointer`}
+                className="bg-surface rounded-2xl border border-border p-6 text-left transition-all duration-300 hover:shadow-md hover:border-primary-pastel hover:-translate-y-0.5 group cursor-pointer"
               >
                 <div
-                  className={`w-14 h-14 bg-gradient-to-br ${type.color} ${type.hoverColor} rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-md`}
+                  className={`w-14 h-14 ${type.iconBg} rounded-xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform duration-300`}
                 >
-                  <Icon className="h-7 w-7 text-white" />
+                  <Icon className="h-7 w-7" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                <h3 className="text-xl font-bold text-foreground mb-2">
                   {type.title}
                 </h3>
-                <p className="text-sm text-gray-600 leading-relaxed">
+                <p className="text-sm text-muted-foreground leading-relaxed">
                   {type.description}
                 </p>
-                <div className="mt-4 flex items-center text-green-600 font-medium text-sm group-hover:translate-x-1 transition-transform">
+                <div className="mt-4 flex items-center text-primary font-medium text-sm group-hover:translate-x-1 transition-transform">
                   <span>Chọn loại này</span>
-                  <svg
-                    className="w-4 h-4 ml-1"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 5l7 7-7 7"
-                    />
-                  </svg>
+                  <ChevronRight className="w-4 h-4 ml-1" />
                 </div>
               </button>
             );
@@ -127,23 +111,23 @@ const LessonsCreate = () => {
         </div>
 
         {/* Info Box */}
-        <div className="mt-8 bg-green-50 border border-green-200 rounded-xl p-6">
+        <Card variant="pastel-blue" className="mt-8 p-6">
           <div className="flex items-start gap-3">
-            <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+            <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
               <span className="text-white text-xs font-bold">i</span>
             </div>
             <div>
-              <h4 className="font-semibold text-green-900 mb-1">
+              <h4 className="font-semibold text-foreground mb-1">
                 Thông tin quan trọng
               </h4>
-              <p className="text-sm text-green-800 leading-relaxed">
+              <p className="text-sm text-muted-foreground leading-relaxed">
                 Mỗi loại bài học có các tính năng và yêu cầu khác nhau. Bạn có
                 thể tạo nhiều loại bài học khác nhau trong cùng một khóa học để
                 tạo trải nghiệm học tập phong phú cho học viên.
               </p>
             </div>
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   );

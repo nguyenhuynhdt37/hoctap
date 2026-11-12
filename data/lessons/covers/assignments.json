@@ -1,0 +1,117 @@
+{
+  "database": "studynest",
+  "committed": true,
+  "completed_at": "2026-11-12T10:38:52.696095+00:00",
+  "assignments": [
+    {
+      "course_id": "f59f1e47-6f7d-4671-a7f8-ed4f442faf95",
+      "title": "Tiếng Việt lớp 1 · Học vần cùng VTV7",
+      "subject": "tieng-viet",
+      "asset": "tieng-viet-may-may-v1.jpg",
+      "sha256": "5cfcd855485c37e76d855b983d4155ee6510725c44f558ef8bcdc0c673271391",
+      "previous_thumbnail": null,
+      "key": "public/courses/f59f1e47-6f7d-4671-a7f8-ed4f442faf95/thumbnails/0f98416d51d14c1cac6120c66f0357f2-tieng-viet-may-may-v1.jpg",
+      "thumbnail_url": "/api/storage/files/public/courses/f59f1e47-6f7d-4671-a7f8-ed4f442faf95/thumbnails/0f98416d51d14c1cac6120c66f0357f2-tieng-viet-may-may-v1.jpg"
+    },
+    {
+      "course_id": "7962cb7c-8610-4a1d-a7ab-8f005d4ffbfe",
+      "title": "Toán lớp 1 · Bộ bài giảng VTV7",
+      "subject": "toan",
+      "asset": "toan-may-may-v1.jpg",
+      "sha256": "fac00ecc5a937f8e45dfd08907a6fb116edc2166d66d975e328bc3147c47b773",
+      "previous_thumbnail": null,
+      "key": "public/courses/7962cb7c-8610-4a1d-a7ab-8f005d4ffbfe/thumbnails/2b850f1786444db5936363a7e0c032b7-toan-may-may-v1.jpg",
+      "thumbnail_url": "/api/storage/files/public/courses/7962cb7c-8610-4a1d-a7ab-8f005d4ffbfe/thumbnails/2b850f1786444db5936363a7e0c032b7-toan-may-may-v1.jpg"
+    },
+    {
+      "course_id": "085140c0-b84f-40fd-916f-466f302b5462",
+      "title": "4 chuyên đề Hóa học THPT · VTV7 2021 (tư liệu)",
+      "subject": "hoa-hoc",
+      "asset": "hoa-hoc-may-may-v1.jpg",
+      "sha256": "9eac13acfd9bbe9e698da622673de3c4a89410c140e401c6510c26a3b49bb9fa",
+      "previous_thumbnail": null,
+      "key": "public/courses/085140c0-b84f-40fd-916f-466f302b5462/thumbnails/baa249d087c24849ad0e689826f3cff8-hoa-hoc-may-may-v1.jpg",
+      "thumbnail_url": "/api/storage/files/public/courses/085140c0-b84f-40fd-916f-466f302b5462/thumbnails/baa249d087c24849ad0e689826f3cff8-hoa-hoc-may-may-v1.jpg"
+    },
+    {
+      "course_id": "3e04125f-22f2-479d-81da-4f993f6d157e",
+      "title": "Toán lớp 2 · Bộ bài giảng VTV7",
+      "subject": "toan",
+      "asset": "toan-may-may-v1.jpg",
+      "sha256": "fac00ecc5a937f8e45dfd08907a6fb116edc2166d66d975e328bc3147c47b773",
+      "previous_thumbnail": null,
+      "key": "public/courses/3e04125f-22f2-479d-81da-4f993f6d157e/thumbnails/9aca926961fa4d428f12cb49ad80d15d-toan-may-may-v1.jpg",
+      "thumbnail_url": "/api/storage/files/public/courses/3e04125f-22f2-479d-81da-4f993f6d157e/thumbnails/9aca926961fa4d428f12cb49ad80d15d-toan-may-may-v1.jpg"
+    },
+    {
+      "course_id": "4ab83ddd-f588-4fda-ae5d-a726640913a1",
+      "title": "5 chuyên đề Địa lí THPT · VTV7 2021 (tư liệu)",
+      "subject": "dia-ly",
+      "asset": "dia-ly-may-may-v1.jpg",
+      "sha256": "f53dadae7f37cb7abc10be0bf3db565dc7509aff71b57747f0c38da682d4805f",
+      "previous_thumbnail": null,
+      "key": "public/courses/4ab83ddd-f588-4fda-ae5d-a726640913a1/thumbnails/9dc746fae22c47979022b71c3246dbd2-dia-ly-may-may-v1.jpg",
+      "thumbnail_url": "/api/storage/files/public/courses/4ab83ddd-f588-4fda-ae5d-a726640913a1/thumbnails/9dc746fae22c47979022b71c3246dbd2-dia-ly-may-may-v1.jpg"
+    },
+    {
+      "course_id": "54406315-fd74-4bea-b548-d43da789c753",
+      "title": "Toán ôn thi vào lớp 10 · VTV7 2023 (tư liệu)",
+      "subject": "toan",
+      "asset": "toan-may-may-v1.jpg",
+      "sha256": "fac00ecc5a937f8e45dfd08907a6fb116edc2166d66d975e328bc3147c47b773",
+      "previous_thumbnail": null,
+      "key": "public/courses/54406315-fd74-4bea-b548-d43da789c753/thumbnails/dce908e46e9f400b80ddfcc9181dc743-toan-may-may-v1.jpg",
+      "thumbnail_url": "/api/storage/files/public/courses/54406315-fd74-4bea-b548-d43da789c753/thumbnails/dce908e46e9f400b80ddfcc9181dc743-toan-may-may-v1.jpg"
+    },
+    {
+      "course_id": "6a98e6ce-344f-4fd7-b637-65126873eda5",
+      "title": "Tiếng Việt lớp 2 · Bộ bài giảng VTV7",
+      "subject": "tieng-viet",
+      "asset": "tieng-viet-may-may-v1.jpg",
+      "sha256": "5cfcd855485c37e76d855b983d4155ee6510725c44f558ef8bcdc0c673271391",
+      "previous_thumbnail": null,
+      "key": "public/courses/6a98e6ce-344f-4fd7-b637-65126873eda5/thumbnails/1384bdb3c648436db216d9b17875558a-tieng-viet-may-may-v1.jpg",
+      "thumbnail_url": "/api/storage/files/public/courses/6a98e6ce-344f-4fd7-b637-65126873eda5/thumbnails/1384bdb3c648436db216d9b17875558a-tieng-viet-may-may-v1.jpg"
+    },
+    {
+      "course_id": "9082ab04-1df7-4cf5-9196-528c8af758d2",
+      "title": "4 chuyên đề Sinh học THPT · VTV7 2021 (tư liệu)",
+      "subject": "sinh-hoc",
+      "asset": "sinh-hoc-may-may-v1.jpg",
+      "sha256": "c8e09d8cf611284a9dc9bb5149688ca052381ad7c7440cb0eeed2f50c3ebf076",
+      "previous_thumbnail": null,
+      "key": "public/courses/9082ab04-1df7-4cf5-9196-528c8af758d2/thumbnails/d0fcaa7c0e0d448396925a3fbf2e2ea2-sinh-hoc-may-may-v1.jpg",
+      "thumbnail_url": "/api/storage/files/public/courses/9082ab04-1df7-4cf5-9196-528c8af758d2/thumbnails/d0fcaa7c0e0d448396925a3fbf2e2ea2-sinh-hoc-may-may-v1.jpg"
+    },
+    {
+      "course_id": "a0ee076e-f136-439a-8391-bbb4443f762c",
+      "title": "Ôn tập Lịch sử THPT · Sơ đồ tư duy VTV7 (tư liệu)",
+      "subject": "lich-su",
+      "asset": "lich-su-may-may-v1.jpg",
+      "sha256": "956ab2d5dc05cd01b32f0a2d36cab9d29ed499015e94428e9f5ae29b96cd0be0",
+      "previous_thumbnail": null,
+      "key": "public/courses/a0ee076e-f136-439a-8391-bbb4443f762c/thumbnails/78882f2b99d0419bb5de007ad100f5d9-lich-su-may-may-v1.jpg",
+      "thumbnail_url": "/api/storage/files/public/courses/a0ee076e-f136-439a-8391-bbb4443f762c/thumbnails/78882f2b99d0419bb5de007ad100f5d9-lich-su-may-may-v1.jpg"
+    },
+    {
+      "course_id": "a69a9f5d-57cc-4dd5-905c-fe38dbd23205",
+      "title": "Ngữ văn ôn thi vào lớp 10 · VTV7 2023 (tư liệu)",
+      "subject": "ngu-van",
+      "asset": "ngu-van-may-may-v1.jpg",
+      "sha256": "c2defea731dafc27f2edd09854109d75024b870982f934c368256fea6bd23185",
+      "previous_thumbnail": null,
+      "key": "public/courses/a69a9f5d-57cc-4dd5-905c-fe38dbd23205/thumbnails/def20b8861a04bc690856153ec098ae2-ngu-van-may-may-v1.jpg",
+      "thumbnail_url": "/api/storage/files/public/courses/a69a9f5d-57cc-4dd5-905c-fe38dbd23205/thumbnails/def20b8861a04bc690856153ec098ae2-ngu-van-may-may-v1.jpg"
+    },
+    {
+      "course_id": "abb03117-5a67-4e1f-a96c-056a857ead61",
+      "title": "Ôn tập Vật lí THPT · Sơ đồ tư duy VTV7 (tư liệu)",
+      "subject": "vat-ly",
+      "asset": "vat-ly-may-may-v1.jpg",
+      "sha256": "3aa94c140ae999f21a7be3fdea54bc8944cab1c2c45a5d727bacecf6519e4184",
+      "previous_thumbnail": null,
+      "key": "public/courses/abb03117-5a67-4e1f-a96c-056a857ead61/thumbnails/3b4992862f8b48fcad52f1af066eab0d-vat-ly-may-may-v1.jpg",
+      "thumbnail_url": "/api/storage/files/public/courses/abb03117-5a67-4e1f-a96c-056a857ead61/thumbnails/3b4992862f8b48fcad52f1af066eab0d-vat-ly-may-may-v1.jpg"
+    }
+  ]
+}

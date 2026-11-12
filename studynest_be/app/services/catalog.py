@@ -287,17 +287,15 @@ class CatalogService:
         await self.db.commit()
         return {"message": "Đã cập nhật môn theo lớp"}
 
-    async def provider_permission(
-        self, provider_id, user_id, roles=("owner", "manager", "instructor", "editor")
-    ):
+    async def provider_permission(self, provider_id, user_id):
         provider = await self.db.get(Provider, provider_id)
         membership = await self.db.get(ProviderMember, (provider_id, user_id))
         if (
             not provider
             or not provider.is_active
+            or provider.verification_status != "verified"
             or not membership
             or membership.status != "active"
-            or membership.role not in roles
         ):
             raise HTTPException(
                 403, "Bạn không có quyền quản lý khóa học của đơn vị này"
@@ -427,6 +425,9 @@ class CatalogService:
                 "description",
                 "logo_url",
                 "banner_url",
+                "province",
+                "address",
+                "website_url",
                 "verification_status",
             )
         }

@@ -22,7 +22,7 @@ export interface LecturerCourse {
     id: string;
     name: string;
     slug: string;
-  };
+  } | null;
   created_at: string;
   updated_at: string;
 }
@@ -83,7 +83,7 @@ export interface CourseDetailResponse {
     id: string;
     name: string;
     slug: string;
-  };
+  } | null;
   topic: {
     id: string;
     name: string;

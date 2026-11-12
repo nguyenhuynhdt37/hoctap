@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useCallback, useEffect, useRef, useState } from "react";
-import { HiChat, HiX, HiMenuAlt2, HiPlus } from "react-icons/hi";
+import { HiChat, HiX, HiMenuAlt2, HiPlus, HiMicrophone } from "react-icons/hi";
 import {
   TutorMessage,
   TutorScope,
@@ -11,6 +11,8 @@ import {
   MessageSource,
 } from "@/types/user/tutor-chat";
 import api from "@/lib/utils/fetcher/client/axios";
+import VoiceDialog from "./voice/voice-dialog";
+import { Alert } from "@/components/ui/states";
 
 import MessageBubble from "./message-bubble";
 import MessageInput from "./message-input";
@@ -25,8 +27,13 @@ interface TutorChatPanelProps {
   sectionId?: string;
   courseTitle: string;
   onSeekToTime?: (seconds: number) => void;
+  onNavigateToLesson?: (lessonId: string) => void;
   onClose?: () => void;
+  accessToken?: string;
 }
+
+// Document-memory only: closing/reopening or SPA navigation keeps this set; F5 resets it.
+const shownUnreadableLessonNotices = new Set<string>();
 
 // ========== MAIN COMPONENT ==========
 
@@ -34,9 +41,12 @@ function TutorChatPanel({
   lessonId,
   lessonTitle,
   onSeekToTime,
+  onNavigateToLesson,
   onClose,
+  accessToken,
 }: TutorChatPanelProps) {
   // State cơ bản
+  const [voiceOpen, setVoiceOpen] = useState(false);
   const [messages, setMessages] = useState<TutorMessage[]>([]);
   const [scope, setScope] = useState<TutorScope>("lesson");
   const [showHistory, setShowHistory] = useState(false);
@@ -45,6 +55,7 @@ function TutorChatPanel({
   const [isFetchingHistory, setIsFetchingHistory] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [showUnreadableNotice, setShowUnreadableNotice] = useState(false);
 
   // ========== API FETCH MESSAGES ==========
 
@@ -87,6 +98,8 @@ function TutorChatPanel({
     setMessages([]);
     setThreadId(undefined);
     setScope("lesson");
+    setShowUnreadableNotice(false);
+    let cancelled = false;
 
     // 2. Fetch active thread
     if (!lessonId) return;
@@ -96,6 +109,11 @@ function TutorChatPanel({
         const res = await api.get<ActiveThreadResponse>(
           `/tutor-chat/lessons/${lessonId}/threads/active`
         );
+        if (cancelled) return;
+        if (res.data.can_read_lesson === false && !shownUnreadableLessonNotices.has(lessonId)) {
+          shownUnreadableLessonNotices.add(lessonId);
+          setShowUnreadableNotice(true);
+        }
         if (res.data.thread) {
           setThreadId(res.data.thread.id);
           setScope(res.data.thread.scope);
@@ -106,6 +124,7 @@ function TutorChatPanel({
     };
 
     fetchActiveThread();
+    return () => { cancelled = true; };
   }, [lessonId]);
 
   // Auto scroll
@@ -156,56 +175,25 @@ function TutorChatPanel({
   // Click source trong tin nhắn
   const handleSourceClick = useCallback(
     (source: MessageSource) => {
-      switch (source.source_type) {
-        case "video":
-          // Nếu video thuộc lesson hiện tại và có timestamp -> seek
-          if (
-            source.lesson_id === lessonId &&
-            source.timestamp_seconds !== undefined
-          ) {
-            onSeekToTime?.(source.timestamp_seconds);
-          } else if (source.lesson_id && source.lesson_id !== lessonId) {
-            // Video thuộc bài khác -> thông báo
-            alert(
-              `⚠️ Video này thuộc bài học "${
-                source.lesson_title || "khác"
-              }". Hiện tại không thể seek tới thời điểm cụ thể.`
-            );
+      if (source.source_type === "resource" && source.resource_url) {
+        // Do not execute arbitrary schemes in historical/model-generated URLs.
+        try {
+          const url = new URL(source.resource_url, window.location.origin);
+          if (["http:", "https:"].includes(url.protocol)) {
+            window.open(url.href, "_blank", "noopener,noreferrer");
           }
-          break;
-
-        case "resource":
-          if (source.resource_url) {
-            window.open(source.resource_url, "_blank");
-          }
-          break;
-
-        case "code":
-          // Có thể mở modal hiển thị code hoặc scroll tới phần code
-          if (source.code_content) {
-            // Tạm thời alert, sau này có thể mở modal
-            console.log("Code content:", source.code_content);
-          }
-          break;
-
-        case "quiz":
-          // Nếu có quizz_option_id -> điều hướng đến câu hỏi đó
-          if (source.quizz_option_id) {
-            // Emit event hoặc callback để navigate đến quiz
-            console.log("Navigate to quiz option:", source.quizz_option_id);
-            // TODO: Implement navigation to specific quiz question
-            if (source.lesson_id && source.lesson_id !== lessonId) {
-              alert(
-                `⚠️ Quiz này thuộc bài học "${
-                  source.lesson_title || "khác"
-                }". Vui lòng chuyển đến bài học đó để xem.`
-              );
-            }
-          }
-          break;
+        } catch { /* malformed historical URL */ }
+        return;
+      }
+      if (!source.lesson_id) return;
+      if (source.lesson_id === lessonId && source.source_type === "video"
+          && source.timestamp_seconds !== undefined) {
+        onSeekToTime?.(source.timestamp_seconds);
+      } else {
+        onNavigateToLesson?.(source.lesson_id);
       }
     },
-    [onSeekToTime, lessonId]
+    [onSeekToTime, onNavigateToLesson, lessonId]
   );
 
   // Chọn thread từ history
@@ -262,6 +250,10 @@ function TutorChatPanel({
         </div>
       )}
 
+      {voiceOpen && <VoiceDialog lessonId={lessonId} lessonTitle={lessonTitle} accessToken={accessToken}
+        onSourceClick={handleSourceClick}
+        onClose={(id) => { setVoiceOpen(false); if (id) { setThreadId(id); void fetchMessages(id); } }} />}
+
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
@@ -292,6 +284,10 @@ function TutorChatPanel({
             </div>
           </div>
           <div className="flex items-center gap-1">
+            <button type="button" onClick={() => setVoiceOpen(true)} title="Trò chuyện bằng giọng nói" aria-label="Mở voice Mây Mây"
+              className="rounded-lg p-2 text-primary transition-colors hover:bg-primary-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <HiMicrophone className="h-5 w-5" />
+            </button>
             <button
               onClick={() => setShowHistory(true)}
               className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary-light rounded-lg"
@@ -308,6 +304,17 @@ function TutorChatPanel({
             )}
           </div>
         </header>
+
+        {showUnreadableNotice && (
+          <Alert
+            variant="info"
+            role="status"
+            className="mx-3 mt-3 rounded-xl px-3 py-2 text-xs"
+            onClose={() => setShowUnreadableNotice(false)}
+          >
+            Mây Mây chưa hỗ trợ đọc nội dung bài giảng này. Bạn vẫn có thể đặt câu hỏi về kiến thức chung hoặc gửi nội dung cần giải thích.
+          </Alert>
+        )}
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-4 py-4">

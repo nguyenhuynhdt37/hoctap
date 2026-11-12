@@ -52,7 +52,7 @@ export default function InstructorSection({
               {instructor.fullname}
             </Link>
             <p className="text-xs text-muted-foreground">
-              Giảng viên được chứng nhận trên nền tảng Mây Mây
+              Giảng viên trên nền tảng Mây Mây
             </p>
           </div>
 

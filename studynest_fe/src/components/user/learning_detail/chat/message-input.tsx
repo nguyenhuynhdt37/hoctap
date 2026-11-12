@@ -1,5 +1,7 @@
 "use client";
 
+import { prepareImageUpload } from "@/lib/prepare-image-upload";
+import toast from "react-hot-toast";
 import { memo, useCallback, useRef, useState, useEffect } from "react";
 import { HiPaperAirplane, HiPhotograph, HiX } from "react-icons/hi";
 import {
@@ -103,7 +105,7 @@ function MessageInput({
         const file = imageFiles[index];
         try {
           const form = new FormData();
-          form.append("file", file);
+          form.append("file", await prepareImageUpload(file, "chat"));
           const res = await api.post<UploadedImage>(
             "/tutor-chat/upload/image",
             form,
@@ -119,6 +121,7 @@ function MessageInput({
           );
         } catch (err) {
           console.error("Upload failed:", err);
+          toast.error(err instanceof Error ? err.message : "Không tải được ảnh. Vui lòng thử lại.");
           // Remove failed image and cleanup URL
           setLocalImages((prev) => {
             const target = prev.find((i) => i.tempId === item.tempId);

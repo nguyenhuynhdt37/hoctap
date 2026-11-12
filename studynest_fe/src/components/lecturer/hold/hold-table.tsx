@@ -1,11 +1,13 @@
 "use client";
 
+import { Badge, Card } from "@/components/ui";
+import type { BadgeVariant } from "@/components/ui/badge";
 import { getImageUrl } from "@/lib/utils/helpers/image";
 import { HoldEarningsItem, HoldEarningsQuery } from "@/types/lecturer/hold";
+import { AlertCircle, ArrowDown, ArrowUp } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import { HiArrowDown, HiArrowUp, HiExclamationCircle } from "react-icons/hi";
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("vi-VN", {
@@ -41,14 +43,14 @@ const getStatusLabel = (status: "holding" | "freeze") => {
   }
 };
 
-const getStatusBadgeClass = (status: "holding" | "freeze") => {
+const getStatusVariant = (status: "holding" | "freeze"): BadgeVariant => {
   switch (status) {
     case "holding":
-      return "bg-yellow-100 text-yellow-700 border-yellow-300";
+      return "warning";
     case "freeze":
-      return "bg-red-100 text-red-700 border-red-300";
+      return "destructive";
     default:
-      return "bg-gray-100 text-gray-700 border-gray-300";
+      return "neutral";
   }
 };
 
@@ -72,23 +74,23 @@ const getRefundStatusLabel = (status: string | null) => {
   }
 };
 
-const getRefundStatusBadgeClass = (status: string | null) => {
-  if (!status) return "bg-gray-100 text-gray-700 border-gray-300";
+const getRefundStatusVariant = (status: string | null): BadgeVariant => {
+  if (!status) return "neutral";
   switch (status) {
     case "requested":
-      return "bg-yellow-100 text-yellow-700 border-yellow-300";
+      return "warning";
     case "instructor_approved":
-      return "bg-blue-100 text-blue-700 border-blue-300";
+      return "info";
     case "instructor_rejected":
-      return "bg-red-100 text-red-700 border-red-300";
+      return "destructive";
     case "admin_approved":
-      return "bg-green-100 text-green-700 border-green-300";
+      return "success";
     case "admin_rejected":
-      return "bg-red-100 text-red-700 border-red-300";
+      return "destructive";
     case "refunded":
-      return "bg-green-100 text-green-700 border-green-300";
+      return "success";
     default:
-      return "bg-gray-100 text-gray-700 border-gray-300";
+      return "neutral";
   }
 };
 
@@ -132,25 +134,30 @@ export function HoldEarningsTable({
   ];
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+    <Card variant="surface" className="overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-gradient-to-r from-green-50 to-emerald-50">
+          <thead className="bg-background border-b border-border">
             <tr>
               {columns.map((column) => (
                 <th
                   key={column.key}
-                  className="px-6 py-4 text-left text-sm font-semibold text-gray-700"
+                  className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground"
                 >
                   {column.sortable ? (
                     <button
+                      type="button"
                       onClick={() => handleSort(column.key)}
-                      className="flex items-center space-x-2 hover:text-green-600 transition-colors duration-200"
+                      className="flex items-center gap-1.5 hover:text-primary transition-colors"
                     >
                       <span>{column.title}</span>
                       {sortBy === column.key && (
-                        <span className="text-green-600 font-bold">
-                          {orderDir === "asc" ? "↑" : "↓"}
+                        <span className="text-primary inline-flex">
+                          {orderDir === "asc" ? (
+                            <ArrowUp className="w-3.5 h-3.5" />
+                          ) : (
+                            <ArrowDown className="w-3.5 h-3.5" />
+                          )}
                         </span>
                       )}
                     </button>
@@ -161,12 +168,12 @@ export function HoldEarningsTable({
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200 bg-white">
+          <tbody className="divide-y divide-border bg-surface">
             {data.length === 0 ? (
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="px-6 py-12 text-center text-gray-500"
+                  className="px-6 py-12 text-center text-sm text-muted-foreground"
                 >
                   Không có dữ liệu
                 </td>
@@ -179,7 +186,7 @@ export function HoldEarningsTable({
           </tbody>
         </table>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -195,11 +202,11 @@ function HoldEarningsRow({ item }: { item: HoldEarningsItem }) {
     : null;
 
   return (
-    <tr className="hover:bg-gray-50 transition-colors duration-200">
+    <tr className="hover:bg-background/70 transition-colors">
       {/* Course */}
       <td className="px-6 py-4">
         <div className="flex items-center gap-3">
-          <div className="relative w-16 h-12 shrink-0 rounded-lg overflow-hidden bg-gray-100">
+          <div className="relative w-16 h-12 shrink-0 rounded-xl overflow-hidden bg-background border border-border">
             {thumbnailSrc && !thumbnailError ? (
               <Image
                 src={thumbnailSrc}
@@ -210,19 +217,19 @@ function HoldEarningsRow({ item }: { item: HoldEarningsItem }) {
                 unoptimized
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                <span className="text-gray-400 text-xs">No image</span>
+              <div className="w-full h-full flex items-center justify-center bg-primary-light/50">
+                <span className="text-muted-foreground text-xs">No image</span>
               </div>
             )}
           </div>
           <div className="flex-1 min-w-0">
             <Link
               href={`/lecturer/courses/${item.course.course_id}`}
-              className="text-sm font-semibold text-gray-900 hover:text-green-600 transition-colors line-clamp-2"
+              className="text-sm font-semibold text-foreground hover:text-primary transition-colors line-clamp-2"
             >
               {item.course.title}
             </Link>
-            <div className="text-xs text-gray-500 mt-0.5 font-mono">
+            <div className="text-xs text-muted-foreground mt-0.5 font-mono">
               {item.course.course_id.slice(0, 8)}...
             </div>
           </div>
@@ -231,19 +238,19 @@ function HoldEarningsRow({ item }: { item: HoldEarningsItem }) {
 
       {/* Student */}
       <td className="px-6 py-4">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           {avatarSrc && !avatarError ? (
             <Image
               src={avatarSrc}
               alt={item.student.fullname}
               width={32}
               height={32}
-              className="rounded-full object-cover object-center aspect-square border border-green-200"
+              className="rounded-full object-cover object-center aspect-square border border-border"
               onError={() => setAvatarError(true)}
               unoptimized
             />
           ) : (
-            <div className="w-8 h-8 rounded-full bg-green-100 text-green-700 text-xs font-bold flex items-center justify-center border border-green-200">
+            <div className="w-8 h-8 rounded-full bg-primary-light text-primary text-xs font-bold flex items-center justify-center border border-primary-pastel">
               {item.student.fullname
                 .split(" ")
                 .map((n) => n[0])
@@ -253,10 +260,10 @@ function HoldEarningsRow({ item }: { item: HoldEarningsItem }) {
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium text-gray-900 line-clamp-1">
+            <div className="text-sm font-medium text-foreground line-clamp-1">
               {item.student.fullname}
             </div>
-            <div className="text-xs text-gray-500 font-mono">
+            <div className="text-xs text-muted-foreground font-mono">
               {item.student.id.slice(0, 8)}...
             </div>
           </div>
@@ -265,25 +272,21 @@ function HoldEarningsRow({ item }: { item: HoldEarningsItem }) {
 
       {/* Amount */}
       <td className="px-6 py-4">
-        <div className="text-lg font-bold text-green-600">
+        <div className="text-base font-bold text-primary tabular-nums">
           {formatCurrency(item.amount_instructor)}
         </div>
       </td>
 
       {/* Status */}
       <td className="px-6 py-4">
-        <span
-          className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${getStatusBadgeClass(
-            item.status
-          )}`}
-        >
+        <Badge variant={getStatusVariant(item.status)} size="sm" dot>
           {getStatusLabel(item.status)}
-        </span>
+        </Badge>
       </td>
 
       {/* Hold Until */}
       <td className="px-6 py-4">
-        <div className="text-sm text-gray-900">
+        <div className="text-sm text-foreground">
           {formatDateTime(item.hold_until)}
         </div>
       </td>
@@ -291,23 +294,23 @@ function HoldEarningsRow({ item }: { item: HoldEarningsItem }) {
       {/* Refund */}
       <td className="px-6 py-4">
         {item.refund && item.refund.refund_id ? (
-          <div className="space-y-2">
-            <span
-              className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${getRefundStatusBadgeClass(
-                item.refund.status
-              )}`}
+          <div className="space-y-1.5">
+            <Badge
+              variant={getRefundStatusVariant(item.refund.status)}
+              size="sm"
+              dot
             >
               {getRefundStatusLabel(item.refund.status)}
-            </span>
+            </Badge>
             {item.refund.reason && (
-              <div className="text-xs text-gray-600 line-clamp-2 max-w-xs">
+              <div className="text-xs text-muted-foreground line-clamp-2 max-w-xs">
                 {item.refund.reason}
               </div>
             )}
           </div>
         ) : (
-          <div className="flex items-center gap-1 text-gray-400">
-            <HiExclamationCircle className="h-4 w-4" />
+          <div className="flex items-center gap-1 text-muted-foreground">
+            <AlertCircle className="h-4 w-4" />
             <span className="text-xs">Không có</span>
           </div>
         )}
@@ -315,7 +318,7 @@ function HoldEarningsRow({ item }: { item: HoldEarningsItem }) {
 
       {/* Created At */}
       <td className="px-6 py-4">
-        <div className="text-sm text-gray-600">
+        <div className="text-sm text-muted-foreground">
           {formatDateTime(item.created_at)}
         </div>
       </td>

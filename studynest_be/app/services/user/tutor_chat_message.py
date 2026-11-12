@@ -9,6 +9,9 @@ TutorChatMessageService - Xử lý chat messages.
 Truy xuất tài liệu theo phạm vi bài học và giữ lịch sử hội thoại.
 """
 
+import asyncio
+import re
+import time
 import uuid
 from typing import Any, Dict, List, Optional
 
@@ -22,6 +25,7 @@ from app.core.embedding import (
     EmbeddingService,
     get_embedding_service,
 )
+from app.core.settings import settings
 from app.db.models.database import (
     TutorChatImages,
     TutorChatMessages,
@@ -37,6 +41,7 @@ from app.services.user.message_classifier import (
     MessageClassifierService,
     get_message_classifier_service,
     is_casual_message,
+    rule_decide,
 )
 from app.services.user.tutor_chat import TutorChatService, get_tutor_chat_service
 
@@ -167,6 +172,10 @@ class TutorChatMessageService:
             "scope": thread_data.get("scope", "lesson"),
         }
 
+        # A preview lesson must not unlock private material elsewhere in its course.
+        if lesson_context["scope"] != "lesson":
+            await self.thread_service.validate_enrollment(user_id, course.id)
+
         # Retain six turns, including OCR, without mixing different lesson threads.
         history_result = await self.db.execute(
             select(TutorChatMessages)
@@ -256,20 +265,10 @@ class TutorChatMessageService:
         if image_context:
             full_message += f"\n\n{image_context}"
 
-        # 5. Classify intent
-        has_prev_context = bool(history_messages)
-
-        # Format history for classifier (List[Dict])
-        chat_history_dicts = [
-            {"role": msg.role, "content": msg.content} for msg in history_messages
-        ]
-
-        classify_result = await self.classifier_service.classify_message(
-            message=full_message,
-            chat_history=chat_history_dicts,
-            has_prev_context=has_prev_context,
-        )
-        mode = classify_result["mode"]
+        # Retrieval is needed for every substantive question. A second LLM call
+        # cannot change this policy, so classify locally without a network round trip.
+        started = time.monotonic()
+        mode = rule_decide(full_message, bool(history_messages)) or "SEARCH"
 
         # 6. Execute based on Mode
         sources = []
@@ -281,12 +280,17 @@ class TutorChatMessageService:
             # Retrieve real passages again for follow-ups instead of reusing them.
             search_query = self._build_search_query(full_message, context, lesson.title, mode)
             mode = "SEARCH"
-            sources = await self._rag_search(
-                query=search_query,
-                lesson_id=lesson_id,
-                scope=lesson_context["scope"],
-                user_id=user_id,
-            )
+            try:
+                # Embedding ingestion can retry for minutes; interactive retrieval
+                # must have a bounded wait and must never invent missing evidence.
+                sources = await self._rag_search(
+                    query=search_query, lesson_id=lesson_id,
+                    scope=lesson_context["scope"], user_id=user_id,
+                )
+            except (TimeoutError, HTTPException) as exc:
+                logger.warning("Tutor retrieval unavailable lesson={} error={}", lesson_id, type(exc).__name__)
+        retrieval_ms = round((time.monotonic() - started) * 1000)
+        first_token_ms = None
         logger.info("Tutor retrieval lesson={} mode={} scope={} sources={}", lesson_id, mode, lesson_context["scope"], len(sources))
 
         # Build prompt và gọi LLM
@@ -307,12 +311,14 @@ class TutorChatMessageService:
 
             llm_response = ""
             visible = ""
-            async for chunk in LLMService().stream_model(
-                prompt, mime_type="application/json", temperature=0.7, max_output_tokens=4000
+            async for chunk in LLMService(model_override=settings.TUTOR_CHAT_MODEL or None).stream_model(
+                prompt, retries=1, mime_type="application/json", temperature=0.3, max_output_tokens=1800
             ):
                 llm_response += chunk
                 content = partial_json_content(llm_response)
                 if content.startswith(visible) and len(content) > len(visible):
+                    if first_token_ms is None:
+                        first_token_ms = round((time.monotonic() - started) * 1000)
                     await on_delta(content[len(visible):])
                     visible = content
 
@@ -344,6 +350,16 @@ class TutorChatMessageService:
         bot_title = result.get("title", "Câu hỏi mới")
         bot_content = result.get("content", "")
         sources_used = self._ground_sources(result.get("sources_used", []), sources)
+        if mode != "NO_SEARCH" and not sources_used:
+            notice = "\n\n> Chưa có nguồn bài học/tài liệu được đối chiếu cho câu trả lời này. Bạn có thể hỏi cụ thể hơn hoặc xem trực tiếp nội dung bài học."
+            bot_content += notice
+            if on_delta is not None:
+                await on_delta(notice)
+        logger.info(
+            "Tutor completed lesson={} retrieval_ms={} first_token_ms={} total_ms={} retrieved={} cited={}",
+            lesson_id, retrieval_ms, first_token_ms,
+            round((time.monotonic() - started) * 1000), len(sources), len(sources_used),
+        )
 
         # 5. Lưu tin nhắn của bot vào DB
         assistant_msg = TutorChatMessages(
@@ -635,7 +651,20 @@ class TutorChatMessageService:
 
         else:
             # Video/Article: Dùng embedding search như cũ
-            embedding = await self.embedding_service.embed_query(query)
+            indexed = await self.db.execute(text("""
+                SELECT EXISTS (
+                    SELECT 1 FROM public.lessons l
+                    WHERE (:scope = 'lesson' AND l.id = :lesson_id
+                        OR :scope = 'section' AND l.section_id = :section_id
+                        OR :scope = 'course' AND l.course_id = :course_id)
+                    AND (EXISTS (SELECT 1 FROM public.lesson_chunks lc WHERE lc.lesson_id=l.id AND lc.embedding IS NOT NULL)
+                        OR EXISTS (SELECT 1 FROM public.resource_chunks rc WHERE rc.lesson_id=l.id AND rc.embedding IS NOT NULL))
+                )
+            """), {"scope": scope, "lesson_id": lesson_id,
+                   "section_id": lesson.section_id, "course_id": lesson.course_id})
+            if not indexed.scalar():
+                return []
+            embedding = await asyncio.wait_for(self.embedding_service.embed_query(query), timeout=8)
             embedding_str = str(embedding)
 
             stmt = text(
@@ -683,7 +712,7 @@ class TutorChatMessageService:
 
             if has_resources.scalar_one_or_none():
                 # Tìm resource chunks bằng embedding
-                embedding = await self.embedding_service.embed_query(query)
+                embedding = await asyncio.wait_for(self.embedding_service.embed_query(query), timeout=8)
                 embedding_str = str(embedding)
 
                 resource_stmt = text(
@@ -752,19 +781,29 @@ class TutorChatMessageService:
             if not isinstance(citation, dict):
                 continue
             key = str(citation.get("chunk_id") or citation.get("code_id") or citation.get("quiz_id") or "")
+            if not key:
+                index = citation.get("index")
+                if isinstance(index, int) and not isinstance(index, bool) and 1 <= index <= len(sources):
+                    key = str(sources[index - 1].get("chunk_id") or "")
             if key not in available or key in seen:
                 continue
             seen.add(key)
             src = available[key]
             item = {k: v for k, v in src.items() if k != "content"}
             item["source_type"] = "video" if src["source_type"] == "lesson" else src["source_type"]
-            item["index"] = len(grounded) + 1
+            item["index"] = sources.index(src) + 1
             item["summary"] = str(citation.get("summary", ""))[:600]
             if item["source_type"] in {"code", "quiz"}:
                 item[item["source_type"] + "_id"] = key
-            timestamp = citation.get("timestamp_seconds")
-            if isinstance(timestamp, (int, float)) and timestamp >= 0:
-                item["timestamp_seconds"] = timestamp
+            # Seek positions come from the transcript, never from model guesses.
+            timestamps = []
+            for match in re.finditer(r"(?<!\d)(?:(\d{1,2}):)?(\d{1,2}):(\d{2})(?!\d)", (src.get("content") or "")):
+                hours, minutes, seconds = match.groups()
+                if int(minutes) < 60 and int(seconds) < 60:
+                    timestamps.append(int(hours or 0) * 3600 + int(minutes) * 60 + int(seconds))
+            if item["source_type"] == "video" and timestamps:
+                requested = citation.get("timestamp_seconds")
+                item["timestamp_seconds"] = requested if requested in timestamps else timestamps[0]
             grounded.append(item)
         return grounded
 
@@ -887,69 +926,16 @@ Nếu không có đoạn tài liệu phù hợp, nói rõ chưa tìm được; k
 
             ---
             # YÊU CẦU OUTPUT
-            Trả lời dưới dạng JSON với format sau:
-            ```json
-            {{
-                "title": "Tiêu đề ngắn gọn tóm tắt câu hỏi (tối đa 50 ký tự)",
-                "content": "Nội dung trả lời chi tiết, sử dụng Markdown formatting",
-                "sources_used": [
-                    {{
-                        "index": 1,
-                        "source_type": "video" ,
-                        "chunk_id": "uuid của chunk",
-                        "lesson_id": "uuid của lesson",
-                        "lesson_title": "Tên bài học",
-                        "summary": "Tóm tắt ngắn gọn nội dung đoạn này (20-30 từ)",
-                        "similarity": 1,
-                        "chunk_index": 0,
-                        "timestamp_seconds": 0
-                    }},
-                    {{
-                        "index": 2,
-                        "source_type": "resource",
-                        "chunk_id": "uuid của chunk",
-                        "resource_id": "uuid của resource",
-                        "resource_title": "Tên tài liệu",
-                        "summary": "Tóm tắt ngắn gọn nội dung đoạn này (20-30 từ)",
-                        "resource_url": "URL tài liệu",
-                        "similarity": 0.75
-                    }},
-                    {{
-                        "index": 3,
-                        "source_type": "code",
-                        "lesson_id": "uuid của lesson",
-                        "code_id": "uuid của code",
-                        "lesson_title": "Tên bài học",
-                        "summary": "Tóm tắt ngắn gọn nội dung đoạn này (20-30 từ)",
-                        "code_content": "Nội dung code",
-                        "similarity": 0.75
-                    }},
-                    {{
-                        "index": 4,
-                        "source_type": "quiz",
-                        "lesson_id": "uuid của lesson",
-                        "quiz_id": "uuid của quiz",
-                        "quizz_option_id": "uuid của option",
-                        "lesson_title": "Tên bài học",
-                        "summary": "Tóm tắt ngắn gọn nội dung đoạn này (20-30 từ)",
-                        "similarity": 0.73,
-                        "quizz_option_title": "Tên option",
-                        "quizz_option_content": "Nội dung option"
-                    }}
-                ]
-            }}
-            ```
-            
-            Lưu ý quan trọng:
-            - "title": Tiêu đề ngắn gọn, súc tích mô tả nội dung câu hỏi
-            - "content": Trả lời đầy đủ, dễ hiểu, có ví dụ minh họa
-            - "sources_used": Chỉ liệt kê các tài liệu THỰC SỰ được dùng để trả lời. Khi giải thích dựa trên tài liệu, phải dẫn nguồn đã dùng; không chép các ví dụ nguồn bên trên. Nếu không dùng tài liệu thì trả [].
-              + "summary": Tóm tắt nội dung chính của đoạn này (ví dụ: "Giới thiệu JavaScript và lịch sử ra đời")
-              + Với source_type="video": Lấy timestamp_seconds từ nội dung (ví dụ: `00:15` = 15, `01:20` = 80)
-              + Với source_type="code": Không cần timestamp_seconds
-              + Với source_type="quiz": Không cần timestamp_seconds
-              + Copy chính xác các giá trị chunk_id, lesson_id, resource_id từ tài liệu tham khảo
-              + Sắp xếp theo index giảm dần
+            Trả đúng một JSON object, đặt content ĐẦU TIÊN để học viên đọc ngay khi stream:
+            {{"content": "Câu trả lời Markdown, dẫn [1], [2] ở các ý dựa trên tài liệu",
+              "title": "Tiêu đề tối đa 50 ký tự",
+              "sources_used": [{{"index": 1, "summary": "Ý được dùng từ nguồn [1]"}}]}}
+            Trả lời tập trung, thường 150–300 từ; chỉ viết dài hơn khi câu hỏi cần.
+            Chỉ trích index có trong TÀI LIỆU THAM KHẢO, không bịa URL hoặc thông tin nguồn.
+            Nếu dùng tài liệu, bắt buộc trả sources_used với đúng index tương ứng.
+            Nếu không có nguồn phù hợp: sources_used=[], nói rõ chưa đối chiếu được nội dung bài;
+            kiến thức giải thích thêm phải được phân biệt với điều video thực sự nói.
+            Không tự đoán timestamp. Không chép ví dụ JSON vào câu trả lời.
             """
 
         return prompt
@@ -963,12 +949,13 @@ Nếu không có đoạn tài liệu phù hợp, nói rõ chưa tìm được; k
         """
         from app.core.llm import LLMService
 
-        llm = LLMService()
+        llm = LLMService(model_override=settings.TUTOR_CHAT_MODEL or None)
         response = await llm.call_model(
             prompt=prompt,
             mime_type="application/json",
-            temperature=0.7,
-            max_output_tokens=4000,
+            retries=1,
+            temperature=0.3,
+            max_output_tokens=1800,
         )
         return response
 

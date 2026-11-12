@@ -24,6 +24,19 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     mcpServer: true,
+    optimizePackageImports: [
+      "lucide-react",
+      "react-icons",
+      "@radix-ui/react-dropdown-menu",
+      "@radix-ui/react-hover-card",
+      "@radix-ui/react-navigation-menu",
+      "framer-motion",
+      "@tanstack/react-query",
+      "@dnd-kit/core",
+      "@dnd-kit/sortable",
+      "chart.js",
+      "react-chartjs-2",
+    ],
   },
 };
 

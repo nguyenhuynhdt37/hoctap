@@ -14,7 +14,7 @@ REST API Convention:
 import uuid
 from typing import Optional
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, WebSocket
 from pydantic import BaseModel
 
 from app.core.chat_stream import chat_stream_response
@@ -86,7 +86,10 @@ async def get_active_thread(
         user_id=user.id,
         lesson_id=lesson_id,
     )
-    return {"thread": thread}
+    return {
+        "thread": thread,
+        "can_read_lesson": await service.can_read_lesson(user.id, lesson_id),
+    }
 
 
 @router.post("/lessons/{lesson_id}/threads")
@@ -293,3 +296,9 @@ async def get_messages(
         limit=limit,
         cursor_next=cursor_next,
     )
+
+
+@router.websocket("/lessons/{lesson_id}/voice")
+async def tutor_voice(websocket: WebSocket, lesson_id: uuid.UUID):
+    from app.services.user.tutor_voice import run_tutor_voice
+    await run_tutor_voice(websocket, lesson_id)

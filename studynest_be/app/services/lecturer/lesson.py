@@ -1110,11 +1110,11 @@ class LessonService:
                 files=files,
                 stdin=tc.input,
             )
-            run = result.get("run", {}) or {}
+            run = result.get("run") or result.get("compile") or {}
 
             stdout = (run.get("stdout") or "").strip()
             stderr = (run.get("stderr") or "").strip()
-            exit_code = run.get("code", 0)
+            exit_code = run.get("code")
             cpu_time = run.get("cpu_time", 0)
             memory = run.get("memory", 0)
 

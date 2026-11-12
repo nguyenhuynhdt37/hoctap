@@ -15,6 +15,7 @@ import {
 import { ChevronsDown } from "lucide-react";
 import LogoHub from "./LogoHub";
 import { usePathname, useRouter } from "next/navigation";
+import Link from "next/link";
 import React, {
   useCallback,
   useEffect,
@@ -39,10 +40,18 @@ import {
 } from "react-icons/hi";
 
 export interface LandingDynamicIslandProps {
-  onExploreCourses?: () => void;
-  onSelectGradeLevel?: (level: "primary" | "secondary" | "highschool") => void;
   onSkipVideo?: () => void;
 }
+
+type GradeMenuLevel = "primary" | "secondary" | "highschool";
+
+const GRADE_CATALOG_PATH: Record<GradeMenuLevel, string> = {
+  primary: "/courses?level=tieu-hoc",
+  secondary: "/courses?level=thcs",
+  highschool: "/courses?level=thpt",
+};
+
+const MotionLink = motion.create(Link);
 
 const ISLAND_SIZE = 52;
 const EXPANDED_WIDTH = 268;
@@ -62,8 +71,6 @@ const getInitials = (fullname?: string | null): string => {
 };
 
 const LandingDynamicIsland: React.FC<LandingDynamicIslandProps> = ({
-  onExploreCourses,
-  onSelectGradeLevel,
   onSkipVideo,
 }) => {
   const user = useUserStore((s) => s.user);
@@ -217,14 +224,6 @@ const LandingDynamicIsland: React.FC<LandingDynamicIslandProps> = ({
     }
   }, [isOpen]);
 
-  const handleNavigate = useCallback(
-    (path: string) => {
-      closeIsland(false);
-      router.push(path);
-    },
-    [closeIsland, router]
-  );
-
   const handleScrollTop = useCallback(() => {
     closeIsland(false);
     if (pathname === "/") {
@@ -234,36 +233,9 @@ const LandingDynamicIsland: React.FC<LandingDynamicIslandProps> = ({
     }
   }, [closeIsland, pathname, router]);
 
-  const handleExplore = useCallback(() => {
-    closeIsland(false);
-    if (onExploreCourses) {
-      onExploreCourses();
-    } else {
-      router.push("/");
-    }
-  }, [closeIsland, onExploreCourses, router]);
-
-  const handleGradeSelect = useCallback(
-    (level: "primary" | "secondary" | "highschool") => {
-      closeIsland(false);
-      if (onSelectGradeLevel) {
-        onSelectGradeLevel(level);
-      } else {
-        router.push("/");
-      }
-    },
-    [closeIsland, onSelectGradeLevel, router]
-  );
-
-  const handleDashboardClick = useCallback(() => {
-    if (user?.roles?.includes("LECTURER")) {
-      handleNavigate("/lecturer");
-    } else if (user?.roles?.includes("ADMIN")) {
-      handleNavigate("/admin");
-    } else {
-      handleNavigate("/my-learning");
-    }
-  }, [user, handleNavigate]);
+  const dashboardHref = user?.roles?.includes("LECTURER")
+    ? "/lecturer"
+    : user?.roles?.includes("ADMIN") ? "/admin" : "/my-learning";
 
   const handleLogout = useCallback(async () => {
     closeIsland(false);
@@ -488,19 +460,35 @@ const LandingDynamicIsland: React.FC<LandingDynamicIslandProps> = ({
                   <span>Trang chủ</span>
                 </motion.button>
 
-                <motion.button
+                <MotionLink
                   custom={1}
                   variants={itemVariants}
                   initial={false}
                   animate={isOpen ? "visible" : "hidden"}
-                  type="button"
                   role="menuitem"
-                  onClick={handleExplore}
+                  href="/courses"
+                  prefetch={isOpen ? null : false}
+                  onNavigate={() => closeIsland(false)}
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-foreground hover:bg-primary-light/80 hover:text-primary transition-colors text-left cursor-pointer"
                 >
                   <HiBookOpen className="w-4 h-4 text-primary shrink-0" />
                   <span>Khám phá khóa học</span>
-                </motion.button>
+                </MotionLink>
+
+                <MotionLink
+                  custom={1.5}
+                  variants={itemVariants}
+                  initial={false}
+                  animate={isOpen ? "visible" : "hidden"}
+                  role="menuitem"
+                  href="/instructors"
+                  prefetch={isOpen ? null : false}
+                  onNavigate={() => closeIsland(false)}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-foreground hover:bg-primary-light/80 hover:text-primary transition-colors text-left cursor-pointer"
+                >
+                  <HiAcademicCap className="w-4 h-4 text-primary shrink-0" />
+                  <span>Đội ngũ giáo viên</span>
+                </MotionLink>
 
                 <div className="pt-1.5 pb-1 px-3">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-subtle-foreground">
@@ -508,14 +496,15 @@ const LandingDynamicIsland: React.FC<LandingDynamicIslandProps> = ({
                   </span>
                 </div>
 
-                <motion.button
+                <MotionLink
                   custom={2}
                   variants={itemVariants}
                   initial={false}
                   animate={isOpen ? "visible" : "hidden"}
-                  type="button"
                   role="menuitem"
-                  onClick={() => handleGradeSelect("primary")}
+                  href={GRADE_CATALOG_PATH["primary"]}
+                  prefetch={isOpen ? null : false}
+                  onNavigate={() => closeIsland(false)}
                   className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs font-medium text-foreground hover:bg-accent-vanilla/55 transition-colors text-left cursor-pointer"
                 >
                   <span className="flex items-center gap-2.5">
@@ -525,16 +514,17 @@ const LandingDynamicIsland: React.FC<LandingDynamicIslandProps> = ({
                   <Badge variant="vanilla" size="sm">
                     Lớp 1–5
                   </Badge>
-                </motion.button>
+                </MotionLink>
 
-                <motion.button
+                <MotionLink
                   custom={3}
                   variants={itemVariants}
                   initial={false}
                   animate={isOpen ? "visible" : "hidden"}
-                  type="button"
                   role="menuitem"
-                  onClick={() => handleGradeSelect("secondary")}
+                  href={GRADE_CATALOG_PATH["secondary"]}
+                  prefetch={isOpen ? null : false}
+                  onNavigate={() => closeIsland(false)}
                   className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs font-medium text-foreground hover:bg-secondary-light/65 transition-colors text-left cursor-pointer"
                 >
                   <span className="flex items-center gap-2.5">
@@ -544,16 +534,17 @@ const LandingDynamicIsland: React.FC<LandingDynamicIslandProps> = ({
                   <Badge variant="secondary" size="sm">
                     Lớp 6–9
                   </Badge>
-                </motion.button>
+                </MotionLink>
 
-                <motion.button
+                <MotionLink
                   custom={4}
                   variants={itemVariants}
                   initial={false}
                   animate={isOpen ? "visible" : "hidden"}
-                  type="button"
                   role="menuitem"
-                  onClick={() => handleGradeSelect("highschool")}
+                  href={GRADE_CATALOG_PATH["highschool"]}
+                  prefetch={isOpen ? null : false}
+                  onNavigate={() => closeIsland(false)}
                   className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs font-medium text-foreground hover:bg-primary-light/80 transition-colors text-left cursor-pointer"
                 >
                   <span className="flex items-center gap-2.5">
@@ -563,7 +554,7 @@ const LandingDynamicIsland: React.FC<LandingDynamicIslandProps> = ({
                   <Badge variant="default" size="sm">
                     Lớp 10–12
                   </Badge>
-                </motion.button>
+                </MotionLink>
               </div>
 
               {/* Divider */}
@@ -572,14 +563,15 @@ const LandingDynamicIsland: React.FC<LandingDynamicIslandProps> = ({
               {/* Section 2: Authentication-Aware Account Controls */}
               {user ? (
                 <div className="space-y-0.5">
-                  <motion.button
+                  <MotionLink
                     custom={5}
                     variants={itemVariants}
                     initial={false}
                     animate={isOpen ? "visible" : "hidden"}
-                    type="button"
                     role="menuitem"
-                    onClick={handleDashboardClick}
+                    href={dashboardHref}
+                    prefetch={isOpen ? null : false}
+                    onNavigate={() => closeIsland(false)}
                     className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-foreground hover:bg-primary-light/80 hover:text-primary transition-colors text-left cursor-pointer"
                   >
                     <HiViewGrid className="w-4 h-4 text-primary shrink-0" />
@@ -588,50 +580,49 @@ const LandingDynamicIsland: React.FC<LandingDynamicIslandProps> = ({
                         ? "Bảng điều khiển Giảng viên"
                         : "Học tập của tôi"}
                     </span>
-                  </motion.button>
+                  </MotionLink>
 
                   {user.roles?.includes("LECTURER") && (
-                    <motion.button
+                    <MotionLink
                       custom={6}
                       variants={itemVariants}
                       initial={false}
                       animate={isOpen ? "visible" : "hidden"}
-                      type="button"
                       role="menuitem"
-                      onClick={() => handleNavigate("/my-learning")}
+                      href="/my-learning"
+                      prefetch={isOpen ? null : false}
+                      onNavigate={() => closeIsland(false)}
                       className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-foreground hover:bg-primary-light/80 hover:text-primary transition-colors text-left cursor-pointer"
                     >
                       <HiBookOpen className="w-4 h-4 text-muted-foreground shrink-0" />
                       <span>Khóa học đang học</span>
-                    </motion.button>
+                    </MotionLink>
                   )}
 
-                  <motion.button
+                  <MotionLink
                     custom={7}
                     variants={itemVariants}
                     initial={false}
                     animate={isOpen ? "visible" : "hidden"}
-                    type="button"
                     role="menuitem"
-                    onClick={() => handleNavigate("/favorites")}
+                    href="/favorites"
+                    prefetch={isOpen ? null : false}
+                    onNavigate={() => closeIsland(false)}
                     className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-foreground hover:bg-primary-light/80 hover:text-primary transition-colors text-left cursor-pointer"
                   >
                     <HiHeart className="w-4 h-4 text-secondary-foreground shrink-0" />
                     <span>Khóa học yêu thích</span>
-                  </motion.button>
+                  </MotionLink>
 
-                  <motion.button
+                  <MotionLink
                     custom={8}
                     variants={itemVariants}
                     initial={false}
                     animate={isOpen ? "visible" : "hidden"}
-                    type="button"
                     role="menuitem"
-                    onClick={() =>
-                      handleNavigate(
-                        user.roles?.includes("LECTURER") ? "/lecturer" : "/welcome"
-                      )
-                    }
+                    href={user.roles?.includes("LECTURER") ? "/lecturer" : "/welcome"}
+                    prefetch={isOpen ? null : false}
+                    onNavigate={() => closeIsland(false)}
                     className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-foreground hover:bg-primary-light/80 hover:text-primary transition-colors text-left cursor-pointer"
                   >
                     <HiAcademicCap className="w-4 h-4 text-primary shrink-0" />
@@ -640,16 +631,17 @@ const LandingDynamicIsland: React.FC<LandingDynamicIslandProps> = ({
                         ? "Khu vực giảng viên"
                         : "Trở thành giảng viên"}
                     </span>
-                  </motion.button>
+                  </MotionLink>
 
-                  <motion.button
+                  <MotionLink
                     custom={8}
                     variants={itemVariants}
                     initial={false}
                     animate={isOpen ? "visible" : "hidden"}
-                    type="button"
                     role="menuitem"
-                    onClick={() => handleNavigate("/notifications")}
+                    href="/notifications"
+                    prefetch={isOpen ? null : false}
+                    onNavigate={() => closeIsland(false)}
                     className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs font-medium text-foreground hover:bg-primary-light/80 hover:text-primary transition-colors text-left cursor-pointer"
                   >
                     <span className="flex items-center gap-2.5">
@@ -661,21 +653,22 @@ const LandingDynamicIsland: React.FC<LandingDynamicIslandProps> = ({
                         {unreadCount}
                       </Badge>
                     )}
-                  </motion.button>
+                  </MotionLink>
 
-                  <motion.button
+                  <MotionLink
                     custom={9}
                     variants={itemVariants}
                     initial={false}
                     animate={isOpen ? "visible" : "hidden"}
-                    type="button"
                     role="menuitem"
-                    onClick={() => handleNavigate("/profile")}
+                    href="/profile"
+                    prefetch={isOpen ? null : false}
+                    onNavigate={() => closeIsland(false)}
                     className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-foreground hover:bg-primary-light/80 hover:text-primary transition-colors text-left cursor-pointer"
                   >
                     <HiUser className="w-4 h-4 text-muted-foreground shrink-0" />
                     <span>Hồ sơ cá nhân</span>
-                  </motion.button>
+                  </MotionLink>
 
                   <div className="pt-1 mt-1 border-t border-border/70">
                     <motion.button
@@ -695,33 +688,35 @@ const LandingDynamicIsland: React.FC<LandingDynamicIslandProps> = ({
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-2 pt-1">
-                  <motion.button
+                  <MotionLink
                     custom={5}
                     variants={itemVariants}
                     initial={false}
                     animate={isOpen ? "visible" : "hidden"}
-                    type="button"
                     role="menuitem"
-                    onClick={() => handleNavigate("/login")}
+                    href="/login"
+                    prefetch={isOpen ? null : false}
+                    onNavigate={() => closeIsland(false)}
                     className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border border-primary-pastel bg-background hover:bg-primary-light text-primary text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer"
                   >
                     <HiLogin className="w-4 h-4 shrink-0" />
                     <span>Đăng nhập</span>
-                  </motion.button>
+                  </MotionLink>
 
-                  <motion.button
+                  <MotionLink
                     custom={6}
                     variants={itemVariants}
                     initial={false}
                     animate={isOpen ? "visible" : "hidden"}
-                    type="button"
                     role="menuitem"
-                    onClick={() => handleNavigate("/register")}
+                    href="/register"
+                    prefetch={isOpen ? null : false}
+                    onNavigate={() => closeIsland(false)}
                     className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-semibold whitespace-nowrap shadow-2xs transition-colors cursor-pointer"
                   >
                     <HiUserAdd className="w-4 h-4 shrink-0" />
                     <span>Đăng ký</span>
-                  </motion.button>
+                  </MotionLink>
                 </div>
               )}
         </motion.div>

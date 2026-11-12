@@ -8,35 +8,49 @@ import { NotificationsResponse } from "@/types/user/notification";
 import { cookies } from "next/headers";
 import { ReactNode, Suspense } from "react";
 
-export default async function LecturerLayout({
+async function LecturerNotificationsBootstrap() {
+  const stores = await cookies();
+  const accessToken = getServerCookie(stores, "access_token");
+  let notifications: NotificationsResponse | null = null;
+
+  if (accessToken) {
+    try {
+      const resGetNotifications = await fetcher(
+        "/notifications/lecturer?page=1&limit=10&sort_by=created_at&order_dir=desc",
+        stores
+      );
+
+      if (resGetNotifications.ok) {
+        notifications = await resGetNotifications.json();
+      }
+    } catch {
+      // Không chặn render layout nếu dịch vụ thông báo tạm thời gián đoạn
+    }
+  }
+
+  return (
+    <>
+      <InitRealtimeNoti role="LECTURER" notifications={notifications} />
+      <NotificationWS
+        role_name="LECTURER"
+        accessToken={accessToken || null}
+      />
+    </>
+  );
+}
+
+export default function LecturerLayout({
   children,
 }: {
   children: ReactNode;
 }) {
-  const stores = await cookies();
-  const accessToken = getServerCookie(stores, "access_token");
-  let notifications: NotificationsResponse | null = null;
-  if (accessToken) {
-    const res_getNotifications = await fetcher(
-      "/notifications/lecturer?page=1&limit=10&sort_by=created_at&order_dir=desc",
-      stores
-    );
-
-    if (res_getNotifications.ok) {
-      notifications = await res_getNotifications.json();
-    }
-  }
   return (
     <>
       <LecturerHeader />
-      <InitRealtimeNoti role="LECTURER" notifications={notifications} />
       <Suspense fallback={null}>
-        <NotificationWS
-          role_name="LECTURER"
-          accessToken={accessToken || null}
-        />
+        <LecturerNotificationsBootstrap />
       </Suspense>
-      <div className="min-h-screen bg-gray-50">{children}</div>
+      <div className="min-h-screen bg-background text-foreground">{children}</div>
       <Footer />
     </>
   );

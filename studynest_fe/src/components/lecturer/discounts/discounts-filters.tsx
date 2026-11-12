@@ -1,7 +1,17 @@
 "use client";
 
+import { Badge, Button, Card } from "@/components/ui";
 import { DiscountsFiltersProps } from "@/types/lecturer/discount";
-import { HiSearch, HiX } from "react-icons/hi";
+import {
+  ArrowDown,
+  ArrowUp,
+  BadgePercent,
+  Clock,
+  Search,
+  SlidersHorizontal,
+  Tag,
+  X,
+} from "lucide-react";
 
 const DISCOUNT_TYPE_OPTIONS = [
   { value: "", label: "Tất cả" },
@@ -70,12 +80,12 @@ export function DiscountsFilters({
     orderDir !== "desc";
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+    <Card variant="surface" className="overflow-hidden mb-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-green-500 to-emerald-600 px-6 py-4">
-        <h3 className="text-lg font-semibold text-white flex items-center space-x-2">
-          <HiSearch className="w-5 h-5" />
-          <span>Tìm kiếm & Sắp xếp</span>
+      <div className="bg-primary-light/50 border-b border-border px-6 py-4">
+        <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+          <SlidersHorizontal className="w-4 h-4 text-primary" />
+          <span>Tìm kiếm &amp; Sắp xếp</span>
         </h3>
       </div>
 
@@ -84,36 +94,37 @@ export function DiscountsFilters({
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Search Section */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
-              🔍 Tìm kiếm mã giảm giá
+            <label className="flex items-center gap-1.5 text-sm font-semibold text-foreground mb-2.5">
+              <Search className="w-4 h-4 text-muted-foreground" />
+              <span>Tìm kiếm mã giảm giá</span>
             </label>
             <div className="relative">
-              <HiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 pointer-events-none" />
               <input
                 type="text"
                 placeholder="Nhập tên hoặc mã giảm giá..."
                 value={search}
                 onChange={(e) => onSearchChange(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 focus:bg-white transition-all duration-200 placeholder-gray-500"
+                className="w-full pl-10 pr-4 py-2.5 text-sm bg-surface border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
               />
             </div>
           </div>
 
           {/* Sort Section */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
-              📊 Sắp xếp dữ liệu
+            <label className="block text-sm font-semibold text-foreground mb-2.5">
+              Sắp xếp dữ liệu
             </label>
             <div className="grid grid-cols-2 gap-3">
               {/* Sort Field */}
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-2">
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5">
                   Trường sắp xếp
                 </label>
                 <select
                   value={sortBy}
                   onChange={(e) => onSortByChange(e.target.value)}
-                  className="w-full px-3 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 focus:bg-white transition-all duration-200"
+                  className="w-full px-3.5 py-2.5 text-sm bg-surface border border-border rounded-xl text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
                 >
                   {SORT_BY_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -125,7 +136,7 @@ export function DiscountsFilters({
 
               {/* Sort Order */}
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-2">
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5">
                   Thứ tự
                 </label>
                 <select
@@ -133,7 +144,7 @@ export function DiscountsFilters({
                   onChange={(e) =>
                     onOrderDirChange(e.target.value as "asc" | "desc")
                   }
-                  className="w-full px-3 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 focus:bg-white transition-all duration-200"
+                  className="w-full px-3.5 py-2.5 text-sm bg-surface border border-border rounded-xl text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
                 >
                   <option value="desc">Giảm dần ↓</option>
                   <option value="asc">Tăng dần ↑</option>
@@ -144,12 +155,13 @@ export function DiscountsFilters({
         </div>
 
         {/* Advanced Filters */}
-        <div className="mt-6 pt-6 border-t border-gray-200">
+        <div className="mt-6 pt-6 border-t border-border">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Discount Type Filter */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-3">
-                💰 Loại giảm giá
+              <label className="flex items-center gap-1.5 text-sm font-semibold text-foreground mb-2.5">
+                <BadgePercent className="w-4 h-4 text-muted-foreground" />
+                <span>Loại giảm giá</span>
               </label>
               <select
                 value={discountType}
@@ -158,7 +170,7 @@ export function DiscountsFilters({
                     e.target.value as "percent" | "fixed" | ""
                   )
                 }
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 focus:bg-white transition-all duration-200"
+                className="w-full px-3.5 py-2.5 text-sm bg-surface border border-border rounded-xl text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
               >
                 {DISCOUNT_TYPE_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -170,13 +182,14 @@ export function DiscountsFilters({
 
             {/* Status Filter */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-3">
-                📌 Trạng thái
+              <label className="flex items-center gap-1.5 text-sm font-semibold text-foreground mb-2.5">
+                <Tag className="w-4 h-4 text-muted-foreground" />
+                <span>Trạng thái</span>
               </label>
               <select
                 value={statusValue}
                 onChange={(e) => handleStatusChange(e.target.value)}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 focus:bg-white transition-all duration-200"
+                className="w-full px-3.5 py-2.5 text-sm bg-surface border border-border rounded-xl text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
               >
                 {STATUS_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -188,8 +201,9 @@ export function DiscountsFilters({
 
             {/* Validity Filter */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-3">
-                🕒 Thời gian hiệu lực
+              <label className="flex items-center gap-1.5 text-sm font-semibold text-foreground mb-2.5">
+                <Clock className="w-4 h-4 text-muted-foreground" />
+                <span>Thời gian hiệu lực</span>
               </label>
               <select
                 value={validity}
@@ -198,7 +212,7 @@ export function DiscountsFilters({
                     e.target.value as "expired" | "running" | "upcoming" | ""
                   )
                 }
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 focus:bg-white transition-all duration-200"
+                className="w-full px-3.5 py-2.5 text-sm bg-surface border border-border rounded-xl text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
               >
                 {VALIDITY_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -211,45 +225,47 @@ export function DiscountsFilters({
         </div>
 
         {/* Status Bar */}
-        <div className="mt-6 pt-4 border-t border-gray-200">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+        <div className="mt-6 pt-4 border-t border-border">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             {/* Status Indicators */}
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2.5">
               {/* Sort Status */}
-              <div className="flex items-center space-x-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm font-medium text-green-800">
+              <Badge variant="default" size="md" dot className="px-3 py-1.5">
+                <span>
                   Sắp xếp:{" "}
                   <strong>
                     {SORT_BY_OPTIONS.find((opt) => opt.value === sortBy)
                       ?.label || sortBy}
                   </strong>
-                  <span className="ml-1 text-green-600 font-bold">
-                    {orderDir === "asc" ? "↑" : "↓"}
-                  </span>
                 </span>
-              </div>
+                {orderDir === "asc" ? (
+                  <ArrowUp className="w-3.5 h-3.5 ml-1" />
+                ) : (
+                  <ArrowDown className="w-3.5 h-3.5 ml-1" />
+                )}
+              </Badge>
 
               {/* Search Status */}
               {search && (
-                <div className="flex items-center space-x-2 px-3 py-2 bg-emerald-50 border border-emerald-200 rounded-lg">
-                  <span className="text-sm text-emerald-700">
-                    Tìm: <strong>"{search}"</strong>
+                <Badge variant="info" size="md" className="px-3 py-1.5 gap-1.5">
+                  <span>
+                    Tìm: <strong>&ldquo;{search}&rdquo;</strong>
                   </span>
                   <button
+                    type="button"
                     onClick={() => onSearchChange("")}
-                    className="text-emerald-500 hover:text-emerald-700 transition-colors text-sm font-bold"
+                    className="hover:opacity-75 transition-opacity"
                     title="Xóa tìm kiếm"
                   >
-                    ✕
+                    <X className="w-3.5 h-3.5" />
                   </button>
-                </div>
+                </Badge>
               )}
 
               {/* Discount Type Status */}
               {discountType && (
-                <div className="flex items-center space-x-2 px-3 py-2 bg-emerald-50 border border-emerald-200 rounded-lg">
-                  <span className="text-sm text-emerald-700">
+                <Badge variant="info" size="md" className="px-3 py-1.5 gap-1.5">
+                  <span>
                     Loại:{" "}
                     <strong>
                       {
@@ -260,19 +276,20 @@ export function DiscountsFilters({
                     </strong>
                   </span>
                   <button
+                    type="button"
                     onClick={() => onDiscountTypeChange("")}
-                    className="text-emerald-500 hover:text-emerald-700 transition-colors text-sm font-bold"
+                    className="hover:opacity-75 transition-opacity"
                     title="Xóa lọc"
                   >
-                    ✕
+                    <X className="w-3.5 h-3.5" />
                   </button>
-                </div>
+                </Badge>
               )}
 
               {/* Status Filter Status */}
               {isActive !== null && (
-                <div className="flex items-center space-x-2 px-3 py-2 bg-emerald-50 border border-emerald-200 rounded-lg">
-                  <span className="text-sm text-emerald-700">
+                <Badge variant="info" size="md" className="px-3 py-1.5 gap-1.5">
+                  <span>
                     Trạng thái:{" "}
                     <strong>
                       {
@@ -282,19 +299,20 @@ export function DiscountsFilters({
                     </strong>
                   </span>
                   <button
+                    type="button"
                     onClick={() => onIsActiveChange(null)}
-                    className="text-emerald-500 hover:text-emerald-700 transition-colors text-sm font-bold"
+                    className="hover:opacity-75 transition-opacity"
                     title="Xóa lọc"
                   >
-                    ✕
+                    <X className="w-3.5 h-3.5" />
                   </button>
-                </div>
+                </Badge>
               )}
 
               {/* Validity Filter Status */}
               {validity && (
-                <div className="flex items-center space-x-2 px-3 py-2 bg-emerald-50 border border-emerald-200 rounded-lg">
-                  <span className="text-sm text-emerald-700">
+                <Badge variant="info" size="md" className="px-3 py-1.5 gap-1.5">
+                  <span>
                     Thời gian:{" "}
                     <strong>
                       {
@@ -304,29 +322,32 @@ export function DiscountsFilters({
                     </strong>
                   </span>
                   <button
+                    type="button"
                     onClick={() => onValidityChange("")}
-                    className="text-emerald-500 hover:text-emerald-700 transition-colors text-sm font-bold"
+                    className="hover:opacity-75 transition-opacity"
                     title="Xóa lọc"
                   >
-                    ✕
+                    <X className="w-3.5 h-3.5" />
                   </button>
-                </div>
+                </Badge>
               )}
             </div>
 
             {/* Reset Button */}
             {hasActiveFilters && (
-              <button
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
                 onClick={onReset}
-                className="flex items-center justify-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-800 border-2 border-gray-200 rounded-lg hover:bg-gray-50 transition-all duration-200 font-medium"
+                leftIcon={<X className="w-4 h-4" />}
               >
-                <HiX className="w-4 h-4" />
-                <span>Xóa tất cả bộ lọc</span>
-              </button>
+                Xóa tất cả bộ lọc
+              </Button>
             )}
           </div>
         </div>
       </div>
-    </div>
+    </Card>
   );
 }

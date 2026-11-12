@@ -104,6 +104,16 @@ class NineRouterTests(unittest.IsolatedAsyncioTestCase):
         ):
             await LLMService().call_model("Test")
 
+    async def test_server_model_override_does_not_change_global_selection(self):
+        def handler(request):
+            self.assertEqual(json.loads(request.content)['model'], 'ag/fast-tutor')
+            return self.completion('{"ok":true}')
+        client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+        with patch('app.core.llm.httpx.AsyncClient', return_value=client):
+            result = await LLMService(model_override='ag/fast-tutor').call_model('Test')
+        self.assertEqual(json.loads(result), {'ok': True})
+        self.model.assert_not_awaited()
+
     def test_unknown_provider_is_rejected(self):
         with (
             patch.object(settings, "LLM_PROVIDER", "typo"),

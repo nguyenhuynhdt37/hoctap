@@ -2,12 +2,7 @@
 
 import { Badge, Button, Card } from "@/components/ui";
 import { useRouter } from "next/navigation";
-import {
-  HiCurrencyDollar,
-  HiPlay,
-  HiUsers,
-  HiVideoCamera,
-} from "react-icons/hi";
+import { CircleDollarSign, Play, Users, Video } from "lucide-react";
 import { BecomeLecturerAction } from "./become";
 
 const LecturerWelcome = () => {
@@ -58,7 +53,7 @@ const LecturerWelcome = () => {
                     onClick={() => router.push("/lecturer/courses/create")}
                     className="px-7 border-primary-pastel text-primary hover:bg-primary-light"
                   >
-                    <HiPlay className="h-5 w-5" />
+                    <Play className="h-5 w-5" />
                     Tạo khóa học
                   </Button>
                 </div>
@@ -68,7 +63,7 @@ const LecturerWelcome = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-12 max-w-4xl mx-auto">
                 <Card className="group hover:shadow-md hover:border-primary-pastel hover:-translate-y-0.5 transition-all duration-200">
                   <div className="w-12 h-12 bg-primary-light rounded-xl flex items-center justify-center mb-4">
-                    <HiVideoCamera className="h-6 w-6 text-primary" />
+                    <Video className="h-6 w-6 text-primary" />
                   </div>
                   <h3 className="text-base font-semibold text-foreground mb-2">
                     Tạo khóa học dễ dàng
@@ -80,7 +75,7 @@ const LecturerWelcome = () => {
 
                 <Card className="group hover:shadow-md hover:border-primary-pastel hover:-translate-y-0.5 transition-all duration-200">
                   <div className="w-12 h-12 bg-secondary-light rounded-xl flex items-center justify-center mb-4">
-                    <HiCurrencyDollar className="h-6 w-6 text-secondary-foreground" />
+                    <CircleDollarSign className="h-6 w-6 text-secondary-foreground" />
                   </div>
                   <h3 className="text-base font-semibold text-foreground mb-2">
                     Thu nhập hấp dẫn
@@ -93,7 +88,7 @@ const LecturerWelcome = () => {
 
                 <Card className="group hover:shadow-md hover:border-primary-pastel hover:-translate-y-0.5 transition-all duration-200">
                   <div className="w-12 h-12 bg-accent/60 rounded-xl flex items-center justify-center mb-4">
-                    <HiUsers className="h-6 w-6 text-accent-foreground" />
+                    <Users className="h-6 w-6 text-accent-foreground" />
                   </div>
                   <h3 className="text-base font-semibold text-foreground mb-2">
                     Quản lý học viên

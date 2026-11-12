@@ -52,6 +52,7 @@ export function NotificationCard({
       wallet: "Ví",
       course: "Khóa học",
       system: "Hệ thống",
+      provider: "Đơn vị cung cấp",
       learning: "Học tập",
     };
     return labels[type] || type;
@@ -59,8 +60,8 @@ export function NotificationCard({
 
   const cardClassName = `group relative rounded-xl border p-4 transition-all duration-200 cursor-pointer ${
     isRead
-      ? "border-green-200 bg-white hover:border-green-300"
-      : "border-green-300 bg-green-50/50 hover:border-green-400 hover:shadow-md"
+      ? "border-border bg-surface hover:border-primary-pastel"
+      : "border-primary-pastel bg-primary-light/50 hover:border-primary hover:shadow-md"
   }`;
 
   const cardInner = (
@@ -68,13 +69,13 @@ export function NotificationCard({
       <div className="flex items-start gap-3">
         <div
           className={`mt-1 flex-shrink-0 ${
-            isRead ? "text-gray-400" : "text-green-600"
+            isRead ? "text-subtle-foreground" : "text-primary"
           }`}
         >
           {isRead ? (
             <HiCheckCircle className="h-5 w-5" />
           ) : (
-            <div className="h-5 w-5 rounded-full bg-green-600" />
+            <div className="h-5 w-5 rounded-full bg-primary" />
           )}
         </div>
 
@@ -82,15 +83,13 @@ export function NotificationCard({
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1">
               <h3
-                className={`text-sm font-semibold ${
-                  isRead ? "text-gray-700" : "text-gray-900"
-                }`}
+                className="text-sm font-semibold text-foreground"
               >
                 {notification.title}
               </h3>
               <p
                 className={`mt-1 text-sm line-clamp-2 ${
-                  isRead ? "text-gray-500" : "text-gray-700"
+                  isRead ? "text-muted-foreground" : "text-foreground"
                 }`}
               >
                 {notification.content}
@@ -98,12 +97,12 @@ export function NotificationCard({
             </div>
           </div>
 
-          <div className="mt-3 flex items-center gap-4 text-xs text-gray-500">
+          <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1">
               <HiClock className="h-3 w-3" />
               {formatDate(notification.created_at)}
             </span>
-            <span className="rounded-full bg-green-100 border border-green-200 px-2 py-0.5 text-green-700 font-medium">
+            <span className="rounded-full bg-primary-light border border-border px-2 py-0.5 text-primary font-medium">
               {getTypeLabel(notification.type)}
             </span>
           </div>
@@ -111,7 +110,7 @@ export function NotificationCard({
       </div>
 
       {!isRead && (
-        <div className="absolute right-3 top-3 h-2 w-2 rounded-full bg-green-600" />
+        <div className="absolute right-3 top-3 h-2 w-2 rounded-full bg-primary" />
       )}
     </>
   );

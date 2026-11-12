@@ -5,17 +5,22 @@ import api from "@/lib/utils/fetcher/client/axios";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  HiCheckCircle,
-  HiChevronLeft,
-  HiChevronRight,
-  HiCloudUpload,
-  HiLink,
-  HiPlay,
-  HiVideoCamera,
-  HiXCircle,
-} from "react-icons/hi";
+  ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
+  UploadCloud,
+  Link as LinkIcon,
+  Play,
+  Video,
+  XCircle,
+  CheckCircle2,
+  Sparkles,
+} from "lucide-react";
 import useSWR from "swr";
 import { VideoFormData, UploadProgress } from "@/types/lecturer/lesson-api";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Alert } from "@/components/ui/states";
 
 const CreateVideoLesson = () => {
   const router = useRouter();
@@ -456,127 +461,132 @@ const CreateVideoLesson = () => {
 
   if (!sectionId || !courseId) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-4xl mx-auto px-4 py-16">
-          <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-            <p className="text-red-800 font-medium">
-              Thiếu thông tin section_id hoặc course_id. Vui lòng quay lại trang
-              trước.
-            </p>
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="max-w-md w-full p-6 border border-border text-center">
+          <Alert variant="destructive" title="Thiếu thông tin cần thiết">
+            Thiếu thông tin section_id hoặc course_id. Vui lòng quay lại trang trước.
+          </Alert>
+          <div className="mt-4">
+            <Button
+              variant="outline"
+              onClick={() => router.back()}
+              leftIcon={<ArrowLeft className="h-4 w-4" />}
+            >
+              Quay lại
+            </Button>
           </div>
-        </div>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() =>
               router.push(`/lecturer/chapters?course_id=${courseId}`)
             }
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition-colors cursor-pointer"
+            leftIcon={<ArrowLeft className="h-4 w-4" />}
+            className="mb-4 text-muted-foreground hover:text-foreground"
           >
-            <HiChevronLeft className="h-5 w-5" />
-            <span className="font-medium">Quay lại danh sách bài học</span>
-          </button>
-          <h1 className="text-3xl font-black text-gray-900 mb-2">
+            Quay lại danh sách bài học
+          </Button>
+          <h1 className="text-3xl font-bold font-display text-foreground mb-2">
             Tạo bài học Video
           </h1>
-          <p className="text-gray-600">
+          <p className="text-sm text-muted-foreground">
             Tạo bài học video từ YouTube hoặc upload file video
           </p>
         </div>
 
         {/* Progress Bar */}
-        <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm mb-6">
-          <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
-            <span className="font-medium">
+        <Card className="p-6 border border-border bg-surface shadow-xs mb-6">
+          <div className="flex items-center justify-between text-sm mb-3">
+            <span className="font-medium text-foreground">
               Bước {currentStep + 1} / {totalSteps}
             </span>
-            <span className="font-semibold text-green-600">
+            <span className="font-semibold text-primary">
               {Math.round(progressPercentage)}%
             </span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+          <div className="w-full bg-primary-light/50 rounded-full h-2.5 overflow-hidden">
             <div
-              className="bg-gradient-to-r from-green-500 to-emerald-600 h-3 rounded-full transition-all duration-500 ease-out"
+              className="bg-primary h-2.5 rounded-full transition-all duration-500 ease-out"
               style={{ width: `${progressPercentage}%` }}
             />
           </div>
-          <div className="flex items-center justify-between mt-4 text-xs text-gray-500">
+          <div className="flex items-center justify-between mt-4 text-xs">
             <span
-              className={currentStep >= 0 ? "text-green-600 font-medium" : ""}
+              className={
+                currentStep >= 0
+                  ? "text-primary font-semibold"
+                  : "text-muted-foreground"
+              }
             >
               Thông tin cơ bản
             </span>
             <span
-              className={currentStep >= 1 ? "text-green-600 font-medium" : ""}
+              className={
+                currentStep >= 1
+                  ? "text-primary font-semibold"
+                  : "text-muted-foreground"
+              }
             >
               Chọn phương thức
             </span>
             <span
-              className={currentStep >= 2 ? "text-green-600 font-medium" : ""}
+              className={
+                currentStep >= 2
+                  ? "text-primary font-semibold"
+                  : "text-muted-foreground"
+              }
             >
               Upload video
             </span>
           </div>
-        </div>
+        </Card>
 
         {/* Success Message */}
         {successMessage && (
-          <div className="bg-green-50 border-2 border-green-500 rounded-xl p-6 mb-6 shadow-lg animate-in fade-in slide-in-from-top-2 duration-300">
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0">
-                <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-                  <HiCheckCircle className="h-6 w-6 text-white" />
+          <div className="mb-6">
+            <Alert variant="success" title="Thành công!">
+              <p>{successMessage}</p>
+              {successMessage.includes("chuyển hướng") && (
+                <div className="mt-2 flex items-center gap-2 text-xs">
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                  <span>Đang chuyển hướng về trang quản lý bài học...</span>
                 </div>
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-bold text-green-900 mb-1">
-                  Thành công!
-                </h3>
-                <p className="text-sm text-green-800 font-medium leading-relaxed">
-                  {successMessage}
-                </p>
-                {successMessage.includes("chuyển hướng") && (
-                  <div className="mt-3 flex items-center gap-2 text-xs text-green-700">
-                    <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
-                    <span>Đang chuyển hướng về trang quản lý bài học...</span>
-                  </div>
-                )}
-              </div>
-            </div>
+              )}
+            </Alert>
           </div>
         )}
 
         {/* Error Message */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
-            <div className="flex items-center gap-2">
-              <HiXCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
-              <p className="text-sm text-red-800">{error}</p>
-            </div>
+          <div className="mb-6">
+            <Alert variant="destructive">{error}</Alert>
           </div>
         )}
 
         {/* Upload Progress */}
         {showUploadProgress && uploadProgress && (
-          <div className="bg-green-50 border-2 border-green-200 rounded-xl p-6 mb-6">
+          <Card variant="pastel-blue" className="p-6 mb-6 border border-border">
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                    <HiCloudUpload className="h-6 w-6 text-green-600" />
+                  <div className="w-12 h-12 bg-primary text-white rounded-xl flex items-center justify-center shadow-xs">
+                    <UploadCloud className="h-6 w-6" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-gray-900">
+                    <h3 className="font-bold text-foreground">
                       Đang upload và xử lý video
                     </h3>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-muted-foreground">
                       Video đang được upload và xử lý ở nền. Bạn có thể quay lại
                       sau.
                     </p>
@@ -585,24 +595,24 @@ const CreateVideoLesson = () => {
 
                 {/* Progress Bar */}
                 <div className="mb-4">
-                  <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
-                    <span className="font-medium">
+                  <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
+                    <span className="font-medium text-foreground">
                       Tiến độ: {uploadProgress.percent.toFixed(1)}%
                     </span>
                     {uploadProgress.speed_mb_s > 0 && (
-                      <span className="text-gray-500">
+                      <span className="text-muted-foreground">
                         {uploadProgress.speed_mb_s.toFixed(2)} MB/s
                       </span>
                     )}
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                  <div className="w-full bg-primary-light/60 rounded-full h-2.5 overflow-hidden">
                     <div
-                      className="bg-gradient-to-r from-green-500 to-emerald-600 h-3 rounded-full transition-all duration-300"
+                      className="bg-primary h-2.5 rounded-full transition-all duration-300"
                       style={{ width: `${uploadProgress.percent}%` }}
                     />
                   </div>
                   {uploadProgress.total_mb > 0 && (
-                    <div className="flex items-center justify-between text-xs text-gray-500 mt-2">
+                    <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
                       <span>
                         Đã upload: {uploadProgress.uploaded_mb.toFixed(2)} MB
                       </span>
@@ -612,51 +622,49 @@ const CreateVideoLesson = () => {
                 </div>
 
                 {uploadProgress.is_completed && (
-                  <div className="bg-green-100 border border-green-300 rounded-lg p-3 mb-4">
-                    <div className="flex items-center gap-2">
-                      <HiCheckCircle className="h-5 w-5 text-green-600" />
-                      <p className="text-sm font-medium text-green-800">
-                        Video đã được upload và xử lý thành công!
-                      </p>
-                    </div>
+                  <div className="mb-4">
+                    <Alert variant="success">
+                      Video đã được upload và xử lý thành công!
+                    </Alert>
                   </div>
                 )}
 
-                <div className="flex items-center gap-3">
-                  <button
+                <div className="flex items-center gap-3 flex-wrap">
+                  <Button
                     type="button"
+                    variant="primary"
+                    size="sm"
                     onClick={handleBackToChapters}
-                    className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors text-sm"
                   >
                     Quay về danh sách bài học
-                  </button>
+                  </Button>
                   {uploadProgress.is_completed ? (
-                    <p className="text-xs text-green-600 font-medium">
-                      ✓ Upload hoàn tất. Đang chuyển hướng về danh sách bài học
+                    <p className="text-xs text-success-foreground font-medium">
+                      Upload hoàn tất. Đang chuyển hướng về danh sách bài học
                       trong 3 giây...
                     </p>
                   ) : (
-                    <p className="text-xs text-gray-500">
-                      💡 Upload sẽ tiếp tục chạy ở nền. Bạn có thể quay lại bất
-                      cứ lúc nào.
+                    <p className="text-xs text-muted-foreground">
+                      Upload sẽ tiếp tục chạy ở nền. Bạn có thể quay lại bất cứ
+                      lúc nào.
                     </p>
                   )}
                 </div>
               </div>
             </div>
-          </div>
+          </Card>
         )}
 
         {/* Step Content */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-8 mb-6">
+        <Card className="border border-border bg-surface shadow-xs p-8 mb-6">
           {/* Step 0: Basic Info */}
           {currentStep === 0 && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                <h2 className="text-2xl font-bold font-display text-foreground mb-1">
                   Thông tin cơ bản về bài học
                 </h2>
-                <p className="text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   Nhập thông tin cơ bản để mô tả bài học video của bạn
                 </p>
               </div>
@@ -665,28 +673,22 @@ const CreateVideoLesson = () => {
                 {/* Title */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm font-semibold text-gray-700">
-                      Tiêu đề bài học <span className="text-red-500">*</span>
+                    <label className="block text-sm font-semibold text-foreground">
+                      Tiêu đề bài học <span className="text-destructive">*</span>
                     </label>
-                    <button
+                    <Button
                       type="button"
+                      variant="outline"
+                      size="sm"
                       onClick={handleGenerateTitle}
                       disabled={isGeneratingTitle || !formData.title.trim()}
-                      className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-lg transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm hover:shadow-md"
-                      title="Tự động tạo tiêu đề từ AI"
+                      isLoading={isGeneratingTitle}
+                      loadingText="Đang tạo..."
+                      leftIcon={<Sparkles className="h-4 w-4" />}
+                      className="border-primary text-primary hover:bg-primary-light/50"
                     >
-                      {isGeneratingTitle ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                          Đang tạo...
-                        </>
-                      ) : (
-                        <>
-                          <span>🤖</span>
-                          Tạo tiêu đề tự động
-                        </>
-                      )}
-                    </button>
+                      Tạo tiêu đề tự động
+                    </Button>
                   </div>
                   <input
                     type="text"
@@ -698,56 +700,52 @@ const CreateVideoLesson = () => {
                       }))
                     }
                     placeholder="Ví dụ: Giới thiệu về Python"
-                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${
+                    className={`w-full px-4 py-3 border rounded-xl bg-surface text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 transition-all ${
                       errors.title
-                        ? "border-red-300 focus:ring-red-500"
-                        : "border-gray-300 focus:ring-green-500 focus:border-transparent"
+                        ? "border-destructive focus:ring-destructive"
+                        : "border-border focus:ring-primary focus:border-transparent"
                     }`}
                   />
                   {errors.title && (
-                    <p className="text-red-600 text-sm mt-1">{errors.title}</p>
+                    <p className="text-destructive text-sm mt-1">
+                      {errors.title}
+                    </p>
                   )}
-                  <p className="text-xs text-gray-500 mt-1">
-                    💡 Nhập tiêu đề và nhấn "Tạo tiêu đề tự động" để AI tối ưu
-                    tiêu đề cho bạn
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Nhập tiêu đề và nhấn &ldquo;Tạo tiêu đề tự động&rdquo; để AI
+                    tối ưu tiêu đề cho bạn
                   </p>
                 </div>
 
                 {/* Description */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm font-semibold text-gray-700">
-                      Mô tả bài học <span className="text-red-500">*</span>
+                    <label className="block text-sm font-semibold text-foreground">
+                      Mô tả bài học <span className="text-destructive">*</span>
                     </label>
-                    <button
+                    <Button
                       type="button"
+                      variant="outline"
+                      size="sm"
                       onClick={handleGenerateDescription}
                       disabled={
                         isGeneratingDescription ||
                         !formData.title.trim() ||
                         !sectionName
                       }
-                      className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-lg transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm hover:shadow-md"
-                      title="Tự động tạo mô tả từ AI"
+                      isLoading={isGeneratingDescription}
+                      loadingText="Đang tạo..."
+                      leftIcon={<Sparkles className="h-4 w-4" />}
+                      className="border-primary text-primary hover:bg-primary-light/50"
                     >
-                      {isGeneratingDescription ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                          Đang tạo...
-                        </>
-                      ) : (
-                        <>
-                          <span>🤖</span>
-                          Tạo mô tả tự động
-                        </>
-                      )}
-                    </button>
+                      Tạo mô tả tự động
+                    </Button>
                   </div>
                   <div
-                    className={`rounded-lg overflow-hidden ${
+                    className={`rounded-xl overflow-hidden ${
                       errors.description
-                        ? "border-2 border-red-300"
-                        : "border border-gray-300"
+                        ? "border-2 border-destructive"
+                        : "border border-border"
                     }`}
                   >
                     <TiptapEditor
@@ -763,18 +761,18 @@ const CreateVideoLesson = () => {
                     />
                   </div>
                   {errors.description && (
-                    <p className="text-red-600 text-sm mt-1">
+                    <p className="text-destructive text-sm mt-1">
                       {errors.description}
                     </p>
                   )}
-                  <p className="text-xs text-gray-500 mt-1">
-                    💡 Nhập tiêu đề và nhấn "Tạo mô tả tự động" để AI tạo mô tả
-                    chi tiết cho bạn
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Nhập tiêu đề và nhấn &ldquo;Tạo mô tả tự động&rdquo; để AI tạo
+                    mô tả chi tiết cho bạn
                   </p>
                 </div>
 
                 {/* Is Preview */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 pt-2">
                   <input
                     type="checkbox"
                     id="is_preview"
@@ -785,16 +783,16 @@ const CreateVideoLesson = () => {
                         is_preview: e.target.checked,
                       }))
                     }
-                    className="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500 cursor-pointer"
+                    className="w-5 h-5 text-primary border-border rounded focus:ring-primary cursor-pointer"
                   />
                   <label
                     htmlFor="is_preview"
-                    className="text-sm font-medium text-gray-700 cursor-pointer"
+                    className="text-sm font-medium text-foreground cursor-pointer"
                   >
                     Cho phép xem trước bài học này (Preview)
                   </label>
                 </div>
-                <p className="text-xs text-gray-500 -mt-3 ml-8">
+                <p className="text-xs text-muted-foreground ml-8">
                   Học viên có thể xem bài học này miễn phí mà không cần đăng ký
                   khóa học
                 </p>
@@ -806,10 +804,10 @@ const CreateVideoLesson = () => {
           {currentStep === 1 && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                <h2 className="text-2xl font-bold font-display text-foreground mb-1">
                   Chọn phương thức upload video
                 </h2>
-                <p className="text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   Bạn muốn sử dụng video từ YouTube hay upload file video?
                 </p>
               </div>
@@ -824,36 +822,30 @@ const CreateVideoLesson = () => {
                       uploadMethod: "youtube",
                     }))
                   }
-                  className={`p-6 border-2 rounded-xl transition-all text-left ${
+                  className={`p-6 border-2 rounded-2xl transition-all text-left cursor-pointer ${
                     formData.uploadMethod === "youtube"
-                      ? "border-green-500 bg-green-50"
-                      : "border-gray-200 hover:border-green-300 hover:bg-green-50/50"
+                      ? "border-primary bg-primary-light/40 shadow-xs"
+                      : "border-border hover:border-primary-pastel hover:bg-surface-muted bg-surface"
                   }`}
                 >
                   <div className="flex items-center gap-4 mb-3">
                     <div
-                      className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+                      className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-xs ${
                         formData.uploadMethod === "youtube"
-                          ? "bg-green-500"
-                          : "bg-gray-100"
+                          ? "bg-primary text-white"
+                          : "bg-primary-light text-primary"
                       }`}
                     >
-                      <HiVideoCamera
-                        className={`h-6 w-6 ${
-                          formData.uploadMethod === "youtube"
-                            ? "text-white"
-                            : "text-gray-600"
-                        }`}
-                      />
+                      <Video className="h-6 w-6" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-gray-900">YouTube URL</h3>
-                      <p className="text-sm text-gray-600">
+                      <h3 className="font-bold text-foreground">YouTube URL</h3>
+                      <p className="text-sm text-muted-foreground">
                         Liên kết video từ YouTube
                       </p>
                     </div>
                   </div>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted-foreground">
                     Dán link YouTube vào bước tiếp theo. Video sẽ được tự động
                     tải lên hệ thống.
                   </p>
@@ -868,36 +860,30 @@ const CreateVideoLesson = () => {
                       uploadMethod: "file",
                     }))
                   }
-                  className={`p-6 border-2 rounded-xl transition-all text-left ${
+                  className={`p-6 border-2 rounded-2xl transition-all text-left cursor-pointer ${
                     formData.uploadMethod === "file"
-                      ? "border-green-500 bg-green-50"
-                      : "border-gray-200 hover:border-green-300 hover:bg-green-50/50"
+                      ? "border-primary bg-primary-light/40 shadow-xs"
+                      : "border-border hover:border-primary-pastel hover:bg-surface-muted bg-surface"
                   }`}
                 >
                   <div className="flex items-center gap-4 mb-3">
                     <div
-                      className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+                      className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-xs ${
                         formData.uploadMethod === "file"
-                          ? "bg-green-500"
-                          : "bg-gray-100"
+                          ? "bg-primary text-white"
+                          : "bg-primary-light text-primary"
                       }`}
                     >
-                      <HiCloudUpload
-                        className={`h-6 w-6 ${
-                          formData.uploadMethod === "file"
-                            ? "text-white"
-                            : "text-gray-600"
-                        }`}
-                      />
+                      <UploadCloud className="h-6 w-6" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-gray-900">Upload File</h3>
-                      <p className="text-sm text-gray-600">
+                      <h3 className="font-bold text-foreground">Upload File</h3>
+                      <p className="text-sm text-muted-foreground">
                         Tải video từ máy tính
                       </p>
                     </div>
                   </div>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted-foreground">
                     Upload file video trực tiếp. Hỗ trợ định dạng MP4, MOV, AVI
                     (tối đa 2GB).
                   </p>
@@ -905,7 +891,7 @@ const CreateVideoLesson = () => {
               </div>
 
               {errors.uploadMethod && (
-                <p className="text-red-600 text-sm mt-2">
+                <p className="text-destructive text-sm mt-2">
                   {errors.uploadMethod}
                 </p>
               )}
@@ -916,12 +902,12 @@ const CreateVideoLesson = () => {
           {currentStep === 2 && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                <h2 className="text-2xl font-bold font-display text-foreground mb-1">
                   {formData.uploadMethod === "youtube"
                     ? "Nhập URL video YouTube"
                     : "Upload file video"}
                 </h2>
-                <p className="text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   {formData.uploadMethod === "youtube"
                     ? "Dán link video YouTube của bạn vào ô bên dưới"
                     : "Chọn file video từ máy tính của bạn"}
@@ -931,12 +917,12 @@ const CreateVideoLesson = () => {
               {formData.uploadMethod === "youtube" && (
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      URL Video YouTube <span className="text-red-500">*</span>
+                    <label className="block text-sm font-semibold text-foreground mb-2">
+                      URL Video YouTube <span className="text-destructive">*</span>
                     </label>
                     <div className="flex items-center gap-3">
                       <div className="flex-1 relative">
-                        <HiLink className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                        <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                         <input
                           type="text"
                           value={formData.video_url}
@@ -947,20 +933,20 @@ const CreateVideoLesson = () => {
                             }))
                           }
                           placeholder="https://www.youtube.com/watch?v=..."
-                          className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${
+                          className={`w-full pl-10 pr-4 py-3 border rounded-xl bg-surface text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 transition-all ${
                             errors.video_url
-                              ? "border-red-300 focus:ring-red-500"
-                              : "border-gray-300 focus:ring-green-500 focus:border-transparent"
+                              ? "border-destructive focus:ring-destructive"
+                              : "border-border focus:ring-primary focus:border-transparent"
                           }`}
                         />
                       </div>
                     </div>
                     {errors.video_url && (
-                      <p className="text-red-600 text-sm mt-1">
+                      <p className="text-destructive text-sm mt-1">
                         {errors.video_url}
                       </p>
                     )}
-                    <p className="text-xs text-gray-500 mt-2">
+                    <p className="text-xs text-muted-foreground mt-2">
                       Ví dụ: https://www.youtube.com/watch?v=dQw4w9WgXcQ hoặc
                       https://youtu.be/dQw4w9WgXcQ
                     </p>
@@ -970,20 +956,15 @@ const CreateVideoLesson = () => {
                     !errors.video_url &&
                     (formData.video_url.includes("youtube.com") ||
                       formData.video_url.includes("youtu.be")) && (
-                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                        <div className="flex items-center gap-3">
-                          <HiVideoCamera className="h-6 w-6 text-green-600" />
-                          <div>
-                            <p className="font-medium text-gray-900">
-                              Video YouTube đã được nhận diện
-                            </p>
-                            <p className="text-sm text-gray-600">
-                              Video sẽ được tự động tải lên hệ thống sau khi bạn
-                              hoàn tất
-                            </p>
-                          </div>
-                        </div>
-                      </div>
+                      <Alert variant="info" icon={<Video className="h-5 w-5" />}>
+                        <p className="font-semibold text-foreground">
+                          Video YouTube đã được nhận diện
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Video sẽ được tự động tải lên hệ thống sau khi bạn hoàn
+                          tất
+                        </p>
+                      </Alert>
                     )}
                 </div>
               )}
@@ -991,10 +972,10 @@ const CreateVideoLesson = () => {
               {formData.uploadMethod === "file" && (
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      File Video <span className="text-red-500">*</span>
+                    <label className="block text-sm font-semibold text-foreground mb-2">
+                      File Video <span className="text-destructive">*</span>
                     </label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-green-400 transition-colors">
+                    <div className="border-2 border-dashed border-border hover:border-primary rounded-2xl p-8 text-center bg-surface-muted/30 transition-colors">
                       <input
                         type="file"
                         accept="video/*"
@@ -1006,105 +987,101 @@ const CreateVideoLesson = () => {
                         htmlFor="video-file-input"
                         className="cursor-pointer flex flex-col items-center"
                       >
-                        <HiCloudUpload className="h-12 w-12 text-gray-400 mb-4" />
-                        <p className="text-sm font-medium text-gray-700 mb-1">
+                        <div className="w-14 h-14 rounded-2xl bg-primary-light text-primary flex items-center justify-center mb-3 shadow-xs">
+                          <UploadCloud className="h-7 w-7" />
+                        </div>
+                        <p className="text-sm font-medium text-foreground mb-1">
                           Click để chọn file video
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-muted-foreground">
                           MP4, MOV, AVI (tối đa 2GB)
                         </p>
                       </label>
                     </div>
                     {errors.video_file && (
-                      <p className="text-red-600 text-sm mt-2">
+                      <p className="text-destructive text-sm mt-2">
                         {errors.video_file}
                       </p>
                     )}
                   </div>
 
                   {formData.video_file && (
-                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <HiPlay className="h-6 w-6 text-green-600" />
-                          <div>
-                            <p className="font-medium text-gray-900">
-                              {formData.video_file.name}
-                            </p>
-                            <p className="text-sm text-gray-600">
-                              {(
-                                formData.video_file.size /
-                                (1024 * 1024)
-                              ).toFixed(2)}{" "}
-                              MB
-                            </p>
-                          </div>
+                    <div className="bg-surface-muted border border-border rounded-xl p-4 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-primary-light text-primary flex items-center justify-center">
+                          <Play className="h-5 w-5" />
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setFormData((prev) => ({
-                              ...prev,
-                              video_file: null,
-                            }));
-                            setVideoPreview(null);
-                          }}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <HiXCircle className="h-5 w-5" />
-                        </button>
+                        <div>
+                          <p className="font-medium text-foreground">
+                            {formData.video_file.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {(
+                              formData.video_file.size /
+                              (1024 * 1024)
+                            ).toFixed(2)}{" "}
+                            MB
+                          </p>
+                        </div>
                       </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormData((prev) => ({
+                            ...prev,
+                            video_file: null,
+                          }));
+                          setVideoPreview(null);
+                        }}
+                        className="text-muted-foreground hover:text-destructive p-1 rounded-lg hover:bg-destructive-bg transition-colors"
+                        aria-label="Xóa video đã chọn"
+                      >
+                        <XCircle className="h-5 w-5" />
+                      </button>
                     </div>
                   )}
                 </div>
               )}
             </div>
           )}
-        </div>
+        </Card>
 
         {/* Navigation Buttons */}
-        <div className="flex items-center justify-between bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-          <button
+        <Card className="flex items-center justify-between p-6 border border-border bg-surface shadow-xs">
+          <Button
             type="button"
+            variant="outline"
             onClick={handleBack}
             disabled={currentStep === 0 || isSubmitting || isUploading}
-            className="flex items-center gap-2 px-6 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            leftIcon={<ChevronLeft className="h-4 w-4" />}
           >
-            <HiChevronLeft className="h-5 w-5" />
             Quay lại
-          </button>
+          </Button>
 
           {currentStep < totalSteps - 1 ? (
-            <button
+            <Button
               type="button"
+              variant="primary"
               onClick={handleNext}
               disabled={isSubmitting || isUploading}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-lg font-medium transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              rightIcon={<ChevronRight className="h-4 w-4" />}
             >
               Tiếp theo
-              <HiChevronRight className="h-5 w-5" />
-            </button>
+            </Button>
           ) : (
-            <button
+            <Button
               type="button"
+              variant="primary"
               onClick={handleSubmit}
               disabled={isSubmitting || isUploading}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-lg font-medium transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              isLoading={isSubmitting || isUploading}
+              loadingText="Đang xử lý..."
+              leftIcon={<CheckCircle2 className="h-4 w-4" />}
             >
-              {isSubmitting || isUploading ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Đang xử lý...
-                </>
-              ) : (
-                <>
-                  <HiCheckCircle className="h-5 w-5" />
-                  Hoàn tất
-                </>
-              )}
-            </button>
+              Hoàn tất
+            </Button>
           )}
-        </div>
+        </Card>
       </div>
     </div>
   );

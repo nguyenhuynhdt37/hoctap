@@ -73,8 +73,9 @@ Prefix backend `/api/v1`, web proxy `/api`.
 | GET `/catalog/courses` | Public published+approved+not deleted, provider đủ điều kiện |
 | GET `/catalog/courses/{id}/taxonomy` | Public course; owner/admin được đọc metadata của draft |
 | GET `/providers`, `/providers/{slug}` | Thông tin công khai, không email/điện thoại học sinh |
-| GET/POST `/lecturer/providers`, PUT `/lecturer/providers/{id}` | Membership/owner/manager kiểm tra phía server |
-| PUT `/providers/{id}/members` | Owner hoặc admin; không thu hồi owner cuối cùng |
+| GET `/lecturer/providers` | Giảng viên đọc các đơn vị được cấp liên kết; tạo/sửa trực tiếp bị chặn, gửi yêu cầu qua `/lecturer/provider-requests` |
+| PUT `/admin/providers/{id}/members` | Chỉ ADMIN cấp/thu hồi liên kết giảng viên; không có role riêng của đơn vị; thu hồi cần lý do |
+| GET `/admin/providers/{id}/membership-events` | Chỉ ADMIN đọc lịch sử cấp/thu hồi liên kết |
 | GET/POST `/admin/catalog/{kind}` | Admin; kinds: levels, grades, subjects, learning-goals, exams |
 | PUT/DELETE `/admin/catalog/{kind}/{id}` | Admin; code/slug ổn định, FK chặn xóa đang dùng |
 | PUT `/admin/catalog/grades/{id}/subjects` | Body UUID[]; không bỏ môn đang được khóa học sử dụng |
@@ -101,7 +102,7 @@ Không thu thập thêm dữ liệu học sinh hoặc business documents trong V
 - [ ] Admin tạo/sửa môn, mã trùng bị từ chối; gắn môn vào nhiều lớp; xóa mục đang dùng bị chặn.
 - [ ] Admin đổi category name giữ URL; đổi cha tạo cycle/depth quá mức bị chặn; không truyền parent_id giữ nguyên.
 - [ ] Lecturer tạo course legacy không education; chỉnh education, chọn nhiều lớp và đọc lại; membership sai bị từ chối.
-- [ ] Provider owner cấp manager/instructor/editor, tham gia nhiều provider; owner cuối không bị thu hồi.
+- [ ] Chỉ admin cấp/thu hồi liên kết giảng viên; không có owner/manager/editor của đơn vị; cấp lại giữ lịch sử thu hồi; tài khoản không có LECTURER bị từ chối.
 - [ ] Filter URL refresh/back/forward giữ lựa chọn; đổi grade cập nhật môn; sort và cursor không trùng/mất khóa bằng giá trị.
 - [ ] Anonymous không thấy draft/pending/deleted; chưa settlement không checkout; learner cũ vẫn truy cập khóa đã mua.
 - [ ] Desktop/mobileweb không tràn ngang; filter mở/đóng; loading/empty/error/retry; bàn phím và label form.

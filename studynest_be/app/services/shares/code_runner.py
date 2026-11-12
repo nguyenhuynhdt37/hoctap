@@ -1,5 +1,4 @@
-from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import httpx
 from loguru import logger
@@ -8,14 +7,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.settings import settings
 from app.db.models.database import SupportedLanguages
-from app.libs.formats.datetime import now as get_now, to_utc_naive
+from app.libs.formats.datetime import now as get_now
+from app.libs.formats.datetime import to_utc_naive
 
 
 class PistonService:
     """Service gọi đến Piston API: run code (1 hoặc nhiều file) + sync runtime."""
 
     def __init__(self):
-        self.base_url = settings.PISTON_URL
+        self.base_url = settings.PISTON_URL.rstrip("/")
+        self.headers = (
+            {"Authorization": f"Bearer {settings.PISTON_API_KEY}"}
+            if settings.PISTON_API_KEY
+            else {}
+        )
 
     # =========================================================
     # 🧠 1️⃣ RUN CODE — TỰ ĐỘNG PHÂN BIỆT 1 FILE / NHIỀU FILE
@@ -23,10 +28,10 @@ class PistonService:
     async def run_code(
         self,
         language: str,
-        files: List[Dict[str, str]],
-        version: Optional[str] = None,
-        stdin: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        files: list[dict[str, str]],
+        version: str | None = None,
+        stdin: str | None = None,
+    ) -> dict[str, Any]:
         """
         Chạy code qua Piston API.
         - Nếu files có 1 phần tử → chạy đơn
@@ -49,7 +54,7 @@ class PistonService:
         if stdin:
             payload["stdin"] = stdin
 
-        async with httpx.AsyncClient(timeout=20) as client:
+        async with httpx.AsyncClient(timeout=20, headers=self.headers) as client:
             try:
                 resp = await client.post(url, json=payload)
                 resp.raise_for_status()
@@ -71,7 +76,7 @@ class PistonService:
     async def sync_supported_languages(self, db: AsyncSession) -> int:
         url = f"{self.base_url}/api/v2/runtimes"
 
-        async with httpx.AsyncClient(timeout=15) as client:
+        async with httpx.AsyncClient(timeout=15, headers=self.headers) as client:
             resp = await client.get(url)
             resp.raise_for_status()
             runtimes = resp.json()

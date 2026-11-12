@@ -10,9 +10,9 @@ from typing import Any
 import aiofiles
 import httpx
 import isodate
+from fastapi import HTTPException
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
 from loguru import logger
 from starlette.datastructures import UploadFile
 
@@ -24,7 +24,6 @@ SCOPES: list[str] = [
 ]
 
 TOKEN_PATH = "app/core/secret/token.json"
-CLIENT_SECRET_PATH = "app/core/secret/client_secret.json"
 
 UPLOAD_PROGRESS: dict[str, int] = {}
 UPLOAD_RESULT: dict[str, dict[str, str]] = {}
@@ -39,29 +38,17 @@ class YouTubeAsyncService:
     def __init__(self) -> None:
         self._access_token: str | None = None
         self._creds: Credentials | None = None
-        self._authenticate_console_if_missing()
 
     # ======================================================
     # 🔑 AUTH
     # ======================================================
-    def _authenticate_console_if_missing(self) -> None:
-        """Nếu chưa có token thì yêu cầu xác thực Google qua console."""
-        if os.path.exists(TOKEN_PATH):
-            return
-        if not os.path.exists(CLIENT_SECRET_PATH):
-            raise FileNotFoundError(f"❌ Thiếu file {CLIENT_SECRET_PATH}")
-
-        logger.info("🔑 Chưa có token — tiến hành xác thực Google (console)…")
-        flow = InstalledAppFlow.from_client_secrets_file(CLIENT_SECRET_PATH, SCOPES)
-        creds = flow.run_console()
-        os.makedirs(os.path.dirname(TOKEN_PATH), exist_ok=True)
-        with open(TOKEN_PATH, "w", encoding="utf-8") as f:
-            f.write(creds.to_json())
-        logger.success(f"✅ Token mới đã lưu tại: {TOKEN_PATH}")
-
     async def _load_token(self) -> dict[str, Any]:
+        # Shared lesson dependencies also serve code/article lessons. Authenticate
+        # only for YouTube operations, never launch an interactive flow in a request.
         if not os.path.exists(TOKEN_PATH):
-            self._authenticate_console_if_missing()
+            raise HTTPException(
+                503, "Chưa cấu hình xác thực YouTube. Vui lòng liên hệ quản trị viên."
+            )
         async with aiofiles.open(TOKEN_PATH, "r") as f:
             return json.loads(await f.read())
 

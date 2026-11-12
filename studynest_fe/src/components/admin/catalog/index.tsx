@@ -1,5 +1,6 @@
 "use client";
 import CatalogAdminNav from "./catalog-nav";
+import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import useSWR from "swr";
 import axios from "axios";
@@ -25,6 +26,7 @@ function errorMessage(error: unknown) {
     : "Không lưu được. Kiểm tra dữ liệu hoặc thử lại.";
 }
 export default function CatalogAdmin() {
+  const router = useRouter();
   const [tab, setTab] = useState("levels");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -142,6 +144,7 @@ export default function CatalogAdmin() {
             key={key}
             variant={tab === key ? "primary" : "outline"}
             onClick={() => {
+              if (key === "providers") { router.push("/admin/providers"); return; }
               setTab(key);
               setPage(1);
               setEditing(null);

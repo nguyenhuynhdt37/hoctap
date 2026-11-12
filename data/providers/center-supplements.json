@@ -1,0 +1,44 @@
+[
+  {
+    "name": "VTED",
+    "website_url": "https://vted.vn/",
+    "source_url": "https://vted.vn/khoa-hoc.html",
+    "page_title": "Danh sách khóa học toán và luyện thi THPT",
+    "checked_at": "2026-11-12T04:33:26.077691+00:00"
+  },
+  {
+    "name": "Mclass",
+    "website_url": "https://mclass.vn/",
+    "source_url": "https://play.google.com/store/apps/details?hl=vi&id=vn.mclass.elearning",
+    "page_title": "Mclass - Lớp học Livestream; nhà phát triển công bố khóa luyện thi THPT",
+    "checked_at": "2026-11-12T04:33:26.077691+00:00"
+  },
+  {
+    "name": "Luyện Thi 123",
+    "website_url": "https://luyenthi123.edu.vn/",
+    "source_url": "https://luyenthi123.edu.vn/",
+    "page_title": "Luyện Thi 123 - Học chắc nền tảng, vững vàng mỗi kỳ thi",
+    "checked_at": "2026-11-12T04:33:26.077691+00:00"
+  },
+  {
+    "name": "Luyện thi Nguyễn Thượng Hiền",
+    "website_url": "https://ltnth.edu.vn/",
+    "source_url": "https://ltnth.edu.vn/",
+    "page_title": "Trung tâm luyện thi THPT và đại học Nguyễn Thượng Hiền",
+    "checked_at": "2026-11-12T04:33:26.077691+00:00"
+  },
+  {
+    "name": "Bồi dưỡng văn hóa và Luyện thi Thành Công",
+    "website_url": "https://ttthanhcong.edu.vn/",
+    "source_url": "https://ttthanhcong.edu.vn/list_news.php",
+    "page_title": "Bồi dưỡng Văn hóa và Luyện thi Thành Công - tài liệu tốt nghiệp THPT",
+    "checked_at": "2026-11-12T04:33:26.077691+00:00"
+  },
+  {
+    "name": "Luyện thi Nhân Tài Việt",
+    "website_url": "https://toanlyhoa.vn/",
+    "source_url": "https://toanlyhoa.vn/",
+    "page_title": "Trung tâm Nhân Tài Việt - ôn thi THPT, đại học, đánh giá năng lực",
+    "checked_at": "2026-11-12T04:33:26.077691+00:00"
+  }
+]

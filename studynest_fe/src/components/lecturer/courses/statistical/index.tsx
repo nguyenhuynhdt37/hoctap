@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
+import { Alert, Card, Skeleton } from "@/components/ui";
 import api from "@/lib/utils/fetcher/client/axios";
 import { getImageUrl } from "@/lib/utils/helpers/image";
 import type {
@@ -318,10 +319,10 @@ export default function LecturerCourseStats() {
       <div className="max-w-screen-2xl mx-auto px-2 md:px-4 lg:px-6 py-6 md:py-10">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-foreground">
+          <h1 className="font-display text-2xl md:text-3xl font-bold tracking-tight text-foreground">
             Thống kê học viên
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground mt-1">
             {data?.title
               ? `Khóa học: ${data.title}`
               : "Tổng quan tình trạng học"}
@@ -332,29 +333,26 @@ export default function LecturerCourseStats() {
         {isLoading && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {[...Array(4)].map((_, i) => (
-              <div
-                key={i}
-                className="rounded-2xl border border-border bg-white shadow-xs p-5 animate-pulse"
-              >
-                <div className="h-4 w-32 bg-primary-light rounded mb-3" />
-                <div className="h-8 w-24 bg-primary-light rounded" />
-              </div>
+              <Card key={i} className="p-5">
+                <Skeleton className="h-4 w-32 mb-3" />
+                <Skeleton className="h-8 w-24" />
+              </Card>
             ))}
           </div>
         )}
 
         {/* Error */}
         {error && !isLoading && (
-          <div className="rounded-2xl border border-accent-vanilla bg-warning-bg p-5 text-warning-foreground">
+          <Alert variant="warning" title="Không thể tải thống kê">
             {error}
-          </div>
+          </Alert>
         )}
 
         {/* Content */}
         {data && !isLoading && !error && (
           <div className="space-y-6">
             {/* Course meta overview */}
-            <div className="rounded-[24px] border border-border bg-white shadow-xs p-6">
+            <Card className="rounded-[24px] p-6">
               <div className="flex items-start gap-4">
                 {data.thumbnail_url ? (
                   <img
@@ -464,16 +462,16 @@ export default function LecturerCourseStats() {
                   </div>
                 </div>
               </div>
-            </div>
+            </Card>
             {/* Stat cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="rounded-[20px] border border-border bg-white shadow-xs p-5">
+              <Card className="rounded-[20px] p-5">
                 <div className="text-sm text-muted-foreground mb-1">Tổng học viên</div>
                 <div className="text-3xl font-semibold text-foreground">
                   {data.total_students}
                 </div>
-              </div>
-              <div className="rounded-[20px] border border-border bg-white shadow-xs p-5">
+              </Card>
+              <Card className="rounded-[20px] p-5">
                 <div className="text-sm text-muted-foreground mb-1">
                   Tiến độ trung bình
                 </div>
@@ -493,8 +491,8 @@ export default function LecturerCourseStats() {
                     {data.avg_progress.toFixed(2)}%
                   </span>
                 </div>
-              </div>
-              <div className="rounded-[20px] border border-border bg-white shadow-xs p-5">
+              </Card>
+              <Card className="rounded-[20px] p-5">
                 <div className="text-sm text-muted-foreground mb-1">Doanh thu</div>
                 {(() => {
                   const total =
@@ -521,7 +519,7 @@ export default function LecturerCourseStats() {
                             {formatCurrency(data.revenue_holding || 0)}
                           </div>
                         </div>
-                        <div className="rounded-lg bg-warning-bg border border-accent-vanilla p-2">
+                        <div className="rounded-lg bg-warning-bg border border-warning-border p-2">
                           <div>Chờ xử lý</div>
                           <div className="font-semibold text-warning-foreground">
                             {formatCurrency(data.revenue_pending || 0)}
@@ -531,11 +529,11 @@ export default function LecturerCourseStats() {
                     </>
                   );
                 })()}
-              </div>
+              </Card>
             </div>
 
             {/* Status distribution */}
-            <div className="rounded-[24px] border border-border bg-white shadow-xs p-6">
+            <Card className="rounded-[24px] p-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h2 className="text-lg font-semibold text-foreground">
@@ -564,10 +562,10 @@ export default function LecturerCourseStats() {
                   ) : null}
                 </div>
               </div>
-            </div>
+            </Card>
 
             {/* Timeline (Flow line) */}
-            <div className="rounded-[24px] border border-border bg-white shadow-xs p-6">
+            <Card className="rounded-[24px] p-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h2 className="text-lg font-semibold text-foreground">
@@ -589,7 +587,7 @@ export default function LecturerCourseStats() {
                           | "year") || "day"
                       )
                     }
-                    className="px-3 py-2 rounded-xl border border-border bg-white text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary"
+                    className="px-3 py-2 rounded-xl border border-border bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary"
                   >
                     <option value="day">Theo ngày</option>
                     <option value="month">Theo tháng</option>
@@ -605,12 +603,12 @@ export default function LecturerCourseStats() {
                     <Line data={combinedLineData} options={lineOptions} />
                   </div>
                 ) : (
-                  <div className="h-40 flex items-center justify-center text-subtle-foreground">
+                  <div className="h-40 flex items-center justify-center text-muted-foreground">
                     Không có dữ liệu
                   </div>
                 )}
               </div>
-            </div>
+            </Card>
           </div>
         )}
       </div>

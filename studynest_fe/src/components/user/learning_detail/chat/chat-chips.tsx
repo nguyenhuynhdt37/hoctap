@@ -72,7 +72,9 @@ export const SourceList = memo(function SourceList({
   if (!sources?.length) return null;
 
   return (
-    <div className="flex flex-wrap gap-2 mt-2">
+    <div className="mt-3 border-t border-border pt-3">
+      <p className="mb-2 text-xs font-medium text-foreground">Nguồn tham khảo · {sources.length}</p>
+      <div className="flex flex-wrap gap-2">
       {sources.map((source, idx) => {
         const Icon = getSourceIcon(source);
         const label = getSourceLabel(source);
@@ -89,6 +91,7 @@ export const SourceList = memo(function SourceList({
                 onClick={() => onSourceClick(source)}
                 className="flex items-center gap-1.5 px-2.5 py-1.5 bg-background border border-border rounded-lg hover:bg-primary-pastel/50 hover:border-primary-light hover:text-primary transition-colors text-xs text-muted-foreground max-w-full cursor-pointer"
               >
+                <span className="font-semibold text-primary">[{source.index}]</span>
                 <Icon className="w-3.5 h-3.5 flex-shrink-0" />
                 <span className="truncate max-w-[200px]">{label}</span>
               </button>
@@ -116,12 +119,7 @@ export const SourceList = memo(function SourceList({
                             {formatTime(source.timestamp_seconds)}
                           </span>
                         )}
-                      {source.similarity !== undefined && (
-                        <span className="text-[10px] bg-primary-pastel text-primary px-1.5 py-0.5 rounded-full font-medium">
-                          {Math.round(source.similarity * 100)}%
-                        </span>
-                        
-                      )}
+
                     </div>
                     <h4 className="text-sm font-semibold text-foreground leading-snug truncate">
                       {getSourceTitle(source)}
@@ -191,9 +189,7 @@ export const SourceList = memo(function SourceList({
                 {/* Footer */}
                 <div className="flex items-center justify-between text-[11px]">
                   <span className="text-muted-foreground">
-                    {source.chunk_index !== undefined
-                      ? `Chunk: ${source.chunk_index}`
-                      : `#${source.index}`}
+                    Nguồn [{source.index}]
                   </span>
                   <span className="text-primary font-medium hover:underline cursor-pointer flex items-center gap-1">
                     {getActionLabel(source, isCurrentLesson)} &rarr;
@@ -204,6 +200,7 @@ export const SourceList = memo(function SourceList({
           </HoverCard>
         );
       })}
+      </div>
     </div>
   );
 });

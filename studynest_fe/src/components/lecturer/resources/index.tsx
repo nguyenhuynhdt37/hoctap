@@ -1,5 +1,6 @@
 "use client";
 
+import { prepareImageUpload } from "@/lib/prepare-image-upload";
 import api from "@/lib/utils/fetcher/client/axios";
 import { showToast } from "@/lib/utils/helpers/toast";
 import {
@@ -7,25 +8,30 @@ import {
   CreateResourceResponse,
   LessonResource,
 } from "@/types/lecturer/resource";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import {
-  HiChevronLeft,
-  HiDocument,
-  HiLink,
-  HiPaperClip,
-  HiPlus,
-  HiTrash,
-  HiUpload,
-  HiX,
-} from "react-icons/hi";
+  Archive,
+  ArrowLeft,
+  FileText,
+  Link as LinkIcon,
+  Paperclip,
+  Plus,
+  Trash2,
+  UploadCloud,
+  X,
+} from "lucide-react";
 import useSWR from "swr";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Alert } from "@/components/ui/states";
 
 const Resources = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const lessonId = searchParams.get("lesson_id");
-  console.log("lessonId", lessonId);
+  const params = useParams<{ id?: string }>();
+  const lessonId = params?.id || searchParams.get("lesson_id");
   const [activeTab, setActiveTab] = useState<"file" | "link" | "archive">(
     "file"
   );
@@ -98,9 +104,9 @@ const Resources = () => {
     setIsSubmitting(true);
     try {
       const formData = new FormData();
-      selectedFiles.forEach((file) => {
-        formData.append("files", file);
-      });
+      for (const file of selectedFiles) {
+        formData.append("files", await prepareImageUpload(file, "resource"));
+      }
 
       const response = await api.post<CreateResourceResponse>(
         `/lecturer/lessons/${lessonId}/resources`,
@@ -237,13 +243,13 @@ const Resources = () => {
   const getResourceIcon = (resource: LessonResource) => {
     switch (resource.resource_type) {
       case "file":
-        return <HiDocument className="h-5 w-5 text-green-600" />;
+        return <FileText className="h-5 w-5 text-primary" />;
       case "link":
-        return <HiLink className="h-5 w-5 text-emerald-600" />;
+        return <LinkIcon className="h-5 w-5 text-info-foreground" />;
       case "archive":
-        return <HiPaperClip className="h-5 w-5 text-teal-600" />;
+        return <Archive className="h-5 w-5 text-accent-foreground" />;
       default:
-        return <HiPaperClip className="h-5 w-5 text-gray-600" />;
+        return <Paperclip className="h-5 w-5 text-muted-foreground" />;
     }
   };
 
@@ -270,79 +276,81 @@ const Resources = () => {
     resources?.filter((r) => r.resource_type === "archive") || [];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => router.back()}
-            className="text-gray-600 hover:text-gray-900 mb-4 flex items-center gap-2 transition-colors cursor-pointer"
+            leftIcon={<ArrowLeft className="h-4 w-4" />}
+            className="mb-4 text-muted-foreground hover:text-foreground"
           >
-            <HiChevronLeft className="h-5 w-5" />
             Quay lại
-          </button>
-          <h1 className="text-3xl font-black text-gray-900 mb-2">
+          </Button>
+          <h1 className="text-3xl font-bold font-display text-foreground mb-2">
             Quản lý tài liệu
           </h1>
-          <p className="text-gray-600">
+          <p className="text-sm text-muted-foreground">
             Thêm và quản lý tài liệu, link và file nén cho bài học
           </p>
         </div>
 
         {/* Tabs */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm mb-6">
-          <div className="flex border-b border-gray-200">
+        <Card className="bg-surface rounded-2xl border border-border shadow-xs mb-6 overflow-hidden">
+          <div className="flex border-b border-border overflow-x-auto">
             <button
               onClick={() => setActiveTab("file")}
-              className={`px-6 py-4 font-semibold transition-colors border-b-2 ${
+              className={`px-6 py-4 font-semibold text-sm transition-colors border-b-2 cursor-pointer whitespace-nowrap ${
                 activeTab === "file"
-                  ? "border-green-600 text-green-600"
-                  : "border-transparent text-gray-600 hover:text-gray-900"
+                  ? "border-primary text-primary bg-primary-light/20"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
               <div className="flex items-center gap-2">
-                <HiDocument className="h-5 w-5" />
+                <FileText className="h-4 w-4" />
                 <span>File (PDF/Word)</span>
                 {fileResources.length > 0 && (
-                  <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">
+                  <Badge variant="default" size="sm" className="ml-1">
                     {fileResources.length}
-                  </span>
+                  </Badge>
                 )}
               </div>
             </button>
             <button
               onClick={() => setActiveTab("link")}
-              className={`px-6 py-4 font-semibold transition-colors border-b-2 ${
+              className={`px-6 py-4 font-semibold text-sm transition-colors border-b-2 cursor-pointer whitespace-nowrap ${
                 activeTab === "link"
-                  ? "border-emerald-600 text-emerald-600"
-                  : "border-transparent text-gray-600 hover:text-gray-900"
+                  ? "border-primary text-primary bg-primary-light/20"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
               <div className="flex items-center gap-2">
-                <HiLink className="h-5 w-5" />
+                <LinkIcon className="h-4 w-4" />
                 <span>Link</span>
                 {linkResources.length > 0 && (
-                  <span className="ml-2 px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs rounded-full">
+                  <Badge variant="info" size="sm" className="ml-1">
                     {linkResources.length}
-                  </span>
+                  </Badge>
                 )}
               </div>
             </button>
             <button
               onClick={() => setActiveTab("archive")}
-              className={`px-6 py-4 font-semibold transition-colors border-b-2 ${
+              className={`px-6 py-4 font-semibold text-sm transition-colors border-b-2 cursor-pointer whitespace-nowrap ${
                 activeTab === "archive"
-                  ? "border-teal-600 text-teal-600"
-                  : "border-transparent text-gray-600 hover:text-gray-900"
+                  ? "border-primary text-primary bg-primary-light/20"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
               <div className="flex items-center gap-2">
-                <HiPaperClip className="h-5 w-5" />
+                <Archive className="h-4 w-4" />
                 <span>Archive (ZIP/RAR)</span>
                 {archiveResources.length > 0 && (
-                  <span className="ml-2 px-2 py-0.5 bg-teal-100 text-teal-700 text-xs rounded-full">
+                  <Badge variant="lavender" size="sm" className="ml-1">
                     {archiveResources.length}
-                  </span>
+                  </Badge>
                 )}
               </div>
             </button>
@@ -353,10 +361,10 @@ const Resources = () => {
             {activeTab === "file" && (
               <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-foreground mb-2">
                     Chọn file PDF hoặc Word
                   </label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-green-400 transition-colors">
+                  <div className="border-2 border-dashed border-border hover:border-primary rounded-2xl p-8 text-center bg-surface-muted/30 transition-colors">
                     <input
                       type="file"
                       accept=".pdf,.doc,.docx"
@@ -369,11 +377,13 @@ const Resources = () => {
                       htmlFor="file-input"
                       className="cursor-pointer flex flex-col items-center gap-2"
                     >
-                      <HiUpload className="h-12 w-12 text-gray-400" />
-                      <span className="text-gray-600 font-medium">
+                      <div className="w-12 h-12 rounded-2xl bg-primary-light text-primary flex items-center justify-center mb-1">
+                        <UploadCloud className="h-6 w-6" />
+                      </div>
+                      <span className="text-foreground font-medium text-sm">
                         Click để chọn file hoặc kéo thả vào đây
                       </span>
-                      <span className="text-sm text-gray-500">
+                      <span className="text-xs text-muted-foreground">
                         Hỗ trợ: PDF, DOC, DOCX
                       </span>
                     </label>
@@ -384,76 +394,82 @@ const Resources = () => {
                       {selectedFiles.map((file, index) => (
                         <div
                           key={index}
-                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
+                          className="flex items-center justify-between p-3 bg-surface-muted/60 rounded-xl border border-border"
                         >
                           <div className="flex items-center gap-3 flex-1">
-                            <HiDocument className="h-5 w-5 text-green-600" />
+                            <FileText className="h-5 w-5 text-primary flex-shrink-0" />
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-900 truncate">
+                              <p className="text-sm font-medium text-foreground truncate">
                                 {file.name}
                               </p>
-                              <p className="text-xs text-gray-500">
+                              <p className="text-xs text-muted-foreground">
                                 {formatFileSize(file.size)}
                               </p>
                             </div>
                           </div>
                           <button
                             onClick={() => removeFile(index)}
-                            className="p-1.5 hover:bg-red-50 rounded-lg transition-colors"
+                            className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive-bg rounded-lg transition-colors"
+                            aria-label="Xóa file"
                           >
-                            <HiX className="h-4 w-4 text-red-600" />
+                            <X className="h-4 w-4" />
                           </button>
                         </div>
                       ))}
                     </div>
                   )}
 
-                  <button
+                  <Button
+                    variant="primary"
                     onClick={handleSubmitFile}
                     disabled={selectedFiles.length === 0 || isSubmitting}
-                    className="mt-4 w-full px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold rounded-lg hover:from-green-600 hover:to-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
+                    isLoading={isSubmitting}
+                    loadingText="Đang tải lên..."
+                    leftIcon={<UploadCloud className="h-4 w-4" />}
+                    className="mt-4 w-full"
                   >
-                    <HiUpload className="h-5 w-5" />
-                    {isSubmitting ? "Đang tải lên..." : "Tải lên file"}
-                  </button>
+                    Tải lên file
+                  </Button>
                 </div>
 
                 {/* File List */}
                 {fileResources.length > 0 && (
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-4">
+                    <h3 className="text-lg font-bold font-display text-foreground mb-4">
                       Danh sách file
                     </h3>
                     <div className="space-y-3">
                       {fileResources.map((resource) => (
                         <div
                           key={resource.id}
-                          className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:shadow-md transition-shadow"
+                          className="flex items-center justify-between p-4 bg-surface-muted/40 rounded-xl border border-border hover:border-primary-pastel transition-all"
                         >
-                          <div className="flex items-center gap-4 flex-1">
-                            {getResourceIcon(resource)}
+                          <div className="flex items-center gap-4 flex-1 min-w-0">
+                            <div className="w-10 h-10 rounded-xl bg-primary-light flex items-center justify-center flex-shrink-0">
+                              {getResourceIcon(resource)}
+                            </div>
                             <div className="flex-1 min-w-0">
-                              <h4 className="text-sm font-semibold text-gray-900 truncate">
+                              <h4 className="text-sm font-semibold text-foreground truncate">
                                 {resource.title}
                               </h4>
-                              <div className="flex items-center gap-4 mt-1">
-                                <span className="text-xs text-gray-500">
+                              <div className="flex items-center gap-3 mt-1 flex-wrap">
+                                <span className="text-xs text-muted-foreground">
                                   {formatFileSize(resource.file_size)}
                                 </span>
-                                <span className="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded">
+                                <Badge variant="default" size="sm">
                                   {getResourceTypeLabel(resource)}
-                                </span>
+                                </Badge>
                                 {resource.embed_status !== "skipped" && (
-                                  <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded">
+                                  <Badge variant="neutral" size="sm">
                                     {resource.embed_status}
-                                  </span>
+                                  </Badge>
                                 )}
                               </div>
                               <a
                                 href={resource.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-xs text-green-600 hover:text-emerald-700 mt-1 inline-block truncate max-w-md"
+                                className="text-xs text-primary hover:underline mt-1 inline-block truncate max-w-md"
                               >
                                 {resource.url}
                               </a>
@@ -461,10 +477,10 @@ const Resources = () => {
                           </div>
                           <button
                             onClick={() => setResourceToDelete(resource.id)}
-                            className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                            className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive-bg rounded-lg transition-colors flex-shrink-0"
                             title="Xóa"
                           >
-                            <HiTrash className="h-5 w-5 text-red-600" />
+                            <Trash2 className="h-4 w-4" />
                           </button>
                         </div>
                       ))}
@@ -479,25 +495,26 @@ const Resources = () => {
               <div className="space-y-6">
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <label className="block text-sm font-semibold text-gray-700">
+                    <label className="block text-sm font-semibold text-foreground">
                       Thêm link
                     </label>
-                    <button
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={addLinkRow}
-                      className="px-3 py-1.5 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-sm font-semibold rounded-lg hover:from-emerald-600 hover:to-emerald-700 transition-colors cursor-pointer flex items-center gap-1"
+                      leftIcon={<Plus className="h-4 w-4" />}
                     >
-                      <HiPlus className="h-4 w-4" />
                       Thêm link
-                    </button>
+                    </Button>
                   </div>
 
                   <div className="space-y-3">
                     {links.map((link, index) => (
                       <div
                         key={index}
-                        className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200"
+                        className="flex items-center gap-3 p-4 bg-surface-muted/50 rounded-xl border border-border"
                       >
-                        <div className="flex-1 grid grid-cols-2 gap-3">
+                        <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <input
                             type="text"
                             value={link.title}
@@ -505,7 +522,7 @@ const Resources = () => {
                               handleLinkChange(index, "title", e.target.value)
                             }
                             placeholder="Tiêu đề link"
-                            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                            className="px-3 py-2 border border-border rounded-lg bg-surface text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
                           />
                           <input
                             type="url"
@@ -514,68 +531,76 @@ const Resources = () => {
                               handleLinkChange(index, "url", e.target.value)
                             }
                             placeholder="URL"
-                            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                            className="px-3 py-2 border border-border rounded-lg bg-surface text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
                           />
                         </div>
                         {links.length > 1 && (
                           <button
                             onClick={() => removeLinkRow(index)}
-                            className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                            className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive-bg rounded-lg transition-colors"
+                            aria-label="Xóa dòng link"
                           >
-                            <HiX className="h-5 w-5 text-red-600" />
+                            <X className="h-4 w-4" />
                           </button>
                         )}
                       </div>
                     ))}
                   </div>
 
-                  <button
+                  <Button
+                    variant="primary"
                     onClick={handleSubmitLinks}
                     disabled={isSubmitting}
-                    className="mt-4 w-full px-6 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold rounded-lg hover:from-emerald-600 hover:to-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
+                    isLoading={isSubmitting}
+                    loadingText="Đang thêm..."
+                    leftIcon={<Plus className="h-4 w-4" />}
+                    className="mt-4 w-full"
                   >
-                    <HiPlus className="h-5 w-5" />
-                    {isSubmitting ? "Đang thêm..." : "Thêm link"}
-                  </button>
+                    Thêm link
+                  </Button>
                 </div>
 
                 {/* Link List */}
                 {linkResources.length > 0 && (
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-4">
+                    <h3 className="text-lg font-bold font-display text-foreground mb-4">
                       Danh sách link
                     </h3>
                     <div className="space-y-3">
                       {linkResources.map((resource) => (
                         <div
                           key={resource.id}
-                          className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:shadow-md transition-shadow"
+                          className="flex items-center justify-between p-4 bg-surface-muted/40 rounded-xl border border-border hover:border-primary-pastel transition-all"
                         >
-                          <div className="flex items-center gap-4 flex-1">
-                            {getResourceIcon(resource)}
+                          <div className="flex items-center gap-4 flex-1 min-w-0">
+                            <div className="w-10 h-10 rounded-xl bg-info-bg flex items-center justify-center flex-shrink-0">
+                              {getResourceIcon(resource)}
+                            </div>
                             <div className="flex-1 min-w-0">
-                              <h4 className="text-sm font-semibold text-gray-900">
+                              <h4 className="text-sm font-semibold text-foreground">
                                 {resource.title}
                               </h4>
-                              <a
-                                href={resource.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-xs text-green-600 hover:text-emerald-700 mt-1 inline-block truncate max-w-md"
-                              >
-                                {resource.url}
-                              </a>
-                              <span className="ml-2 text-xs px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded">
-                                {getResourceTypeLabel(resource)}
-                              </span>
+                              <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                <a
+                                  href={resource.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-xs text-primary hover:underline truncate max-w-md"
+                                >
+                                  {resource.url}
+                                </a>
+                                <Badge variant="info" size="sm">
+                                  {getResourceTypeLabel(resource)}
+                                </Badge>
+                              </div>
                             </div>
                           </div>
                           <button
                             onClick={() => setResourceToDelete(resource.id)}
-                            className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                            className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive-bg rounded-lg transition-colors flex-shrink-0"
                             title="Xóa"
                           >
-                            <HiTrash className="h-5 w-5 text-red-600" />
+                            <Trash2 className="h-4 w-4" />
                           </button>
                         </div>
                       ))}
@@ -589,10 +614,10 @@ const Resources = () => {
             {activeTab === "archive" && (
               <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-foreground mb-2">
                     Chọn file ZIP hoặc RAR
                   </label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-teal-400 transition-colors">
+                  <div className="border-2 border-dashed border-border hover:border-primary rounded-2xl p-8 text-center bg-surface-muted/30 transition-colors">
                     <input
                       type="file"
                       accept=".zip,.rar,.7z"
@@ -605,11 +630,13 @@ const Resources = () => {
                       htmlFor="archive-input"
                       className="cursor-pointer flex flex-col items-center gap-2"
                     >
-                      <HiUpload className="h-12 w-12 text-gray-400" />
-                      <span className="text-gray-600 font-medium">
+                      <div className="w-12 h-12 rounded-2xl bg-accent text-accent-foreground flex items-center justify-center mb-1">
+                        <UploadCloud className="h-6 w-6" />
+                      </div>
+                      <span className="text-foreground font-medium text-sm">
                         Click để chọn file hoặc kéo thả vào đây
                       </span>
-                      <span className="text-sm text-gray-500">
+                      <span className="text-xs text-muted-foreground">
                         Hỗ trợ: ZIP, RAR, 7Z
                       </span>
                     </label>
@@ -620,71 +647,77 @@ const Resources = () => {
                       {selectedFiles.map((file, index) => (
                         <div
                           key={index}
-                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
+                          className="flex items-center justify-between p-3 bg-surface-muted/60 rounded-xl border border-border"
                         >
                           <div className="flex items-center gap-3 flex-1">
-                            <HiPaperClip className="h-5 w-5 text-teal-600" />
+                            <Archive className="h-5 w-5 text-accent-foreground flex-shrink-0" />
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-900 truncate">
+                              <p className="text-sm font-medium text-foreground truncate">
                                 {file.name}
                               </p>
-                              <p className="text-xs text-gray-500">
+                              <p className="text-xs text-muted-foreground">
                                 {formatFileSize(file.size)}
                               </p>
                             </div>
                           </div>
                           <button
                             onClick={() => removeFile(index)}
-                            className="p-1.5 hover:bg-red-50 rounded-lg transition-colors"
+                            className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive-bg rounded-lg transition-colors"
+                            aria-label="Xóa file nén"
                           >
-                            <HiX className="h-4 w-4 text-red-600" />
+                            <X className="h-4 w-4" />
                           </button>
                         </div>
                       ))}
                     </div>
                   )}
 
-                  <button
+                  <Button
+                    variant="primary"
                     onClick={handleSubmitArchive}
                     disabled={selectedFiles.length === 0 || isSubmitting}
-                    className="mt-4 w-full px-6 py-3 bg-gradient-to-r from-teal-500 to-teal-600 text-white font-semibold rounded-lg hover:from-teal-600 hover:to-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
+                    isLoading={isSubmitting}
+                    loadingText="Đang tải lên..."
+                    leftIcon={<UploadCloud className="h-4 w-4" />}
+                    className="mt-4 w-full"
                   >
-                    <HiUpload className="h-5 w-5" />
-                    {isSubmitting ? "Đang tải lên..." : "Tải lên file nén"}
-                  </button>
+                    Tải lên file nén
+                  </Button>
                 </div>
 
                 {/* Archive List */}
                 {archiveResources.length > 0 && (
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-4">
+                    <h3 className="text-lg font-bold font-display text-foreground mb-4">
                       Danh sách file nén
                     </h3>
                     <div className="space-y-3">
                       {archiveResources.map((resource) => (
                         <div
                           key={resource.id}
-                          className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:shadow-md transition-shadow"
+                          className="flex items-center justify-between p-4 bg-surface-muted/40 rounded-xl border border-border hover:border-primary-pastel transition-all"
                         >
-                          <div className="flex items-center gap-4 flex-1">
-                            {getResourceIcon(resource)}
+                          <div className="flex items-center gap-4 flex-1 min-w-0">
+                            <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center flex-shrink-0">
+                              {getResourceIcon(resource)}
+                            </div>
                             <div className="flex-1 min-w-0">
-                              <h4 className="text-sm font-semibold text-gray-900 truncate">
+                              <h4 className="text-sm font-semibold text-foreground truncate">
                                 {resource.title}
                               </h4>
-                              <div className="flex items-center gap-4 mt-1">
-                                <span className="text-xs text-gray-500">
+                              <div className="flex items-center gap-3 mt-1 flex-wrap">
+                                <span className="text-xs text-muted-foreground">
                                   {formatFileSize(resource.file_size)}
                                 </span>
-                                <span className="text-xs px-2 py-0.5 bg-teal-100 text-teal-700 rounded">
+                                <Badge variant="lavender" size="sm">
                                   {getResourceTypeLabel(resource)}
-                                </span>
+                                </Badge>
                               </div>
                               <a
                                 href={resource.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-xs text-green-600 hover:text-emerald-700 mt-1 inline-block truncate max-w-md"
+                                className="text-xs text-primary hover:underline mt-1 inline-block truncate max-w-md"
                               >
                                 {resource.url}
                               </a>
@@ -692,10 +725,10 @@ const Resources = () => {
                           </div>
                           <button
                             onClick={() => setResourceToDelete(resource.id)}
-                            className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                            className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive-bg rounded-lg transition-colors flex-shrink-0"
                             title="Xóa"
                           >
-                            <HiTrash className="h-5 w-5 text-red-600" />
+                            <Trash2 className="h-4 w-4" />
                           </button>
                         </div>
                       ))}
@@ -705,60 +738,61 @@ const Resources = () => {
               </div>
             )}
           </div>
-        </div>
+        </Card>
 
         {/* Loading State */}
         {isLoading && (
-          <div className="bg-white rounded-xl p-12 text-center border border-gray-100">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-emerald-500 border-t-transparent mb-4"></div>
-            <p className="text-gray-600">Đang tải danh sách tài liệu...</p>
-          </div>
+          <Card className="bg-surface rounded-2xl p-12 text-center border border-border">
+            <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-primary border-t-transparent mb-4"></div>
+            <p className="text-sm text-muted-foreground">
+              Đang tải danh sách tài liệu...
+            </p>
+          </Card>
         )}
 
         {/* Error State */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-            <p className="text-red-700 font-medium">
-              Không thể tải danh sách tài liệu
-            </p>
-            <button
-              onClick={() => mutate()}
-              className="mt-4 px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors cursor-pointer"
-            >
+          <Alert variant="destructive" className="text-center">
+            <p className="font-medium mb-3">Không thể tải danh sách tài liệu</p>
+            <Button variant="destructive" size="sm" onClick={() => mutate()}>
               Thử lại
-            </button>
-          </div>
+            </Button>
+          </Alert>
         )}
       </div>
 
       {/* Delete Modal */}
       {resourceToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-2xl">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-foreground/30 backdrop-blur-xs">
+          <Card className="bg-surface rounded-2xl p-6 max-w-md w-full border border-border shadow-xl">
+            <h3 className="text-xl font-bold font-display text-foreground mb-2">
               Xác nhận xóa tài nguyên
             </h3>
-            <p className="text-gray-600 mb-6">
+            <p className="text-sm text-muted-foreground mb-6">
               Bạn có chắc chắn muốn xóa tài nguyên này? Hành động này không thể
               hoàn tác.
             </p>
             <div className="flex gap-3">
-              <button
+              <Button
+                variant="destructive"
                 onClick={handleDeleteResource}
                 disabled={isSubmitting}
-                className="flex-1 px-6 py-3 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors cursor-pointer disabled:opacity-50"
+                isLoading={isSubmitting}
+                loadingText="Đang xóa..."
+                className="flex-1"
               >
-                {isSubmitting ? "Đang xóa..." : "Xóa"}
-              </button>
-              <button
+                Xóa
+              </Button>
+              <Button
+                variant="outline"
                 onClick={() => setResourceToDelete(null)}
                 disabled={isSubmitting}
-                className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition-colors cursor-pointer disabled:opacity-50"
+                className="flex-1"
               >
                 Hủy
-              </button>
+              </Button>
             </div>
-          </div>
+          </Card>
         </div>
       )}
     </div>

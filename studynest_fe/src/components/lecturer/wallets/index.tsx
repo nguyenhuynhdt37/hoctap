@@ -1,15 +1,28 @@
 "use client";
 
+import { Alert, Badge, Card, EmptyState, Skeleton } from "@/components/ui";
 import api from "@/lib/utils/fetcher/client/axios";
 import {
   LecturerTransactionsResponse,
   LecturerWallet,
 } from "@/types/lecturer/wallet";
 import { isAxiosError } from "axios";
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  Clock,
+  History,
+  PlusCircle,
+  Search,
+  Wallet as WalletIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { HiArrowDown, HiArrowUp } from "react-icons/hi";
 import useSWR from "swr";
 
 const WALLET_ENDPOINT = "/lecturer/wallets/lecturer/wallet";
@@ -140,42 +153,26 @@ export default function LecturerWallets() {
     : 1;
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex-1">
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="font-display text-2xl sm:text-3xl font-semibold text-foreground tracking-tight">
             Ví của giảng viên
           </h1>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-muted-foreground mt-1.5">
             Quản lý số dư, trạng thái KYC và các giao dịch gần đây.
           </p>
         </div>
         <Link
           href="/lecturer/hold"
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 transition-colors text-sm"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary-hover transition-colors text-sm shadow-soft-xs self-start sm:self-auto"
         >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
+          <Clock className="w-4 h-4" />
           <span>Giao dịch đang hold</span>
         </Link>
       </div>
 
-      {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-          {error}
-        </div>
-      )}
+      {error && <Alert variant="destructive">{error}</Alert>}
 
       <section className="grid gap-6 md:grid-cols-[2fr,3fr]">
         <WalletSummaryCard
@@ -184,23 +181,25 @@ export default function LecturerWallets() {
         />
       </section>
 
-      <div className="bg-white rounded-xl border border-green-200 shadow-sm p-6">
-        <h2 className="text-lg font-bold text-gray-900 mb-4">Rút tiền</h2>
-        <div className="flex flex-wrap gap-4">
+      <Card variant="surface" className="p-6">
+        <h2 className="text-lg font-semibold text-foreground mb-4">Rút tiền</h2>
+        <div className="flex flex-wrap gap-3">
           <Link
             href="/lecturer/withdraw/create"
-            className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl hover:bg-primary-hover font-semibold text-sm transition-colors shadow-soft-xs"
           >
-            Tạo yêu cầu rút tiền
+            <PlusCircle className="w-4 h-4" />
+            <span>Tạo yêu cầu rút tiền</span>
           </Link>
           <Link
             href="/lecturer/withdraw"
-            className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-semibold"
+            className="inline-flex items-center gap-2 px-5 py-2.5 border border-border bg-surface rounded-xl text-foreground hover:bg-background font-semibold text-sm transition-colors"
           >
-            Lịch sử yêu cầu
+            <History className="w-4 h-4 text-muted-foreground" />
+            <span>Lịch sử yêu cầu</span>
           </Link>
         </div>
-      </div>
+      </Card>
 
       <TransactionsTable
         transactions={transactionsData?.items || []}
@@ -241,74 +240,54 @@ interface WalletSummaryCardProps {
 function WalletSummaryCard({ wallet, walletStatus }: WalletSummaryCardProps) {
   const isLocked = Boolean(wallet?.is_locked);
   const statusStyles = isLocked
-    ? "bg-red-500/15 text-red-500 border-red-400/40"
-    : "bg-white/15 text-white border-white/30";
+    ? "bg-destructive-bg text-destructive-foreground border-destructive-border"
+    : "bg-white/15 text-white border-white/25";
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-green-200 bg-gradient-to-br from-green-600 via-emerald-600 to-green-700 p-6 text-white shadow-lg">
+    <div className="relative overflow-hidden rounded-3xl border border-primary-pastel/40 bg-gradient-to-br from-primary via-[#2D5F94] to-[#234C78] p-6 text-white shadow-soft-md">
       <div className="pointer-events-none absolute -right-14 -top-14 h-36 w-36 rounded-full bg-white/10 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-16 -left-10 h-40 w-40 rounded-full bg-white/5 blur-3xl" />
 
       <div className="relative flex items-start justify-between gap-4">
-        <div className="flex flex-col gap-3">
-          <span className="text-xs font-semibold uppercase tracking-wide text-white/70">
+        <div className="flex flex-col gap-2">
+          <span className="text-xs font-semibold uppercase tracking-wide text-white/75">
             Số dư ví
           </span>
-          <p className="mt-3 text-3xl font-semibold sm:text-4xl">
+          <p className="mt-2 text-3xl font-semibold sm:text-4xl tracking-tight">
             {formatCurrency(wallet?.balance)}
           </p>
         </div>
         <div className="flex flex-col items-end gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 backdrop-blur">
-            <svg
-              width="26"
-              height="26"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              className="text-white/90"
-            >
-              <path
-                d="M4 8.5C4 6.567 5.567 5 7.5 5h9A3.5 3.5 0 0 1 20 8.5v7A3.5 3.5 0 0 1 16.5 19h-9A3.5 3.5 0 0 1 4 15.5v-7Z"
-                stroke="currentColor"
-                strokeWidth="1.5"
-              />
-              <path
-                d="M16 12.5h1.2a1.3 1.3 0 0 0 0-2.6H16"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 backdrop-blur border border-white/15">
+            <WalletIcon className="h-6 w-6 text-white/95" />
           </div>
-          <span className="rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide">
+          <span className="rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide">
             {wallet?.currency || "VND"}
           </span>
         </div>
       </div>
 
-      <div className="relative mt-6 grid gap-3 text-sm text-white/80 sm:grid-cols-2">
-        <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3">
-          <p className="text-xs uppercase tracking-wide text-white/60">
+      <div className="relative mt-6 grid gap-3 text-sm text-white/85 sm:grid-cols-2">
+        <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3">
+          <p className="text-xs uppercase tracking-wide text-white/70">
             Tổng nạp
           </p>
           <p className="mt-1 text-base font-semibold text-white">
             {formatCurrency(wallet?.total_in)}
           </p>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3">
-          <p className="text-xs uppercase tracking-wide text-white/60">
+        <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3">
+          <p className="text-xs uppercase tracking-wide text-white/70">
             Tổng rút
           </p>
           <p className="mt-1 text-base font-semibold text-white">
             {formatCurrency(wallet?.total_out)}
           </p>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 sm:col-span-2">
+        <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 sm:col-span-2">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-xs uppercase tracking-wide text-white/60">
+              <p className="text-xs uppercase tracking-wide text-white/70">
                 Trạng thái
               </p>
               <p className="mt-1 text-base font-semibold text-white">
@@ -320,15 +299,15 @@ function WalletSummaryCard({ wallet, walletStatus }: WalletSummaryCardProps) {
             >
               <span
                 className={`h-2 w-2 rounded-full ${
-                  isLocked ? "bg-red-500" : "bg-white"
+                  isLocked ? "bg-destructive-foreground" : "bg-white"
                 }`}
               />
               {isLocked ? "Ví đã khóa" : "Ví đang hoạt động"}
             </span>
           </div>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 sm:col-span-2">
-          <p className="text-xs uppercase tracking-wide text-white/60">
+        <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 sm:col-span-2">
+          <p className="text-xs uppercase tracking-wide text-white/70">
             Giao dịch gần nhất
           </p>
           <p className="mt-1 text-base font-medium text-white">
@@ -380,25 +359,28 @@ function TransactionsTable({
   onSearchSubmit,
 }: TransactionsTableProps) {
   return (
-    <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+    <Card variant="surface" className="p-6">
       <div className="mb-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">
+        <h2 className="text-lg font-semibold text-foreground mb-4">
           Lịch sử giao dịch
         </h2>
 
-        <div className="flex flex-wrap items-center gap-4 mb-4">
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => onSearchChange(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && onSearchSubmit()}
-            placeholder="Tìm kiếm..."
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-          />
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative flex-1 min-w-[220px]">
+            <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => onSearchChange(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && onSearchSubmit()}
+              placeholder="Tìm kiếm..."
+              className="w-full pl-10 pr-4 py-2 text-sm border border-border bg-surface text-foreground placeholder:text-muted-foreground rounded-xl focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
+            />
+          </div>
           <select
             value={status}
             onChange={(e) => onStatusChange(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+            className="px-3.5 py-2 text-sm border border-border bg-surface text-foreground rounded-xl focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
           >
             <option value="all">Tất cả trạng thái</option>
             <option value="completed">Thành công</option>
@@ -408,7 +390,7 @@ function TransactionsTable({
           <select
             value={type}
             onChange={(e) => onTypeChange(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+            className="px-3.5 py-2 text-sm border border-border bg-surface text-foreground rounded-xl focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
           >
             <option value="all">Tất cả loại</option>
             <option value="deposit">Nạp tiền</option>
@@ -420,47 +402,56 @@ function TransactionsTable({
       </div>
 
       {isLoading ? (
-        <div className="p-12 text-center text-gray-500">
-          <div className="w-6 h-6 border-2 border-green-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="mt-2">Đang tải...</p>
+        <div className="space-y-3 py-4">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-14 w-full rounded-xl" />
+          ))}
         </div>
       ) : transactions.length === 0 ? (
-        <div className="p-12 text-center text-gray-500">
-          <p>Chưa có giao dịch nào</p>
-        </div>
+        <EmptyState
+          icon={<WalletIcon className="h-7 w-7" />}
+          title="Chưa có giao dịch nào"
+          description="Các giao dịch phát sinh trong ví của bạn sẽ hiển thị tại đây."
+        />
       ) : (
         <>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
+          <div className="overflow-x-auto rounded-xl border border-border">
+            <table className="min-w-full divide-y divide-border">
               <thead>
-                <tr className="bg-gray-50">
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">
+                <tr className="bg-background">
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     Loại
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     Số tiền
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     Trạng thái
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     Mô tả
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     Thời gian
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 bg-white">
+              <tbody className="divide-y divide-border bg-surface">
                 {transactions.map((item) => {
                   const tx = item.transaction;
                   const isIncome = isIncomeTransaction(tx);
                   const typeLabel = getTypeLabel(tx.type);
+                  const badgeVariant =
+                    tx.status === "completed"
+                      ? "success"
+                      : tx.status === "canceled"
+                      ? "destructive"
+                      : "warning";
 
                   return (
                     <tr
                       key={tx.id}
-                      className="hover:bg-gray-50 cursor-pointer"
+                      className="hover:bg-background/80 cursor-pointer transition-colors"
                       onClick={() =>
                         router.push(`/lecturer/wallets/transactions/${tx.id}`)
                       }
@@ -468,27 +459,29 @@ function TransactionsTable({
                       <td className="px-4 py-4">
                         <div className="flex items-center gap-3">
                           <div
-                            className={`flex h-10 w-10 items-center justify-center rounded-full ${
+                            className={`flex h-9 w-9 items-center justify-center rounded-xl border ${
                               isIncome
-                                ? "bg-green-100 text-green-600"
-                                : "bg-gray-100 text-gray-600"
+                                ? "bg-success-bg text-success-foreground border-success-border/70"
+                                : "bg-background text-muted-foreground border-border"
                             }`}
                           >
                             {isIncome ? (
-                              <HiArrowUp className="h-5 w-5" />
+                              <ArrowUpRight className="h-4 w-4" />
                             ) : (
-                              <HiArrowDown className="h-5 w-5" />
+                              <ArrowDownLeft className="h-4 w-4" />
                             )}
                           </div>
-                          <div className="font-semibold text-gray-900">
+                          <div className="font-semibold text-sm text-foreground">
                             {typeLabel}
                           </div>
                         </div>
                       </td>
                       <td className="px-4 py-4">
                         <span
-                          className={`text-lg font-bold ${
-                            isIncome ? "text-green-600" : "text-gray-900"
+                          className={`text-base font-bold tabular-nums ${
+                            isIncome
+                              ? "text-success-foreground"
+                              : "text-foreground"
                           }`}
                         >
                           {isIncome ? "+" : "-"}
@@ -496,30 +489,22 @@ function TransactionsTable({
                         </span>
                       </td>
                       <td className="px-4 py-4">
-                        <span
-                          className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
-                            tx.status === "completed"
-                              ? "bg-green-100 text-green-700"
-                              : tx.status === "canceled"
-                              ? "bg-red-100 text-red-700"
-                              : "bg-yellow-100 text-yellow-700"
-                          }`}
-                        >
+                        <Badge variant={badgeVariant} size="sm" dot>
                           {getStatusLabel(tx.status)}
-                        </span>
+                        </Badge>
                       </td>
                       <td className="px-4 py-4">
-                        <p className="text-sm text-gray-700">
+                        <p className="text-sm text-foreground">
                           {tx.description || "Không có mô tả"}
                         </p>
                         {tx.transaction_code && (
-                          <p className="text-xs text-gray-500 mt-1">
+                          <p className="text-xs text-muted-foreground mt-1">
                             Mã: {tx.transaction_code}
                           </p>
                         )}
                       </td>
                       <td className="px-4 py-4">
-                        <div className="text-sm text-gray-600">
+                        <div className="text-sm text-muted-foreground">
                           {formatDateTime(tx.created_at)}
                         </div>
                       </td>
@@ -531,19 +516,21 @@ function TransactionsTable({
           </div>
 
           {totalPages > 1 && (
-            <div className="mt-4 pt-4 border-t border-gray-200 space-y-4">
+            <div className="mt-5 pt-4 border-t border-border space-y-4">
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-muted-foreground">
                   Hiển thị {(page - 1) * limit + 1}-
                   {Math.min(page * limit, total)} trên tổng số {total} giao dịch
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">Mỗi trang</span>
+                  <span className="text-sm text-muted-foreground">
+                    Mỗi trang
+                  </span>
                   <select
                     value={limit}
                     onChange={(e) => onLimitChange(Number(e.target.value))}
-                    className="px-3 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="px-3 py-1.5 text-sm border border-border bg-surface text-foreground rounded-xl focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                   >
                     <option value={10}>10</option>
                     <option value={20}>20</option>
@@ -553,20 +540,24 @@ function TransactionsTable({
                 </div>
               </div>
 
-              <div className="flex items-center justify-center gap-2">
+              <div className="flex items-center justify-center gap-1.5">
                 <button
+                  type="button"
                   onClick={() => onPageChange(1)}
                   disabled={page === 1}
-                  className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-2 border border-border bg-surface text-foreground rounded-xl hover:bg-background disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  aria-label="Trang đầu"
                 >
-                  «
+                  <ChevronsLeft className="h-4 w-4" />
                 </button>
                 <button
+                  type="button"
                   onClick={() => onPageChange(Math.max(1, page - 1))}
                   disabled={page === 1}
-                  className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-2 border border-border bg-surface text-foreground rounded-xl hover:bg-background disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  aria-label="Trang trước"
                 >
-                  ‹
+                  <ChevronLeft className="h-4 w-4" />
                 </button>
 
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -584,11 +575,12 @@ function TransactionsTable({
                   return (
                     <button
                       key={pageNum}
+                      type="button"
                       onClick={() => onPageChange(pageNum)}
-                      className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+                      className={`min-w-[36px] px-3 py-1.5 rounded-xl text-sm font-semibold transition-colors ${
                         pageNum === page
-                          ? "bg-green-600 text-white"
-                          : "border border-gray-300 hover:bg-gray-50"
+                          ? "bg-primary text-primary-foreground shadow-soft-xs"
+                          : "border border-border bg-surface text-foreground hover:bg-background"
                       }`}
                     >
                       {pageNum}
@@ -597,24 +589,28 @@ function TransactionsTable({
                 })}
 
                 <button
+                  type="button"
                   onClick={() => onPageChange(Math.min(totalPages, page + 1))}
                   disabled={page === totalPages}
-                  className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-2 border border-border bg-surface text-foreground rounded-xl hover:bg-background disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  aria-label="Trang sau"
                 >
-                  ›
+                  <ChevronRight className="h-4 w-4" />
                 </button>
                 <button
+                  type="button"
                   onClick={() => onPageChange(totalPages)}
                   disabled={page === totalPages}
-                  className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-2 border border-border bg-surface text-foreground rounded-xl hover:bg-background disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  aria-label="Trang cuối"
                 >
-                  »
+                  <ChevronsRight className="h-4 w-4" />
                 </button>
               </div>
             </div>
           )}
         </>
       )}
-    </section>
+    </Card>
   );
 }

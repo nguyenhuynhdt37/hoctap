@@ -3,7 +3,7 @@ from decimal import Decimal
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 Sort = Literal["newest", "popular", "rating", "price_asc", "price_desc"]
 
@@ -154,20 +154,106 @@ class ProviderInput(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
     name: str = Field(min_length=2, max_length=160)
     slug: str = Field(default="", max_length=180)
-    provider_type: Literal["individual", "center", "exam_center", "organization"] = (
-        "individual"
-    )
+    provider_type: Literal[
+        "individual", "center", "exam_center", "organization", "school"
+    ] = "individual"
     description: str | None = Field(None, max_length=10000)
     logo_url: str | None = Field(None, max_length=2048)
     banner_url: str | None = Field(None, max_length=2048)
 
 
+class ProviderDirectoryFilters(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    page: int = Field(1, ge=1)
+    size: int = Field(12, ge=1, le=100)
+    search: str | None = Field(None, max_length=160)
+    province: str | None = Field(None, max_length=160)
+    provider_type: (
+        Literal["individual", "school", "center", "exam_center", "organization"] | None
+    ) = None
+    verification_status: Literal["pending", "verified", "rejected"] | None = None
+    is_active: bool | None = None
+    sort: Literal["name_asc", "name_desc", "newest", "oldest"] = "name_asc"
+
+
 class ProviderAdminInput(ProviderInput):
-    verification_status: Literal["pending", "verified", "rejected"] = "pending"
+    province: str | None = Field(None, max_length=160)
+    address: str | None = Field(None, max_length=2000)
+    website_url: str | None = Field(None, max_length=2048)
+
+    @field_validator("website_url")
+    @classmethod
+    def validate_website(cls, value):
+        from urllib.parse import urlsplit
+
+        if value and (
+            urlsplit(value).scheme not in {"http", "https"}
+            or not urlsplit(value).hostname
+        ):
+            raise ValueError("Website phải là địa chỉ HTTP hoặc HTTPS")
+        return value or None
+
+    verification_status: Literal["verified"] = "verified"
     is_active: bool = True
 
 
 class MemberInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
     user_id: UUID
-    role: Literal["owner", "manager", "instructor", "editor"]
     status: Literal["active", "inactive"] = "active"
+    reason: str | None = Field(None, max_length=2000)
+
+    @model_validator(mode="after")
+    def require_revocation_reason(self):
+        if self.status == "inactive" and not self.reason:
+            raise ValueError("Cần ghi lý do thu hồi liên kết giảng viên")
+        return self
+
+
+class ProviderCreationRequestInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    name: str = Field(min_length=2, max_length=160)
+    provider_type: Literal[
+        "individual", "center", "exam_center", "organization", "school"
+    ] = "center"
+    description: str = Field(min_length=10, max_length=10000)
+    contact_email: str = Field(
+        min_length=3, max_length=320, pattern=r"^[^\s@]+@[^\s@]+\.[^\s@]+$"
+    )
+    website_url: str | None = Field(None, max_length=2048)
+    reason: str = Field(min_length=10, max_length=2000)
+
+    @field_validator("name")
+    @classmethod
+    def bounded_normalized_name(cls, value):
+        import unicodedata
+
+        normalized = " ".join(unicodedata.normalize("NFKC", value).lower().split())
+        if not 2 <= len(normalized) <= 160:
+            raise ValueError("Tên đơn vị sau chuẩn hóa cần từ 2 đến 160 ký tự")
+        return value
+
+    @field_validator("website_url")
+    @classmethod
+    def valid_website(cls, value):
+        if not value:
+            return None
+        from pydantic import HttpUrl, TypeAdapter
+
+        normalized = str(TypeAdapter(HttpUrl).validate_python(value))
+        if len(normalized) > 2048:
+            raise ValueError("Đường dẫn quá dài")
+        return normalized
+
+
+class ProviderRequestDecision(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    decision: Literal["approved", "rejected"]
+    note: str = Field(default="", max_length=2000)
+    provider_id: UUID | None = None
+
+    @model_validator(mode="after")
+    def validate_decision(self):
+        if self.decision == "rejected" and (not self.note or self.provider_id):
+            raise ValueError("Từ chối cần lý do và không được gắn đơn vị")
+        return self

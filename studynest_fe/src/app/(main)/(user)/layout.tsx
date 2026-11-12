@@ -9,6 +9,27 @@ import { NotificationsResponse } from "@/types/user/notification";
 import { cookies } from "next/headers";
 import { Suspense } from "react";
 
+async function UserNotificationsBootstrap() {
+  const stores = await cookies();
+  const accessToken = getServerCookie(stores, "access_token");
+  let notifications: NotificationsResponse | null = null;
+  if (accessToken) {
+    try {
+      const res_getNotifications = await fetcher(
+        "/notifications/user?limit=10&page=1&sort_by=created_at&order_dir=desc",
+        stores
+      );
+
+      if (res_getNotifications.ok) {
+        notifications = await res_getNotifications.json();
+      }
+    } catch {
+      // Notifications must not block or fail page navigation.
+    }
+  }
+  return <InitRealtimeNoti role="USER" notifications={notifications} />;
+}
+
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -16,21 +37,12 @@ export default async function RootLayout({
 }>) {
   const stores = await cookies();
   const accessToken = getServerCookie(stores, "access_token");
-  let notifications: NotificationsResponse | null = null;
-  if (accessToken) {
-    const res_getNotifications = await fetcher(
-      "/notifications/user?limit=10&page=1&sort_by=created_at&order_dir=desc",
-      stores
-    );
-
-    if (res_getNotifications.ok) {
-      notifications = await res_getNotifications.json();
-    }
-  }
   return (
     <>
       <Header />
-      <InitRealtimeNoti role="USER" notifications={notifications} />
+      <Suspense fallback={null}>
+        <UserNotificationsBootstrap />
+      </Suspense>
       <Suspense fallback={null}>
         <NotificationWS role_name="USER" accessToken={accessToken || null} />
       </Suspense>

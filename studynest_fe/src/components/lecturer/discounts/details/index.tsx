@@ -1,22 +1,24 @@
 "use client";
 
+import { Alert, Badge, Card, EmptyState, Skeleton } from "@/components/ui";
+import type { BadgeVariant } from "@/components/ui/badge";
 import api from "@/lib/utils/fetcher/client/axios";
 import { getImageUrl } from "@/lib/utils/helpers/image";
 import {
   DiscountDetail,
   DiscountDetailsProps,
 } from "@/types/lecturer/discount";
+import {
+  ArrowLeft,
+  Calendar,
+  CheckCircle2,
+  DollarSign,
+  Tag,
+  User,
+  XCircle,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
-import {
-  HiArrowLeft,
-  HiCalendar,
-  HiCheckCircle,
-  HiCurrencyDollar,
-  HiTag,
-  HiUser,
-  HiXCircle,
-} from "react-icons/hi";
 import useSWR from "swr";
 
 const formatCurrency = (value: number) =>
@@ -52,42 +54,41 @@ export default function DiscountDetails({ discountId }: DiscountDetailsProps) {
     }
   );
 
-  const discountStatus = useMemo(() => {
+  const discountStatus = useMemo<{
+    label: string;
+    variant: BadgeVariant;
+  } | null>(() => {
     if (!data?.discount) return null;
     const now = new Date();
     const startAt = new Date(data.discount.start_at);
     const endAt = new Date(data.discount.end_at);
 
     if (!data.discount.is_active) {
-      return { label: "Đã tắt", color: "text-gray-600", bg: "bg-gray-100" };
+      return { label: "Đã tắt", variant: "neutral" };
     }
     if (now < startAt) {
-      return {
-        label: "Sắp bắt đầu",
-        color: "text-yellow-600",
-        bg: "bg-yellow-100",
-      };
+      return { label: "Sắp bắt đầu", variant: "warning" };
     }
     if (now > endAt) {
-      return { label: "Đã hết hạn", color: "text-red-600", bg: "bg-red-100" };
+      return { label: "Đã hết hạn", variant: "destructive" };
     }
-    return {
-      label: "Đang hoạt động",
-      color: "text-teal-600",
-      bg: "bg-teal-100",
-    };
+    return { label: "Đang hoạt động", variant: "success" };
   }, [data]);
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="text-center">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-teal-500 border-t-transparent mb-4"></div>
-              <p className="text-gray-600">Đang tải thông tin...</p>
+      <div className="min-h-screen bg-background">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+          <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-10 w-64" />
+          <Card variant="surface" className="p-6 sm:p-8 space-y-6">
+            <Skeleton className="h-16 w-full rounded-2xl" />
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {[...Array(4)].map((_, i) => (
+                <Skeleton key={i} className="h-24 w-full rounded-xl" />
+              ))}
             </div>
-          </div>
+          </Card>
         </div>
       </div>
     );
@@ -95,19 +96,11 @@ export default function DiscountDetails({ discountId }: DiscountDetailsProps) {
 
   if (error || !data) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="bg-white rounded-xl border border-red-200 p-6">
-            <div className="flex items-center gap-3 text-red-600">
-              <HiXCircle className="h-6 w-6" />
-              <div>
-                <h3 className="font-semibold">Không thể tải thông tin</h3>
-                <p className="text-sm text-gray-600 mt-1">
-                  Vui lòng thử lại sau hoặc liên hệ hỗ trợ.
-                </p>
-              </div>
-            </div>
-          </div>
+      <div className="min-h-screen bg-background">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+          <Alert variant="destructive" title="Không thể tải thông tin">
+            Vui lòng thử lại sau hoặc liên hệ hỗ trợ.
+          </Alert>
         </div>
       </div>
     );
@@ -116,103 +109,110 @@ export default function DiscountDetails({ discountId }: DiscountDetailsProps) {
   const { discount, targets, usage_history } = data;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-background">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         {/* Header */}
         <div className="mb-6">
           <button
+            type="button"
             onClick={() => router.back()}
-            className="flex items-center gap-2 text-gray-600 hover:text-teal-600 transition-colors mb-4"
+            className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors mb-4"
           >
-            <HiArrowLeft className="h-5 w-5" />
-            <span className="font-medium">Quay lại</span>
+            <ArrowLeft className="h-4 w-4" />
+            <span>Quay lại</span>
           </button>
-          <h1 className="text-3xl font-black text-gray-900 mb-2">
+          <h1 className="font-display text-2xl sm:text-3xl font-semibold text-foreground tracking-tight mb-1.5">
             Chi tiết mã giảm giá
           </h1>
         </div>
 
         {/* Discount Info Card */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
-          <div className="flex items-start justify-between mb-6">
+        <Card variant="surface" className="p-6 sm:p-8 mb-6">
+          <div className="flex items-start justify-between gap-4 mb-6">
             <div className="flex items-center gap-4">
-              <div className="h-16 w-16 bg-gradient-to-br from-teal-400 to-emerald-500 rounded-xl flex items-center justify-center shadow-md">
-                <HiTag className="h-8 w-8 text-white" />
+              <div className="h-14 w-14 bg-primary-light border border-primary-pastel rounded-2xl flex items-center justify-center shrink-0">
+                <Tag className="h-7 w-7 text-primary" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-1">
+                <h2 className="text-xl sm:text-2xl font-semibold text-foreground mb-1.5">
                   {discount.name}
                 </h2>
-                <div className="flex items-center gap-3">
-                  <span className="px-3 py-1 bg-teal-50 text-teal-700 rounded-lg font-semibold text-sm">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <span className="px-3 py-1 bg-background border border-border text-foreground rounded-lg font-mono font-semibold text-xs">
                     {discount.code}
                   </span>
                   {discountStatus && (
-                    <span
-                      className={`px-3 py-1 ${discountStatus.bg} ${discountStatus.color} rounded-lg font-medium text-sm`}
-                    >
+                    <Badge variant={discountStatus.variant} size="sm" dot>
                       {discountStatus.label}
-                    </span>
+                    </Badge>
                   )}
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               {discount.is_active ? (
-                <HiCheckCircle className="h-6 w-6 text-teal-600" />
+                <CheckCircle2 className="h-6 w-6 text-success-foreground" />
               ) : (
-                <HiXCircle className="h-6 w-6 text-gray-400" />
+                <XCircle className="h-6 w-6 text-muted-foreground" />
               )}
             </div>
           </div>
 
           {discount.description && (
-            <p className="text-gray-700 mb-6 leading-relaxed">
+            <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
               {discount.description}
             </p>
           )}
 
           {/* Discount Details Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center gap-2 text-gray-600 mb-2">
-                <HiCurrencyDollar className="h-5 w-5" />
-                <span className="text-sm font-medium">Giá trị giảm</span>
+            <div className="p-4 bg-background border border-border rounded-2xl">
+              <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                <DollarSign className="h-4 w-4 text-primary" />
+                <span className="text-xs font-medium uppercase tracking-wide">
+                  Giá trị giảm
+                </span>
               </div>
-              <p className="text-xl font-bold text-gray-900">
+              <p className="text-xl font-bold text-foreground tabular-nums">
                 {discount.discount_type === "percent"
                   ? `${discount.percent_value}%`
                   : formatCurrency(discount.fixed_value || 0)}
               </p>
             </div>
 
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center gap-2 text-gray-600 mb-2">
-                <HiUser className="h-5 w-5" />
-                <span className="text-sm font-medium">Đã sử dụng</span>
+            <div className="p-4 bg-background border border-border rounded-2xl">
+              <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                <User className="h-4 w-4 text-primary" />
+                <span className="text-xs font-medium uppercase tracking-wide">
+                  Đã sử dụng
+                </span>
               </div>
-              <p className="text-xl font-bold text-gray-900">
+              <p className="text-xl font-bold text-foreground tabular-nums">
                 {discount.usage_count}
                 {discount.usage_limit && ` / ${discount.usage_limit}`}
               </p>
             </div>
 
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center gap-2 text-gray-600 mb-2">
-                <HiUser className="h-5 w-5" />
-                <span className="text-sm font-medium">Giới hạn/người</span>
+            <div className="p-4 bg-background border border-border rounded-2xl">
+              <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                <User className="h-4 w-4 text-primary" />
+                <span className="text-xs font-medium uppercase tracking-wide">
+                  Giới hạn/người
+                </span>
               </div>
-              <p className="text-xl font-bold text-gray-900">
+              <p className="text-xl font-bold text-foreground tabular-nums">
                 {discount.per_user_limit}
               </p>
             </div>
 
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center gap-2 text-gray-600 mb-2">
-                <HiTag className="h-5 w-5" />
-                <span className="text-sm font-medium">Áp dụng cho</span>
+            <div className="p-4 bg-background border border-border rounded-2xl">
+              <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                <Tag className="h-4 w-4 text-primary" />
+                <span className="text-xs font-medium uppercase tracking-wide">
+                  Áp dụng cho
+                </span>
               </div>
-              <p className="text-lg font-semibold text-gray-900 capitalize">
+              <p className="text-lg font-semibold text-foreground capitalize">
                 {discount.applies_to === "course"
                   ? "Khóa học"
                   : discount.applies_to === "category"
@@ -225,97 +225,104 @@ export default function DiscountDetails({ discountId }: DiscountDetailsProps) {
           </div>
 
           {/* Date Range */}
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <div className="flex items-center gap-2 text-gray-600 mb-3">
-              <HiCalendar className="h-5 w-5" />
-              <span className="font-medium">Thời gian hiệu lực</span>
+          <div className="mt-6 pt-6 border-t border-border">
+            <div className="flex items-center gap-2 text-muted-foreground mb-3">
+              <Calendar className="h-4 w-4 text-primary" />
+              <span className="text-sm font-semibold text-foreground">
+                Thời gian hiệu lực
+              </span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <p className="text-sm text-gray-500 mb-1">Bắt đầu</p>
-                <p className="font-semibold text-gray-900">
+                <p className="text-xs text-muted-foreground mb-1">Bắt đầu</p>
+                <p className="text-sm font-semibold text-foreground">
                   {formatDateTime(discount.start_at)}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-500 mb-1">Kết thúc</p>
-                <p className="font-semibold text-gray-900">
+                <p className="text-xs text-muted-foreground mb-1">Kết thúc</p>
+                <p className="text-sm font-semibold text-foreground">
                   {formatDateTime(discount.end_at)}
                 </p>
               </div>
             </div>
           </div>
-        </div>
+        </Card>
 
         {/* Targets Section */}
         {targets.length > 0 && (
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">
+          <Card variant="surface" className="p-6 sm:p-8 mb-6">
+            <h3 className="text-lg font-semibold text-foreground mb-4">
               Đối tượng áp dụng ({targets.length})
             </h3>
             <div className="space-y-3">
               {targets.map((target, index) => (
                 <div
                   key={index}
-                  className="p-4 bg-gray-50 rounded-lg border border-gray-100"
+                  className="p-4 bg-background rounded-2xl border border-border"
                 >
                   {target.course_title ? (
                     <div>
-                      <p className="text-sm text-gray-500 mb-1">Khóa học</p>
-                      <p className="font-semibold text-gray-900">
+                      <p className="text-xs text-muted-foreground mb-1">
+                        Khóa học
+                      </p>
+                      <p className="text-sm font-semibold text-foreground">
                         {target.course_title}
                       </p>
                     </div>
                   ) : target.category_name ? (
                     <div>
-                      <p className="text-sm text-gray-500 mb-1">Danh mục</p>
-                      <p className="font-semibold text-gray-900">
+                      <p className="text-xs text-muted-foreground mb-1">
+                        Danh mục
+                      </p>
+                      <p className="text-sm font-semibold text-foreground">
                         {target.category_name}
                       </p>
                     </div>
                   ) : (
-                    <p className="text-gray-600">Toàn bộ</p>
+                    <p className="text-sm text-muted-foreground">Toàn bộ</p>
                   )}
                 </div>
               ))}
             </div>
-          </div>
+          </Card>
         )}
 
         {/* Usage History */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-          <h3 className="text-xl font-bold text-gray-900 mb-4">
+        <Card variant="surface" className="p-6 sm:p-8">
+          <h3 className="text-lg font-semibold text-foreground mb-4">
             Lịch sử sử dụng ({usage_history.length})
           </h3>
           {usage_history.length === 0 ? (
-            <div className="text-center py-12">
-              <HiUser className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-600">Chưa có lịch sử sử dụng</p>
-            </div>
+            <EmptyState
+              icon={<User className="h-7 w-7" />}
+              title="Chưa có lịch sử sử dụng"
+              description="Lịch sử học viên áp dụng mã giảm giá này sẽ hiển thị tại đây."
+            />
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+            <div className="overflow-x-auto rounded-xl border border-border">
+              <table className="min-w-full divide-y divide-border">
+                <thead className="bg-background">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                       Người dùng
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                       Khóa học
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                       Số tiền giảm
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                       Thời gian
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-border bg-surface">
                   {usage_history.map((usage, index) => (
                     <tr
                       key={index}
-                      className="hover:bg-gray-50 transition-colors"
+                      className="hover:bg-background/70 transition-colors"
                     >
                       <td className="px-4 py-4">
                         <div className="flex items-center gap-3">
@@ -323,30 +330,30 @@ export default function DiscountDetails({ discountId }: DiscountDetailsProps) {
                             <img
                               src={getImageUrl(usage.avatar)}
                               alt={usage.user_name}
-                              className="h-10 w-10 rounded-full"
+                              className="h-9 w-9 rounded-full object-cover border border-border"
                             />
                           ) : (
-                            <div className="h-10 w-10 rounded-full bg-teal-100 flex items-center justify-center">
-                              <HiUser className="h-5 w-5 text-teal-600" />
+                            <div className="h-9 w-9 rounded-full bg-primary-light border border-primary-pastel flex items-center justify-center">
+                              <User className="h-4 w-4 text-primary" />
                             </div>
                           )}
-                          <span className="font-medium text-gray-900">
+                          <span className="text-sm font-medium text-foreground">
                             {usage.user_name}
                           </span>
                         </div>
                       </td>
                       <td className="px-4 py-4">
-                        <span className="text-gray-700">
+                        <span className="text-sm text-foreground">
                           {usage.course_title}
                         </span>
                       </td>
                       <td className="px-4 py-4">
-                        <span className="font-semibold text-teal-600">
+                        <span className="text-sm font-semibold text-primary tabular-nums">
                           {formatCurrency(usage.discounted_amount)}
                         </span>
                       </td>
                       <td className="px-4 py-4">
-                        <span className="text-sm text-gray-600">
+                        <span className="text-sm text-muted-foreground">
                           {formatDateTime(usage.used_at)}
                         </span>
                       </td>
@@ -356,7 +363,7 @@ export default function DiscountDetails({ discountId }: DiscountDetailsProps) {
               </table>
             </div>
           )}
-        </div>
+        </Card>
       </div>
     </div>
   );

@@ -107,16 +107,22 @@ export default function CourseHeader({
             {/* Rating, Enrollments, Lessons Pill Row */}
             <div className="flex flex-wrap items-center gap-3 pt-1">
               <div className="inline-flex items-center gap-1.5 bg-surface/90 backdrop-blur-sm px-3.5 py-1.5 rounded-full border border-border shadow-2xs">
-                <HiStar className="h-4 w-4 text-warning-foreground" />
-                <span className="font-bold text-sm text-foreground">
-                  {course.rating > 0 ? course.rating.toFixed(1) : "5.0"}
-                </span>
-                <a
-                  href="#reviews"
-                  className="text-xs text-muted-foreground hover:text-primary transition-colors"
-                >
-                  ({course.rating_count.toLocaleString("vi-VN")} đánh giá)
-                </a>
+                {course.rating_count > 0 && course.rating > 0 ? (
+                  <>
+                    <HiStar className="h-4 w-4 text-warning-foreground" />
+                    <span className="font-bold text-sm text-foreground">
+                      {course.rating.toFixed(1)}
+                    </span>
+                    <a
+                      href="#reviews"
+                      className="text-xs text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      ({course.rating_count.toLocaleString("vi-VN")} đánh giá)
+                    </a>
+                  </>
+                ) : (
+                  <span className="text-xs text-muted-foreground">Chưa có đánh giá</span>
+                )}
               </div>
 
               <div className="inline-flex items-center gap-1.5 bg-surface/90 backdrop-blur-sm px-3.5 py-1.5 rounded-full border border-border shadow-2xs text-xs sm:text-sm text-foreground font-medium">

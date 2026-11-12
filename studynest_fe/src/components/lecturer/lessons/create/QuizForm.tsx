@@ -9,11 +9,16 @@ import {
 } from "@/types/lecturer/lesson";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  HiLightningBolt,
-  HiPlus,
-  HiQuestionMarkCircle,
-  HiX,
-} from "react-icons/hi";
+  HelpCircle,
+  Plus,
+  Sparkles,
+  Timer,
+  X,
+  Clock,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Alert, EmptyState } from "@/components/ui/states";
 
 const QUIZ_COOLDOWN_TIME = 180;
 
@@ -329,31 +334,31 @@ const QuizForm = memo(
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-md">
-            <HiQuestionMarkCircle className="h-6 w-6 text-white" />
+          <div className="w-12 h-12 bg-primary-light text-primary rounded-2xl flex items-center justify-center shadow-xs">
+            <HelpCircle className="h-6 w-6" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-2xl font-bold font-display text-foreground">
               Tạo câu hỏi Quiz
             </h2>
-            <p className="text-gray-600 mt-1">
+            <p className="text-sm text-muted-foreground mt-0.5">
               Sử dụng AI để tạo câu hỏi hoặc tạo thủ công
             </p>
           </div>
         </div>
 
         {/* AI Generate Quiz Section */}
-        <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 border-2 border-green-200 mb-6">
+        <Card variant="pastel-blue" className="p-6 mb-6 border border-border">
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center shadow-md">
-                <HiLightningBolt className="h-5 w-5 text-white" />
+              <div className="w-10 h-10 bg-primary text-white rounded-xl flex items-center justify-center shadow-xs">
+                <Sparkles className="h-5 w-5" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-gray-900">
+                <h3 className="text-lg font-bold text-foreground">
                   AI Tổng hợp câu hỏi
                 </h3>
-                <p className="text-sm text-gray-600 mt-1">
+                <p className="text-sm text-muted-foreground mt-0.5">
                   Chọn các bài học để AI tự động tạo câu hỏi quiz
                 </p>
               </div>
@@ -362,30 +367,28 @@ const QuizForm = memo(
 
           {/* Lesson Selection */}
           <div className="mb-4">
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
-              Chọn bài học để tạo quiz <span className="text-red-500">*</span>
+            <label className="block text-sm font-semibold text-foreground mb-3">
+              Chọn bài học để tạo quiz <span className="text-destructive">*</span>
             </label>
 
             {isLoadingLessons ? (
               <div className="flex items-center justify-center py-8">
-                <div className="w-6 h-6 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
-                <span className="ml-2 text-sm text-gray-600">
+                <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                <span className="ml-2 text-sm text-muted-foreground">
                   Đang tải danh sách bài học...
                 </span>
               </div>
             ) : availableLessons.length === 0 ? (
-              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <p className="text-sm text-yellow-800">
-                  Không có bài học nào trong chương này. Vui lòng chọn chương
-                  học khác hoặc tạo bài học trước.
-                </p>
-              </div>
+              <Alert variant="warning" title="Chưa có bài học">
+                Không có bài học nào trong chương này. Vui lòng chọn chương
+                học khác hoặc tạo bài học trước.
+              </Alert>
             ) : (
-              <div className="space-y-2 max-h-60 overflow-y-auto border border-gray-200 rounded-lg p-3 bg-white">
+              <div className="space-y-2 max-h-60 overflow-y-auto border border-border rounded-xl p-3 bg-surface">
                 {availableLessons.map((lesson) => (
                   <label
                     key={lesson.id}
-                    className="flex items-start gap-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
+                    className="flex items-start gap-3 p-3 hover:bg-primary-light/40 rounded-lg cursor-pointer transition-colors"
                   >
                     <input
                       type="checkbox"
@@ -399,13 +402,13 @@ const QuizForm = memo(
                           );
                         }
                       }}
-                      className="mt-1 w-4 h-4 text-green-600 focus:ring-green-500 rounded cursor-pointer"
+                      className="mt-1 w-4 h-4 text-primary focus:ring-primary rounded border-border cursor-pointer"
                     />
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-sm font-medium text-foreground">
                         {lesson.title}
                       </p>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-muted-foreground mt-1">
                         {lesson.lesson_type} • {lesson.chunk_count} chunk
                       </p>
                     </div>
@@ -415,128 +418,108 @@ const QuizForm = memo(
             )}
 
             {hasSelectedLessons && (
-              <p className="text-xs text-gray-600 mt-2">
+              <p className="text-xs text-muted-foreground mt-2">
                 Đã chọn {selectedLessonIds.length} bài học
               </p>
             )}
           </div>
 
           {/* Warning */}
-          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-            <div className="flex items-start gap-2">
-              <span className="text-green-600">⏳</span>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-green-900">
-                  Lưu ý về thời gian xử lý
-                </p>
-                <p className="text-xs text-green-700 mt-1">
-                  AI sẽ mất từ 1-5 phút để tổng hợp câu hỏi từ các bài học đã
-                  chọn. Vui lòng kiên nhẫn chờ đợi.
-                </p>
-              </div>
-            </div>
+          <div className="mb-4">
+            <Alert
+              variant="info"
+              icon={<Clock className="h-5 w-5" />}
+              title="Lưu ý về thời gian xử lý"
+            >
+              AI sẽ mất từ 1-5 phút để tổng hợp câu hỏi từ các bài học đã chọn.
+              Vui lòng kiên nhẫn chờ đợi.
+            </Alert>
           </div>
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3">
-            <button
+            <Button
               type="button"
+              variant="primary"
               onClick={() => generateQuizzesWithAI("new")}
               disabled={!canGenerate}
-              className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+              isLoading={isGeneratingQuiz}
+              loadingText="Đang tạo..."
+              leftIcon={<Sparkles className="h-4 w-4" />}
+              className="flex-1"
             >
-              {isGeneratingQuiz ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span>Đang tạo...</span>
-                </>
-              ) : (
-                <>
-                  <HiLightningBolt className="h-5 w-5" />
-                  <span>Tạo mới</span>
-                </>
-              )}
-            </button>
+              Tạo mới
+            </Button>
 
-            <button
+            <Button
               type="button"
+              variant="outline"
               onClick={() => generateQuizzesWithAI("append")}
               disabled={!canGenerate}
-              className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-white border-2 border-green-500 hover:bg-green-50 text-green-600 font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+              isLoading={isGeneratingQuiz}
+              loadingText="Đang tạo..."
+              leftIcon={<Sparkles className="h-4 w-4" />}
+              className="flex-1 border-primary text-primary hover:bg-primary-light/50"
             >
-              {isGeneratingQuiz ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
-                  <span>Đang tạo...</span>
-                </>
-              ) : (
-                <>
-                  <HiLightningBolt className="h-5 w-5" />
-                  <span>Tạo tiếp</span>
-                </>
-              )}
-            </button>
+              Tạo tiếp
+            </Button>
           </div>
 
           {/* Countdown Timer */}
           {quizCooldownSeconds > 0 && (
-            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <div className="flex items-center gap-2 text-yellow-800">
-                <span>⏱️</span>
-                <span className="text-sm font-medium">
-                  Vui lòng chờ {cooldownMinutes} phút {cooldownSeconds} giây
-                  trước khi tạo thêm quiz
-                </span>
-              </div>
+            <div className="mt-4">
+              <Alert variant="warning" icon={<Timer className="h-5 w-5" />}>
+                Vui lòng chờ {cooldownMinutes} phút {cooldownSeconds} giây trước
+                khi tạo thêm quiz
+              </Alert>
             </div>
           )}
 
           {/* Error Message */}
           {(errors.description || error) && (
-            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-700">
+            <div className="mt-4">
+              <Alert variant="destructive">
                 {errors.description || error}
-              </p>
+              </Alert>
             </div>
           )}
-        </div>
+        </Card>
 
         {/* Quiz List */}
         <div className="space-y-4">
           {quizzes.length === 0 ? (
-            <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
-              <HiQuestionMarkCircle className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-              <p className="text-gray-600 font-medium">Chưa có câu hỏi nào</p>
-              <p className="text-sm text-gray-500 mt-1">
-                Sử dụng AI để tạo câu hỏi hoặc thêm câu hỏi thủ công
-              </p>
-            </div>
+            <EmptyState
+              icon={<HelpCircle className="h-8 w-8" />}
+              title="Chưa có câu hỏi nào"
+              description="Sử dụng AI để tạo câu hỏi hoặc thêm câu hỏi thủ công"
+            />
           ) : (
             quizzes.map((quiz, quizIndex) => (
-              <div
+              <Card
                 key={quizIndex}
-                className="bg-white border-2 border-gray-200 rounded-xl p-6 space-y-4"
+                className="p-6 space-y-4 border border-border bg-surface"
               >
                 {/* Quiz Header */}
                 <div className="flex items-start justify-between">
-                  <h4 className="text-lg font-bold text-gray-900">
+                  <h4 className="text-lg font-bold text-foreground">
                     Câu hỏi {quizIndex + 1}
                   </h4>
                   <button
                     type="button"
                     onClick={() => removeQuiz(quizIndex)}
-                    className="text-red-600 hover:text-red-700 p-1 rounded transition-colors"
+                    className="text-muted-foreground hover:text-destructive p-1 rounded-lg hover:bg-destructive-bg transition-colors"
+                    aria-label="Xóa câu hỏi"
                   >
-                    <HiX className="h-5 w-5" />
+                    <X className="h-5 w-5" />
                   </button>
                 </div>
 
                 {/* Question */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Câu hỏi <span className="text-red-500">*</span>
+                  <label className="block text-sm font-semibold text-foreground mb-2">
+                    Câu hỏi <span className="text-destructive">*</span>
                   </label>
-                  <div className="border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-green-500 focus-within:border-transparent transition-all">
+                  <div className="border border-border rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-primary focus-within:border-transparent transition-all">
                     <TiptapEditor
                       value={quiz.question}
                       onChange={(content) =>
@@ -551,13 +534,13 @@ const QuizForm = memo(
 
                 {/* Options */}
                 <div className="space-y-3">
-                  <label className="block text-sm font-semibold text-gray-700">
-                    Đáp án <span className="text-red-500">*</span>
+                  <label className="block text-sm font-semibold text-foreground">
+                    Đáp án <span className="text-destructive">*</span>
                   </label>
                   {quiz.options.map((option, optionIndex) => (
                     <div
                       key={optionIndex}
-                      className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200"
+                      className="flex items-start gap-3 p-3 bg-surface-muted rounded-xl border border-border"
                     >
                       <input
                         type="radio"
@@ -566,7 +549,7 @@ const QuizForm = memo(
                         onChange={() =>
                           setCorrectAnswer(quizIndex, optionIndex)
                         }
-                        className="mt-1 w-4 h-4 text-green-600 focus:ring-green-500 cursor-pointer"
+                        className="mt-1 w-4 h-4 text-primary focus:ring-primary cursor-pointer"
                       />
                       <div className="flex-1 space-y-2">
                         <input
@@ -581,7 +564,7 @@ const QuizForm = memo(
                             )
                           }
                           placeholder={`Đáp án ${optionIndex + 1}...`}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm text-gray-900"
+                          className="w-full px-3 py-2 border border-border rounded-lg bg-surface focus:outline-none focus:ring-2 focus:ring-primary text-sm text-foreground placeholder:text-muted-foreground"
                         />
                         <input
                           type="text"
@@ -595,7 +578,7 @@ const QuizForm = memo(
                             )
                           }
                           placeholder="Phản hồi (tùy chọn)..."
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm text-gray-500"
+                          className="w-full px-3 py-2 border border-border rounded-lg bg-surface focus:outline-none focus:ring-2 focus:ring-primary text-sm text-muted-foreground placeholder:text-muted-foreground"
                         />
                       </div>
                       {quiz.options.length > 2 && (
@@ -604,30 +587,32 @@ const QuizForm = memo(
                           onClick={() =>
                             removeQuizOption(quizIndex, optionIndex)
                           }
-                          className="text-red-600 hover:text-red-700 p-1 rounded transition-colors"
+                          className="text-muted-foreground hover:text-destructive p-1 rounded-lg hover:bg-destructive-bg transition-colors"
+                          aria-label="Xóa đáp án"
                         >
-                          <HiX className="h-4 w-4" />
+                          <X className="h-4 w-4" />
                         </button>
                       )}
                     </div>
                   ))}
-                  <button
+                  <Button
                     type="button"
+                    variant="outline"
+                    size="sm"
                     onClick={() => addQuizOption(quizIndex)}
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-green-600 hover:text-green-700 font-medium border border-green-300 rounded-lg hover:bg-green-50 transition-colors"
+                    leftIcon={<Plus className="h-4 w-4" />}
                   >
-                    <HiPlus className="h-4 w-4" />
                     Thêm đáp án
-                  </button>
+                  </Button>
                 </div>
 
                 {/* Code Block (if exists) */}
                 {quiz.code_block && (
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-foreground mb-2">
                       Code Block
                     </label>
-                    <pre className="w-full px-4 py-3 bg-gray-900 text-gray-100 rounded-lg overflow-x-auto text-sm font-mono border border-gray-700">
+                    <pre className="w-full px-4 py-3 bg-slate-900 text-slate-100 rounded-xl overflow-x-auto text-sm font-mono border border-slate-800">
                       <code>{quiz.code_block}</code>
                     </pre>
                   </div>
@@ -635,10 +620,10 @@ const QuizForm = memo(
 
                 {/* Explanation */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-foreground mb-2">
                     Giải thích (tùy chọn)
                   </label>
-                  <div className="border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-green-500 focus-within:border-transparent transition-all">
+                  <div className="border border-border rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-primary focus-within:border-transparent transition-all">
                     <TiptapEditor
                       value={quiz.explanation}
                       onChange={(content) =>
@@ -650,23 +635,24 @@ const QuizForm = memo(
                     />
                   </div>
                 </div>
-              </div>
+              </Card>
             ))
           )}
 
           {/* Add Quiz Button */}
-          <button
+          <Button
             type="button"
+            variant="outline"
             onClick={addQuiz}
-            className="w-full flex items-center justify-center gap-2 px-6 py-3 border-2 border-dashed border-gray-300 hover:border-green-500 text-gray-600 hover:text-green-600 font-medium rounded-lg transition-colors"
+            className="w-full py-4 border-2 border-dashed border-border hover:border-primary text-muted-foreground hover:text-primary transition-colors"
+            leftIcon={<Plus className="h-5 w-5" />}
           >
-            <HiPlus className="h-5 w-5" />
             Thêm câu hỏi thủ công
-          </button>
+          </Button>
         </div>
 
         {errors.lesson_type && (
-          <p className="text-red-600 text-sm mt-2">{errors.lesson_type}</p>
+          <p className="text-destructive text-sm mt-2">{errors.lesson_type}</p>
         )}
       </div>
     );

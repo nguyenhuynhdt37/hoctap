@@ -40,6 +40,7 @@ interface MenuItem {
 }
 
 const menuItems: MenuItem[] = [
+  { title: "Đơn vị cung cấp", href: "/admin/providers", icon: HiUsers, badge: null },
   {
     title: "Lộ trình học tập",
     href: "/admin/learning-paths",

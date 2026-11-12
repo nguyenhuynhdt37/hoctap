@@ -1,15 +1,16 @@
 "use client";
 
 import Pagination from "@/components/shared/pagination";
+import { Button } from "@/components/ui";
 import api from "@/lib/utils/fetcher/client/axios";
 import { showToast } from "@/lib/utils/helpers/toast";
 import {
   DiscountsQueryParams,
   DiscountsResponse,
 } from "@/types/lecturer/discount";
+import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { HiPlus } from "react-icons/hi";
 import useSWR from "swr";
 import { DiscountsEmpty } from "./discounts-empty";
 import { DiscountsFilters } from "./discounts-filters";
@@ -173,26 +174,29 @@ export default function DiscountsManagement() {
   const isEmpty = !isInitialLoading && data && data.items.length === 0;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-background">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         {/* Page Header */}
         <div className="mb-8">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-black text-gray-900 mb-2">
+              <h1 className="font-display text-2xl sm:text-3xl font-semibold text-foreground tracking-tight mb-1.5">
                 Quản lý mã giảm giá
               </h1>
-              <p className="text-gray-600">
+              <p className="text-sm text-muted-foreground">
                 Tạo và quản lý các mã giảm giá để thu hút học viên
               </p>
             </div>
-            <button
+            <Button
+              type="button"
+              variant="primary"
+              size="md"
               onClick={() => router.push("/lecturer/discounts/create")}
-              className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold rounded-lg hover:shadow-lg transition-all duration-200"
+              leftIcon={<Plus className="h-4 w-4" />}
+              className="self-start sm:self-auto"
             >
-              <HiPlus className="h-5 w-5" />
-              <span>Tạo mã giảm giá</span>
-            </button>
+              Tạo mã giảm giá
+            </Button>
           </div>
         </div>
 

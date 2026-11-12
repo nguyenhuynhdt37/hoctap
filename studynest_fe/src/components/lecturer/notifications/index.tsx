@@ -1,6 +1,7 @@
 "use client";
 
 import Pagination from "@/components/shared/pagination";
+import { Alert, Badge, Button, Card, EmptyState, Skeleton } from "@/components/ui";
 import { NotificationCard } from "@/components/user/notifications/notification-card";
 import { NotificationsToolbar } from "@/components/user/notifications/notifications-toolbar";
 import api from "@/lib/utils/fetcher/client/axios";
@@ -12,8 +13,8 @@ import {
   NotificationsResponse,
 } from "@/types/user/notification";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Bell, CheckCheck } from "lucide-react";
 import { useEffect, useState } from "react";
-import { HiBell, HiExclamationCircle } from "react-icons/hi";
 
 export default function Notifications() {
   const user = useUserStore((s) => s.user);
@@ -81,38 +82,39 @@ export default function Notifications() {
   useEffect(() => setPage(1), [search, type, read, sortBy, orderDir]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="mx-auto max-w-7xl px-4 py-8">
+    <div className="min-h-screen bg-background">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
         <header className="mb-8">
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Thông báo</h1>
-              <p className="text-sm text-gray-600 mt-2">
+              <h1 className="font-display text-2xl sm:text-3xl font-semibold text-foreground tracking-tight">
+                Thông báo
+              </h1>
+              <p className="text-sm text-muted-foreground mt-1.5">
                 Xem và quản lý tất cả thông báo của bạn
               </p>
             </div>
             {data?.unread && data.unread > 0 && (
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-50 border border-green-200">
-                  <HiBell className="h-5 w-5 text-green-600" />
-                  <span className="text-sm font-semibold text-green-700">
-                    {data.unread} chưa đọc
-                  </span>
-                </div>
-                <button
-                  onClick={() => markAll.mutate()}
-                  disabled={markAll.isPending}
-                  className="px-4 py-2 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              <div className="flex flex-wrap items-center gap-3">
+                <Badge
+                  variant="default"
+                  size="md"
+                  icon={<Bell className="h-3.5 w-3.5" />}
+                  className="px-3.5 py-2 text-sm font-semibold"
                 >
-                  {markAll.isPending ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span>Đang xử lý...</span>
-                    </>
-                  ) : (
-                    <span>Đánh dấu đã đọc tất cả</span>
-                  )}
-                </button>
+                  {data.unread} chưa đọc
+                </Badge>
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="md"
+                  onClick={() => markAll.mutate()}
+                  isLoading={markAll.isPending}
+                  loadingText="Đang xử lý..."
+                  leftIcon={<CheckCheck className="h-4 w-4" />}
+                >
+                  Đánh dấu đã đọc tất cả
+                </Button>
               </div>
             )}
           </div>
@@ -134,36 +136,32 @@ export default function Notifications() {
         </div>
 
         {isLoading && (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {[...Array(5)].map((_, i) => (
-              <div
+              <Skeleton
                 key={i}
-                className="h-24 animate-pulse rounded-xl bg-gray-200 border border-gray-200"
+                className="h-24 w-full rounded-2xl border border-border"
               />
             ))}
           </div>
         )}
 
         {error && (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 mb-6">
+          <Alert variant="destructive" className="mb-6">
             Có lỗi xảy ra khi tải thông báo. Vui lòng thử lại sau.
-          </div>
+          </Alert>
         )}
 
         {data && (
           <>
             {data.items.length === 0 ? (
-              <div className="rounded-xl border border-green-200 bg-white p-12 text-center shadow-sm">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
-                  <HiExclamationCircle className="h-8 w-8 text-gray-400" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  Không có thông báo nào
-                </h3>
-                <p className="text-gray-600">
-                  Hiện tại bạn chưa có thông báo nào.
-                </p>
-              </div>
+              <Card variant="surface" className="p-8">
+                <EmptyState
+                  icon={<Bell className="h-7 w-7" />}
+                  title="Không có thông báo nào"
+                  description="Hiện tại bạn chưa có thông báo nào."
+                />
+              </Card>
             ) : (
               <>
                 <div className="space-y-3">

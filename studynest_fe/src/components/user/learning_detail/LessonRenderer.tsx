@@ -4,6 +4,8 @@ import { ActiveLessonResponse } from "@/types/user/activeLesson";
 import CodeLesson from "./code";
 import QuizLesson from "./quiz";
 import VideoLesson from "./video";
+import MarkdownRenderer from "@/components/shared/markdown-renderer";
+import { Button } from "@/components/ui/button";
 
 interface LessonRendererProps {
   activeLessonData: ActiveLessonResponse | undefined;
@@ -41,6 +43,23 @@ export default function LessonRenderer({
     }
 
     switch (activeLessonData.lesson_type) {
+      case "article": {
+        const completed = activeLessonData.is_completed || completedLessons?.has(activeLessonData.id);
+        return (
+          <article className="rounded-2xl border border-border bg-surface p-5 text-foreground sm:p-8">
+            <h1 className="mb-6 text-xl font-semibold sm:text-2xl">{activeLessonData.title}</h1>
+            <MarkdownRenderer content={activeLessonData.description || "Nội dung đang được cập nhật."} isHtml={false} />
+            {onMarkCompleted && (
+              <div className="mt-8 border-t border-border pt-5">
+                <Button disabled={completed || activeLessonData.is_locked} onClick={() => onMarkCompleted(activeLessonData.id)}>
+                  {completed ? "Đã hoàn thành" : "Đánh dấu đã học xong"}
+                </Button>
+              </div>
+            )}
+          </article>
+        );
+      }
+
       case "video":
         return (
           <VideoLesson

@@ -1,0 +1,5 @@
+{"checked_at": "2026-11-12T04:37:06.237573+00:00", "inserted": 3340, "already_imported": 0, "manual_collisions": [], "target_database": "local-development"}
+{"checked_at": "2026-11-12T04:41:07.414423+00:00", "inserted": 0, "already_imported": 3340, "manual_collisions": [], "target_database": "local-development"}
+{"checked_at": "2026-11-12T04:46:53.790554+00:00", "inserted": 3340, "already_imported": 0, "manual_collisions": [], "target_database": "studynest_provider_directory_migration_test"}
+{"checked_at": "2026-11-12T04:46:54.691374+00:00", "inserted": 0, "already_imported": 3340, "manual_collisions": [], "target_database": "studynest_provider_directory_migration_test"}
+{"checked_at": "2026-11-12T04:47:33.306404+00:00", "target_database": "studynest", "inserted": 0, "already_imported": 3340, "manual_collisions": []}

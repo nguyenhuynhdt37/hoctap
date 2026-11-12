@@ -83,6 +83,8 @@ class FileStorageService:
         date = datetime.now(UTC).strftime("%Y/%m")
         if len(parts) == 2 and parts[0] == "avatars":
             prefix = f"public/users/{parts[1]}/avatars"
+        elif len(parts) == 3 and parts[0] == "providers" and parts[2] in {"avatars", "banners"}:
+            prefix = f"public/providers/{parts[1]}/{parts[2]}"
         elif len(parts) == 3 and parts[0] == "shares":
             prefix = f"public/users/{parts[2]}/editor/{date}/{category}"
         elif len(parts) == 3 and parts[0] == "courses" and parts[2] == "thumbnails":

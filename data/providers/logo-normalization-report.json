@@ -1,0 +1,166 @@
+[
+  {
+    "provider_id": "a1655fe2-1775-4fcb-a56a-83b0e5e4023e",
+    "status": "ownership_requires_review"
+  },
+  {
+    "provider_id": "4643dae0-b2d2-4bf6-b1d2-66a5935a84bc",
+    "status": "retry_required",
+    "error": "HTTPException"
+  },
+  {
+    "provider_id": "01ade852-a3bb-46ce-b4b4-3195728d780c",
+    "status": "retry_required",
+    "error": "HTTPException"
+  },
+  {
+    "provider_id": "44cd5534-c5eb-4aff-8185-78953b2e0e19",
+    "status": "retry_required",
+    "error": "HTTPException"
+  },
+  {
+    "provider_id": "468cb9bb-56bd-4241-9043-4a8bf7212d2f",
+    "status": "retry_required",
+    "error": "HTTPException"
+  },
+  {
+    "provider_id": "a0e6db27-7e1e-41d8-9ca9-b1a0bf65ddf3",
+    "status": "retry_required",
+    "error": "HTTPException"
+  },
+  {
+    "provider_id": "aa84eaed-5110-45a8-9875-1bcfe215759f",
+    "status": "retry_required",
+    "error": "HTTPException"
+  },
+  {
+    "provider_id": "58d51ed1-872d-41f8-8e42-cc3285987268",
+    "status": "retry_required",
+    "error": "HTTPException"
+  },
+  {
+    "provider_id": "c3f354f8-5177-4345-aef5-b30548ff5d5a",
+    "status": "retry_required",
+    "error": "HTTPException"
+  },
+  {
+    "provider_id": "92141b92-11db-4827-881e-240333839660",
+    "status": "retry_required",
+    "error": "HTTPException"
+  },
+  {
+    "provider_id": "3bcd7449-0ea1-4dd2-afa5-4e1a9c077475",
+    "status": "retry_required",
+    "error": "HTTPException"
+  },
+  {
+    "provider_id": "09220a64-dbf2-44b7-9bb7-aefbfe10d4d1",
+    "status": "retry_required",
+    "error": "HTTPException"
+  },
+  {
+    "provider_id": "6a22e4f3-075d-46b0-9c68-949ba53a43b6",
+    "status": "retry_required",
+    "error": "HTTPException"
+  },
+  {
+    "provider_id": "0e7b1cea-52c6-496a-a792-b249c67454e8",
+    "status": "retry_required",
+    "error": "HTTPException"
+  },
+  {
+    "provider_id": "9a23b299-9ee6-4346-b5af-111d9ad87887",
+    "status": "retry_required",
+    "error": "HTTPException"
+  },
+  {
+    "provider_id": "95a8b954-a893-4d9b-a7c0-7c4b48a01f9d",
+    "status": "retry_required",
+    "error": "HTTPException"
+  },
+  {
+    "provider_id": "e9d150de-7d2c-44e6-a021-46168796fa8e",
+    "status": "retry_required",
+    "error": "HTTPException"
+  },
+  {
+    "provider_id": "91cd3de4-3ebc-4c05-b72f-92c20e99a749",
+    "status": "retry_required",
+    "error": "HTTPException"
+  },
+  {
+    "provider_id": "cde41311-a21f-4564-8193-c72632301100",
+    "status": "retry_required",
+    "error": "HTTPException"
+  },
+  {
+    "provider_id": "db7f954d-9772-4f8b-90e4-b6ba238f6ba9",
+    "status": "retry_required",
+    "error": "HTTPException"
+  },
+  {
+    "provider_id": "ad124c69-6fa1-45ef-bbb3-fb55f7eee060",
+    "status": "retry_required",
+    "error": "HTTPException"
+  },
+  {
+    "provider_id": "9ca92d19-88ee-472d-884e-1300ad5add15",
+    "status": "retry_required",
+    "error": "HTTPException"
+  },
+  {
+    "provider_id": "3aa2be9e-6b6e-4f2e-a637-08736cc05587",
+    "status": "retry_required",
+    "error": "HTTPException"
+  },
+  {
+    "provider_id": "64b16c88-96f8-4a63-b7af-332d3fcf652b",
+    "status": "retry_required",
+    "error": "HTTPException"
+  },
+  {
+    "provider_id": "954e625f-2096-495f-b190-4a38d09f4717",
+    "status": "retry_required",
+    "error": "HTTPException"
+  },
+  {
+    "provider_id": "378b9399-4831-459f-9da4-ca1573a57b94",
+    "status": "retry_required",
+    "error": "HTTPException"
+  },
+  {
+    "provider_id": "e27c3a11-ebe3-4e6a-b41f-c00133c6954b",
+    "status": "retry_required",
+    "error": "HTTPException"
+  },
+  {
+    "provider_id": "69fe07d3-ff69-4c5d-b0a6-2deb190650e0",
+    "status": "retry_required",
+    "error": "HTTPException"
+  },
+  {
+    "provider_id": "c338a82a-af6c-40e1-a31b-35e7993d33dd",
+    "status": "retry_required",
+    "error": "HTTPException"
+  },
+  {
+    "provider_id": "9349c593-8917-489d-a914-58a8b78d4bfe",
+    "status": "retry_required",
+    "error": "HTTPException"
+  },
+  {
+    "provider_id": "f0461918-3568-442d-b9a1-4bf989128640",
+    "status": "retry_required",
+    "error": "HTTPException"
+  },
+  {
+    "provider_id": "fab00f8b-ef79-41f8-8440-f874ea98dd0c",
+    "status": "retry_required",
+    "error": "HTTPException"
+  },
+  {
+    "provider_id": "f84f806a-6ba8-443d-8556-d3cfd3fb205e",
+    "status": "retry_required",
+    "error": "HTTPException"
+  }
+]

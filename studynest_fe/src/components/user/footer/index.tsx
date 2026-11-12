@@ -120,7 +120,7 @@ const Footer = () => {
               </li>
               <li>
                 <Link
-                  href="/help/instructors"
+                  href="/instructors"
                   className="text-muted-foreground hover:text-primary transition-colors duration-200 text-sm leading-relaxed flex items-center"
                 >
                   Đội ngũ giảng viên

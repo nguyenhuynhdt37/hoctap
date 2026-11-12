@@ -62,7 +62,7 @@ export default function VideoLesson({
 
   useEffect(() => {
     if (hasQuizzes || isCompleted) return;
-    const requiredTime = Math.floor(duration * 0.75);
+    const requiredTime = Math.ceil(duration * 0.3);
     if (watchTime >= requiredTime && !isCompleted) {
       playSuccessSound();
       triggerCelebration(3, 2);

@@ -49,6 +49,15 @@ class ChatStreamTests(unittest.IsolatedAsyncioTestCase):
             return httpx.Response(200, stream=ByteStream(frame("Xin ") + frame("chào 🚀") + frame(finish="stop") + 'data: [DONE]\n\n'))
         self.assertEqual(await self.run_stream(handler), ["Xin ", "chào 🚀"])
 
+    async def test_tutor_model_override_reaches_streaming_provider(self):
+        def handler(request):
+            self.assertEqual(json.loads(request.content)['model'], 'ag/fast-tutor')
+            return httpx.Response(200, stream=ByteStream(frame('OK') + frame(finish='stop')))
+        client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+        with patch('app.core.llm.httpx.AsyncClient', return_value=client):
+            result = [s async for s in LLMService(model_override='ag/fast-tutor').stream_model('Test')]
+        self.assertEqual(result, ['OK'])
+
     async def test_router_stop_without_done_is_supported(self):
         result = await self.run_stream(lambda _: httpx.Response(200, stream=ByteStream(frame("OK") + frame(finish="stop"))))
         self.assertEqual(result, ["OK"])
