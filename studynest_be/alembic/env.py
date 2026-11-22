@@ -79,11 +79,16 @@ async def run_async_migrations() -> None:
     and associate a connection with the context.
 
     """
+    connect_args = {}
+    if database_url and "psql-maymay.itup.io.vn" in database_url:
+        connect_args["host"] = "100.122.190.92"
+        connect_args["port"] = 5435
 
     connectable = async_engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        connect_args=connect_args,
     )
 
     async with connectable.connect() as connection:

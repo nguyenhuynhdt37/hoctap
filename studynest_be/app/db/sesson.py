@@ -11,9 +11,16 @@ DATABASE_URL = os.getenv(
     settings.DATABASE_ASYNC_URL,
 )
 
+# Phân giải host psql-maymay qua IP Tailscale trực tiếp khi domain đi qua Cloudflare proxy (chỉ forward HTTP/HTTPS)
+connect_args = {}
+if DATABASE_URL and "psql-maymay.itup.io.vn" in DATABASE_URL:
+    connect_args["host"] = "100.122.190.92"
+    connect_args["port"] = 5435
+
 # ✅ Tạo engine async
 engine = create_async_engine(
     DATABASE_URL,
+    connect_args=connect_args,
     echo=False,  # bật True chỉ khi debug
     pool_pre_ping=True,  # tự kiểm tra connection còn sống
 )
