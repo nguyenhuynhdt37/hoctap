@@ -3,7 +3,6 @@
 import { useCallback, useRef, useState } from "react";
 import BenefitsSection from "./benefits-section";
 import { LandingDynamicIsland, ScrollCinematicHero } from "./cinematic";
-import LandingVoiceTour from "./cinematic/LandingVoiceTour";
 import CoursesSection from "./courses-section";
 import CTASection from "./cta-section";
 import GradeLevelsSection, { SchoolLevelId } from "./grade-levels-section";
@@ -35,7 +34,6 @@ const Home = () => {
   return (
     <main className="min-h-screen bg-background">
       <LandingDynamicIsland onSkipVideo={scrollToContent} />
-      <LandingVoiceTour />
 
       {/* Section B: Scroll-Driven 3D Cinematic Hero */}
       <ScrollCinematicHero
