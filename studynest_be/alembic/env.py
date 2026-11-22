@@ -23,7 +23,7 @@ load_dotenv()
 # load config URL từ .env
 database_url = os.getenv("DATABASE_ASYNC_URL")
 if database_url:
-    config.set_main_option("sqlalchemy.url", database_url)
+    config.set_main_option("sqlalchemy.url", database_url.replace("%", "%%"))
 
 from app.db.models.database import Base
 from app.db.models import github_identity
