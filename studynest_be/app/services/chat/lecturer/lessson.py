@@ -1,6 +1,5 @@
 import json
 import re
-from curses import raw
 from uuid import UUID
 
 from fastapi import Depends, HTTPException
