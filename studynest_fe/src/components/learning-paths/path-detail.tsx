@@ -5,6 +5,7 @@ import { useState } from "react";
 import useSWR from "swr";
 import api from "@/lib/utils/fetcher/client/axios";
 import { Button, Badge } from "@/components/ui";
+import MarkdownRenderer from "@/components/shared/markdown-renderer";
 import { useUserStore } from "@/stores/user";
 import type { LearningPath, Bundle, PageResult } from "@/types/learning-paths";
 import { fetchLearning, LoadError, Loading, message, price } from "./shared";
@@ -58,9 +59,9 @@ export default function PathDetail({ slug }: { slug: string }) {
           <Badge variant="outline">Lộ trình tuyển chọn</Badge>
         </div>
         <h1 className="text-3xl font-semibold">{data.title}</h1>
-        <p className="max-w-3xl whitespace-pre-line leading-relaxed text-muted-foreground">
-          {data.description}
-        </p>
+        <div className="max-w-3xl leading-relaxed text-muted-foreground">
+          <MarkdownRenderer content={data.description || ""} />
+        </div>
         <p className="text-sm text-muted-foreground">
           Mỗi học phần chọn một khóa phù hợp. Theo dõi lộ trình không tự đăng ký
           hoặc mua khóa học.
@@ -109,9 +110,9 @@ export default function PathDetail({ slug }: { slug: string }) {
                   {stage.title}
                   {stage.completed ? " · Đã học xong nội dung" : ""}
                 </h2>
-                <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
-                  {stage.description}
-                </p>
+                <div className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  <MarkdownRenderer content={stage.description || ""} />
+                </div>
               </div>
             </div>
             <div className="space-y-6">

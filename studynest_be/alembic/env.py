@@ -26,7 +26,10 @@ if database_url:
     config.set_main_option("sqlalchemy.url", database_url)
 
 from app.db.models.database import Base
+from app.db.models import github_identity
 from app.db.models import catalog  # register additive metadata
+from app.agent import github_connection  # account-linked credentials metadata
+from app.db.models import agent, code_attempts, learning_memory, quiz_attempts  # additive learner/agent state
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,

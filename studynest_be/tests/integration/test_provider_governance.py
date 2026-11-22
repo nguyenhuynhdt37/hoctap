@@ -8,7 +8,7 @@ from uuid import uuid4
 import httpx
 import pytest
 import pytest_asyncio
-from app.api.v1.catalog import router
+from tests.provider_legacy_routes import router
 from app.api.v1.shares.notification import router as notifications_router
 from app.core.deps import AuthorizationService
 from app.db.models.catalog import Provider, ProviderCreationRequest, ProviderMember
@@ -567,14 +567,18 @@ async def test_realtime_failure_keeps_decision_and_durable_notification(
 
 async def test_pending_hidden_and_admin_notification_read_scope(ctx):
     name = f"Hidden {uuid4().hex}"
-    p = await ctx.service.save(
-        ProviderAdminInput(name=name, verification_status="pending"),
-        ctx.actors["admin"].id,
-        admin=True,
+    provider = Provider(
+        name=name,
+        slug=f"hidden-{uuid4().hex}",
+        provider_type="individual",
+        verification_status="pending",
+        is_active=True,
     )
+    ctx.db.add(provider)
+    await ctx.db.commit()
     assert not (await ctx.service.listing(search=name))["items"]
     with pytest.raises(HTTPException):
-        await ctx.service.detail(p["slug"])
+        await ctx.service.detail(provider.slug)
     request = await ctx.service.submit_request(proposal(), ctx.actors["lecturer"].id)
     admin_notice = next(
         n

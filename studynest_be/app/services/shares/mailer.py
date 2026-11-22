@@ -3,8 +3,13 @@ from pathlib import Path
 
 from fastapi_mail import ConnectionConfig, FastMail, MessageSchema, MessageType
 from pydantic import SecretStr
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.settings import settings
+from app.services.user.learning_menu import (
+    announcement_emails_enabled,
+    promotional_emails_enabled,
+)
 
 
 class MailerService:
@@ -38,7 +43,7 @@ class MailerService:
             subtype=MessageType.html,
         )
         await self.fastmail.send_message(message, template_name="verify_email.html")
-        return {"message": f"Đã gửi email xác thực đến {email}"}
+        return {"message": f"Đã gửi email xác thực đến {email}", "sent": True}
 
     async def send_login_otp_email(self, email: str, fullname: str, code: str):
         """Gửi email OTP đăng nhập."""
@@ -80,6 +85,70 @@ class MailerService:
         )
         await self.fastmail.send_message(message, template_name=template_name)
         return {"message": f"Đã gửi email '{subject}' đến {', '.join(recipients)}"}
+
+    async def send_course_announcement_email(
+        self,
+        db: AsyncSession,
+        *,
+        user_id,
+        course_id,
+        email: str,
+        fullname: str,
+        course_title: str,
+        body: str,
+    ):
+        """Per-course announcement. Skips transport when the learner opted out."""
+        if not await announcement_emails_enabled(db, user_id, course_id):
+            return {"sent": False, "skipped": "announcement"}
+        message = MessageSchema(
+            subject=f"Thông báo mới: {course_title}",
+            recipients=[email],
+            template_body={
+                "fullname": fullname,
+                "course_title": course_title,
+                "body": body,
+            },
+            subtype=MessageType.html,
+        )
+        await self.fastmail.send_message(
+            message, template_name="course_announcement.html"
+        )
+        return {"sent": True, "skipped": None}
+
+    async def send_promotional_email(
+        self,
+        db: AsyncSession,
+        *,
+        user_id,
+        email: str,
+        fullname: str,
+        subject: str,
+        body: str,
+    ):
+        """Account promotional mail. Skips transport when the learner opted out."""
+        if not await promotional_emails_enabled(db, user_id):
+            return {"sent": False, "skipped": "promotional"}
+        message = MessageSchema(
+            subject=subject,
+            recipients=[email],
+            template_body={"fullname": fullname, "body": body},
+            subtype=MessageType.html,
+        )
+        await self.fastmail.send_message(message, template_name="promotional.html")
+        return {"sent": True, "skipped": None}
+
+    async def send_gift_claim_notice(
+        self, *, email: str, fullname: str, course_title: str
+    ):
+        """Transactional gift notice. Preference opt-outs do not apply."""
+        message = MessageSchema(
+            subject=f"Bạn được tặng khóa học {course_title}",
+            recipients=[email],
+            template_body={"fullname": fullname, "course_title": course_title},
+            subtype=MessageType.html,
+        )
+        await self.fastmail.send_message(message, template_name="gift_claim.html")
+        return {"sent": True, "skipped": None}
 
 
 # ✅ Dependency Injection để dùng trong router

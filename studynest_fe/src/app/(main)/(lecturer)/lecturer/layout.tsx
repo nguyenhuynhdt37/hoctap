@@ -1,5 +1,4 @@
-import LecturerHeader from "@/components/lecturer/shared/header";
-import Footer from "@/components/user/footer";
+import LecturerShell from "@/components/lecturer/shared/header";
 import { getServerCookie } from "@/lib/utils/fetcher/server/cookieStore";
 import { fetcher } from "@/lib/utils/fetcher/server/fetcher";
 import { NotificationWS } from "@/provider/notification-ws";
@@ -45,13 +44,11 @@ export default function LecturerLayout({
   children: ReactNode;
 }) {
   return (
-    <>
-      <LecturerHeader />
+    <LecturerShell>
       <Suspense fallback={null}>
         <LecturerNotificationsBootstrap />
       </Suspense>
-      <div className="min-h-screen bg-background text-foreground">{children}</div>
-      <Footer />
-    </>
+      {children}
+    </LecturerShell>
   );
 }

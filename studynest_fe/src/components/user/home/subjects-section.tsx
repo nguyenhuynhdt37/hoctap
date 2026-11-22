@@ -43,7 +43,7 @@ interface SubjectsSectionProps {
 }
 
 export default function SubjectsSection({ selectedLevel, onChangeLevel, onExploreCourses }: SubjectsSectionProps) {
-  const { data, error, isLoading, mutate } = useSWR<CatalogOptions>("/catalog/filters", fetcher);
+  const { data, error, isLoading, mutate } = useSWR<CatalogOptions>("/catalog/filters", fetcher, {revalidateOnFocus:false,revalidateOnReconnect:false,dedupingInterval:300000});
   const subjects = useMemo(() => {
     if (!data) return [];
     return data.subjects

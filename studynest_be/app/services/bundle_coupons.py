@@ -19,6 +19,26 @@ class BundleCouponService:
             raise HTTPException(404, "Không tìm thấy combo")
         return root
 
+    async def owned(self, bundle_id, actor_id):
+        from app.services.bundle_ownership import BundleOwnershipPolicy
+
+        root = await BundleOwnershipPolicy(self.db).root(bundle_id, actor_id)
+        if root["suspended_at"]:
+            raise HTTPException(409, "Combo đang tạm ngừng")
+        return root
+
+    async def listing_owned(self, bundle_id, actor_id):
+        await self.owned(bundle_id, actor_id)
+        return await self.listing(bundle_id)
+
+    async def save_owned(self, bundle_id, data, actor_id, coupon_id=None):
+        await self.owned(bundle_id, actor_id)
+        return await self.save(bundle_id, data, actor_id, coupon_id)
+
+    async def active_owned(self, bundle_id, coupon_id, active, actor_id):
+        await self.owned(bundle_id, actor_id)
+        return await self.active(bundle_id, coupon_id, active)
+
     async def listing(self, bundle_id):
         await self.root(bundle_id)
         rows = (

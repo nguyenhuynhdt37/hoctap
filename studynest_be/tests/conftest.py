@@ -10,19 +10,11 @@ import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-# ──────────────────────────────────────────────────────────────────────────────
-# Nếu có biến môi trường TEST_DATABASE_ASYNC_URL thì dùng, còn không thì
-# dùng database thật (cẩn thận chỉ để dev / CI).
-# ──────────────────────────────────────────────────────────────────────────────
+# Database tests are opt-in and must use an explicitly isolated database.
+# Never fall back to application credentials or the developer's real database.
 import os
 
-TEST_DATABASE_URL: str = os.getenv(
-    "TEST_DATABASE_ASYNC_URL",
-    os.getenv(
-        "DATABASE_ASYNC_URL",
-        "postgresql+asyncpg://admin:StrongPass2026!@127.0.0.1:5433/studynest",
-    ),
-)
+TEST_DATABASE_URL: str | None = os.getenv("TEST_DATABASE_ASYNC_URL")
 
 
 @pytest.fixture(scope="session")
@@ -38,6 +30,8 @@ from sqlalchemy.pool import NullPool
 
 @pytest_asyncio.fixture(scope="session")
 async def async_engine():
+    if not TEST_DATABASE_URL:
+        pytest.skip("Set TEST_DATABASE_ASYNC_URL to an isolated verification database")
     engine = create_async_engine(
         TEST_DATABASE_URL,
         echo=False,
@@ -52,7 +46,7 @@ async def db_session(async_engine) -> AsyncGenerator[AsyncSession, None]:
     """Session với transaction rollback sau mỗi test, hỗ trợ commit() trong code ứng dụng."""
     connection = await async_engine.connect()
     transaction = await connection.begin()
-    session = AsyncSession(bind=connection, expire_on_commit=False)
+    session = AsyncSession(bind=connection, expire_on_commit=False, join_transaction_mode="create_savepoint")
 
     yield session
 

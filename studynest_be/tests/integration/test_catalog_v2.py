@@ -371,27 +371,12 @@ async def test_provider_permissions_and_settlement_guard(db_session):
     course, user = await make_course(db_session, is_published=False)
     user_id = user.id
     svc = ProviderService(db_session)
-    pending = ProviderAdminInput(
-        name="Test center " + uuid4().hex, provider_type="center"
-    )
-    data = await svc.save(pending, user_id, admin=True)
-    provider_id = data["id"]
-    assert data["verification_status"] == "pending"
-    with pytest.raises(HTTPException) as hidden:
-        await svc.detail(data["slug"])
-    assert hidden.value.status_code == 404
     data = await svc.save(
-        ProviderAdminInput(
-            **{
-                **pending.model_dump(),
-                "slug": data["slug"],
-                "verification_status": "verified",
-            }
-        ),
+        ProviderAdminInput(name="Test center " + uuid4().hex, provider_type="center"),
         user_id,
-        provider_id,
         admin=True,
     )
+    provider_id = data["id"]
     db_session.add(
         ProviderMember(provider_id=provider_id, user_id=user_id, status="active")
     )
@@ -400,7 +385,13 @@ async def test_provider_permissions_and_settlement_guard(db_session):
     assert profile["course_count"] == 0 and profile["subjects"] == []
     assert "email" not in profile
     catalog = CatalogService(db_session)
-    await catalog.assign(course, CourseTaxonomy(provider_id=provider_id), user_id)
+    with pytest.raises(HTTPException) as assignment:
+        await catalog.assign(course, CourseTaxonomy(provider_id=provider_id), user_id)
+    assert assignment.value.status_code == 422
+
+    course.provider_id = provider_id
+    await catalog.assign(course, CourseTaxonomy(), user_id)
+    assert course.provider_id == provider_id
     with pytest.raises(HTTPException) as e:
         await catalog.validate_assignment(
             CourseTaxonomy(provider_id=provider_id), uuid4()

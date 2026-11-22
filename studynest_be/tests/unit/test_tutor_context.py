@@ -145,7 +145,8 @@ class TutorContextTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn('Chưa có nguồn', result['content'])
 
     def test_compact_citation_preserves_original_source_number(self):
-        second = dict(self.source, chunk_id=str(uuid4()), content='- `01:09` Giải thích dây nylon')
+        second = dict(self.source, chunk_id=str(uuid4()), content='- `01:09` Giải thích dây nylon',
+                      source_kind='youtube_transcript',timestamps_verified=True,timestamp_anchors=[69])
         sources = self.service._ground_sources([{'index': 2, 'timestamp_seconds': 999}], [self.source, second])
         self.assertEqual(sources[0]['index'], 2)
         self.assertEqual(sources[0]['chunk_id'], second['chunk_id'])

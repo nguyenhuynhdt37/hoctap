@@ -14,6 +14,7 @@ interface InfoPanelProps {
   currentExercise: CodeExercise | undefined;
   testResult: TestResult | null;
   accessToken?: string;
+  lessonAuthorId?: string | null;
 }
 
 export default function InfoPanel({
@@ -23,6 +24,7 @@ export default function InfoPanel({
   currentExercise,
   testResult,
   accessToken,
+  lessonAuthorId,
 }: InfoPanelProps) {
   const qaSectionRef = useRef<HTMLDivElement | null>(null);
 
@@ -192,6 +194,7 @@ export default function InfoPanel({
             <QASection
               lessonId={lesson.id}
               accessToken={accessToken}
+              lessonAuthorId={lessonAuthorId}
               containerClassName="w-full bg-surface px-4 sm:px-6 lg:px-8 py-4"
             />
           </div>

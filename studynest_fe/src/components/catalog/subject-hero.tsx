@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, BookOpen, Compass, Globe2, Layers, Sparkles } from "lucide-react";
+import { ArrowRight, BookOpen, Compass, Globe2, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui";
 import type { BrowseSubjectOption } from "@/types/catalog";
 
@@ -75,26 +75,17 @@ export function SubjectHero({ currentSubject, totalCourses }: SubjectHeroProps) 
 
           <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
             {desc ||
-              "Lọc khóa học theo khối lớp, môn học, mục tiêu học tập và đơn vị đào tạo trên hệ thống Mây Mây."}
+              "Lọc khóa học theo khối lớp, môn học và mục tiêu học tập trên hệ thống Mây Mây."}
           </p>
 
-          {/* Lối tắt Lộ trình & Combo điều hướng chuẩn (Link styled như nút, không nested button) */}
+          {/* Combo là lộ trình học do giảng viên xây dựng và bán. */}
           <div className="flex flex-wrap items-center gap-3 pt-2">
             <Link
-              href="/lo-trinh"
+              href="/combo"
               className="inline-flex items-center gap-2 rounded-xl bg-primary-light px-3.5 py-2 text-xs font-semibold text-primary border border-primary-pastel/80 hover:bg-primary-pastel/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <Compass className="w-4 h-4 text-primary" />
-              <span>Khám phá lộ trình</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-
-            <Link
-              href="/combo"
-              className="inline-flex items-center gap-2 rounded-xl bg-surface px-3.5 py-2 text-xs font-semibold text-foreground border border-border hover:bg-surface-hover hover:border-border-hover transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <Layers className="w-4 h-4 text-muted-foreground" />
-              <span>Combo khóa học</span>
+              <span>Combo · Lộ trình từ giảng viên</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>

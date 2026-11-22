@@ -28,8 +28,8 @@ export default function QuestionDisplay({
   return (
     <>
       {/* Question */}
-      <div className="mb-6">
-        <div className="text-lg font-semibold text-foreground mb-6 leading-relaxed">
+      <div className="mb-6 min-w-0">
+        <div className="mb-6 min-w-0 break-words text-lg font-semibold leading-relaxed text-foreground [&_pre]:max-w-full [&_pre]:overflow-x-auto">
           <MarkdownRenderer
             content={question.question}
             isHtml={false}

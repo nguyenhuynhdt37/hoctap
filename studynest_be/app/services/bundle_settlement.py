@@ -40,6 +40,20 @@ class BundleSettlement:
             raise HTTPException(403, "Bạn không sở hữu khoản mua này")
         if not earning or purchase.status != "completed" or line.paid <= 0:
             raise HTTPException(409, "Khoản mua không đủ điều kiện hoàn tiền")
+        active_enrollment = await self.db.scalar(
+            select(CourseEnrollments)
+            .where(
+                CourseEnrollments.user_id == user_id,
+                CourseEnrollments.course_id == purchase.course_id,
+                CourseEnrollments.status == "active",
+            )
+            .with_for_update()
+        )
+        if not active_enrollment:
+            raise HTTPException(
+                409,
+                "Khóa học đã được chuyển tặng hoặc không còn quyền truy cập, không thể hoàn tiền",
+            )
         if earning.status != "holding" or earning.hold_until <= now():
             raise HTTPException(409, "Đã hết thời hạn hoàn tiền")
         if await self.db.scalar(

@@ -42,8 +42,12 @@ SUBJECTS = {
 async def main(apply=False):
     try:
         items = []
-        for name in ["vtv7-import-report.json", "vtv7-more-import-report.json"]:
-            report = json.loads((DATA / name).read_text())
+        # Discover every applied batch, including future imports. A hard-coded
+        # list silently left the November 13 batch without thumbnails.
+        for path in sorted(DATA.glob("vtv7*import-report.json")):
+            report = json.loads(path.read_text())
+            if not report.get("apply"):
+                continue
             if report["target_database"] != engine.url.database:
                 raise ValueError("Import report belongs to another database")
             items.extend(report["courses"])

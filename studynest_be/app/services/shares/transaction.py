@@ -36,6 +36,11 @@ from app.schemas.shares.notification import NotificationCreateSchema
 from app.services.shares.discounts import DiscountService
 from app.services.shares.notification import NotificationService
 from app.services.shares.wallets import WalletsService
+from app.services.user.learning_menu import (
+    complete_paid_gift,
+    load_gift_for_checkout,
+    notify_gift_recipient,
+)
 
 MAX_PENDING_HOURS = 3
 
@@ -364,10 +369,17 @@ class TransactionsService:
         discount_code: str | None,
         wallets_service: WalletsService,
         discount_service: DiscountService,
+        gift_id: uuid.UUID | None = None,
     ):
         try:
             from app.services.bundles import lock_purchase_user
             await lock_purchase_user(self.db, user.id)
+
+            gift = None
+            if gift_id is not None:
+                gift = await load_gift_for_checkout(
+                    self.db, gift_id, user.id, course_ids
+                )
 
             # ============================
             # 0) VALIDATE COURSE
@@ -471,6 +483,9 @@ class TransactionsService:
 
                     # ENROLL + CẬP NHẬT THỐNG KÊ
                     for pi in purchase_items:
+                        if gift is not None and pi.course_id == gift.course_id:
+                            await complete_paid_gift(self.db, gift, now)
+                            continue
                         existed = await self.db.scalar(
                             select(CourseEnrollments).where(
                                 CourseEnrollments.user_id == user.id,
@@ -517,6 +532,9 @@ class TransactionsService:
                                         instructor.student_count = (
                                             instructor.student_count or 0
                                         ) + 1
+
+                if gift is not None:
+                    await self.db.commit()
 
                 # NOTI (chỉ enroll, không ví)
                 try:
@@ -573,6 +591,10 @@ class TransactionsService:
                         )
                     except Exception as evt_err:
                         logger.warning(f"[EventBus] Failed to publish course.purchased: {evt_err}")
+
+                if gift is not None:
+                    await self.db.commit()
+                    await notify_gift_recipient(self.db, gift)
 
                 return {
                     "message": "Đăng ký khóa học thành công 🎉",
@@ -702,6 +724,9 @@ class TransactionsService:
 
                 # 5.5 ENROLL + CẬP NHẬT THỐNG KÊ
                 for pi in purchase_items:
+                    if gift is not None and pi.course_id == gift.course_id:
+                        await complete_paid_gift(self.db, gift, now)
+                        continue
                     existed = await self.db.scalar(
                         select(CourseEnrollments).where(
                             CourseEnrollments.user_id == user.id,
@@ -783,6 +808,9 @@ class TransactionsService:
                     )
                     self.db.add(earning)
 
+            if gift is not None:
+                await self.db.commit()
+
             # ============================
             # 6) NOTIFICATIONS
             # ============================
@@ -859,6 +887,10 @@ class TransactionsService:
             # ============================
             # 7) RETURN
             # ============================
+            if gift is not None:
+                await self.db.commit()
+                await notify_gift_recipient(self.db, gift)
+
             return {
                 "message": "Thanh toán thành công 🎉",
                 "is_free": False,

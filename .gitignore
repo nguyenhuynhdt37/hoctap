@@ -55,3 +55,4 @@ studynest_be/backup_*.sql
 .agents/
 .cursor/
 .vscode/
+.archify/

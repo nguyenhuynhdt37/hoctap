@@ -72,6 +72,7 @@ export default function LearningTabs(props: LearningTabsProps) {
           <QASection
             lessonId={lessonOverview.id}
             accessToken={accessToken}
+            lessonAuthorId={instructor?.id ?? null}
             isModal={true}
             onClose={() => setIsQAModalOpen(false)}
           />

@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Literal
+from typing import Annotated, Literal
 from uuid import UUID
 
 from pydantic import (
@@ -52,11 +52,22 @@ class PathInput(StrictModel):
     stages: list[StageInput] = Field(default_factory=list, max_length=20)
 
 
+BundleLearningPoint = Annotated[str, Field(min_length=1, max_length=500)]
+BUNDLE_PRESENTATION_FIELDS = (
+    "thumbnail_url", "subtitle", "outcomes", "requirements", "target_audience",
+)
+
+
 class BundleInput(StrictModel):
     slug: str = Field(default="", max_length=180)
     bundle_id: UUID | None = None
     title: str = Field(min_length=3, max_length=180)
     description: str = Field(default="", max_length=20000)
+    thumbnail_url: str | None = Field(default=None, max_length=512)
+    subtitle: str | None = Field(default=None, max_length=240)
+    outcomes: list[BundleLearningPoint] | None = Field(default=None, max_length=12)
+    requirements: list[BundleLearningPoint] | None = Field(default=None, max_length=12)
+    target_audience: list[BundleLearningPoint] | None = Field(default=None, max_length=12)
     price: Decimal = Field(ge=0, max_digits=12, decimal_places=2)
     course_ids: list[UUID] = Field(default_factory=list, max_length=60)
     path_version_id: UUID | None = None

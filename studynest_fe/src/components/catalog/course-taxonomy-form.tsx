@@ -6,7 +6,6 @@ import { Button } from "@/components/ui";
 import type {
   CatalogOptions,
   CourseTaxonomyInput,
-  Provider,
   TaxonomyItem,
 } from "@/types/catalog";
 
@@ -16,9 +15,7 @@ const fetcher = <T,>(url: string) => api.get<T>(url).then((r) => r.data);
 export default function CourseTaxonomyForm({
   value,
   onChange,
-  admin = false,
 }: {
-  admin?: boolean;
   value: CourseTaxonomyInput;
   onChange: (value: CourseTaxonomyInput) => void;
 }) {
@@ -26,23 +23,20 @@ export default function CourseTaxonomyForm({
     "/catalog/filters",
     fetcher,
   );
-  const { data: providers, error: providerError } = useSWR<{
-    items: Provider[];
-  }>(admin ? "/admin/providers?size=100" : "/lecturer/providers", fetcher);
   const [level, setLevel] = useState("");
-  if (error || providerError)
+  if (error)
     return (
       <div
         role="alert"
         className="rounded-xl bg-destructive-bg p-4 text-destructive-foreground"
       >
-        Không tải được phân loại hoặc đơn vị.{" "}
+        Không tải được phân loại.{" "}
         <Button type="button" variant="outline" onClick={() => mutate()}>
           Thử lại
         </Button>
       </div>
     );
-  if (!data || !providers)
+  if (!data)
     return (
       <p role="status" className="animate-pulse text-muted-foreground">
         Đang tải phân loại giáo dục…
@@ -138,47 +132,6 @@ export default function CourseTaxonomyForm({
       </label>
       {multi("Mục tiêu học tập", data.learning_goals, "learning_goal_ids")}
       {multi("Kỳ thi liên quan (tùy chọn)", data.exams, "exam_ids")}
-      <label className="block space-y-2">
-        <span>Đơn vị cung cấp</span>
-        <select
-          className={selectClass}
-          value={value.provider_id ?? ""}
-          onChange={(e) =>
-            onChange({ ...value, provider_id: e.target.value || null })
-          }
-        >
-          <option value="">Giáo viên trực tiếp cung cấp</option>
-          {value.provider_id &&
-            !providers.items.some((x) => x.id === value.provider_id) && (
-              <option value={value.provider_id}>
-                Đơn vị hiện tại chưa được xác minh hoặc bạn đã bị thu hồi quyền
-              </option>
-            )}
-          {providers.items.map((x) => (
-            <option key={x.id} value={x.id}>
-              {x.name}
-            </option>
-          ))}
-        </select>
-      </label>
-      {!admin && (
-        <p className="text-sm text-muted-foreground">
-          Chỉ hiển thị đơn vị đã được admin xác minh và cấp quyền cho bạn.{" "}
-          <a
-            href="/lecturer/providers"
-            className="font-medium text-primary underline underline-offset-4"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Tra cứu hoặc yêu cầu tạo đơn vị
-          </a>
-          .
-        </p>
-      )}
-      <p className="text-sm text-muted-foreground">
-        Hình thức: Video bài giảng. Trung tâm có thể chuẩn bị khóa nháp; việc mở
-        bán cần cơ chế đối soát riêng.
-      </p>
     </section>
   );
 }

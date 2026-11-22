@@ -2,6 +2,7 @@
 
 import { memo, useState } from "react";
 import { TutorMessage, MessageSource } from "@/types/user/tutor-chat";
+import { AgentActivity } from "../agent/agent-activity";
 import MarkdownRenderer from "./markdown-renderer";
 import { SourceList } from "./chat-chips";
 import { getImageUrl } from "@/lib/utils/helpers/image";
@@ -61,11 +62,12 @@ function MessageBubble({ message, onSourceClick, currentLessonId }: Props) {
   // Assistant message
   return (
     <div className="w-full">
+      <AgentActivity events={message.activity} running={message.isStreaming} />
       {/* Content */}
       {message.content && <MarkdownRenderer content={message.content} />}
 
       {/* Loading dots */}
-      {message.isStreaming && !message.content && (
+      {message.isStreaming && !message.content && !message.activity?.length && (
         <div className="flex items-center gap-2 py-2">
           <div className="flex gap-1">
             {[0, 150, 300].map((delay) => (

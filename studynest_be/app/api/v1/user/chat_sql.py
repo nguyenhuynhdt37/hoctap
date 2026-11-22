@@ -11,7 +11,7 @@ Tích hợp message_classifier để:
 
 from typing import List, Literal, Optional
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from app.core.chat_stream import chat_stream_response
@@ -23,7 +23,13 @@ from app.services.user.message_classifier import (
 )
 from app.services.user.text_to_sql import TextToSqlService, get_text_to_sql_service
 
-router = APIRouter(prefix="/chat-sql", tags=["Chat SQL"])
+async def retired_sql_endpoint(auth: AuthorizationService = Depends(AuthorizationService)):
+    await auth.get_current_user()
+    raise HTTPException(410, "Chat SQL cũ đã chuyển sang Hannes. Dùng công cụ data.query_account trong trợ lý; chỉ đọc dữ liệu tài khoản qua sandbox.")
+
+
+router = APIRouter(prefix="/chat-sql", tags=["Chat SQL"], deprecated=True,
+    dependencies=[Depends(retired_sql_endpoint)])
 
 
 # =========================

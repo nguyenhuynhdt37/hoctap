@@ -34,8 +34,8 @@ export default function ProgressModal(props: ProgressModalProps) {
   return (
     <div className="fixed inset-0 z-[100]">
       <div className="absolute inset-0 bg-foreground/10 backdrop-blur-[1px]" onClick={onClose} />
-      <div className="absolute right-6 top-[4.75rem] w-full max-w-md bg-white rounded-[20px] shadow-lg border border-border">
-        <div className="absolute -top-2 right-10 w-4 h-4 bg-white border-l border-t border-border rotate-45" />
+      <div className="absolute left-3 right-3 top-[4.5rem] max-h-[calc(100dvh-6rem)] overflow-y-auto rounded-[20px] border border-border bg-surface shadow-lg sm:left-auto sm:right-6 sm:w-full sm:max-w-md">
+        <div className="absolute -top-2 right-8 hidden h-4 w-4 rotate-45 border-l border-t border-border bg-surface sm:block" />
         <div className="px-5 py-4 border-b border-border flex items-center justify-between">
           <div className="min-w-0 pr-4">
             <h3 className="text-base font-semibold text-foreground truncate">

@@ -18,6 +18,7 @@ interface CodeEditorProps {
   value: string;
   onChange: (value: string | undefined) => void;
   onBlur?: () => void;
+  onSelectionChange?: (selection: { start: number; end: number }) => void;
   language?: string;
   height?: string | number;
   theme?: string;
@@ -856,6 +857,7 @@ const CodeEditor = ({
   value,
   onChange,
   onBlur,
+  onSelectionChange,
   language = "plaintext",
   height = "100%",
   theme = "vs",
@@ -944,6 +946,12 @@ const CodeEditor = ({
     <div className={className} style={{ ...style, height: editorHeight }}>
       <CodeMirror
         onBlur={onBlur}
+        onUpdate={(update) => {
+          if (update.selectionSet || update.docChanged) {
+            const selection = update.state.selection.main;
+            onSelectionChange?.({ start: selection.from, end: selection.to });
+          }
+        }}
         value={value}
         height={editorHeight}
         theme={theme === "vs-dark" || theme === "dark" ? oneDark : undefined}

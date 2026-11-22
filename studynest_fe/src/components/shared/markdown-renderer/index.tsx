@@ -1,12 +1,9 @@
 "use client";
 
 import "highlight.js/styles/github-dark.css";
-import MarkdownIt from "markdown-it";
-import markdownItAnchor from "markdown-it-anchor";
-import markdownItAttrs from "markdown-it-attrs";
-import markdownItTaskLists from "markdown-it-task-lists";
 import { useEffect, useMemo, useRef } from "react";
 import "./markdown.css";
+import { renderLearningContent } from "./safe-html";
 
 interface MarkdownRendererProps {
   content: string;
@@ -18,86 +15,6 @@ interface MarkdownRendererProps {
   isHtml?: boolean;
 }
 
-import { getImageUrl } from "@/lib/utils/helpers/image";
-
-// ⚙️ Markdown → HTML converter (markdown-it + GFM) - giống TiptapEditor
-const parseMarkdownToHTML = (markdown: string): string => {
-  if (!markdown || !markdown.trim()) return "";
-  if (markdown.trim().startsWith("<")) return markdown;
-
-  // Khởi tạo markdown-it (GFM-ish)
-  const md = new MarkdownIt({
-    html: false, // không cho HTML thô (an toàn hơn)
-    linkify: true, // tự link URL
-    breaks: true, // xuống dòng = <br>
-    typographer: false,
-  })
-    .use(markdownItTaskLists, { enabled: true, label: true })
-    .use(markdownItAttrs)
-    .use(markdownItAnchor, { permalink: false });
-
-  // Custom image renderer: resolve stored asset URLs
-  const defaultImageRender =
-    md.renderer.rules.image ||
-    function (tokens, idx, options, env, self) {
-      return self.renderToken(tokens, idx, options);
-    };
-
-  md.renderer.rules.image = function (tokens, idx, options, env, self) {
-    const token = tokens[idx];
-    const srcIndex = token.attrIndex("src");
-
-    if (srcIndex >= 0 && token.attrs) {
-      const src = token.attrs[srcIndex][1];
-      // Resolve the stored image URL
-      token.attrs[srcIndex][1] = getImageUrl(src);
-
-      // Thêm class cho ảnh để đẹp hơn (optional)
-      const classIndex = token.attrIndex("class");
-      if (classIndex < 0) {
-        token.attrPush([
-          "class",
-          "rounded-lg max-w-full h-auto my-2 shadow-sm",
-        ]);
-      } else {
-        token.attrs[classIndex][1] +=
-          " rounded-lg max-w-full h-auto my-2 shadow-sm";
-      }
-    }
-
-    return defaultImageRender(tokens, idx, options, env, self);
-  };
-
-  // Xử lý underline syntax: __text__ -> <u>text</u>
-  // Placeholder underline để không đụng vào **bold**
-  const U_PLACE = "___UNDERLINE_PLACEHOLDER___";
-  const map = new Map<string, string>();
-  let idx = 0;
-
-  // Bắt __text__ khi KHÔNG phải **text**
-  // - không ăn vào chữ có gạch dưới trong từ
-  // - giữ nguyên khoảng trắng đầu/cuối
-  const processed = markdown.replace(
-    /(^|[\s([>])__(?!\*)([^_\n][^_]*?[^_\n])__(?=$|[\s\])<.,!?:;])/g,
-    (match, before, content) => {
-      const ph = `${U_PLACE}_${idx++}`;
-      map.set(ph, `<u>${content}</u>`);
-      return `${before}${ph}`;
-    }
-  );
-
-  // Render markdown
-  let html = md.render(processed);
-
-  // Thay placeholder về underline tags
-  for (const [ph, val] of map.entries()) {
-    // dùng split/join thay vì RegExp để tránh escape
-    html = html.split(ph).join(val);
-  }
-
-  return html;
-};
-
 export default function MarkdownRenderer({
   content,
   className = "",
@@ -107,25 +24,7 @@ export default function MarkdownRenderer({
 
   // Parse markdown sang HTML hoặc sử dụng HTML trực tiếp
   // Dùng useMemo để tránh parse lại khi không cần thiết
-  const htmlContent = useMemo(() => {
-    if (!content || !content.trim()) {
-      return "";
-    }
-
-    if (isHtml) {
-      // Nếu là HTML sẵn, trả về trực tiếp
-      return content;
-    }
-
-    // Parse markdown thành HTML
-    try {
-      const parsed = parseMarkdownToHTML(content);
-      return parsed || "";
-    } catch (error) {
-      console.error("Error parsing markdown:", error);
-      return content; // Fallback: trả về content gốc nếu parse lỗi
-    }
-  }, [content, isHtml]);
+  const htmlContent = useMemo(() => renderLearningContent(content, isHtml), [content, isHtml]);
 
   useEffect(() => {
     // Highlight code blocks sau khi render

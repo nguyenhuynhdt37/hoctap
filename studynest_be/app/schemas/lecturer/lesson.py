@@ -1,7 +1,7 @@
 import uuid
 from typing import List, Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class CreateLesson(BaseModel):
@@ -93,21 +93,45 @@ class LessonCodeCreate(BaseModel):
     testcases: List[LessonCodeTestcaseCreate] = Field(default_factory=list)
 
 
+def validate_code_filename(value: str) -> str:
+    import re
+    if not re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9_.-]{0,119}", value) or ".." in value:
+        raise ValueError("Tên file không hợp lệ; chỉ hỗ trợ file trong thư mục bài tập.")
+    return value
+
+
 class LessonCodeSaveFile(BaseModel):
-    filename: str = Field(..., description="Tên file")
-    content: str = Field(..., description="Nội dung code")
-    is_main: bool = Field(False, description="File chính hay phụ")
+    filename: str
+    content: str = Field(max_length=200_000)
+    is_main: bool = False
+    expected_content_hash: Optional[str] = Field(default=None, pattern=r"^[a-f0-9]{64}$")
+
+    _filename = field_validator("filename")(validate_code_filename)
 
 
 class CodeFile(BaseModel):
     filename: str
-    content: str
+    content: str = Field(max_length=200_000)
     is_main: bool
+
+    _filename = field_validator("filename")(validate_code_filename)
 
 
 class LessonCodeUserTest(BaseModel):
     language_id: uuid.UUID
-    files: List[CodeFile]
+    files: List[CodeFile] = Field(min_length=1, max_length=20)
+    sample_only: bool = False
+    buffer_revision: Optional[int] = Field(default=None, ge=0)
+
+    @model_validator(mode="after")
+    def validate_files(self):
+        if len({f.filename for f in self.files}) != len(self.files):
+            raise ValueError("Tên file bị trùng")
+        if sum(f.is_main for f in self.files) != 1:
+            raise ValueError("Cần đúng một file chính")
+        if sum(len(f.content.encode("utf-8")) for f in self.files) > 500_000:
+            raise ValueError("Tổng nội dung code vượt giới hạn")
+        return self
 
 
 class UpdateLessonSchema(BaseModel):

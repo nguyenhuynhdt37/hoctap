@@ -1,5 +1,5 @@
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, Mock, patch
 from uuid import uuid4
 
 import httpx
@@ -85,32 +85,36 @@ async def test_runtime_sync_uses_the_same_private_authentication():
         ({"run": {"code": None, "status": "SG", "signal": "SIGKILL"}}, "runtime_error"),
         (
             {"compile": {"code": 1, "stderr": "Compilation failed", "status": "RE"}},
-            "runtime_error",
+            "compile_error",
         ),
         ({"run": {"code": 0, "stdout": "wrong", "cpu_time": 1}}, "failed"),
     ],
 )
 async def test_grader_handles_timeout_and_compile_failure(response, verdict):
-    language = SimpleNamespace(name="python", version="3.11.0")
+    language = SimpleNamespace(name="python", version="3.11.0", is_active=True)
     testcase = SimpleNamespace(
         id=uuid4(), input="", expected_output="42", order_index=0, is_sample=False
     )
     exercise = SimpleNamespace(
-        id=uuid4(),
+        id=uuid4(), lesson_id=uuid4(), language_id=uuid4(),
         lesson_code_testcases=[testcase],
         time_limit=500,
         memory_limit=256000000,
     )
     db = AsyncMock()
-    db.scalar.side_effect = [language, exercise]
+    db.get.return_value = language
+    db.add = Mock()
     runner = SimpleNamespace(run_code=AsyncMock(return_value=response))
     payload = SimpleNamespace(
-        language_id=uuid4(),
+        language_id=exercise.language_id, sample_only=False, buffer_revision=3,
         files=[SimpleNamespace(filename="main.py", content="print(42)", is_main=True)],
     )
-    result = await LearningService(db=db, piston=runner).test_user_code_async(
-        payload, SimpleNamespace(id=uuid4()), exercise.id
-    )
+    service = LearningService(db=db, piston=runner)
+    service._admit_code_execution_async = AsyncMock()
+    service._code_exercise_access_async = AsyncMock(return_value=exercise)
+    with patch("app.services.user.learning.require_lesson_access", AsyncMock()):
+        result = await service.test_user_code_async(payload, SimpleNamespace(id=uuid4()), exercise.id)
     assert result["details"][0]["result"] == verdict
     assert result["saved"] is False
-    db.commit.assert_not_awaited()
+    db.commit.assert_awaited_once()
+    assert db.add.call_args.args[0].content_hash == result["content_hash"]

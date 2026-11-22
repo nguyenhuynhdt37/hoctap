@@ -4,25 +4,25 @@
 
 - Existing lesson chat now offers a microphone entry and accessible Cloudy Blue voice dialog, with a reactive cloud orb, microphone/speaking waveform, live captions, mute, stop and reconnect controls.
 - Browser captures mono microphone audio with echo cancellation and noise suppression. A dedicated AudioWorklet resamples it to PCM16/16kHz. Browser Web Audio schedules received PCM16/24kHz audio and drops its playback queue on Live interruption events.
-- `WS /api/v1/tutor-chat/lessons/{lesson_id}/voice` authenticates the existing StudyNest session and roles. Browser auth uses a WebSocket subprotocol, not a query-string token. Google API key stays on the server.
-- Backend connects directly to Gemini Live, independent of text chat's 9Router model selection. Native input/output transcription, Vietnamese instructions, automatic voice activity detection and interruption are enabled.
-- A blocking `search_lesson(query)` function delegates to the existing tutor retrieval service. User and lesson IDs are pinned server-side, scope is the current lesson, and access is checked again on each retrieval. The client cannot supply course/owner IDs, upstream API endpoints or a Google model.
+- `WS /api/v1/tutor-chat/lessons/{lesson_id}/voice` authenticates the existing StudyNest session and roles. Browser auth uses a WebSocket subprotocol, not a query-string token. The xAI API key stays on the server.
+- Backend connects directly to Grok Voice. Text chat uses its configured provider. Native input/output transcription, Vietnamese instructions, automatic voice activity detection and interruption are enabled.
+- A blocking `search_lesson(query)` function delegates to the existing tutor retrieval service. User and lesson IDs are pinned server-side, scope is the current lesson, and access is checked again on each retrieval. The client cannot supply course/owner IDs, upstream API endpoints or a provider model.
 - Grounded source metadata and transcript-derived timestamps reuse the existing source DTO and chip UI. Source selection stops voice before returning to the lesson/video. Missing evidence is disclosed both visually and in the model instructions.
 - Completed turns reuse `tutor_chat_threads`/`tutor_chat_messages`, including citations. Partly completed transcribed turns are marked interrupted on graceful exit where available. Audio is not stored. No database migration or parallel conversation/learning engine.
 
 ## Configuration
 
-`GOOGLE_API_KEY` is the existing server credential. Defaults:
+Set `XAI_API_KEY` on the backend. Defaults:
 
 ```
 TUTOR_VOICE_ENABLED=True
-TUTOR_VOICE_MODEL=gemini-3.8-live
-TUTOR_VOICE_NAME=Aoede
+TUTOR_VOICE_MODEL=grok-voice-latest
+TUTOR_VOICE_NAME=eve
 TUTOR_VOICE_MAX_SECONDS=600
 TUTOR_VOICE_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
 ```
 
-`FRONTEND_URL` also supplies an allowed browser origin. Add the real HTTPS origin before deployment. Native clients can omit Origin but still require valid authorization. Install the explicit `google-genai>=3.0,<4` dependency. Redis must be available; sessions fail closed if the distributed admission lock cannot be acquired.
+`FRONTEND_URL` also supplies an allowed browser origin. Add the real HTTPS origin before deployment. Native clients can omit Origin but still require valid authorization. Install the explicit `websockets>=13,<18` dependency. Redis must be available; sessions fail closed if the distributed admission lock cannot be acquired.
 
 - One active voice session per user across workers, enforced by a Redis NX lease with TTL and compare-and-delete cleanup.
 - Each session is capped at 10 minutes by default. Reconnect is an explicit user action; there is no endless retry loop consuming quota.

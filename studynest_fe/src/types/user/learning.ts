@@ -37,12 +37,13 @@ export interface CodeFile {
   content: string;
   role: "starter" | "solution" | "user";
   is_main: boolean;
+  content_hash?: string;
 }
 
 export interface CodeTestCase {
   id: string;
-  input: string;
-  expected_output: string;
+  input: string | null;
+  expected_output: string | null;
   is_sample: boolean;
   order_index: number;
   hidden: boolean;
@@ -73,16 +74,20 @@ export interface TestResultDetail {
   expected?: string;
   output?: string;
   stderr?: string;
-  exit_code: number;
-  cpu_time: number;
-  memory: number;
+  exit_code?: number | null;
+  cpu_time?: number | null;
+  memory?: number | null;
   language: string;
   version: string;
-  result: "passed" | "failed";
+  result: "passed" | "failed" | "compile_error" | "runtime_error" | "time_limit_exceeded" | "memory_limit_exceeded" | "internal_error";
   is_hidden: boolean;
 }
 
 export interface TestResult {
+  attempt_id?: string;
+  content_hash?: string;
+  buffer_revision?: number;
+  sample_only?: boolean;
   status: "passed" | "failed";
   passed: number;
   failed: number;

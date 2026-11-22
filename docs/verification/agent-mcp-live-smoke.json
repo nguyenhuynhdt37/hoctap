@@ -1,0 +1,28 @@
+{
+  "mcp": {
+    "connected": true,
+    "server": "maymay-public-research",
+    "tools": [
+      "web_search",
+      "github_repository",
+      "github_tree",
+      "github_read_file"
+    ],
+    "github_access": "public_only",
+    "read_only": true
+  },
+  "github": {
+    "repository": "octocat/Hello-World",
+    "commit_sha": "7fd1a60b01f91b314f59955a4e4d4e80d8edf11d",
+    "file": "README",
+    "read_characters": 13,
+    "tests_executed": false
+  },
+  "web": {
+    "results": 2,
+    "urls": [
+      "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/map",
+      "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map"
+    ]
+  }
+}

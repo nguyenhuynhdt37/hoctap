@@ -87,7 +87,7 @@ export default function CourseAssignment() {
       )}
       {value && (
         <div className="space-y-5 border-t border-border pt-6">
-          <CourseTaxonomyForm admin value={value} onChange={setValue} />
+          <CourseTaxonomyForm value={value} onChange={setValue} />
           <Button disabled={busy} onClick={save}>
             Lưu phân loại
           </Button>

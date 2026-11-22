@@ -1,22 +1,19 @@
 "use client";
 import CatalogAdminNav from "./catalog-nav";
-import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import useSWR from "swr";
 import axios from "axios";
 import toast from "react-hot-toast";
 import api from "@/lib/utils/fetcher/client/axios";
 import { Button, Input } from "@/components/ui";
-import type { CatalogOptions, Provider, TaxonomyItem } from "@/types/catalog";
+import type { CatalogOptions, TaxonomyItem } from "@/types/catalog";
 import { selectClass } from "@/components/catalog/course-taxonomy-form";
-import ProviderEditor from "@/components/catalog/provider-editor";
 const tabs = [
   ["levels", "Cấp học"],
   ["grades", "Khối lớp"],
   ["subjects", "Môn học"],
   ["learning-goals", "Mục tiêu"],
   ["exams", "Kỳ thi"],
-  ["providers", "Đơn vị cung cấp"],
 ];
 const fetcher = <T,>(url: string) => api.get<T>(url).then((r) => r.data);
 function errorMessage(error: unknown) {
@@ -26,27 +23,15 @@ function errorMessage(error: unknown) {
     : "Không lưu được. Kiểm tra dữ liệu hoặc thử lại.";
 }
 export default function CatalogAdmin() {
-  const router = useRouter();
   const [tab, setTab] = useState("levels");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<Partial<TaxonomyItem> | null>(null);
-  const [provider, setProvider] = useState<Partial<Provider> | null>(null);
   const [mapping, setMapping] = useState<TaxonomyItem | null>(null);
   const [subjectIds, setSubjectIds] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const { data, error, mutate, isLoading } = useSWR<TaxonomyItem[]>(
-    tab !== "providers" ? `/admin/catalog/${tab}` : null,
-    fetcher,
-  );
-  const {
-    data: providers,
-    error: providerError,
-    mutate: reloadProviders,
-  } = useSWR<{ items: Provider[]; total: number }>(
-    tab === "providers"
-      ? `/admin/providers?page=${page}&size=10&search=${encodeURIComponent(search)}`
-      : null,
+    `/admin/catalog/${tab}`,
     fetcher,
   );
   const { data: options, mutate: reloadOptions } = useSWR<CatalogOptions>(
@@ -59,7 +44,7 @@ export default function CatalogAdmin() {
       .includes(search.toLocaleLowerCase()),
   );
   const items = filtered.slice((page - 1) * 10, page * 10);
-  const total = tab === "providers" ? (providers?.total ?? 0) : filtered.length;
+  const total = filtered.length;
   async function save(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!editing) return;
@@ -135,7 +120,7 @@ export default function CatalogAdmin() {
         <h1 className="text-2xl font-semibold">Danh mục & Giáo dục</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           Sắp xếp cấp học, lớp, môn và gán khóa học trước khi tuyển chọn vào lộ
-          trình hoặc combo.
+          trình.
         </p>
       </div>
       <nav aria-label="Phân loại giáo dục" className="flex flex-wrap gap-2">
@@ -144,11 +129,9 @@ export default function CatalogAdmin() {
             key={key}
             variant={tab === key ? "primary" : "outline"}
             onClick={() => {
-              if (key === "providers") { router.push("/admin/providers"); return; }
               setTab(key);
               setPage(1);
               setEditing(null);
-              setProvider(null);
               setMapping(null);
               setSearch("");
             }}
@@ -173,16 +156,12 @@ export default function CatalogAdmin() {
           }}
         />
         <Button
-          onClick={() =>
-            tab === "providers"
-              ? setProvider({})
-              : setEditing({ is_active: true, order_index: 0 })
-          }
+          onClick={() => setEditing({ is_active: true, order_index: 0 })}
         >
           Thêm mới
         </Button>
       </div>
-      {(error || providerError) && (
+      {error && (
         <div
           role="alert"
           className="rounded-xl bg-destructive-bg p-4 text-destructive-foreground"
@@ -190,13 +169,13 @@ export default function CatalogAdmin() {
           Không tải được dữ liệu.{" "}
           <Button
             variant="outline"
-            onClick={() => (tab === "providers" ? reloadProviders() : mutate())}
+            onClick={() => mutate()}
           >
             Thử lại
           </Button>
         </div>
       )}
-      {isLoading || (tab === "providers" && !providers && !providerError) ? (
+      {isLoading ? (
         <p role="status" className="animate-pulse p-6">
           Đang tải dữ liệu…
         </p>
@@ -212,67 +191,48 @@ export default function CatalogAdmin() {
               </tr>
             </thead>
             <tbody>
-              {tab === "providers"
-                ? providers?.items.map((item) => (
-                    <tr key={item.id} className="border-t border-border">
-                      <td className="p-4">{item.name}</td>
-                      <td className="p-4">{item.slug}</td>
-                      <td className="p-4">
-                        {item.verification_status} ·{" "}
-                        {item.is_active ? "Hoạt động" : "Đã ẩn"}
-                      </td>
-                      <td className="p-4">
+              {items.map((item) => (
+                <tr key={item.id} className="border-t border-border">
+                  <td className="p-4">{item.name}</td>
+                  <td className="p-4">{item.code}</td>
+                  <td className="p-4">
+                    {item.is_active ? "Hoạt động" : "Đã ẩn"}
+                  </td>
+                  <td className="p-4">
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        variant="ghost"
+                        onClick={() => setEditing(item)}
+                      >
+                        Sửa
+                      </Button>
+                      {tab === "grades" && (
                         <Button
                           variant="ghost"
-                          onClick={() => setProvider(item)}
+                          disabled={!options}
+                          onClick={() => {
+                            setMapping(item);
+                            setSubjectIds(
+                              options?.grade_subjects
+                                .filter((x) => x.grade_id === item.id)
+                                .map((x) => x.subject_id) ?? [],
+                            );
+                          }}
                         >
-                          Quản lý
+                          Môn học
                         </Button>
-                      </td>
-                    </tr>
-                  ))
-                : items.map((item) => (
-                    <tr key={item.id} className="border-t border-border">
-                      <td className="p-4">{item.name}</td>
-                      <td className="p-4">{item.code}</td>
-                      <td className="p-4">
-                        {item.is_active ? "Hoạt động" : "Đã ẩn"}
-                      </td>
-                      <td className="p-4">
-                        <div className="flex flex-wrap gap-2">
-                          <Button
-                            variant="ghost"
-                            onClick={() => setEditing(item)}
-                          >
-                            Sửa
-                          </Button>
-                          {tab === "grades" && (
-                            <Button
-                              variant="ghost"
-                              disabled={!options}
-                              onClick={() => {
-                                setMapping(item);
-                                setSubjectIds(
-                                  options?.grade_subjects
-                                    .filter((x) => x.grade_id === item.id)
-                                    .map((x) => x.subject_id) ?? [],
-                                );
-                              }}
-                            >
-                              Môn học
-                            </Button>
-                          )}
-                          <Button
-                            variant="ghost"
-                            disabled={busy}
-                            onClick={() => remove(item)}
-                          >
-                            Xóa
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                      )}
+                      <Button
+                        variant="ghost"
+                        disabled={busy}
+                        onClick={() => remove(item)}
+                      >
+                        Xóa
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
               {total === 0 && (
                 <tr>
                   <td
@@ -445,17 +405,6 @@ export default function CatalogAdmin() {
             Hủy
           </Button>
         </section>
-      )}
-      {provider && (
-        <ProviderEditor
-          admin
-          value={provider}
-          onSaved={() => {
-            setProvider(null);
-            reloadProviders();
-          }}
-          onCancel={() => setProvider(null)}
-        />
       )}
     </main>
   );

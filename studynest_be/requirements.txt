@@ -1,6 +1,7 @@
 # === Core FastAPI stack ===
 fastapi>=0.115.6
 uvicorn[standard]>=0.37,<0.38
+websockets>=13,<18
 anyio>=4.6
 httpx>=0.28
 aiofiles>=24.1
@@ -78,3 +79,10 @@ boto3>=1.36,<2
 beautifulsoup4>=4.12,<5
 
 google-genai>=3.0,<4
+
+# Bundled read-only MCP tools: public web search and GitHub review.
+mcp>=1.26,<2
+ddgs>=9,<10
+
+# Encrypt account-linked GitHub OAuth tokens at rest.
+cryptography

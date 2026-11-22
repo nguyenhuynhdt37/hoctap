@@ -105,7 +105,7 @@ const LogoHub = () => {
   const shortcuts: HubShortcut[] = [
     { label: "Trang chủ", href: "/", icon: <HiHome className="h-4 w-4" /> },
     { label: "Khóa học", href: "/courses", icon: <HiBookOpen className="h-4 w-4" /> },
-    { label: "Lộ trình", href: "/lo-trinh", icon: <HiAcademicCap className="h-4 w-4" /> },
+    { label: "Combo lộ trình", href: "/combo", icon: <HiAcademicCap className="h-4 w-4" /> },
     { label: "Giảng viên", href: "/instructors", icon: <HiUserGroup className="h-4 w-4" /> },
     ...(user
       ? [{ label: "Hỏi Mây Mây AI", href: "/chat-sql", icon: <HiChat className="h-4 w-4" /> }]

@@ -14,6 +14,7 @@ from app.db.models.database import (
     LessonProgress,
     Lessons,
 )
+from app.services.user.learning_menu import gifted_by_name_subquery
 from app.db.sesson import get_session
 
 
@@ -69,6 +70,7 @@ class CourseEnrolls:
                 Courses.language,
                 Courses.created_at,
                 CourseEnrollments.enrolled_at,
+                gifted_by_name_subquery(user_id).label("gifted_by_name"),
                 Categories.name.label("category_name"),
                 func.count(CourseReviews.id).label("review_count"),
                 func.coalesce(func.avg(CourseReviews.rating), 0).label("avg_rating"),
@@ -97,6 +99,8 @@ class CourseEnrolls:
             )
             .outerjoin(Categories, Categories.id == Courses.category_id)
             .where(CourseEnrollments.user_id == user_id)
+            .where(CourseEnrollments.archived_at.is_(None))
+            .where(CourseEnrollments.status == "active")
             .group_by(
                 Courses.id,
                 Categories.name,
@@ -134,6 +138,8 @@ class CourseEnrolls:
             select(func.count())
             .select_from(CourseEnrollments)
             .where(CourseEnrollments.user_id == user_id)
+            .where(CourseEnrollments.archived_at.is_(None))
+            .where(CourseEnrollments.status == "active")
         )
 
         result = await self.db.execute(query)

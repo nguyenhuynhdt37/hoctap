@@ -17,6 +17,7 @@ import {
 } from "@/components/learning-paths/shared";
 import CoursePicker from "./course-picker";
 import SlugField from "./slug-field";
+import TiptapEditor from "@/components/shared/tiptap_editor";
 
 export const emptyPath = (): PathDraft => ({
   slug: "",
@@ -153,21 +154,22 @@ export default function PathEditor({
                 locked={!!draft.path_id}
               />
             </div>
-            <label className="space-y-2 text-sm sm:col-span-2">
-              <span className="font-medium">Giới thiệu và mục tiêu</span>
-              <textarea
-                className={control}
-                rows={3}
-                maxLength={20000}
+            <div className="space-y-2 sm:col-span-2">
+              <label className="block text-sm font-medium text-foreground">
+                Giới thiệu và mục tiêu lộ trình
+              </label>
+              <TiptapEditor
                 value={draft.description}
-                onChange={(e) =>
-                  setDraft({ ...draft, description: e.target.value })
+                onChange={(content) =>
+                  setDraft({ ...draft, description: content })
                 }
+                placeholder="Nhập giới thiệu tổng quan và mục tiêu lộ trình học tập..."
+                minHeight="140px"
               />
-              <span className="text-xs text-muted-foreground">
-                Giới thiệu ít nhất 20 ký tự khi xuất bản.
+              <span className="text-xs text-muted-foreground block">
+                Giới thiệu ít nhất 20 ký tự khi xuất bản. Hỗ trợ định dạng văn bản Markdown.
               </span>
-            </label>
+            </div>
           </div>
         </section>
         <section className="space-y-4 border-t border-border pt-6">
@@ -279,18 +281,17 @@ export default function PathEditor({
                   value={selected.title}
                   onChange={(e) => stage({ title: e.target.value })}
                 />
-                <label className="block space-y-2 text-sm">
-                  <span className="font-medium">
-                    Mục tiêu và kiến thức đầu vào
-                  </span>
-                  <textarea
-                    rows={3}
-                    maxLength={10000}
-                    className={control}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-foreground">
+                    Mục tiêu và kiến thức đầu vào của chặng
+                  </label>
+                  <TiptapEditor
                     value={selected.description}
-                    onChange={(e) => stage({ description: e.target.value })}
+                    onChange={(content) => stage({ description: content })}
+                    placeholder="Nêu rõ mục tiêu cần đạt và kiến thức tiên quyết của chặng học..."
+                    minHeight="120px"
                   />
-                </label>
+                </div>
                 <label className="block space-y-2 text-sm">
                   <span className="font-medium">
                     Trình độ đầu ra (tùy chọn)

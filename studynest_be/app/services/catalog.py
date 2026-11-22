@@ -359,11 +359,14 @@ class CatalogService:
         return data
 
     async def assign(self, course, data, user_id, admin=False, commit=True):
+        if data.provider_id is not None and data.provider_id != course.provider_id:
+            raise HTTPException(422, "Không còn hỗ trợ gán đơn vị cho khóa học")
+        # Keep historical attribution when current clients update taxonomy.
+        data = data.model_copy(update={"provider_id": course.provider_id})
         await self.validate_assignment(
             data, user_id, publishing=bool(course.is_published), admin=admin
         )
         course.subject_id = data.subject_id
-        course.provider_id = data.provider_id
         course.delivery_type = data.delivery_type
         for table, key, field, _ in LINKS:
             await self.db.execute(delete(table).where(table.c.course_id == course.id))

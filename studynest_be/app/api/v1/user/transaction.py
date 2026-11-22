@@ -95,6 +95,7 @@ async def checkout(
         discount_code=schema.discount_code,
         wallets_service=wallets_service,
         discount_service=discount_service,
+        gift_id=schema.gift_id,
     )
 
 

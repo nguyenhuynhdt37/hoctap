@@ -23,6 +23,7 @@ from app.schemas.user.learning import (
     UpdateLessonNote,
 )
 from app.services.user.learning import LearningService
+from app.schemas.user.quiz_attempts import SubmitQuizAttempt
 
 router = APIRouter(prefix="/learning", tags=["User Learning"])
 
@@ -432,3 +433,48 @@ async def lesson_comment_ws(websocket: WebSocket, lesson_id: uuid.UUID):
     finally:
         await disconnect_safe()
         print(f"🔴 {user.email if user else 'Unknown'} left {room_key}")
+
+
+@router.post("/{lesson_id}/quiz-attempts")
+async def submit_quiz_attempt(
+    lesson_id: uuid.UUID,
+    body: SubmitQuizAttempt,
+    authorization: AuthorizationService = Depends(AuthorizationService),
+    learning_service: LearningService = Depends(LearningService),
+):
+    from app.services.user.quiz_attempts import QuizAttemptService
+    user = await authorization.get_current_user()
+    return await QuizAttemptService(learning_service.db).submit_async(user.id, lesson_id, body)
+
+
+@router.get("/{lesson_id}/quiz-attempts")
+async def list_quiz_attempts(
+    lesson_id: uuid.UUID,
+    limit: int = Query(10, ge=1, le=20),
+    authorization: AuthorizationService = Depends(AuthorizationService),
+    learning_service: LearningService = Depends(LearningService),
+):
+    from app.services.user.quiz_attempts import QuizAttemptService
+    user = await authorization.get_current_user()
+    return await QuizAttemptService(learning_service.db).list_async(user.id, lesson_id, limit)
+
+
+@router.get("/quiz-attempts/{attempt_id}")
+async def get_quiz_attempt(
+    attempt_id: uuid.UUID,
+    authorization: AuthorizationService = Depends(AuthorizationService),
+    learning_service: LearningService = Depends(LearningService),
+):
+    from app.services.user.quiz_attempts import QuizAttemptService
+    user = await authorization.get_current_user()
+    return await QuizAttemptService(learning_service.db).get_async(user.id, attempt_id)
+
+
+@router.get("/code-attempts/{attempt_id}")
+async def get_code_test_attempt(
+    attempt_id: uuid.UUID,
+    authorization: AuthorizationService = Depends(AuthorizationService),
+    learning_service: LearningService = Depends(LearningService),
+):
+    user = await authorization.get_current_user()
+    return await learning_service.get_code_test_result_async(attempt_id,user)

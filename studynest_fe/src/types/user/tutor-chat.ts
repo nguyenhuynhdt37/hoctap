@@ -1,3 +1,4 @@
+import type { AgentEvent } from "@/components/user/learning_detail/agent/contracts";
 // ========== Tutor Chat Types ==========
 
 // Phạm vi trả lời
@@ -28,6 +29,7 @@ export interface TutorMessage {
   id: string;
   role: "user" | "assistant";
   content: string;
+  activity?: AgentEvent[];
   sources?: MessageSource[];
   images?: UploadedImage[];
   timestamp: Date;
@@ -176,6 +178,7 @@ export interface MessageResponse {
   user_id: string;
   role: "assistant" | "user"; // Thêm role user để dùng chung cho history
   content: string;
+  activity?: AgentEvent[];
   sources: MessageSource[];
   created_at: string;
   images: UploadedImage[];
@@ -200,6 +203,7 @@ export interface TutorChatRequest {
 export interface TutorChatResponse {
   id: string;
   content: string;
+  activity?: AgentEvent[];
   sources: ChatSource[];
   sessionId: string;
 }

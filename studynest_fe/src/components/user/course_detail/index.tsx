@@ -21,6 +21,7 @@ import RelatedTopicsSection from "./related-topics-section";
 import RequirementsSection from "./requirements-section";
 import ReviewsSection from "./reviews-section";
 import TargetAudienceSection from "./target-audience-section";
+import CourseAdvisor from "./course-advisor";
 
 const CourseDetail = () => {
   const params = useParams();
@@ -479,6 +480,7 @@ const CourseDetail = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           <div className="lg:col-span-8 space-y-8">
             <CourseEducationInfo courseId={data.course.id} />
+            <CourseAdvisor key={course.id} courseId={course.id} courseTitle={course.title} />
             <OutcomesSection outcomes={course.outcomes} />
             <CurriculumSection
               sections={course.sections}

@@ -15,6 +15,7 @@ export interface CoursesMeItem {
   enrolled_at?: string | null;
   review_count: number;
   progress_percent?: number;
+  gifted_by_name?: string | null;
 }
 
 export interface CoursesMeResponse {

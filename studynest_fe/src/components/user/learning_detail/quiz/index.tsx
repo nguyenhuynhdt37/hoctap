@@ -4,12 +4,14 @@ import { triggerCelebration } from "@/lib/utils/helpers/effects";
 import { ActiveLessonResponse } from "@/types/user/activeLesson";
 import { QuizQuestion } from "@/types/user/learning";
 import confetti from "canvas-confetti";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { HiChatAlt2 } from "react-icons/hi";
 import InfoPanel from "./info-panel";
 import QuestionDisplay from "./question-display";
 import QuizNavigation from "./quiz-navigation";
 import QuizResults from "./quiz-results";
+import { submitQuizAttempt, type VerifiedQuizAttempt } from "./submit-attempt";
+import { useLearningAgent, useAgentSnapshot } from "../agent/agent-context";
 
 interface QuizLessonProps {
   lesson: ActiveLessonResponse;
@@ -21,6 +23,7 @@ interface QuizLessonProps {
   completedLessons?: Set<string>;
   quizzes?: QuizQuestion[];
   accessToken?: string;
+  lessonAuthorId?: string | null;
 }
 
 export default function QuizLesson({
@@ -33,6 +36,7 @@ export default function QuizLesson({
   completedLessons,
   quizzes = [],
   accessToken,
+  lessonAuthorId,
 }: QuizLessonProps) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<{
@@ -45,6 +49,15 @@ export default function QuizLesson({
   const [showResults, setShowResults] = useState(false);
   const [hasCompletedQuiz, setHasCompletedQuiz] = useState(false);
 
+  const [verifiedAttempt, setVerifiedAttempt] = useState<VerifiedQuizAttempt | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [attemptError, setAttemptError] = useState("");
+  const attemptKey = useRef("");
+  const [stableLessonQuizzes, setStableLessonQuizzes] = useState(lesson.quizzes);
+  useEffect(() => {
+    setStableLessonQuizzes(lesson.quizzes);
+  }, [lesson.id]);
+  const agent = useLearningAgent();
   // Process quiz questions
   const quizQuestions =
     quizzes.length > 0
@@ -59,7 +72,7 @@ export default function QuizLesson({
             explanation: q.explanation || "",
           };
         })
-      : lesson.quizzes?.map((q) => {
+      : (stableLessonQuizzes || lesson.quizzes)?.map((q) => {
           const correctIndex = q.options.findIndex((opt) => opt.is_correct);
 
           if (correctIndex === -1) {
@@ -84,7 +97,7 @@ export default function QuizLesson({
   const answeredCount = Object.keys(selectedAnswers).length;
   const allQuestionsAnswered = answeredCount === quizQuestions.length;
 
-  const correctCount = quizQuestions.filter((q) => {
+  const rawCorrectCount = quizQuestions.filter((q) => {
     const answer = selectedAnswers[q.id];
     if (answer === undefined) {
       return false;
@@ -98,11 +111,14 @@ export default function QuizLesson({
     const isCorrect = Number(answer) === Number(q.correct_answer);
     return isCorrect;
   }).length;
+  const correctCount = verifiedAttempt?.correct ?? rawCorrectCount;
 
-  const scorePercentage =
+  const scorePercentage = verifiedAttempt?.score_percent ?? (
     quizQuestions.length > 0
       ? Math.round((correctCount / quizQuestions.length) * 100)
-      : 0;
+      : 0);
+  useAgentSnapshot("quiz", () => ({ quiz: { quiz_id: lesson.id, question_id: currentQuestion?.id, state: showResults ? "results" : submitting ? "submitting" : isAnswered ? "answered" : "answering" } }));
+  useEffect(() => { agent?.changed(); }, [currentQuestion?.id, showResults, agent?.changed]);
 
   const playSuccessSound = () => {
     try {
@@ -129,6 +145,7 @@ export default function QuizLesson({
 
   useEffect(() => {
     if (
+      !verifiedAttempt ||
       !showResults ||
       hasCompletedQuiz ||
       quizQuestions.length === 0 ||
@@ -166,6 +183,7 @@ export default function QuizLesson({
     }
   }, [
     showResults,
+    verifiedAttempt,
     scorePercentage,
     hasCompletedQuiz,
     quizQuestions.length,
@@ -176,6 +194,8 @@ export default function QuizLesson({
   ]);
 
   const handleAnswerSelect = (questionId: string, answerIndex: number) => {
+    if (submitting) return;
+    attemptKey.current = "";
     setSelectedAnswers((prev) => ({
       ...prev,
       [questionId]: answerIndex,
@@ -185,14 +205,27 @@ export default function QuizLesson({
 
   const handleNextQuestion = () => {
     if (isLastQuestion) {
-      setShowResults(true);
+      if (submitting) return;
+      setSubmitting(true); setAttemptError("");
+      if (!attemptKey.current) attemptKey.current = crypto.randomUUID();
+      const sourceQuizzes = stableLessonQuizzes || lesson.quizzes;
+      const answers = quizQuestions.map(question => {
+        const original = sourceQuizzes?.find(item => item.id === question.id);
+        const options = quizzes.length > 0 ? [...(original?.options || [])].sort((a, b) => a.position - b.position) : original?.options || [];
+        return { question_id: question.id, option_id: options[selectedAnswers[question.id]]?.id || "" };
+      });
+      if (answers.some(answer => !answer.option_id)) { setAttemptError("Hãy trả lời đầy đủ câu hỏi trước khi nộp bài."); setSubmitting(false); return; }
+      void submitQuizAttempt(lesson.id, answers, attemptKey.current).then(result => {
+        setVerifiedAttempt(result); setShowResults(true);
+      }).catch(() => setAttemptError("Chưa lưu được kết quả kiểm tra. Hãy thử nộp lại; tiến độ chưa được đánh dấu hoàn thành.")).finally(() => setSubmitting(false));
     } else if (!isLastQuestion && isAnswered) {
       setCurrentQuestionIndex((prev) => prev + 1);
     }
   };
 
   const handleRetryQuiz = () => {
-    setShowResults(false);
+    setStableLessonQuizzes(lesson.quizzes);
+    setShowResults(false); setVerifiedAttempt(null); setAttemptError(""); attemptKey.current = "";
     setCurrentQuestionIndex(0);
     setSelectedAnswers({});
     setAnsweredQuestions(new Set());
@@ -200,6 +233,7 @@ export default function QuizLesson({
   };
 
   const handlePrevQuestion = () => {
+    if (submitting) return;
     if (!isFirstQuestion) {
       setCurrentQuestionIndex((prev) => prev - 1);
     }
@@ -220,11 +254,13 @@ export default function QuizLesson({
   }
 
   return (
-    <div className="w-full h-full bg-gradient-to-br from-background to-primary-pastel/30 overflow-y-auto">
-      <div className="w-full h-full p-6 flex flex-col">
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-0">
+    <div className="h-full min-w-0 overflow-x-hidden overflow-y-auto bg-gradient-to-br from-background to-primary-pastel/30">
+      <div className="flex min-h-full min-w-0 flex-col gap-4 p-3 sm:p-6">
+        {attemptError && <p role="alert" className="rounded-xl border border-warning-border bg-warning-bg p-3 text-sm text-warning-foreground">{attemptError}</p>}
+        {submitting && <p role="status" className="text-sm text-primary">Đang lưu và kiểm tra bài làm…</p>}
+        <div className="grid min-h-0 min-w-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6">
           {/* Cột trái: Thông tin bài học */}
-          <div className="flex flex-col min-h-0">
+          <div data-learning-info className="flex min-h-[220px] min-w-0 flex-col lg:min-h-0">
             <InfoPanel
               lesson={lesson}
               infoTab={infoTab}
@@ -233,11 +269,12 @@ export default function QuizLesson({
               selectedAnswersCount={Object.keys(selectedAnswers).length}
               correctCount={correctCount}
               accessToken={accessToken}
+              lessonAuthorId={lessonAuthorId}
             />
           </div>
 
           {/* Cột phải: Quiz Questions */}
-          <div className="bg-surface border border-border rounded-2xl shadow-sm p-6 lg:p-8 flex flex-col flex-1 min-h-0 overflow-y-auto">
+          <div data-learning-quiz-questions className="flex min-h-[320px] min-w-0 flex-1 flex-col overflow-y-auto rounded-2xl border border-border bg-surface p-4 shadow-sm sm:p-6 lg:min-h-0 lg:p-8">
             {showResults ? (
               <QuizResults
                 scorePercentage={scorePercentage}
@@ -302,13 +339,14 @@ export default function QuizLesson({
         </div>
       </div>
 
-      <div className="fixed bottom-6 left-6 z-40">
+      <div className="fixed bottom-[4.75rem] left-3 z-30 sm:left-6">
         <button
+          type="button"
           onClick={() => setInfoTab("qa")}
           disabled={infoTab === "qa"}
-          className={`flex items-center gap-2 px-4 py-2 rounded-full shadow-lg transition-colors ${
+          className={`flex min-h-11 items-center gap-2 rounded-full px-4 py-2 shadow-lg transition-colors ${
             infoTab === "qa"
-              ? "bg-gray-200 text-gray-500 cursor-default"
+              ? "cursor-default bg-border text-muted-foreground"
               : "bg-primary text-white hover:bg-primary-hover"
           }`}
         >

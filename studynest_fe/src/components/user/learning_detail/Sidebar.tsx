@@ -79,20 +79,22 @@ export default function Sidebar(props: SidebarProps) {
     <>
       {sidebarOpen && (
         <div
-          className="w-[434px] flex-shrink-0 bg-surface shadow-lg border-l border-border overflow-y-auto"
+          data-learning-sidebar
+          className="fixed bottom-16 right-0 top-16 z-40 w-full max-w-full overflow-x-hidden overflow-y-auto border-l border-border bg-surface shadow-lg md:static md:inset-auto md:z-auto md:h-full md:w-[434px] md:max-w-[434px] md:shrink-0 md:shadow-none"
           style={{
-            height: `calc(100vh - ${headerHeightPx}px - ${footerHeightPx}px)`,
-            marginTop: 0,
+            maxHeight: `calc(100dvh - ${headerHeightPx}px - ${footerHeightPx}px)`,
           }}
         >
-          <div className="p-6 border-b border-border bg-gradient-to-r from-primary-pastel/50 to-secondary-pastel/40 sticky top-0 z-10 backdrop-blur-md">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-foreground">
+          <div className="sticky top-0 z-10 border-b border-border bg-gradient-to-r from-primary-pastel/50 to-secondary-pastel/40 p-4 backdrop-blur-md sm:p-6">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="min-w-0 truncate text-lg font-bold text-foreground">
                 Nội dung khóa học
               </h2>
               <button
+                type="button"
                 onClick={() => setSidebarOpen(false)}
-                className="text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-surface/70 transition-colors cursor-pointer"
+                aria-label="Đóng nội dung khóa học"
+                className="shrink-0 cursor-pointer rounded-lg p-1 text-muted-foreground transition-colors hover:bg-surface/70 hover:text-foreground"
               >
                 <HiX className="h-5 w-5" />
               </button>
@@ -110,14 +112,14 @@ export default function Sidebar(props: SidebarProps) {
                 >
                   <button
                     onClick={() => toggleSection(section.id)}
-                    className="w-full cursor-pointer px-4 py-4 text-left flex items-center justify-between hover:bg-primary-pastel/30 transition-colors"
+                    className="flex w-full cursor-pointer items-center justify-between gap-2 px-4 py-4 text-left transition-colors hover:bg-primary-pastel/30"
                   >
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-xs">
+                    <div className="flex min-w-0 flex-1 items-center gap-3">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary shadow-xs">
                         <HiBookOpen className="h-4 w-4 text-white" />
                       </div>
-                      <div>
-                        <h4 className="font-semibold text-foreground text-sm">
+                      <div className="min-w-0 flex-1">
+                        <h4 className="truncate text-sm font-semibold text-foreground">
                           {section.title}
                         </h4>
                         <p className="text-xs text-muted-foreground">
@@ -127,8 +129,8 @@ export default function Sidebar(props: SidebarProps) {
                           )}{" "}
                           • {formatDuration(section.total_duration || 0)}
                         </p>
-                        <div className="mt-1 flex items-center space-x-2">
-                          <div className="w-full bg-border rounded-full h-1.5">
+                        <div className="mt-1 flex items-center gap-2">
+                          <div className="h-1.5 min-w-0 flex-1 rounded-full bg-border">
                             <div
                               className="bg-primary h-1.5 rounded-full transition-all duration-300"
                               style={{
@@ -148,9 +150,9 @@ export default function Sidebar(props: SidebarProps) {
                       </div>
                     </div>
                     {expandedSections.has(section.id) ? (
-                      <HiChevronUp className="h-5 w-5 text-primary" />
+                      <HiChevronUp className="h-5 w-5 shrink-0 text-primary" />
                     ) : (
-                      <HiChevronDown className="h-5 w-5 text-muted-foreground" />
+                      <HiChevronDown className="h-5 w-5 shrink-0 text-muted-foreground" />
                     )}
                   </button>
 

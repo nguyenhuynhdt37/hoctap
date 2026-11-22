@@ -1,6 +1,7 @@
 from typing import Any
 
 from fastapi import Depends, HTTPException
+from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.embedding import EmbeddingService
@@ -22,14 +23,23 @@ class UserPreferencesService:
     async def save_user_learning_preferences_async(
         self, schema: LearningFielsSave, user: User
     ) -> dict[str, Any]:
+        preferences_text = (schema.preferences or "").strip()
+        if not preferences_text:
+            raise HTTPException(400, "Nội dung sở thích học tập không được để trống.")
 
         try:
-            # 1️⃣ Sinh embedding
-            vec = await self.embedding.embed_google_normalized(schema.preferences)
+            vec: list[float] | None = None
+            try:
+                vec = await self.embedding.embed_google_normalized(preferences_text)
+            except Exception as embed_err:
+                logger.warning(
+                    "Skipping preferences embedding generation due to provider error: {}",
+                    embed_err,
+                )
 
-            # 2️⃣ Cập nhật thông tin user
-            user.preferences_embedding = vec
-            user.preferences_str = schema.preferences
+            user.preferences_str = preferences_text
+            if vec is not None:
+                user.preferences_embedding = vec
             user.preferences_embedding_date_updated_at = get_now()
 
             await self.db.commit()
@@ -37,7 +47,8 @@ class UserPreferencesService:
                 "message": "Đã lưu sở thích học tập",
                 "updated_at": user.preferences_embedding_date_updated_at,
             }
-
+        except HTTPException:
+            raise
         except Exception as e:
             await self.db.rollback()
             raise HTTPException(500, f"Lỗi khi lưu sở thích học tập: {e}")

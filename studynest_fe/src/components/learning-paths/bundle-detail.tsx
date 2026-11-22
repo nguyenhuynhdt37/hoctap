@@ -3,8 +3,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import useSWR from "swr";
+import { ArrowLeft, BookOpen, Check, ChevronRight } from "lucide-react";
 import api from "@/lib/utils/fetcher/client/axios";
-import { Button, Badge, Input, Modal } from "@/components/ui";
+import { Button, Badge, Card, Input, Modal } from "@/components/ui";
+import MarkdownRenderer from "@/components/shared/markdown-renderer";
 import { useUserStore } from "@/stores/user";
 import type {
   Bundle,
@@ -90,62 +92,121 @@ export default function BundleDetail({ slug }: { slug: string }) {
   }
   if (error) return <LoadError error={error} retry={() => mutate()} />;
   if (!data) return <Loading />;
+  const learningSections = [
+    { title: "Kết quả học tập", items: data.outcomes },
+    { title: "Đối tượng phù hợp", items: data.target_audience },
+    { title: "Yêu cầu đầu vào", items: data.requirements },
+  ].filter(({ items }) => items && items.length > 0);
+
   return (
-    <main className="mx-auto max-w-6xl space-y-8 px-4 py-10 text-foreground sm:px-6">
-      <Link className="text-sm text-primary underline" href="/combo">
-        ← Tất cả combo
+    <main className="mx-auto max-w-7xl space-y-6 px-4 pb-12 pt-28 text-foreground sm:px-6">
+      <Link className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline" href="/combo">
+        <ArrowLeft className="size-4" aria-hidden="true" /> Tất cả combo
       </Link>
-      <div className="grid items-start gap-8 lg:grid-cols-[1fr_360px]">
-        <section className="space-y-7">
-          <header className="space-y-4">
-            <div className="flex gap-2">
-              <Badge variant="primary">Combo · Phiên bản {data.version}</Badge>
-            </div>
-            <h1 className="text-3xl font-semibold sm:text-4xl">{data.title}</h1>
-            <p className="whitespace-pre-line leading-relaxed text-muted-foreground">
-              {data.description}
-            </p>
-          </header>
-          <h2 className="text-xl font-semibold">Các khóa có trong combo</h2>
-          <div className="space-y-3">
-            {data.items?.map((item) => (
-              <article
-                key={item.course_id}
-                className="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-4 sm:flex-row"
+      <header className={`grid items-center gap-6 rounded-[28px] bg-primary-light p-6 sm:p-8 ${data.thumbnail_url ? "md:grid-cols-[minmax(0,1fr)_minmax(0,0.78fr)]" : ""}`}>
+        <div className="min-w-0 space-y-4">
+          <Badge variant="outline" className="bg-surface">
+            <BookOpen className="mr-1.5 size-3.5" aria-hidden="true" />
+            {data.course_count ?? data.items?.length ?? 0} khóa học
+          </Badge>
+          <h1 className="break-words font-display text-3xl leading-tight sm:text-4xl lg:text-5xl">{data.title}</h1>
+          {data.subtitle && <p className="max-w-xl break-words leading-relaxed text-muted-foreground">{data.subtitle}</p>}
+          {data.instructor && (
+            <p className="text-sm text-muted-foreground">
+              Giảng viên{" "}
+              <Link
+                href={`/instructors/${data.instructor.id}`}
+                className="font-medium text-primary underline"
               >
-                {item.thumbnail && (
-                  <img
-                    alt=""
-                    loading="lazy"
-                    src={item.thumbnail}
-                    className="aspect-video w-full rounded-xl object-cover sm:h-24 sm:w-40"
-                  />
-                )}
-                <div className="min-w-0 flex-1 space-y-2">
-                  <h3 className="font-semibold">{item.title}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Giá lẻ tham chiếu: {price(item.list_price)}
-                  </p>
-                  <p className="text-sm text-primary">
-                    Phần giá trong combo: {price(item.allocated_price)}
-                  </p>
-                  {item.slug && (
-                    <Link
-                      className="text-sm text-primary underline"
-                      href={`/course/${item.slug}`}
-                    >
-                      Xem nội dung khóa
-                    </Link>
+                {data.instructor.name}
+              </Link>
+            </p>
+          )}
+          <a href="#mua-combo" className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline lg:hidden">
+            Xem giá và mua combo <ChevronRight className="size-4" aria-hidden="true" />
+          </a>
+        </div>
+        {data.thumbnail_url && (
+          <img src={data.thumbnail_url} alt="" className="aspect-video w-full rounded-2xl bg-surface object-cover" />
+        )}
+      </header>
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_380px]">
+        <section className="min-w-0 space-y-6">
+          {data.description && (
+            <Card className="space-y-3">
+              <h2 className="text-xl font-semibold">Giới thiệu lộ trình</h2>
+              <div className="break-words leading-relaxed text-muted-foreground">
+                <MarkdownRenderer content={data.description} />
+              </div>
+            </Card>
+          )}
+          {learningSections.length > 0 && (
+            <Card className="divide-y divide-border">
+              {learningSections.map(({ title, items }) => (
+                <section key={title} className="space-y-3 py-4 first:pt-0 last:pb-0">
+                  <h2 className="font-semibold">{title}</h2>
+                  <ul className="space-y-2 text-sm text-muted-foreground">
+                    {items?.map((item, index) => (
+                      <li key={index} className="flex items-start gap-2 break-words">
+                        <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+                        <span className="min-w-0">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ))}
+            </Card>
+          )}
+          <Card className="space-y-4">
+            <h2 className="text-xl font-semibold">Các khóa trong lộ trình</h2>
+            <ol className="divide-y divide-border">
+              {data.items?.map((item, index) => (
+                <li
+                  key={item.course_id}
+                  className="flex items-start gap-3 py-4 first:pt-0 last:pb-0 sm:gap-4"
+                >
+                  <span
+                    className="grid size-8 shrink-0 place-items-center rounded-xl bg-primary-light text-sm font-semibold text-primary"
+                    aria-label={`Bước ${index + 1}`}
+                  >
+                    {index + 1}
+                  </span>
+                  {item.thumbnail && (
+                    <img
+                      alt=""
+                      loading="lazy"
+                      src={item.thumbnail}
+                      className="hidden aspect-video w-28 shrink-0 rounded-xl object-cover sm:block lg:w-32"
+                    />
                   )}
-                  {!item.available && (
-                    <p className="text-sm text-warning-foreground">
-                      Tạm ngừng nhận đăng ký mới
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <h3 className="font-semibold">{item.title}</h3>
+                    {quote?.items.find(
+                      (line) => line.course_id === item.course_id,
+                    )?.already_owned && (
+                      <Badge variant="success">Đã sở hữu</Badge>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      Giá lẻ {price(item.list_price)} · Trong combo {price(item.allocated_price)}
                     </p>
-                  )}
-                </div>
-              </article>
-            ))}
-          </div>
+                    {item.slug && (
+                      <Link
+                        className="text-sm text-primary underline"
+                        href={`/course/${item.slug}`}
+                      >
+                        Xem nội dung khóa
+                      </Link>
+                    )}
+                    {!item.available && (
+                      <p className="text-sm text-warning-foreground">
+                        Tạm ngừng nhận đăng ký mới
+                      </p>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </Card>
           <section className="space-y-3 rounded-2xl bg-surface-muted p-6">
             <h2 className="font-semibold">Quyền lợi và hoàn tiền</h2>
             <p className="text-sm leading-relaxed text-muted-foreground">
@@ -161,58 +222,8 @@ export default function BundleDetail({ slug }: { slug: string }) {
             </p>
           </section>
         </section>
-        <aside className="space-y-5 rounded-2xl border border-border bg-surface p-6 lg:sticky lg:top-24">
-          <h2 className="text-xl font-semibold">Báo giá của bạn</h2>
-          <form
-            className="space-y-2"
-            onSubmit={(event) => {
-              event.preventDefault();
-              setCouponCode(couponInput.trim().toUpperCase());
-              setConfirm(false);
-              setFailure("");
-            }}
-          >
-            <Input
-              label="Mã ưu đãi combo"
-              maxLength={40}
-              value={couponInput}
-              disabled={busy}
-              onChange={(event) =>
-                setCouponInput(event.target.value.toUpperCase())
-              }
-              placeholder="Nhập mã nếu có"
-            />
-            <div className="flex flex-wrap gap-2">
-              <Button
-                type="submit"
-                variant="outline"
-                size="sm"
-                disabled={busy || !couponInput.trim() || isValidating}
-              >
-                Áp dụng
-              </Button>
-              {couponCode && (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  disabled={busy}
-                  onClick={() => {
-                    setCouponCode("");
-                    setCouponInput("");
-                    setConfirm(false);
-                  }}
-                >
-                  Bỏ mã
-                </Button>
-              )}
-            </div>
-            {quote?.coupon_code && !quoteError && (
-              <p role="status" className="text-xs text-success-foreground">
-                Đang áp dụng {quote.coupon_code}.
-              </p>
-            )}
-          </form>
+        <aside id="mua-combo" className="scroll-mt-28 space-y-5 rounded-[20px] border border-border bg-surface p-5 shadow-xs sm:p-6 lg:sticky lg:top-24">
+          <h2 className="text-xl font-semibold">Mua trọn lộ trình</h2>
           {quoteError ? (
             <LoadError error={quoteError} retry={() => refreshQuote()} />
           ) : !quote ? (
@@ -221,7 +232,7 @@ export default function BundleDetail({ slug }: { slug: string }) {
             <>
               <dl className="space-y-3 text-sm">
                 <div className="flex justify-between gap-4">
-                  <dt>Giá trọn gói</dt>
+                  <dt>Giá combo lộ trình</dt>
                   <dd>{price(quote.full_price)}</dd>
                 </div>
                 <div className="flex justify-between gap-4">
@@ -239,6 +250,13 @@ export default function BundleDetail({ slug }: { slug: string }) {
                   <dd className="text-primary">{price(quote.total)}</dd>
                 </div>
               </dl>
+              <Button fullWidth disabled={busy || isValidating} onClick={open}>
+                {!user
+                  ? "Đăng nhập để xem giá của bạn"
+                  : Number(quote.total) === 0
+                    ? "Xác nhận quyền học"
+                    : "Tiếp tục mua bằng ví"}
+              </Button>
               {quote.items.some((i) => i.already_owned) && (
                 <ul className="space-y-2 text-xs text-muted-foreground">
                   {quote.items
@@ -257,13 +275,6 @@ export default function BundleDetail({ slug }: { slug: string }) {
                 Thời hạn gửi yêu cầu hoàn tiền: {quote.refund_days} ngày kể từ
                 lúc mua, theo giá thực trả của từng khóa.
               </p>
-              <Button fullWidth disabled={busy || isValidating} onClick={open}>
-                {!user
-                  ? "Đăng nhập để xem giá của bạn"
-                  : Number(quote.total) === 0
-                    ? "Xác nhận quyền học"
-                    : "Tiếp tục mua bằng ví"}
-              </Button>
               <Button
                 variant="ghost"
                 fullWidth
@@ -279,6 +290,59 @@ export default function BundleDetail({ slug }: { slug: string }) {
               {failure}
             </p>
           )}
+          <details className="border-t border-border pt-4">
+            <summary className="cursor-pointer text-sm font-medium text-primary">Mã ưu đãi</summary>
+            <form
+              className="mt-3 space-y-2"
+              onSubmit={(event) => {
+                event.preventDefault();
+                setCouponCode(couponInput.trim().toUpperCase());
+                setConfirm(false);
+                setFailure("");
+              }}
+            >
+              <Input
+                label="Mã ưu đãi combo"
+                maxLength={40}
+                value={couponInput}
+                disabled={busy}
+                onChange={(event) =>
+                  setCouponInput(event.target.value.toUpperCase())
+                }
+                placeholder="Nhập mã nếu có"
+              />
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="submit"
+                  variant="outline"
+                  size="sm"
+                  disabled={busy || !couponInput.trim() || isValidating}
+                >
+                  Áp dụng
+                </Button>
+                {couponCode && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    disabled={busy}
+                    onClick={() => {
+                      setCouponCode("");
+                      setCouponInput("");
+                      setConfirm(false);
+                    }}
+                  >
+                    Bỏ mã
+                  </Button>
+                )}
+              </div>
+              {quote?.coupon_code && !quoteError && (
+                <p role="status" className="text-xs text-success-foreground">
+                  Đang áp dụng {quote.coupon_code}.
+                </p>
+              )}
+            </form>
+          </details>
           <Link
             href="/wallets"
             className="block text-center text-sm text-primary underline"

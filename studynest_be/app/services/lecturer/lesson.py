@@ -370,44 +370,33 @@ class LessonService:
                     transcript_service = YoutubeTranscriptService()
 
                 # 🧠 1. Trích ngữ cảnh từ video
-                description = await transcript_service.extract_video_context(video_id)
-                print("🧠 Gemini mô tả:", description[:200], "...")
+                evidence = await transcript_service.extract_video_evidence(video_id)
+                description = evidence.content
 
                 total_tokens = embedding.estimate_tokens(description)
                 lesson_embedding = await embedding.embed_google_normalized(description)
-                chunks = embedding.split_text_by_tokens(
-                    description, chunk_size=1000, overlap=100
-                )
+                chunks = evidence.chunks(embedding, chunk_tokens=1000)
 
-                await db.execute(
-                    update(Lessons)
-                    .where(Lessons.id == lesson_id)
-                    .values(
-                        embedding=lesson_embedding,
-                        content_tokens=total_tokens,
-                    )
-                )
-                await db.execute(
-                    update(LessonVideos)
-                    .where(LessonVideos.lesson_id == lesson_id)
-                    .values(transcript=description)
-                )
-
+                # Provider work happens before acquiring a DB row lock.
                 lesson_chunks_payload = []
-
-                lesson_chunks_payload = []
-                for idx, chunk_text in enumerate(chunks):
+                for idx, (chunk_text, anchors) in enumerate(chunks):
                     chunk_embed = await embedding.embed_google_normalized(chunk_text)
-                    lesson_chunks_payload.append(
-                        LessonChunks(
-                            lesson_id=lesson_id,
-                            chunk_index=idx,
-                            text_=chunk_text,
-                            embedding=chunk_embed,
-                            token_count=embedding.estimate_tokens(chunk_text),
-                        )
-                    )
-
+                    lesson_chunks_payload.append(LessonChunks(
+                        lesson_id=lesson_id,chunk_index=idx,text_=chunk_text,embedding=chunk_embed,
+                        token_count=embedding.estimate_tokens(chunk_text),source_kind="youtube_transcript",
+                        source_reference=evidence.source_reference,source_content_hash=evidence.content_hash,
+                        timestamps_verified=True,timestamp_anchors=anchors))
+                # A late background job for an old video must not replace the
+                # newly uploaded video's lesson evidence.
+                current_video = await db.scalar(select(LessonVideos).where(
+                    LessonVideos.lesson_id == lesson_id).with_for_update())
+                if not current_video or current_video.file_id != video_id:
+                    await db.rollback()
+                    return
+                await db.execute(update(Lessons).where(Lessons.id == lesson_id).values(
+                    embedding=lesson_embedding,content_tokens=total_tokens))
+                current_video.transcript = description
+                await db.execute(delete(LessonChunks).where(LessonChunks.lesson_id == lesson_id))
                 db.add_all(lesson_chunks_payload)
                 await db.commit()
                 print(
@@ -416,10 +405,7 @@ class LessonService:
 
             except Exception as e:
                 await db.rollback()
-                import traceback
-
-                traceback.print_exc()
-                print(f"❌ Lỗi khi xử lý bài học {lesson_id}: {e}")
+                logger.warning("Lesson evidence ingestion failed lesson={} type={}",lesson_id,type(e).__name__)
 
     async def move_lesson_async(
         self, lesson_id: uuid.UUID, schema: MoveLessonSchema, lecturer_id: uuid.UUID

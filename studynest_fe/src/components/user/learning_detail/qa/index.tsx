@@ -10,6 +10,11 @@ import { HiChat, HiX } from "react-icons/hi";
 import useSWR from "swr";
 import CommentWithReplies from "./comment-with-replies";
 import NewCommentForm from "./new-comment-form";
+import {
+  applyCommentListEvent,
+  mapCreatedComment,
+  replyRefusalMessage,
+} from "./qa-rules";
 import TypingIndicator from "./typing-indicator";
 
 // ============================================================================
@@ -19,6 +24,7 @@ import TypingIndicator from "./typing-indicator";
 interface QASectionProps {
   lessonId: string;
   accessToken?: string;
+  lessonAuthorId?: string | null;
   isModal?: boolean;
   onClose?: () => void;
   containerClassName?: string;
@@ -44,6 +50,7 @@ const usePreventBodyScroll = (isOpen: boolean) => {
 export default function QASection({
   lessonId,
   accessToken,
+  lessonAuthorId = null,
   isModal = false,
   onClose,
   containerClassName,
@@ -51,6 +58,8 @@ export default function QASection({
   usePreventBodyScroll(isModal);
   const user = useUserStore((s) => s.user);
   const currentUserId = user?.id ? String(user.id) : null;
+  const lessonAuthorIdRef = useRef<string | null>(lessonAuthorId ?? null);
+  lessonAuthorIdRef.current = lessonAuthorId ?? null;
 
   // State management
   const [expandedReplies, setExpandedReplies] = useState<Set<string>>(
@@ -250,26 +259,18 @@ export default function QASection({
             if (data.type === "comment_updated" && data.comment) {
               const updatedComment = data.comment;
 
-              if (updatedComment.depth === 0) {
-                mutateRoot((current) => {
-                  if (!current) return current;
-                  return {
-                    ...current,
-                    items: current.items.map((item) => {
-                      if (item.id === updatedComment.id) {
-                        return {
-                          ...item,
-                          content: updatedComment.content,
-                          user_name: updatedComment.user_name || item.user_name,
-                          user_avatar:
-                            updatedComment.user_avatar || item.user_avatar,
-                        };
-                      }
-                      return item;
-                    }),
-                  };
-                }, false);
-              } else {
+              mutateRoot((current) => {
+                if (!current) return current;
+                return {
+                  ...current,
+                  items: applyCommentListEvent(current.items, {
+                    type: "comment_updated",
+                    comment: updatedComment,
+                  }),
+                };
+              }, false);
+
+              if (updatedComment.depth !== 0) {
                 const rootId = updatedComment.root_id;
                 if (rootId) {
                   if (updatedComment.depth === 1) {
@@ -310,18 +311,10 @@ export default function QASection({
                 if (!current) return current;
                 return {
                   ...current,
-                  items: current.items.map((item) => {
-                    if (item.id === commentId) {
-                      return {
-                        ...item,
-                        reactions: {
-                          ...item.reactions,
-                          total: reactions.total,
-                          has_reacted: reactions.has_reacted,
-                        },
-                      };
-                    }
-                    return item;
+                  items: applyCommentListEvent(current.items, {
+                    type: "comment_reacted",
+                    comment_id: commentId,
+                    reactions,
                   }),
                 };
               }, false);
@@ -342,18 +335,10 @@ export default function QASection({
                 if (!current) return current;
                 return {
                   ...current,
-                  items: current.items.map((item) => {
-                    if (item.id === commentId) {
-                      return {
-                        ...item,
-                        reactions: {
-                          ...item.reactions,
-                          total: reactions.total,
-                          has_reacted: reactions.has_reacted,
-                        },
-                      };
-                    }
-                    return item;
+                  items: applyCommentListEvent(current.items, {
+                    type: "comment_unreacted",
+                    comment_id: commentId,
+                    reactions,
                   }),
                 };
               }, false);
@@ -374,15 +359,9 @@ export default function QASection({
                 if (foundItem && foundItem.depth === 0) {
                   return {
                     ...current,
-                    items: current.items.map((item) => {
-                      if (item.id === hiddenComment.id) {
-                        return {
-                          ...item,
-                          content:
-                            hiddenComment.content || "[Bình luận đã bị ẩn]",
-                        };
-                      }
-                      return item;
+                    items: applyCommentListEvent(current.items, {
+                      type: "comment_hidden",
+                      comment: hiddenComment,
                     }),
                   };
                 }
@@ -411,14 +390,14 @@ export default function QASection({
                 );
                 if (foundItem && foundItem.depth === 0) {
                   isRootCommentDeleted = true;
-                  return {
-                    ...current,
-                    items: current.items.filter(
-                      (item) => item.id !== deletedCommentId
-                    ),
-                  };
                 }
-                return current;
+                return {
+                  ...current,
+                  items: applyCommentListEvent(current.items, {
+                    type: "comment_deleted",
+                    comment: { id: deletedCommentId },
+                  }),
+                };
               }, false);
 
               if (isRootCommentDeleted) {
@@ -433,62 +412,7 @@ export default function QASection({
                 return;
               }
 
-              let foundComment: CommentItem | null = null;
-              let foundRootId: string | null = null;
-
-              mutateRoot((current) => {
-                if (!current) return current;
-                const foundItem = current.items.find(
-                  (item) => item.id === deletedCommentId
-                );
-                if (foundItem) {
-                  foundComment = foundItem;
-                  foundRootId = foundItem.root_id || foundItem.id;
-                }
-                return current;
-              }, false);
-
               reloadAllExpandedReplies();
-
-              if (foundComment && foundRootId) {
-                mutateRoot((current) => {
-                  if (!current) return current;
-                  return {
-                    ...current,
-                    items: current.items.map((item) => {
-                      if (item.id === foundRootId) {
-                        return {
-                          ...item,
-                          reply_count_all: Math.max(
-                            (item.reply_count_all || 0) - 1,
-                            0
-                          ),
-                        };
-                      }
-                      return item;
-                    }),
-                  };
-                }, false);
-              } else {
-                mutateRoot((current) => {
-                  if (!current) return current;
-                  return {
-                    ...current,
-                    items: current.items.map((item) => {
-                      if ((item.reply_count_all || 0) > 0) {
-                        return {
-                          ...item,
-                          reply_count_all: Math.max(
-                            (item.reply_count_all || 0) - 1,
-                            0
-                          ),
-                        };
-                      }
-                      return item;
-                    }),
-                  };
-                }, false);
-              }
 
               if (editingComment === deletedCommentId) {
                 setEditingComment(null);
@@ -504,45 +428,20 @@ export default function QASection({
             // Comment created
             if (data.type === "comment_created" && data.comment) {
               const newComment = data.comment;
-              const commentUserId = String(newComment.user_id || "");
-              const isOwner =
-                !!currentUserId &&
-                !!commentUserId &&
-                String(commentUserId) === String(currentUserId);
-              const commentItem: CommentItem = {
-                id: newComment.id,
-                root_id: newComment.root_id,
-                parent_id: newComment.parent_id,
-                lesson_id: newComment.lesson_id,
-                user_id: newComment.user_id,
-                user_name: (newComment as any).user_name || "",
-                user_avatar: (newComment as any).user_avatar || null,
-                content: newComment.content,
-                depth: newComment.depth,
-                created_at: newComment.created_at,
-                reply_count_all: 0,
-                is_owner: isOwner,
-                is_author: isOwner,
-                reactions: {
-                  counts: {},
-                  total: 0,
-                  has_reacted: false,
-                  my_reaction: null,
-                },
-              };
+              const commentItem: CommentItem = mapCreatedComment(newComment, {
+                currentUserId,
+                lessonAuthorId: lessonAuthorIdRef.current,
+              });
 
               if (newComment.depth === 0) {
                 mutateRoot((current) => {
                   if (!current) return current;
-                  if (current.items.some((item) => item.id === commentItem.id))
-                    return current;
                   return {
                     ...current,
-                    items: [commentItem, ...current.items].sort(
-                      (a, b) =>
-                        new Date(b.created_at).getTime() -
-                        new Date(a.created_at).getTime()
-                    ),
+                    items: applyCommentListEvent(current.items, {
+                      type: "comment_created",
+                      comment: commentItem,
+                    }),
                   };
                 }, false);
               } else {
@@ -552,14 +451,10 @@ export default function QASection({
                     if (!current) return current;
                     return {
                       ...current,
-                      items: current.items.map((item) =>
-                        item.id === rootId
-                          ? {
-                              ...item,
-                              reply_count_all: (item.reply_count_all || 0) + 1,
-                            }
-                          : item
-                      ),
+                      items: applyCommentListEvent(current.items, {
+                        type: "comment_created",
+                        comment: commentItem,
+                      }),
                     };
                   }, false);
 
@@ -841,12 +736,23 @@ export default function QASection({
     async (parentId: string, content: string) => {
       if (!content.trim() || isSubmitting) return;
 
-      if (rootCommentsData?.items) {
-        const parentInRoot = rootCommentsData.items.find(
-          (item) => item.id === parentId
-        );
-        if (parentInRoot && parentInRoot.depth >= 2) {
-          showToast.error("Không thể phản hồi comment có độ sâu >= 2.");
+      const parentInRoot = rootCommentsData?.items.find(
+        (item) => item.id === parentId
+      );
+      let parentDepth = parentInRoot?.depth;
+      if (parentDepth == null) {
+        for (const bucket of Object.values(depth2RepliesData)) {
+          const nested = bucket.items.find((item) => item.id === parentId);
+          if (nested) {
+            parentDepth = nested.depth;
+            break;
+          }
+        }
+      }
+      if (parentDepth != null) {
+        const refusal = replyRefusalMessage(parentDepth);
+        if (refusal) {
+          showToast.error(refusal);
           return;
         }
       }
@@ -868,7 +774,7 @@ export default function QASection({
         setIsSubmitting(false);
       }
     },
-    [isSubmitting, sendWebSocketMessage, rootCommentsData]
+    [isSubmitting, sendWebSocketMessage, rootCommentsData, depth2RepliesData]
   );
 
   const handleReaction = useCallback(async (commentId: string) => {
@@ -996,19 +902,19 @@ export default function QASection({
 
       {/* WebSocket connection status */}
       {wsStatus === "reconnecting" && (
-        <div className="mb-4 px-4 py-2 bg-yellow-50 border border-yellow-200 rounded-xl">
-          <div className="flex items-center gap-2 text-sm text-yellow-800">
+        <div className="mb-4 px-4 py-2 bg-warning-bg border border-warning-border rounded-xl">
+          <div className="flex items-center gap-2 text-sm text-warning-foreground">
             <div className="flex gap-1">
               <div
-                className="w-2 h-2 bg-yellow-600 rounded-full animate-bounce"
+                className="w-2 h-2 bg-warning-foreground rounded-full animate-bounce"
                 style={{ animationDelay: "0ms" }}
               />
               <div
-                className="w-2 h-2 bg-yellow-600 rounded-full animate-bounce"
+                className="w-2 h-2 bg-warning-foreground rounded-full animate-bounce"
                 style={{ animationDelay: "150ms" }}
               />
               <div
-                className="w-2 h-2 bg-yellow-600 rounded-full animate-bounce"
+                className="w-2 h-2 bg-warning-foreground rounded-full animate-bounce"
                 style={{ animationDelay: "300ms" }}
               />
             </div>
@@ -1044,7 +950,7 @@ export default function QASection({
             Đang tải bình luận...
           </div>
         ) : rootError ? (
-          <div className="text-center py-8 text-sm text-red-600">
+          <div className="text-center py-8 text-sm text-destructive-foreground">
             Không thể tải bình luận. Vui lòng thử lại sau.
           </div>
         ) : !rootCommentsData || rootCommentsData.items.length === 0 ? (

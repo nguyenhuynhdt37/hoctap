@@ -1,6 +1,7 @@
 "use client";
 
 import { prepareImageUpload } from "@/lib/prepare-image-upload";
+import { formatApiError } from "@/lib/utils";
 import { Alert, Button, Card } from "@/components/ui";
 import CourseTaxonomyForm from "@/components/catalog/course-taxonomy-form";
 import { emptyTaxonomy, taxonomyInput, type CourseTaxonomyInput, type CourseEducation } from "@/types/catalog";
@@ -267,11 +268,10 @@ const CreateCourse = () => {
         setError("Không thể tạo mô tả tự động. Vui lòng thử lại.");
       }
     } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.detail ||
-        error.response?.data?.message ||
-        error.message ||
-        "Không thể tạo mô tả tự động";
+      const errorMessage = formatApiError(
+        error,
+        "Không thể tạo mô tả tự động"
+      );
       setError(errorMessage);
     } finally {
       setIsGeneratingSubtitle(false);
@@ -332,11 +332,10 @@ const CreateCourse = () => {
         setError("Không thể tạo mô tả chi tiết tự động. Vui lòng thử lại.");
       }
     } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.detail ||
-        error.response?.data?.message ||
-        error.message ||
-        "Không thể tạo mô tả chi tiết tự động";
+      const errorMessage = formatApiError(
+        error,
+        "Không thể tạo mô tả chi tiết tự động"
+      );
       setError(errorMessage);
     } finally {
       setIsGeneratingDescription(false);
@@ -399,11 +398,10 @@ const CreateCourse = () => {
         setError("Không thể tạo mục tiêu học tập tự động. Vui lòng thử lại.");
       }
     } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.detail ||
-        error.response?.data?.message ||
-        error.message ||
-        "Không thể tạo mục tiêu học tập tự động";
+      const errorMessage = formatApiError(
+        error,
+        "Không thể tạo mục tiêu học tập tự động"
+      );
       setError(errorMessage);
     } finally {
       setIsGeneratingOutcomes(false);
@@ -466,11 +464,10 @@ const CreateCourse = () => {
         setError("Không thể tạo yêu cầu tự động. Vui lòng thử lại.");
       }
     } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.detail ||
-        error.response?.data?.message ||
-        error.message ||
-        "Không thể tạo yêu cầu tự động";
+      const errorMessage = formatApiError(
+        error,
+        "Không thể tạo yêu cầu tự động"
+      );
       setError(errorMessage);
     } finally {
       setIsGeneratingRequirements(false);
@@ -533,11 +530,10 @@ const CreateCourse = () => {
         setError("Không thể tạo đối tượng học viên tự động. Vui lòng thử lại.");
       }
     } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.detail ||
-        error.response?.data?.message ||
-        error.message ||
-        "Không thể tạo đối tượng học viên tự động";
+      const errorMessage = formatApiError(
+        error,
+        "Không thể tạo đối tượng học viên tự động"
+      );
       setError(errorMessage);
     } finally {
       setIsGeneratingTargetAudience(false);
@@ -596,11 +592,10 @@ const CreateCourse = () => {
         setShowUploadModal(true);
       }
     } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.detail ||
-        error.response?.data?.message ||
-        error.message ||
-        "Đã xảy ra lỗi khi tạo khóa học";
+      const errorMessage = formatApiError(
+        error,
+        "Đã xảy ra lỗi khi tạo khóa học"
+      );
       setError(errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -679,7 +674,7 @@ const CreateCourse = () => {
         {/* Error Message */}
         {error && (
           <Alert variant="destructive" className="mb-6">
-            {error}
+            {typeof error === "string" ? error : JSON.stringify(error)}
           </Alert>
         )}
 
@@ -1501,7 +1496,9 @@ const CreateCourse = () => {
 
               {uploadError && (
                 <Alert variant="destructive" className="mb-6">
-                  {uploadError}
+                  {typeof uploadError === "string"
+                    ? uploadError
+                    : JSON.stringify(uploadError)}
                 </Alert>
               )}
 
@@ -1654,11 +1651,10 @@ const CreateCourse = () => {
                           router.push("/lecturer/courses");
                         }, 1000);
                       } catch (error: any) {
-                        const errorMessage =
-                          error.response?.data?.detail ||
-                          error.response?.data?.message ||
-                          error.message ||
-                          "Đã xảy ra lỗi khi tải lên banner";
+                        const errorMessage = formatApiError(
+                          error,
+                          "Đã xảy ra lỗi khi tải lên banner"
+                        );
                         setUploadError(errorMessage);
                       } finally {
                         setIsUploading(false);

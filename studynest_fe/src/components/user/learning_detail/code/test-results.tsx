@@ -5,8 +5,8 @@ import { HiCheckCircle, HiXCircle } from "react-icons/hi";
 
 interface TestCase {
   id: string;
-  input: string;
-  expected_output: string;
+  input: string | null;
+  expected_output: string | null;
   hidden: boolean;
   is_sample: boolean;
   order_index: number;
@@ -27,8 +27,8 @@ export default function TestResults({
       : 0;
 
   return (
-    <div className="mt-4 bg-surface rounded-2xl border border-border shadow-xs">
-      <div className="px-4 py-3 border-b border-border flex items-center justify-between flex-shrink-0">
+    <div className="mt-4 min-w-0 max-w-full overflow-hidden rounded-2xl border border-border bg-surface shadow-xs">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3">
         <h3 className="text-sm font-semibold text-foreground">Test Cases</h3>
         {testResult && (
           <div className="flex items-center gap-3 text-xs">
@@ -51,15 +51,16 @@ export default function TestResults({
           </div>
         )}
       </div>
+      {testResult && <p role="status" className="px-3 pt-3 text-xs leading-relaxed text-muted-foreground">{testResult.sample_only ? 'Đây là kết quả test mẫu trên phiên bản code vừa chạy, chưa đánh dấu hoàn thành bài tập.' : testResult.saved ? 'Code đã lưu khớp với phiên bản vượt qua toàn bộ test.' : 'Kết quả thuộc phiên bản code vừa chạy. Chưa xác nhận code đã lưu vượt qua toàn bộ test.'}</p>}
       <div className="p-3 max-h-[250px] overflow-y-auto">
         <div className="space-y-2">
-          {testcases
+          {[...testcases]
             .sort((a, b) => a.order_index - b.order_index)
             .map((testcase, index) => {
               const isHidden = testcase.hidden;
               const isSample = testcase.is_sample;
               const testResultDetail = testResult?.details.find(
-                (d) => d.index === index
+                (d) => d.id === testcase.id
               );
               const passed = testResultDetail?.result === "passed";
               return (
@@ -68,8 +69,8 @@ export default function TestResults({
                   className={`p-3 rounded-xl border ${
                     testResultDetail
                       ? passed
-                        ? "border-primary bg-primary-pastel/50"
-                        : "border-red-500 bg-red-50"
+                        ? "border-success-border bg-success-bg"
+                        : "border-destructive-border bg-destructive-bg"
                       : isHidden
                       ? "border-border bg-background"
                       : isSample
@@ -96,16 +97,16 @@ export default function TestResults({
                         <span
                           className={`text-xs px-1.5 py-0.5 rounded font-medium ${
                             passed
-                              ? "bg-primary text-white"
-                              : "bg-red-600 text-white"
+                              ? "bg-success-bg text-success-foreground"
+                              : "bg-destructive-bg text-destructive-foreground"
                           }`}
                         >
-                          {passed ? "PASSED" : "FAILED"}
+                          {passed ? "PASS" : ({ compile_error: "Lỗi biên dịch", runtime_error: "Lỗi chạy", time_limit_exceeded: "Quá thời gian", memory_limit_exceeded: "Quá bộ nhớ", internal_error: "Chưa chạy được", failed: "Chưa đúng" } as Record<string, string>)[testResultDetail.result] || "Chưa đạt"}
                         </span>
                         {passed ? (
                           <HiCheckCircle className="w-4 h-4 text-primary" />
                         ) : (
-                          <HiXCircle className="w-4 h-4 text-red-600" />
+                          <HiXCircle className="w-4 h-4 text-destructive-foreground" />
                         )}
                       </>
                     )}
@@ -138,19 +139,19 @@ export default function TestResults({
                               className={`block mt-1 px-2 py-1.5 rounded font-mono text-xs whitespace-pre-wrap break-words ${
                                 passed
                                   ? "bg-primary-pastel/70 text-primary border border-primary-light"
-                                  : "bg-red-100 text-red-800 border border-red-200"
+                                  : "bg-destructive-bg text-destructive-foreground border border-destructive-border"
                               }`}
                             >
                               {testResultDetail.output || "(empty)"}
                             </code>
                           </div>
                         )}
-                      {testResultDetail.stderr && (
+                      {!isHidden && testResultDetail.stderr && (
                         <div className="mb-2">
-                          <span className="text-xs text-red-600 font-medium">
+                          <span className="text-xs text-destructive-foreground font-medium">
                             Error:
                           </span>
-                          <code className="block mt-1 bg-red-50 border border-red-200 px-2 py-1.5 rounded font-mono text-xs text-red-800 whitespace-pre-wrap break-words">
+                          <code className="block mt-1 bg-destructive-bg border border-destructive-border px-2 py-1.5 rounded font-mono text-xs text-destructive-foreground whitespace-pre-wrap break-words">
                             {testResultDetail.stderr}
                           </code>
                         </div>
@@ -158,14 +159,14 @@ export default function TestResults({
                       <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                         <span>
                           CPU:{" "}
-                          <span className="text-yellow-600 font-medium">
-                            {testResultDetail.cpu_time}ms
+                          <span className="text-foreground font-medium">
+                            {testResultDetail.cpu_time == null ? "chưa có dữ liệu" : `${testResultDetail.cpu_time}ms`}
                           </span>
                         </span>
                         <span>
                           Memory:{" "}
-                          <span className="text-yellow-600 font-medium">
-                            {(testResultDetail.memory / 1000000).toFixed(2)} MB
+                          <span className="text-foreground font-medium">
+                            {testResultDetail.memory == null ? "chưa có dữ liệu" : `${(testResultDetail.memory / 1000000).toFixed(2)} MB`}
                           </span>
                         </span>
                         <span>
@@ -174,10 +175,10 @@ export default function TestResults({
                             className={
                               testResultDetail.exit_code === 0
                                 ? "text-primary font-medium"
-                                : "text-red-600 font-medium"
+                                : "text-destructive-foreground font-medium"
                             }
                           >
-                            {testResultDetail.exit_code}
+                            {testResultDetail.exit_code ?? "chưa có"}
                           </span>
                         </span>
                       </div>

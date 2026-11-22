@@ -245,6 +245,16 @@ class RefundService:
                 .all()
             )
 
+            active_enrollment_exists = (
+                select(CourseEnrollments.id)
+                .where(
+                    CourseEnrollments.user_id == PurchaseItems.user_id,
+                    CourseEnrollments.course_id == PurchaseItems.course_id,
+                    CourseEnrollments.status == "active",
+                )
+                .exists()
+            )
+
             # =====================================================
             # QUERY chính: lấy khóa học CÒN CÓ THỂ REFUND
             # =====================================================
@@ -267,6 +277,7 @@ class RefundService:
                 .where(PurchaseItems.discounted_price > 0)
                 .where(InstructorEarnings.status == "holding")
                 .where(InstructorEarnings.hold_until > now)
+                .where(active_enrollment_exists)
             )
 
             if refunded_items:
@@ -296,6 +307,7 @@ class RefundService:
                 .where(PurchaseItems.discounted_price > 0)
                 .where(InstructorEarnings.status == "holding")
                 .where(InstructorEarnings.hold_until > now)
+                .where(active_enrollment_exists)
             )
 
             if refunded_items:
@@ -403,6 +415,21 @@ class RefundService:
 
             if purchase_item.discounted_price <= 0:
                 raise HTTPException(400, "Khóa học miễn phí không hỗ trợ hoàn tiền.")
+
+            active_enrollment = await self.db.scalar(
+                select(CourseEnrollments)
+                .where(
+                    CourseEnrollments.user_id == user_id,
+                    CourseEnrollments.course_id == purchase_item.course_id,
+                    CourseEnrollments.status == "active",
+                )
+                .with_for_update()
+            )
+            if not active_enrollment:
+                raise HTTPException(
+                    409,
+                    "Khóa học đã được chuyển tặng hoặc không còn quyền truy cập, không thể hoàn tiền.",
+                )
 
             # ======================================================
             # 2) LOAD COURSE + INSTRUCTOR

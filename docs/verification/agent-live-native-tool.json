@@ -1,0 +1,31 @@
+{
+  "timestamp": "2026-11-12T19:13:30.757451+00:00",
+  "real_gemini_live": true,
+  "real_native_model_tool_call": true,
+  "real_runtime_and_postgresql": true,
+  "microphone": "NOT VERIFIED",
+  "backend_websocket": "NOT EXERCISED",
+  "ui_receipt": "SIMULATED PLAYER FIXTURE",
+  "pcm_bytes": 128642,
+  "tool_calls": [
+    {
+      "name": "video__seek",
+      "arguments": {
+        "seconds": 180
+      }
+    }
+  ],
+  "events": [
+    "run.started",
+    "tool.proposed",
+    "tool.started",
+    "ui.action_requested",
+    "ui.action_receipt",
+    "tool.completed",
+    "run.completed"
+  ],
+  "passed": true,
+  "declaration_count": 14,
+  "connected": true,
+  "verified_result": true
+}

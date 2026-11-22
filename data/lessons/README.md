@@ -64,3 +64,45 @@ script also explicitly indexes lesson metadata only.
 For rollback, use the report's new course IDs to unpublish only that batch.
 Preserve any subsequent enrollment and learning history. Do not reset the DB or
 delete financial or learning records.
+
+## November 13, 2026 batch
+
+`vtv7-next-courses.json` is the next official VTV7 batch. The same embed-only
+rules apply. Courses are spread across existing catalog instructors. The
+curator account is still not the video author. Publishing is approved by an
+existing administrator, who does not have to be the course owner. An instructor
+who already owns catalog courses and is missing the lecturer role receives that
+role during an applied import. Administrator access is not added.
+
+Tiếng Việt lớp 3 is the official playlist's contiguous lessons 27–70. Lessons
+1–26 are not in that playlist, so the course title states the range. The 2021
+mixed playlist contributes only the complete Toán, Ngữ văn, Vật lí and Lịch sử
+series that the previous batch left in place. English and computing stay out.
+Playlists whose advertised count did not match the accessible videos were not
+imported.
+
+```sh
+.venv/bin/python scripts/collect_vtv7_next_courses.py
+.venv/bin/python scripts/import_vtv7_courses.py \
+  --owner-id <existing-admin-lecturer-uuid> \
+  --approver-id <existing-admin-uuid> \
+  --manifest ../data/lessons/vtv7-next-courses.json \
+  --report ../data/lessons/vtv7-next-import-report.json \
+  --apply --publish --embed-courses
+```
+
+## November 14, 2026 — internal YouTube test catalog
+
+The project owner explicitly requested YouTube-based sample data for internal
+local testing, with at least six courses per active subject/grade pair. This
+separate batch does not restore the retired synthetic seed courses.
+
+`youtube-test-catalog.json` contains 1,293 distinct public video records from
+203 source channels, with exact subject/grade title matching, search duration,
+and checked oEmbed metadata. `youtube-test-import-report.json` records the 431
+new free courses, three source video lessons each, and their actual database IDs.
+All 76 active subject/grade pairs now have six courses; the local public catalog
+has 452 distinct courses. Source authors remain attributed; curator accounts
+are not video authors. No media or transcripts were downloaded.
+
+See [the complete procedure and verification](../../docs/catalog-youtube-test.md).

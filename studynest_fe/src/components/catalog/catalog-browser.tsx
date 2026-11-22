@@ -27,7 +27,6 @@ import { FilterSidebar, type FilterValues } from "./filter-sidebar";
 import { SubjectHero } from "./subject-hero";
 import { SubjectPills } from "./subject-pills";
 
-// Re-export CatalogCard để tương thích với các trang dùng lại (provider pages)
 export { CatalogCard } from "./catalog-card";
 
 const SORTS = [
@@ -45,7 +44,6 @@ const WHITELIST_PARAMS = [
   "subject",
   "goal",
   "exam",
-  "provider",
   "delivery_type",
   "currency",
   "min_price",
@@ -57,7 +55,7 @@ const WHITELIST_PARAMS = [
 
 const fetcher = <T,>(url: string) => api.get<T>(url).then((r) => r.data);
 
-export default function CatalogBrowser({ provider }: { provider?: string }) {
+export default function CatalogBrowser() {
   const router = useRouter();
   const current = useSearchParams();
   const searchInputId = useId();
@@ -117,12 +115,9 @@ export default function CatalogBrowser({ provider }: { provider?: string }) {
         q.set(key, val.trim());
       }
     }
-    if (provider) {
-      q.set("provider", provider);
-    }
     q.sort();
     return q.toString();
-  }, [current, provider]);
+  }, [current]);
 
   // Trạng thái loadingMore chỉ TRUE khi key đang tải trùng khớp hoàn toàn với filtersQuery hiện tại
   const isLoadingMore = Boolean(loadingMoreKey && loadingMoreKey === filtersQuery);
@@ -385,7 +380,6 @@ export default function CatalogBrowser({ provider }: { provider?: string }) {
       subject: current.get("subject") ?? "",
       goal: current.get("goal") ?? "",
       exam: current.get("exam") ?? "",
-      provider: current.get("provider") ?? "",
       delivery_type: current.get("delivery_type") ?? "",
       rating: current.get("rating") ?? "",
       currency: current.get("currency") ?? "VND",
@@ -446,10 +440,6 @@ export default function CatalogBrowser({ provider }: { provider?: string }) {
     if (filterValues.exam && options?.exams) {
       const ex = options.exams.find((item) => item.code === filterValues.exam);
       if (ex) chips.push({ key: "exam", label: `Kỳ thi: ${ex.name}` });
-    }
-    if (filterValues.provider && options?.providers) {
-      const p = options.providers.find((item) => item.slug === filterValues.provider);
-      if (p) chips.push({ key: "provider", label: `Đơn vị: ${p.name}` });
     }
     if (activeKeyword) {
       chips.push({ key: "keyword", label: `Từ khóa: "${activeKeyword}"` });

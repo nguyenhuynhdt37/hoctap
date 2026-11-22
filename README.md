@@ -148,7 +148,7 @@ Khởi động lại các server sau khi đổi `.env`. Các file secret đã đ
 
 ## 👨‍💻 Tác Giả
 
-**Nguyễn Xuân Huỳnh** — [GitHub Profile](https://github.com/nguyenhuynhdt37)
+**Ngọc Anh** — [GitHub Profile](https://github.com/nguyenhuynhdt37)
 
 
 ### Education Catalog V2

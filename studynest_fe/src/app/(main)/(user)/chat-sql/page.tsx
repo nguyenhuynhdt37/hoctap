@@ -2,9 +2,9 @@ import ChatSql from "@/components/user/chat-sql";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Trợ lý Mây Mây AI | Mây Mây",
+  title: "Hannes · Trợ lý học tập | Mây Mây",
   description:
-    "Trò chuyện cùng Mây Mây AI về lộ trình khóa học, tiến độ học tập và dữ liệu của bạn",
+    "Trò chuyện cùng Hannes về lộ trình khóa học, tiến độ học tập và dữ liệu của bạn",
 };
 
 export default function ChatSqlPage() {
@@ -16,10 +16,10 @@ export default function ChatSqlPage() {
             Trợ lý học tập thông minh
           </span>
           <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground">
-            Trợ lý Mây Mây AI
+            Hannes · Trợ lý học tập
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Hỏi đáp tự nhiên cùng Mây Mây về khóa học và tiến độ học tập của bạn
+            Hỏi đáp tự nhiên cùng Hannes về khóa học và tiến độ học tập của bạn
           </p>
         </div>
 

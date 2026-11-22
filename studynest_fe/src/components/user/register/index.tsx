@@ -1,9 +1,11 @@
 "use client";
 
 import AuthScenicLayout from "@/components/user/auth/auth-scenic-layout";
+import GitHubSignInButton from "@/components/shared/github-sign-in-button";
 import GoogleSignInButton from "@/components/shared/google-sign-in-button";
-import { Button, Card, Divider, Input } from "@/components/ui";
+import { Alert, Button, Card, Divider, Input } from "@/components/ui";
 import api from "@/lib/utils/fetcher/client/axios";
+import { formatApiError } from "@/lib/utils/helpers/error";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
@@ -41,6 +43,8 @@ const Register = () => {
       return { isValid: false, message: "Mật khẩu không được để trống" };
     if (value.length < 6)
       return { isValid: false, message: "Mật khẩu phải có ít nhất 6 ký tự" };
+    if (value.length > 72)
+      return { isValid: false, message: "Mật khẩu không được vượt quá 72 ký tự" };
     return { isValid: true, message: "" };
   };
 
@@ -56,6 +60,7 @@ const Register = () => {
   const [fullNameError, setFullNameError] = useState<string>("");
   const [passwordError, setPasswordError] = useState<string>("");
   const [confirmPasswordError, setConfirmPasswordError] = useState<string>("");
+  const [generalError, setGeneralError] = useState<string>("");
   const [touched, setTouched] = useState({
     email: false,
     fullName: false,
@@ -68,16 +73,15 @@ const Register = () => {
     async (response: any) => {
       if (!response.credential) return;
       setIsGoogleLoading(true);
+      setGeneralError("");
       try {
         await api.post("/auth/google", { credential: response.credential });
         router.push("/");
         router.refresh();
       } catch (error: any) {
-        if (error?.response?.data?.detail) {
-          alert(error.response.data.detail);
-        } else {
-          alert("Đăng ký với Google thất bại. Vui lòng thử lại.");
-        }
+        setGeneralError(
+          formatApiError(error, "Đăng ký với Google thất bại. Vui lòng thử lại.")
+        );
       } finally {
         setIsGoogleLoading(false);
       }
@@ -87,6 +91,7 @@ const Register = () => {
 
   const handleEmailChange = (value: string) => {
     setEmail(value);
+    if (generalError) setGeneralError("");
     if (touched.email) {
       const validation = validateEmail(value);
       setEmailError(validation.isValid ? "" : validation.message);
@@ -200,19 +205,25 @@ const Register = () => {
     if (!isFormValid()) return;
 
     setIsLoading(true);
+    setGeneralError("");
     try {
       await api.post("/auth/register", {
-        email,
-        full_name: fullName,
+        email: email.trim(),
+        full_name: fullName.trim(),
         password,
       });
       router.push(
         "/email_authentication?registered=true&email=" +
-          encodeURIComponent(email)
+          encodeURIComponent(email.trim())
       );
     } catch (e: any) {
-      if (e?.status === 409) {
+      const status = e?.response?.status ?? e?.status;
+      if (status === 409) {
         setEmailError("Email đã được sử dụng. Vui lòng thử email khác.");
+      } else {
+        setGeneralError(
+          formatApiError(e, "Không thể tạo tài khoản lúc này. Vui lòng thử lại.")
+        );
       }
     } finally {
       setIsLoading(false);
@@ -232,11 +243,19 @@ const Register = () => {
             </p>
           </div>
 
+          {generalError && (
+            <Alert variant="destructive" onClose={() => setGeneralError("")}>
+              {generalError}
+            </Alert>
+          )}
+
           {/* Google Register */}
           <GoogleSignInButton
             onCredential={handleGoogleCredentialResponse}
             busy={isGoogleLoading}
           />
+
+          <GitHubSignInButton />
 
           {/* Divider */}
           <Divider label="HOẶC" />

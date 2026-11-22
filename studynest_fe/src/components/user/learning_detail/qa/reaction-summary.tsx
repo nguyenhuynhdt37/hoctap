@@ -111,7 +111,7 @@ export default memo(function ReactionSummary({
                       href={`/users/${reactionUser.user_id}`}
                       className="flex items-center gap-2 p-2 rounded-lg hover:bg-background transition-colors cursor-pointer"
                     >
-                      <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-semibold text-xs flex-shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold text-xs flex-shrink-0">
                         {reactionUser.user_avatar ? (
                           <img
                             src={getImageUrl(reactionUser.user_avatar)}

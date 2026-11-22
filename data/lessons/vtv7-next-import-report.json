@@ -1,0 +1,94 @@
+{
+  "target_database": "studynest",
+  "apply": true,
+  "courses": [
+    {
+      "id": "a0ee06fe-fcb9-46f7-8869-7f843024f097",
+      "title": "Tiếng Việt lớp 3 · Bài 27–70 · VTV7",
+      "slug": "vtv7-tieng-viet-lop-3-bai-2770-vtv7-a7d6dd7a80",
+      "owner_id": "8f83ba28-6d02-5c47-bffd-3289dee591f9",
+      "owner_name": "GV demo · Minh An",
+      "status": "published_created",
+      "lessons": 44,
+      "price": "0",
+      "published": true
+    },
+    {
+      "id": "8f83bb0d-1b83-474e-9c24-4ecb49c82f41",
+      "title": "Ôn tập Ngữ văn THPT · Sơ đồ tư duy VTV7 (tư liệu)",
+      "slug": "vtv7-on-tap-ngu-van-thpt-so-do-tu-duy-vtv7-tu-lieu-a9d4793c9a",
+      "owner_id": "dabe0907-f1ec-534e-9d95-b1d04a1c6c28",
+      "owner_name": "GV demo · Hà Linh",
+      "status": "published_created",
+      "lessons": 49,
+      "price": "0",
+      "published": true
+    },
+    {
+      "id": "9f0b55cc-fac3-4f45-994a-d272b3ee31eb",
+      "title": "4 chuyên đề Toán THPT · VTV7 2021 (tư liệu)",
+      "slug": "vtv7-4-chuyen-de-toan-thpt-vtv7-2021-tu-lieu-41d8752046",
+      "owner_id": "140e7fa1-02d4-5dcb-8df9-65d5baac06bb",
+      "owner_name": "GV demo · Ngọc Mai",
+      "status": "published_created",
+      "lessons": 4,
+      "price": "0",
+      "published": true
+    },
+    {
+      "id": "eb00fdac-2fc8-45e0-9a2a-2d16a8cf612a",
+      "title": "5 chuyên đề Ngữ văn THPT · VTV7 2021 (tư liệu)",
+      "slug": "vtv7-5-chuyen-de-ngu-van-thpt-vtv7-2021-tu-lieu-41d8752046",
+      "owner_id": "3653f07e-d6fc-5358-b045-c9b7030da801",
+      "owner_name": "GV demo · Quang Huy",
+      "status": "published_created",
+      "lessons": 5,
+      "price": "0",
+      "published": true
+    },
+    {
+      "id": "5beff572-56cb-4b8d-8425-f4dcc77ef3db",
+      "title": "4 chuyên đề Vật lí THPT · VTV7 2021 (tư liệu)",
+      "slug": "vtv7-4-chuyen-de-vat-li-thpt-vtv7-2021-tu-lieu-41d8752046",
+      "owner_id": "a5917dd1-69aa-5e13-b655-f5fa092470ce",
+      "owner_name": "GV demo · Bảo Châu",
+      "status": "published_created",
+      "lessons": 4,
+      "price": "0",
+      "published": true
+    },
+    {
+      "id": "e8ccfaaf-66e2-4637-af45-e7c85e5f9233",
+      "title": "5 chuyên đề Lịch sử THPT · VTV7 2021 (tư liệu)",
+      "slug": "vtv7-5-chuyen-de-lich-su-thpt-vtv7-2021-tu-lieu-41d8752046",
+      "owner_id": "c61e871f-5888-5f4a-adc7-3c4e7a4272c7",
+      "owner_name": "GV demo · Đức Khang",
+      "status": "published_created",
+      "lessons": 5,
+      "price": "0",
+      "published": true
+    },
+    {
+      "id": "10c7d45b-cc6a-4a09-aaf8-879aafaf8bb1",
+      "title": "Sinh học ôn thi tốt nghiệp THPT · VTV7 2019 (tư liệu)",
+      "slug": "vtv7-sinh-hoc-on-thi-tot-nghiep-thpt-vtv7-2019-tu-lieu-26b0444418",
+      "owner_id": "25d77be2-fa13-4e7b-ab6b-a0a094a444cb",
+      "owner_name": "Ngọc Anh",
+      "status": "published_created",
+      "lessons": 5,
+      "price": "0",
+      "published": true
+    },
+    {
+      "id": "d3ae770e-966c-4ade-8c9a-b22e28b89eed",
+      "title": "Lịch sử ôn thi tốt nghiệp THPT · VTV7 2019 (tư liệu)",
+      "slug": "vtv7-lich-su-on-thi-tot-nghiep-thpt-vtv7-2019-tu-lieu-823d74ccfc",
+      "owner_id": "5edae502-3d64-4181-8790-8cb0b2e46a17",
+      "owner_name": "Ngọc Anh",
+      "status": "published_created",
+      "lessons": 5,
+      "price": "0",
+      "published": true
+    }
+  ]
+}

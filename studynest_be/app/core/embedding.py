@@ -117,7 +117,7 @@ class EmbeddingService:
             - Tránh văn phong quảng cáo hay diễn giải lan man — chỉ tập trung vào **nội dung giảng dạy và kiến thức học tập.**
 
             ## Giới hạn đầu ra
-            - Nếu không truy cập được video, hãy **tạo bản mô tả dựa trên metadata, tiêu đề, hoặc nội dung có thể suy luận.**
+            - Nếu không truy cập được video, trả về chuỗi rỗng. Không suy luận nội dung từ tiêu đề hay metadata. Không tạo hoặc đoán mốc thời gian. Phân biệt nội dung đã đọc từ video với phân tích của mô hình.
             ## Chỉ trả về nội dung, không giải thích gì thêm.
             """
 
@@ -253,7 +253,7 @@ class EmbeddingService:
                 user.preferences_embedding is None
                 or len(user.preferences_embedding) == 0
             ):
-                old_vec = np.zeros(3072)
+                old_vec = np.zeros(self.EMBED_DIM)
             else:
                 old_vec = np.array(user.preferences_embedding)
 

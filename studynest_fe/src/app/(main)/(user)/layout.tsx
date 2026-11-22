@@ -1,6 +1,5 @@
 import Footer from "@/components/user/footer";
 import Header from "@/components/user/header";
-import FloatingChatButton from "@/components/user/chat-sql/floating-button";
 import { getServerCookie } from "@/lib/utils/fetcher/server/cookieStore";
 import { fetcher } from "@/lib/utils/fetcher/server/fetcher";
 import { NotificationWS } from "@/provider/notification-ws";
@@ -48,8 +47,6 @@ export default async function RootLayout({
       </Suspense>
       {children}
       <Footer />
-      {/* Chat SQL Floating Button - chỉ hiện khi đã đăng nhập */}
-      {accessToken && <FloatingChatButton />}
     </>
   );
 }

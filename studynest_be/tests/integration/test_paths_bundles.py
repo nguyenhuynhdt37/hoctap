@@ -558,10 +558,10 @@ async def test_http_authorization_and_client_amount_rejected(fixture):
     async with httpx.AsyncClient(
         transport=httpx.ASGITransport(app=app), base_url="http://test"
     ) as client:
-        assert (await client.get("/admin/bundles")).status_code == 403
+        assert (await client.get("/admin/bundles")).status_code == 404
         assert (
             await client.get("/admin/bundles/" + str(version["bundle_id"]) + "/coupons")
-        ).status_code == 403
+        ).status_code == 404
         assert (
             await client.get("/bundles/versions/" + str(version["id"]) + "/quote")
         ).status_code == 200

@@ -67,3 +67,15 @@ async def serialize(obj: Any) -> Any:
 
 def strip_tz(dt: datetime | None):
     return dt.replace(tzinfo=None) if dt and dt.tzinfo else dt
+
+
+def has_expired(value: datetime | None) -> bool:
+    """Compare an expiry instant without stripping an aware timestamp's offset.
+
+    Naive legacy application timestamps are Vietnam wall time, as documented by
+    now()/to_vietnam_naive. PostgreSQL timestamptz values are already aware.
+    """
+    if value is None:
+        return True
+    instant = value.replace(tzinfo=VIETNAM_TIMEZONE) if value.tzinfo is None else value
+    return instant <= datetime.now(timezone.utc)

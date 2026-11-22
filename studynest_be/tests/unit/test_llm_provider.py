@@ -114,6 +114,15 @@ class NineRouterTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(json.loads(result), {'ok': True})
         self.model.assert_not_awaited()
 
+    async def test_structured_agent_override_bypasses_global_streaming(self):
+        def handler(request):
+            self.assertFalse(json.loads(request.content)['stream'])
+            return self.completion('{"ok":true}')
+        client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+        with patch.object(settings, 'NINEROUTER_STREAM', True), patch('app.core.llm.httpx.AsyncClient', return_value=client):
+            result = await LLMService(stream_override=False).call_model('Test')
+        self.assertEqual(json.loads(result), {'ok':True})
+
     def test_unknown_provider_is_rejected(self):
         with (
             patch.object(settings, "LLM_PROVIDER", "typo"),

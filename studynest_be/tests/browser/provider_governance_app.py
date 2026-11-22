@@ -20,7 +20,7 @@ from app.core.deps import AuthorizationService
 from app.core.ws_manager import ws_manager
 from app.db.sesson import AsyncSessionLocal
 from app.db.models.database import Role, User, UserRoles
-from app.api.v1.catalog import router
+from tests.provider_legacy_routes import router
 from app.api.v1.shares.notification import router as notification_router
 
 if not make_url(os.environ["TEST_DATABASE_ASYNC_URL"]).database.endswith("_test"):

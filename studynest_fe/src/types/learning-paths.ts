@@ -43,6 +43,7 @@ export interface LearningPath {
 }
 export interface BundleItem {
   course_id: string;
+  position: number;
   title: string;
   slug: string | null;
   thumbnail: string | null;
@@ -57,6 +58,11 @@ export interface Bundle {
   version: number;
   title: string;
   description: string;
+  thumbnail_url?: string | null;
+  subtitle?: string | null;
+  target_audience?: string[] | null;
+  requirements?: string[] | null;
+  outcomes?: string[] | null;
   price: Money;
   currency: string;
   status: "draft" | "published" | "archived";
@@ -64,6 +70,8 @@ export interface Bundle {
   path_version_id: string | null;
   items?: BundleItem[];
   refund_policy?: string;
+  course_count?: number;
+  instructor?: { id: string; name: string } | null;
 }
 export interface BundleQuote {
   version_id: string;

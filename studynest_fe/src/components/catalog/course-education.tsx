@@ -3,7 +3,6 @@
 import { Badge } from "@/components/ui";
 import api from "@/lib/utils/fetcher/client/axios";
 import type { CourseEducation } from "@/types/catalog";
-import Link from "next/link";
 import { HiAcademicCap, HiCloud } from "react-icons/hi";
 import useSWR from "swr";
 
@@ -25,7 +24,7 @@ export default function CourseEducationInfo({
     ...(data.exams || []),
   ];
 
-  if (tags.length === 0 && !data.provider) return null;
+  if (tags.length === 0) return null;
 
   return (
     <section
@@ -49,17 +48,6 @@ export default function CourseEducationInfo({
           </div>
         </div>
 
-        {data.provider && (
-          <div className="text-xs sm:text-sm text-muted-foreground">
-            <span>Đơn vị biên soạn: </span>
-            <Link
-              className="font-semibold text-primary hover:underline"
-              href={`/providers/${data.provider.slug}`}
-            >
-              {data.provider.name}
-            </Link>
-          </div>
-        )}
       </div>
     </section>
   );

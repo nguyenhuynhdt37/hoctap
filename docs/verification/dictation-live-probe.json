@@ -1,0 +1,9 @@
+{
+  "model": "gemini-3.8-live",
+  "synthetic_audio": true,
+  "spoken_language": "vi-VN",
+  "partial_count": 2,
+  "text_before_stop": true,
+  "final_text": "Xin chào, tôi muốn tìm khóa học lập trình. Hôm nay tôi đang kiểm tra nhập giọng nói trực tiếp.",
+  "completed": true
+}

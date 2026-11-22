@@ -46,7 +46,6 @@ const WHITELIST_PARAMS = [
   "subject",
   "goal",
   "exam",
-  "provider",
   "min_rating",
   "has_courses",
   "sort",
@@ -398,7 +397,6 @@ export function InstructorDirectory() {
       subject: current.get("subject") ?? "",
       goal: current.get("goal") ?? "",
       exam: current.get("exam") ?? "",
-      provider: current.get("provider") ?? "",
       min_rating: current.get("min_rating") ?? "",
       has_courses: current.get("has_courses") ?? "",
     }),
@@ -435,10 +433,6 @@ export function InstructorDirectory() {
     if (filterValues.exam && options?.exams) {
       const ex = options.exams.find((item) => item.code === filterValues.exam);
       if (ex) chips.push({ key: "exam", label: `Kỳ thi: ${ex.name}` });
-    }
-    if (filterValues.provider && options?.providers) {
-      const p = options.providers.find((item) => item.slug === filterValues.provider);
-      if (p) chips.push({ key: "provider", label: `Đơn vị: ${p.name}` });
     }
     if (activeKeyword) {
       chips.push({ key: "q", label: `Từ khóa: "${activeKeyword}"` });
@@ -486,7 +480,7 @@ export function InstructorDirectory() {
             </h1>
 
             <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-              Tìm kiếm giáo viên theo khối lớp phổ thông (Lớp 1–12), môn học, kỳ thi ôn luyện và đơn vị đào tạo uy tín.
+              Tìm kiếm giáo viên theo khối lớp phổ thông (Lớp 1–12), môn học và kỳ thi ôn luyện.
             </p>
           </div>
 

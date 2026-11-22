@@ -1,2 +1,5 @@
-import MyProviders from "@/components/catalog/my-providers";
-export default function Page(){return <MyProviders/>;}
+import { redirect } from "next/navigation";
+
+export default function Page() {
+  redirect("/lecturer/courses");
+}

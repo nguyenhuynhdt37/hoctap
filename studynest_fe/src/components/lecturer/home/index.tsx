@@ -8,11 +8,10 @@ import {
   BarChart3,
   BookOpen,
   Clock,
-  Cloud,
   Layers,
+  Library,
   Plus,
   RotateCcw,
-  Sparkles,
   Star,
   Tag,
   TrendingDown,
@@ -77,7 +76,7 @@ const LecturerHome = () => {
 
   if (isCheckingLecturer) {
     return (
-      <div className="min-h-screen bg-background px-4 py-10 max-w-7xl mx-auto space-y-6">
+      <div className="mx-auto max-w-7xl space-y-6 bg-background px-4 py-6 sm:px-6 lg:px-8">
         <div className="space-y-3">
           <Skeleton variant="text" className="h-6 w-48 rounded-full" />
           <Skeleton variant="text" className="h-10 w-80 rounded-xl" />
@@ -201,6 +200,14 @@ const LecturerDashboard = ({
       hoverBorder: "hover:border-accent-border",
     },
     {
+      title: "Combo khóa học",
+      description: "Gom khóa của bạn và mở bán ngay",
+      href: "/lecturer/combos",
+      icon: Library,
+      iconBg: "bg-primary-light text-primary border-primary-pastel/70",
+      hoverBorder: "hover:border-primary-pastel",
+    },
+    {
       title: "Mã giảm giá",
       description: "Tạo chiến dịch ưu đãi học viên",
       href: "/lecturer/discounts",
@@ -221,40 +228,17 @@ const LecturerDashboard = ({
   ];
 
   return (
-    <div className="relative min-h-screen bg-background text-foreground pb-16 overflow-hidden">
-      {/* Đốm mây Ambient Pastel nền */}
-      <div
-        className="pointer-events-none absolute -top-24 left-1/4 w-[640px] h-[320px] bg-gradient-to-b from-primary-light/65 via-secondary-light/30 to-transparent blur-3xl rounded-full -z-10"
-        aria-hidden="true"
-      />
-      <div
-        className="pointer-events-none absolute top-48 -right-24 w-80 h-80 bg-accent/20 blur-3xl rounded-full -z-10"
-        aria-hidden="true"
-      />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 md:pt-10 space-y-8">
-        {/* 1. Hero Chào Mừng Giảng Viên */}
-        <section className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
-          <div className="space-y-3">
-            <Badge
-              variant="info"
-              className="px-3 py-1 text-xs font-medium tracking-wide shadow-2xs"
-            >
-              <Sparkles className="w-3.5 h-3.5 mr-1.5 text-primary" />
-              Không gian Giảng viên • Mây Mây
-            </Badge>
-
-            <h1 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold text-foreground tracking-tight">
-              Chào mừng trở lại,{" "}
-              <span className="text-primary">
-                {user?.fullname || "Thầy/Cô"}
-              </span>
-              !
+    <div className="bg-background text-foreground">
+      <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+        <section className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+          <div className="space-y-1">
+            <p className="text-sm text-muted-foreground">Bảng làm việc</p>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">
+              Chào {user?.fullname || "thầy/cô"}
             </h1>
-
-            <p className="text-sm sm:text-base text-muted-foreground max-w-2xl leading-relaxed">
-              Quản lý các khóa học tâm huyết, theo dõi tiến trình học viên và
-              lan tỏa tri thức trên Học viện trên mây.
+            <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
+              Theo dõi khóa học, học viên và doanh thu. Các mục vận hành nằm ở
+              cột điều hướng bên trái.
             </p>
           </div>
 
@@ -535,7 +519,7 @@ const LecturerDashboard = ({
                               {course.total_students} học viên
                             </span>
                             <span className="inline-flex items-center gap-1">
-                              <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
+                              <Star className="h-3.5 w-3.5 fill-current text-accent-vanilla-foreground" />
                               {course.average_rating.toFixed(1)} (
                               {course.reviews_count})
                             </span>
@@ -691,7 +675,7 @@ const LecturerDashboard = ({
             >
               <div className="flex items-start gap-3.5">
                 <div className="w-11 h-11 rounded-xl bg-primary-light text-primary border border-primary-pastel/60 flex items-center justify-center shrink-0">
-                  <Cloud className="w-6 h-6" />
+                  <BookOpen className="w-6 h-6" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="text-sm font-bold text-foreground">

@@ -17,6 +17,7 @@ interface LessonRendererProps {
   hasPrev?: boolean;
   onSeekToTime?: (timeSeconds: number) => void;
   accessToken?: string;
+  lessonAuthorId?: string | null;
 }
 
 export default function LessonRenderer({
@@ -29,6 +30,7 @@ export default function LessonRenderer({
   hasPrev,
   onSeekToTime,
   accessToken,
+  lessonAuthorId,
 }: LessonRendererProps) {
   const renderLesson = () => {
     if (!activeLessonData) {
@@ -83,6 +85,7 @@ export default function LessonRenderer({
             onMarkCompleted={onMarkCompleted}
             completedLessons={completedLessons}
             accessToken={accessToken}
+            lessonAuthorId={lessonAuthorId}
             quizzes={
               activeLessonData.quizzes?.map((q) => {
                 // Sắp xếp options theo position trước khi tính correct_answer
@@ -110,6 +113,7 @@ export default function LessonRenderer({
             onMarkCompleted={onMarkCompleted}
             completedLessons={completedLessons}
             accessToken={accessToken}
+            lessonAuthorId={lessonAuthorId}
           />
         );
 

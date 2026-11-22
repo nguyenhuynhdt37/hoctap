@@ -1,19 +1,26 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { HiMicrophone, HiPhoneMissedCall, HiVolumeOff } from "react-icons/hi";
+import { HiMicrophone, HiPhoneMissedCall, HiVolumeOff, HiMinus, HiArrowsExpand } from "react-icons/hi";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/states";
 import type { MessageSource } from "@/types/user/tutor-chat";
 import { SourceList } from "../chat-chips";
 import { VoiceOrb } from "./voice-orb";
-import { useLessonVoice } from "./use-lesson-voice";
+import { useLessonVoice, type VoiceState } from "./use-lesson-voice";
+import type { AgentEvent } from "../../agent/contracts";
 
-interface Props {
-  lessonId: string;
+export interface VoiceDialogProps {
+  minimized?: boolean;
+  onStateChange?: (state: VoiceState) => void;
+  onMinimize?: () => void;
+  onExpand?: () => void;
+  lessonId?: string;
   lessonTitle: string;
   accessToken?: string;
+  agentSessionId?: string;
+  onAgentEvent?: (event: AgentEvent) => Promise<void>;
   onClose: (threadId?: string) => void;
   onSourceClick: (source: MessageSource) => void;
 }
@@ -27,8 +34,9 @@ const labels = {
   error: "Chưa thể tiếp tục cuộc trò chuyện",
 };
 
-export default function VoiceDialog({ lessonId, lessonTitle, accessToken, onClose, onSourceClick }: Props) {
-  const voice = useLessonVoice(lessonId, accessToken);
+export default function VoiceDialog({ lessonId, lessonTitle, accessToken, onClose, onSourceClick, agentSessionId, onAgentEvent, minimized, onMinimize, onExpand, onStateChange }: VoiceDialogProps) {
+  const voice = useLessonVoice(lessonId, accessToken, agentSessionId, onAgentEvent);
+  useEffect(() => { onStateChange?.(voice.state); }, [voice.state, onStateChange]);
   const connected = ["listening", "thinking", "speaking"].includes(voice.state);
   const endRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -42,9 +50,20 @@ export default function VoiceDialog({ lessonId, lessonTitle, accessToken, onClos
     close();
     onSourceClick(source);
   };
+  if (minimized) return (
+    <aside aria-label="Cuộc gọi Hannes đang chạy" className="fixed bottom-4 left-4 right-4 z-[100] flex items-center gap-3 rounded-2xl border border-primary-pastel bg-surface p-3 shadow-lg sm:left-auto sm:w-auto sm:min-w-80">
+      <span className={`h-2.5 w-2.5 rounded-full ${voice.muted ? "bg-muted-foreground" : "bg-primary animate-pulse"}`} />
+      <div className="min-w-0 flex-1"><p className="text-sm font-semibold">Hannes · {voice.muted ? "Mic tắt" : labels[voice.state]}</p><p className="max-w-72 truncate text-xs text-muted-foreground">{voice.draft.assistant || voice.draft.user || voice.turns.at(-1)?.content || lessonTitle}</p></div>
+      <Button size="icon" variant="ghost" onClick={voice.toggleMute} aria-label={voice.muted ? "Bật micro" : "Tắt micro"}><HiMicrophone /></Button>
+      <Button size="icon" variant="ghost" onClick={onExpand} aria-label="Mở lại cuộc gọi"><HiArrowsExpand /></Button>
+      <Button size="icon" variant="destructive" onClick={close} aria-label="Kết thúc cuộc gọi"><HiPhoneMissedCall /></Button>
+    </aside>
+  );
   return (
     <Modal open onClose={close} title="Trò chuyện cùng Mây Mây" description={lessonTitle} size="lg" closeOnOverlayClick={false}>
       <div className="space-y-4">
+        {onMinimize && <div className="flex justify-end"><Button size="sm" variant="ghost" onClick={onMinimize} leftIcon={<HiMinus />}>Thu nhỏ · tiếp tục cuộc gọi</Button></div>}
+
         <div className="rounded-2xl border border-primary-pastel/60 bg-background px-4 pb-5 text-center">
           <VoiceOrb level={voice.level} active={connected} />
           <p role="status" aria-live="polite" className="text-sm font-semibold text-foreground">
@@ -61,15 +80,17 @@ export default function VoiceDialog({ lessonId, lessonTitle, accessToken, onClos
                 {voice.muted ? <HiVolumeOff className="h-5 w-5" /> : <HiMicrophone className="h-5 w-5" />}
               </Button>
               <Button variant="destructive" onClick={voice.stop} leftIcon={<HiPhoneMissedCall className="h-5 w-5" />}>Kết thúc</Button>
-            </> : <Button onClick={() => void voice.start()} isLoading={voice.state === "connecting"}
+            </> : <Button onClick={() => void voice.start()} disabled={!voice.preferencesLoaded && !voice.preferencesError} isLoading={voice.state === "connecting"}
               loadingText="Đang kết nối" leftIcon={<HiMicrophone className="h-5 w-5" />}>
               {voice.state === "idle" ? "Bắt đầu nói chuyện" : "Kết nối lại"}
             </Button>}
           </div>
         </div>
+        {voice.imageCount > 0 && <p className="text-xs text-muted-foreground">Đang dùng {voice.imageCount} ảnh đã gửi trong cuộc hội thoại. Bạn có thể hỏi về ảnh bằng giọng nói.</p>}
         {voice.canRead === false && <Alert variant="info" role="status" className="rounded-xl px-3 py-2 text-xs">
-          Mây Mây chưa hỗ trợ đọc nội dung bài giảng này. Bạn vẫn có thể hỏi kiến thức chung hoặc nói rõ nội dung cần giải thích.
+          Bài này chưa có nội dung được lập chỉ mục cho AI. Bạn vẫn có thể hỏi kiến thức chung hoặc nói rõ nội dung cần giải thích.
         </Alert>}
+        {voice.preferencesError && <Alert variant="info" className="text-xs">{voice.preferencesError}</Alert>}
         {voice.error && <Alert variant={voice.state === "error" ? "warning" : "info"} className="rounded-xl px-3 py-2 text-xs">{voice.error}</Alert>}
         {(voice.turns.length > 0 || voice.draft.user || voice.draft.assistant) && (
           <section aria-label="Bản chữ cuộc trò chuyện" className="max-h-64 space-y-3 overflow-y-auto rounded-xl border border-border bg-surface p-4">

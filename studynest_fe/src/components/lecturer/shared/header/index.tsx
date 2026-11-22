@@ -2,25 +2,32 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import React, { useRef, useState } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import useSWR from "swr";
 import {
+  ArrowDownToLine,
   BarChart3,
   BookOpen,
-  Building2,
+  CircleHelp,
   Clock,
+  FolderOpen,
   GraduationCap,
-  Home,
+  Layers,
+  LayoutDashboard,
+  Library,
   LogOut,
   Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
   RotateCcw,
   Search,
   Tag,
   User,
   Wallet,
   X,
+  type LucideIcon,
 } from "lucide-react";
-import { Badge } from "@/components/ui";
+import { Badge, Button } from "@/components/ui";
 import api from "@/lib/utils/fetcher/client/axios";
 import { getImageUrl } from "@/lib/utils/helpers/image";
 import { useRealtimeNotiStore } from "@/stores/notifications";
@@ -28,44 +35,139 @@ import { useUserStore } from "@/stores/user";
 import { HoldEarningsResponse } from "@/types/lecturer/hold";
 import { NotificationButton } from "./notification";
 
-const LecturerHeader = () => {
+const COLLAPSE_KEY = "lecturer-nav-collapsed";
+
+type NavItem = {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  exact?: boolean;
+  also?: string[];
+  holdBadge?: boolean;
+};
+
+const navGroups: { label: string; items: NavItem[] }[] = [
+  {
+    label: "Tổng quan",
+    items: [
+      { href: "/lecturer", label: "Tổng quan", icon: LayoutDashboard, exact: true },
+      { href: "/lecturer/dashboard", label: "Thống kê", icon: BarChart3 },
+    ],
+  },
+  {
+    label: "Nội dung",
+    items: [
+      { href: "/lecturer/courses", label: "Khóa học", icon: BookOpen },
+      { href: "/lecturer/chapters", label: "Chương và bài học", icon: Layers },
+      { href: "/lecturer/resources", label: "Tài nguyên", icon: FolderOpen },
+      { href: "/lecturer/quizzes-lesson", label: "Câu hỏi", icon: CircleHelp },
+      { href: "/lecturer/combos", label: "Combo lộ trình", icon: Library },
+    ],
+  },
+  {
+    label: "Vận hành",
+    items: [
+      { href: "/lecturer/discounts", label: "Mã giảm giá", icon: Tag },
+      {
+        href: "/lecturer/refund",
+        label: "Hoàn tiền",
+        icon: RotateCcw,
+        also: ["/lecturer/refunds"],
+      },
+      { href: "/lecturer/hold", label: "Đang giữ", icon: Clock, holdBadge: true },
+    ],
+  },
+  {
+    label: "Tài chính",
+    items: [
+      { href: "/lecturer/wallets", label: "Ví", icon: Wallet },
+      { href: "/lecturer/withdraw", label: "Rút tiền", icon: ArrowDownToLine },
+    ],
+  },
+];
+
+function isItemActive(pathname: string, item: NavItem) {
+  if (item.exact) return pathname === item.href;
+  const prefixes = [item.href, ...(item.also ?? [])];
+  return prefixes.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
+}
+
+export default function LecturerShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const user = useUserStore((s) => s.user);
   const clearUser = useUserStore((s) => s.clearUser);
   const clearNotifications = useRealtimeNotiStore((s) => s.clearAll);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const userMenuRef = useRef<HTMLDivElement>(null);
+  const accountRef = useRef<HTMLDivElement>(null);
 
-  const navLinks = [
-    { href: "/lecturer", label: "Trang chủ", icon: Home },
-    { href: "/lecturer/courses", label: "Khóa học", icon: BookOpen },
-    { href: "/lecturer/providers", label: "Đơn vị", icon: Building2 },
-    { href: "/lecturer/discounts", label: "Mã giảm giá", icon: Tag },
-    { href: "/lecturer/wallets", label: "Ví", icon: Wallet },
-    { href: "/lecturer/dashboard", label: "Thống kê", icon: BarChart3 },
-  ];
+  const { data: holdData } = useSWR<HoldEarningsResponse>(
+    "/lecturer/transactions/earnings/holding?page=1&limit=1",
+    async (url) => {
+      const response = await api.get(url);
+      return response.data;
+    },
+    { revalidateOnFocus: true, refreshInterval: 30000 }
+  );
+  const holdCount = holdData?.total || 0;
+  const compact = collapsed && !mobileOpen;
 
-  // Lấy chữ cái đầu tên giảng viên
-  const getUserInitials = () => {
-    if (user?.fullname) {
-      return user.fullname
-        .split(" ")
-        .map((n: string) => n[0])
-        .slice(0, 2)
-        .join("")
-        .toUpperCase();
+  useEffect(() => {
+    try {
+      setCollapsed(window.localStorage.getItem(COLLAPSE_KEY) === "1");
+    } catch {
+      // Bỏ qua khi trình duyệt chặn localStorage
     }
-    return "GV";
+  }, []);
+
+  useEffect(() => {
+    setMobileOpen(false);
+    setAccountOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMobileOpen(false);
+        setAccountOpen(false);
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const onPointer = (event: MouseEvent) => {
+      if (!accountRef.current?.contains(event.target as Node)) {
+        setAccountOpen(false);
+      }
+    };
+    if (accountOpen) document.addEventListener("mousedown", onPointer);
+    return () => document.removeEventListener("mousedown", onPointer);
+  }, [accountOpen]);
+
+  const getUserInitials = () => {
+    if (!user?.fullname) return "GV";
+    return user.fullname
+      .split(" ")
+      .map((part) => part[0])
+      .slice(0, 2)
+      .join("")
+      .toUpperCase();
   };
 
-  // Xử lý đăng xuất an toàn
   const handleLogout = async () => {
     try {
       await api.post("/auth/logout");
     } catch {
-      // Bỏ qua lỗi mạng khi đăng xuất để luôn giữ trải nghiệm sạch
+      // Vẫn đăng xuất phía trình duyệt khi mạng lỗi
     } finally {
       clearUser();
       clearNotifications();
@@ -73,354 +175,266 @@ const LecturerHeader = () => {
     }
   };
 
-  const handleNavigation = (path: string) => {
-    router.push(path);
-    setIsMobileMenuOpen(false);
+  const toggleCollapsed = () => {
+    setCollapsed((current) => {
+      const next = !current;
+      try {
+        window.localStorage.setItem(COLLAPSE_KEY, next ? "1" : "0");
+      } catch {
+        // Bỏ qua khi trình duyệt chặn localStorage
+      }
+      return next;
+    });
   };
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSearchSubmit = (event: FormEvent) => {
+    event.preventDefault();
     const trimmed = searchQuery.trim();
-    if (trimmed) {
-      router.push(`/lecturer/courses?search=${encodeURIComponent(trimmed)}`);
-    } else {
-      router.push("/lecturer/courses");
-    }
-    setIsMobileMenuOpen(false);
+    router.push(
+      trimmed
+        ? `/lecturer/courses?search=${encodeURIComponent(trimmed)}`
+        : "/lecturer/courses"
+    );
+    setMobileOpen(false);
   };
 
-  // Lấy số lượng giao dịch đang hold
-  const { data: holdData } = useSWR<HoldEarningsResponse>(
-    "/lecturer/transactions/earnings/holding?page=1&limit=1",
-    async (url) => {
-      const response = await api.get(url);
-      return response.data;
-    },
-    {
-      revalidateOnFocus: true,
-      refreshInterval: 30000,
-    }
+  const searchForm = (
+    <form onSubmit={handleSearchSubmit} className="min-w-0">
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <input
+          type="search"
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
+          placeholder="Tìm khóa học..."
+          aria-label="Tìm khóa học"
+          className="h-10 w-full rounded-xl border border-input bg-background pl-9 pr-3 text-sm text-foreground placeholder:text-subtle-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/15"
+        />
+      </div>
+    </form>
   );
 
-  const holdCount = holdData?.total || 0;
-
   return (
-    <header className="sticky top-0 z-50 bg-surface/90 backdrop-blur-xl border-b border-border shadow-2xs">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 gap-4">
-          {/* Logo Thương Hiệu Mây Mây */}
+    <div className="flex h-dvh max-w-full overflow-hidden bg-background text-foreground">
+      {mobileOpen && (
+        <button
+          type="button"
+          className="fixed inset-0 z-40 bg-foreground/30 lg:hidden"
+          aria-label="Đóng menu điều hướng"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-border bg-surface transition-transform duration-200 lg:static lg:z-auto lg:translate-x-0 ${
+          compact ? "lg:w-[4.5rem]" : "lg:w-64"
+        } ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}
+      >
+        <div className="flex h-14 shrink-0 items-center gap-2 border-b border-border px-3">
           <Link
             href="/lecturer"
-            className="flex items-center gap-2.5 group shrink-0"
-            aria-label="Trang chủ Giảng viên Mây Mây"
+            className="flex min-w-0 flex-1 items-center gap-2.5 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            aria-label="Tổng quan giảng viên"
           >
-            <div className="w-10 h-10 bg-primary-light border border-primary-pastel/70 rounded-xl flex items-center justify-center shadow-2xs group-hover:scale-105 group-hover:bg-primary-pastel/60 transition-all duration-200">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-primary-pastel/70 bg-primary-light">
               <img
                 src="/logo/studynest-logo.svg"
-                alt="Mây Mây"
-                width={24}
-                height={24}
-                className="w-6 h-6 object-contain"
+                alt=""
+                width={20}
+                height={20}
+                className="h-5 w-5 object-contain"
               />
-            </div>
-            <div className="hidden sm:flex flex-col">
-              <span className="text-lg font-bold text-foreground font-display leading-none tracking-tight">
-                Mây <span className="text-primary">Mây</span>
+            </span>
+            <span className={compact ? "sr-only" : "min-w-0"}>
+              <span className="block truncate text-sm font-bold leading-none text-foreground">
+                Mây Mây
               </span>
-              <span className="text-[10px] font-semibold text-subtle-foreground tracking-widest uppercase mt-0.5">
+              <span className="mt-1 block text-[11px] font-medium text-subtle-foreground">
                 Giảng viên
               </span>
-            </div>
+            </span>
           </Link>
-
-          {/* Desktop Navigation */}
-          <nav
-            aria-label="Điều hướng Giảng viên"
-            className="hidden lg:flex items-center gap-1"
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hidden lg:inline-flex"
+            aria-label={collapsed ? "Mở rộng menu" : "Thu gọn menu"}
+            onClick={toggleCollapsed}
           >
-            {navLinks.map((link) => {
-              const Icon = link.icon;
-              const isActive =
-                pathname === link.href ||
-                (link.href !== "/lecturer" && pathname.startsWith(link.href));
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-medium transition-all duration-150 ${
-                    isActive
-                      ? "bg-primary-light text-primary font-semibold shadow-2xs"
-                      : "text-muted-foreground hover:bg-primary-light/50 hover:text-foreground"
-                  }`}
-                >
-                  <Icon className="h-4 w-4 shrink-0" />
-                  <span>{link.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
+            {collapsed ? (
+              <PanelLeftOpen className="h-4 w-4" />
+            ) : (
+              <PanelLeftClose className="h-4 w-4" />
+            )}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="lg:hidden"
+            aria-label="Đóng menu"
+            onClick={() => setMobileOpen(false)}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
 
-          {/* Right Actions */}
-          <div className="flex items-center gap-2.5 sm:gap-3">
-            {/* Search Input */}
-            <form
-              onSubmit={handleSearchSubmit}
-              className="hidden md:block w-52 xl:w-64"
-            >
-              <div className="relative group">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary w-4 h-4 transition-colors" />
-                <input
-                  type="text"
-                  placeholder="Tìm khóa học..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full h-9 pl-9 pr-4 bg-background border border-input rounded-full hover:border-primary-pastel focus:outline-none focus:border-ring focus:ring-2 focus:ring-ring/15 transition-all text-xs text-foreground placeholder:text-subtle-foreground"
-                />
-              </div>
-            </form>
+        <div className="px-3 py-3 lg:hidden">{searchForm}</div>
 
-            {/* Notifications */}
+        <nav
+          aria-label="Điều hướng giảng viên"
+          className="min-h-0 flex-1 space-y-5 overflow-y-auto px-2 py-3"
+        >
+          {navGroups.map((group) => (
+            <div key={group.label}>
+              <p
+                className={`px-2 pb-1.5 text-[11px] font-semibold uppercase tracking-wide text-subtle-foreground ${
+                  compact ? "sr-only" : ""
+                }`}
+              >
+                {group.label}
+              </p>
+              <ul className="space-y-0.5">
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  const active = isItemActive(pathname, item);
+                  return (
+                    <li key={item.href}>
+                      <Link
+                        href={item.href}
+                        aria-current={active ? "page" : undefined}
+                        title={item.label}
+                        className={`relative flex h-10 items-center gap-2.5 rounded-xl px-2.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                          compact ? "justify-center" : ""
+                        } ${
+                          active
+                            ? "bg-primary-light font-semibold text-primary"
+                            : "text-muted-foreground hover:bg-background hover:text-foreground"
+                        }`}
+                      >
+                        <Icon className="h-4 w-4 shrink-0" />
+                        <span className={compact ? "sr-only" : "min-w-0 flex-1 truncate"}>
+                          {item.label}
+                        </span>
+                        {item.holdBadge && holdCount > 0 && !compact && (
+                          <Badge variant="warning" size="sm">
+                            {holdCount > 99 ? "99+" : holdCount}
+                          </Badge>
+                        )}
+                        {item.holdBadge && holdCount > 0 && compact && (
+                          <span
+                            className="absolute right-2 top-2 h-2 w-2 rounded-full bg-warning-foreground"
+                            aria-hidden="true"
+                          />
+                        )}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
+        </nav>
+
+        <div className="shrink-0 border-t border-border p-2 pb-4">
+          <Link
+            href="/"
+            title="Về giao diện học viên"
+            className={`flex h-10 items-center gap-2.5 rounded-xl px-2.5 text-sm text-muted-foreground hover:bg-background hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+              compact ? "justify-center" : ""
+            }`}
+          >
+            <GraduationCap className="h-4 w-4 shrink-0" />
+            <span className={compact ? "sr-only" : "truncate"}>Về trang học viên</span>
+          </Link>
+        </div>
+      </aside>
+
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="z-30 flex h-14 shrink-0 items-center gap-2 border-b border-border bg-surface/95 px-3 backdrop-blur-md sm:px-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="lg:hidden"
+            aria-label="Mở menu điều hướng"
+            aria-expanded={mobileOpen}
+            onClick={() => setMobileOpen(true)}
+          >
+            <Menu className="h-4 w-4" />
+          </Button>
+          <div className="ml-auto hidden w-full max-w-xs md:block">{searchForm}</div>
+          <div className="ml-auto flex items-center gap-1.5 md:ml-0">
             <NotificationButton role="LECTURER" />
-
-            {/* Profile Dropdown */}
-            <div className="relative group" ref={userMenuRef}>
+            <div className="relative" ref={accountRef}>
               <button
                 type="button"
-                className="flex items-center gap-2 p-1 rounded-full hover:bg-primary-light/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all duration-200 cursor-pointer"
+                className="flex h-10 items-center gap-2 rounded-xl px-1.5 hover:bg-primary-light/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 aria-label="Menu tài khoản giảng viên"
+                aria-expanded={accountOpen}
+                aria-haspopup="menu"
+                onClick={() => setAccountOpen((open) => !open)}
               >
                 {user?.avatar ? (
                   <img
                     src={getImageUrl(user.avatar)}
-                    alt={user.fullname || "Giảng viên"}
-                    className="w-9 h-9 rounded-full object-cover ring-2 ring-primary-pastel"
+                    alt=""
+                    className="h-8 w-8 rounded-full object-cover ring-2 ring-primary-pastel"
                   />
                 ) : (
-                  <span className="w-9 h-9 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shadow-2xs ring-2 ring-primary-pastel">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground ring-2 ring-primary-pastel">
                     {getUserInitials()}
                   </span>
                 )}
+                <span className="hidden max-w-32 truncate text-sm font-medium text-foreground xl:block">
+                  {user?.fullname || "Giảng viên"}
+                </span>
               </button>
-
-              {/* Vùng cầu nối chống mất hover */}
-              <div className="absolute right-0 top-full w-72 h-2 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto z-40" />
-
-              {/* Dropdown Menu */}
-              <div className="absolute right-0 top-full mt-1 w-72 sm:w-80 bg-surface rounded-[20px] shadow-ambient-lg border border-border opacity-0 group-hover:opacity-100 transform scale-95 group-hover:scale-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto z-50 overflow-hidden">
-                {/* User Info Header */}
-                <div className="px-5 py-4 border-b border-border bg-gradient-to-r from-primary-light/70 to-secondary-light/40">
-                  <div className="flex items-center gap-3">
-                    {user?.avatar ? (
-                      <div className="relative shrink-0">
-                        <img
-                          src={getImageUrl(user.avatar)}
-                          alt={user.fullname || "Avatar giảng viên"}
-                          className="w-12 h-12 rounded-full object-cover ring-2 ring-primary-pastel"
-                        />
-                        <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-success-foreground rounded-full border-2 border-surface" />
-                      </div>
-                    ) : (
-                      <div className="relative shrink-0">
-                        <span className="w-12 h-12 rounded-full bg-primary text-primary-foreground text-sm font-bold flex items-center justify-center shadow-xs ring-2 ring-primary-pastel">
-                          {getUserInitials()}
-                        </span>
-                        <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-success-foreground rounded-full border-2 border-surface" />
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-foreground truncate">
-                        {user?.fullname || "Giảng viên"}
-                      </p>
-                      <p className="text-xs text-muted-foreground truncate mt-0.5">
-                        {user?.email || "lecturer@maymay.edu.vn"}
-                      </p>
-                    </div>
+              {accountOpen && (
+                <div
+                  role="menu"
+                  className="absolute right-0 top-full z-50 mt-2 w-72 overflow-hidden rounded-2xl border border-border bg-surface shadow-ambient-lg"
+                >
+                  <div className="border-b border-border bg-primary-light/40 px-4 py-3">
+                    <p className="truncate text-sm font-semibold text-foreground">
+                      {user?.fullname || "Giảng viên"}
+                    </p>
+                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                      {user?.email || "Chưa có email"}
+                    </p>
+                  </div>
+                  <div className="p-1.5">
+                    <Link
+                      href="/lecturer/profile"
+                      role="menuitem"
+                      className="flex h-10 items-center gap-2.5 rounded-xl px-3 text-sm text-foreground hover:bg-primary-light/50"
+                    >
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      Hồ sơ giảng viên
+                    </Link>
+                    <Link
+                      href="/"
+                      role="menuitem"
+                      className="flex h-10 items-center gap-2.5 rounded-xl px-3 text-sm text-foreground hover:bg-primary-light/50"
+                    >
+                      <GraduationCap className="h-4 w-4 text-muted-foreground" />
+                      Về giao diện học viên
+                    </Link>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={handleLogout}
+                      className="flex h-10 w-full items-center gap-2.5 rounded-xl px-3 text-left text-sm text-destructive-foreground hover:bg-destructive-bg"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Đăng xuất
+                    </button>
                   </div>
                 </div>
-
-                {/* Menu Items: Tài khoản */}
-                <div className="py-1.5">
-                  <button
-                    type="button"
-                    onClick={() => handleNavigation("/lecturer/profile")}
-                    className="flex w-full items-center gap-3 px-5 py-2.5 text-sm text-foreground hover:bg-primary-light/50 hover:text-primary transition-colors text-left cursor-pointer"
-                  >
-                    <User className="w-4 h-4 text-muted-foreground shrink-0" />
-                    <span>Hồ sơ giảng viên</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleNavigation("/lecturer/providers")}
-                    className="flex w-full items-center gap-3 px-5 py-2.5 text-sm text-foreground hover:bg-primary-light/50 hover:text-primary transition-colors text-left cursor-pointer"
-                  >
-                    <Building2 className="w-4 h-4 text-muted-foreground shrink-0" />
-                    <span>Đơn vị giảng dạy</span>
-                  </button>
-                </div>
-
-                <div className="border-t border-border/80" />
-
-                {/* Menu Items: Tài chính & Vận hành */}
-                <div className="py-1.5">
-                  <button
-                    type="button"
-                    onClick={() => handleNavigation("/lecturer/wallets")}
-                    className="flex w-full items-center gap-3 px-5 py-2.5 text-sm text-foreground hover:bg-primary-light/50 hover:text-primary transition-colors text-left cursor-pointer"
-                  >
-                    <Wallet className="w-4 h-4 text-muted-foreground shrink-0" />
-                    <span>Ví của giảng viên</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleNavigation("/lecturer/hold")}
-                    className="flex w-full items-center justify-between px-5 py-2.5 text-sm text-foreground hover:bg-primary-light/50 hover:text-primary transition-colors text-left cursor-pointer"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
-                      <span>Giao dịch đang hold</span>
-                    </div>
-                    {holdCount > 0 && (
-                      <Badge variant="primary" size="sm">
-                        {holdCount > 99 ? "99+" : holdCount}
-                      </Badge>
-                    )}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleNavigation("/lecturer/refund")}
-                    className="flex w-full items-center gap-3 px-5 py-2.5 text-sm text-foreground hover:bg-primary-light/50 hover:text-primary transition-colors text-left cursor-pointer"
-                  >
-                    <RotateCcw className="w-4 h-4 text-muted-foreground shrink-0" />
-                    <span>Yêu cầu hoàn tiền</span>
-                  </button>
-                </div>
-
-                <div className="border-t border-border/80" />
-
-                {/* Chuyển chế độ & Đăng xuất */}
-                <div className="py-1.5">
-                  <button
-                    type="button"
-                    onClick={() => handleNavigation("/")}
-                    className="flex w-full items-center gap-3 px-5 py-2.5 text-sm text-foreground hover:bg-primary-light/50 hover:text-primary transition-colors text-left cursor-pointer"
-                  >
-                    <GraduationCap className="w-4 h-4 text-muted-foreground shrink-0" />
-                    <span>Về giao diện học viên</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleLogout}
-                    className="w-full flex items-center gap-3 px-5 py-2.5 text-sm text-destructive-foreground hover:bg-destructive-bg/50 transition-colors text-left cursor-pointer"
-                  >
-                    <LogOut className="w-4 h-4 shrink-0" />
-                    <span>Đăng xuất</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Mobile Menu Toggle Button */}
-            <button
-              type="button"
-              onClick={() => setIsMobileMenuOpen((prev) => !prev)}
-              className="lg:hidden p-2 rounded-xl text-muted-foreground hover:bg-primary-light/60 hover:text-primary transition-colors cursor-pointer"
-              aria-label="Mở menu điều hướng"
-              aria-expanded={isMobileMenuOpen}
-            >
-              {isMobileMenuOpen ? (
-                <X className="h-5 w-5" />
-              ) : (
-                <Menu className="h-5 w-5" />
               )}
-            </button>
+            </div>
           </div>
-        </div>
-
-        {/* Mobile Menu Dropdown */}
-        {isMobileMenuOpen && (
-          <div className="lg:hidden py-4 border-t border-border space-y-3">
-            {/* Search trên Mobile */}
-            <form onSubmit={handleSearchSubmit} className="md:hidden">
-              <div className="relative">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <input
-                  type="text"
-                  placeholder="Tìm kiếm khóa học..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full h-10 pl-10 pr-4 bg-background border border-input rounded-xl focus:outline-none focus:border-ring text-sm text-foreground"
-                />
-              </div>
-            </form>
-
-            <nav className="flex flex-col gap-1">
-              {navLinks.map((link) => {
-                const Icon = link.icon;
-                const isActive =
-                  pathname === link.href ||
-                  (link.href !== "/lecturer" && pathname.startsWith(link.href));
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                      isActive
-                        ? "bg-primary-light text-primary font-semibold"
-                        : "text-muted-foreground hover:bg-primary-light/50 hover:text-foreground"
-                    }`}
-                  >
-                    <Icon className="h-4 w-4 shrink-0" />
-                    <span>{link.label}</span>
-                  </Link>
-                );
-              })}
-
-              <div className="border-t border-border/70 my-1" />
-
-              <button
-                type="button"
-                onClick={() => handleNavigation("/lecturer/hold")}
-                className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:bg-primary-light/50 hover:text-foreground transition-colors cursor-pointer"
-              >
-                <div className="flex items-center gap-3">
-                  <Clock className="h-4 w-4 shrink-0" />
-                  <span>Giao dịch đang hold</span>
-                </div>
-                {holdCount > 0 && (
-                  <Badge variant="primary" size="sm">
-                    {holdCount > 99 ? "99+" : holdCount}
-                  </Badge>
-                )}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleNavigation("/lecturer/refund")}
-                className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:bg-primary-light/50 hover:text-foreground transition-colors cursor-pointer"
-              >
-                <RotateCcw className="h-4 w-4 shrink-0" />
-                <span>Yêu cầu hoàn tiền</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleNavigation("/")}
-                className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-primary hover:bg-primary-light/60 transition-colors cursor-pointer"
-              >
-                <GraduationCap className="h-4 w-4 shrink-0" />
-                <span>Về giao diện học viên</span>
-              </button>
-            </nav>
-          </div>
-        )}
+        </header>
+        <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
       </div>
-    </header>
+    </div>
   );
-};
-
-export default LecturerHeader;
+}

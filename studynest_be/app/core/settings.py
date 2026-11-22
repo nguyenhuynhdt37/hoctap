@@ -27,14 +27,47 @@ class Settings(BaseSettings):
     NINEROUTER_STREAM: bool = True
     # Optional server-side route for interactive tutoring. Empty follows admin selection.
     TUTOR_CHAT_MODEL: str = ""
+    TUTOR_TRANSCRIBE_PROVIDER: Literal["gemini", "9router"] = "gemini"
+    TUTOR_DICTATION_ENABLED: bool = True
+    TUTOR_DICTATION_MODEL: str = "grok-voice-transcribe-2.0"
+    TUTOR_DICTATION_MAX_SECONDS: int = 120
+    TUTOR_TRANSCRIBE_MODEL: str = "gemini-3.1-flash-lite"
+    XAI_API_KEY: str = ""
     TUTOR_VOICE_ENABLED: bool = True
-    TUTOR_VOICE_MODEL: str = "gemini-3.8-live"
-    TUTOR_VOICE_NAME: str = "Aoede"
+    TUTOR_VOICE_MODEL: str = "grok-voice-latest"
+    TUTOR_VOICE_NAME: str = "eve"
     TUTOR_VOICE_MAX_SECONDS: int = 600
     TUTOR_VOICE_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000"
     EMBEDDING_PROVIDER: str = "gemini"
     EMBEDDING_MODEL: str = "gemini-embedding-001"
     EMBEDDING_DIMENSIONS: int = 1536
+
+    # Additive agent harness. Enable after migrations and release checks.
+    AGENT_CONTEXT_PROVIDER: str = ""
+    AGENT_CONTEXT_MODEL: str = ""
+    AGENT_CONTEXT_TIMEOUT_SECONDS: float = 30
+    AGENT_CONTEXT_THRESHOLD_CHARS: int = 10000  # Legacy compatibility; not an automatic trigger.
+    AGENT_CONTEXT_WINDOWS_JSON: str = "{}"
+    AGENT_SEMANTIC_MEMORY_ENABLED: bool = True
+    AGENT_MEMORY_TIMEOUT_SECONDS: float = 12
+    AGENT_ENABLED: bool = False
+    AGENT_MODEL: str = ""
+    AGENT_VISION_PROVIDER: str = "gemini"
+    AGENT_VISION_MODEL: str = "gemini-3.1-flash-lite"
+    AGENT_RUN_MAX_SECONDS: int = 240
+    AGENT_MODEL_TIMEOUT_SECONDS: float = 90
+    AGENT_MAX_TOOL_CALLS: int = 12
+    AGENT_MAX_RUNS_PER_MINUTE: int = 20
+    AGENT_MAX_SESSIONS_PER_HOUR: int = 60
+    AGENT_MAX_ITERATIONS: int = 6
+    AGENT_MAX_INPUT_TOKENS: int = 8000000
+    AGENT_MAX_OUTPUT_TOKENS_TOTAL: int = 12000
+    AGENT_MAX_RUN_COST_USD: float | None = None
+    AGENT_MODEL_PRICES_JSON: str = "{}"
+    AGENT_EVENT_RETENTION_DAYS: int = 30
+    AGENT_MCP_ENABLED: bool = True
+    CODE_MAX_RUNS_PER_MINUTE: int = 6
+    CODE_MAX_SECONDS: int = 90
 
     # Upload storage: R2 only.
     STORAGE_PROVIDER: Literal["r2"] = "r2"
@@ -46,6 +79,10 @@ class Settings(BaseSettings):
     R2_CA_BUNDLE: str = ""
     R2_CACHE_DIRECTORY: str = str(Path(__file__).resolve().parents[2] / ".cache" / "r2")
     STORAGE_MAX_UPLOAD_BYTES: int = 2 * 1024 * 1024 * 1024
+
+    GITHUB_OAUTH_CLIENT_ID: str = ""
+    GITHUB_OAUTH_CLIENT_SECRET: str = ""
+    GITHUB_OAUTH_REDIRECT_URI: str = ""
 
     # JWT
     SECRET_KEY: str = ""
@@ -82,6 +119,7 @@ class Settings(BaseSettings):
     PAYPAL_BASE_URL: str = ""
     # PAYPAL_WEBHOOK_ID: str = ""
 
+    CORS_ALLOWED_ORIGINS: str = ""
     FRONTEND_URL: str = ""
     BACKEND_URL: str = ""
 

@@ -1,9 +1,12 @@
+from typing import Literal
 from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import select
 
 from app.core.deps import AuthorizationService
 from app.db.models.learning_paths import (
     BundleOrder,
-    CourseBundle,
     LearningPath,
     PathVersion,
     UserLearningPath,
@@ -11,17 +14,12 @@ from app.db.models.learning_paths import (
 from app.db.sesson import get_session
 from app.schemas.learning_paths import (
     BundleCheckout,
-    BundleCouponInput,
-    BundleInput,
     FrameworkInput,
     PathInput,
     ProficiencyInput,
 )
-from app.services.bundle_coupons import BundleCouponService
 from app.services.bundles import BundleService
 from app.services.learning_paths import LearningPathService
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select
 
 router = APIRouter(tags=["Learning paths & bundles"])
 SESSION = Depends(get_session)
@@ -212,9 +210,16 @@ async def publish_path(version_id: UUID, db=SESSION, auth: AuthorizationService 
 
 @router.get("/bundles")
 async def bundles(
-    page: int = Query(1, ge=1), limit: int = Query(12, ge=1, le=50), db=SESSION
+    page: int = Query(1, ge=1),
+    limit: int = Query(12, ge=1, le=50),
+    keyword: str = Query("", max_length=160),
+    price_filter: Literal["all", "free", "paid"] = "all",
+    sort: Literal["title", "recent", "price_asc", "price_desc"] = "title",
+    db=SESSION,
 ):
-    return await BundleService(db).listing(page=page, limit=limit)
+    return await BundleService(db).listing(
+        page=page, limit=limit, keyword=keyword, price_filter=price_filter, sort=sort
+    )
 
 
 @router.get("/bundles/orders/my")
@@ -263,106 +268,6 @@ async def bundle_detail(slug: str, db=SESSION):
     return await BundleService(db).by_slug(slug)
 
 
-@router.get("/admin/bundles")
-async def admin_bundles(
-    page: int = Query(1, ge=1),
-    limit: int = Query(20, ge=1, le=100),
-    keyword: str = Query("", max_length=160),
-    status: str | None = Query(None, pattern="^(draft|published|archived)$"),
-    active: bool | None = None,
-    history_id: UUID | None = None,
-    db=SESSION,
-    auth: AuthorizationService = AUTH,
-):
-    await require_path_admin(auth)
-    return await BundleService(db).listing(
-        admin=True,
-        page=page,
-        limit=limit,
-        keyword=keyword,
-        status=status,
-        active=active,
-        history_id=history_id,
-    )
-
-
-@router.post("/admin/bundles")
-async def create_bundle(
-    data: BundleInput, db=SESSION, auth: AuthorizationService = AUTH
-):
-    user = await require_path_admin(auth)
-    return await BundleService(db).create(data, user.id)
-
-
-@router.get("/admin/bundles/versions/{version_id}")
-async def admin_bundle_detail(
-    version_id: UUID, db=SESSION, auth: AuthorizationService = AUTH
-):
-    await require_path_admin(auth)
-    return await BundleService(db).detail(version_id, admin=True)
-
-
-@router.put("/admin/bundles/versions/{version_id}")
-async def update_bundle(
-    version_id: UUID, data: BundleInput, db=SESSION, auth: AuthorizationService = AUTH
-):
-    user = await require_path_admin(auth)
-    return await BundleService(db).create(data, user.id, version_id=version_id)
-
-
-@router.get("/admin/bundles/{bundle_id}/coupons")
-async def bundle_coupons(
-    bundle_id: UUID, db=SESSION, auth: AuthorizationService = AUTH
-):
-    await require_path_admin(auth)
-    return await BundleCouponService(db).listing(bundle_id)
-
-
-@router.post("/admin/bundles/{bundle_id}/coupons")
-async def create_coupon(
-    bundle_id: UUID,
-    data: BundleCouponInput,
-    db=SESSION,
-    auth: AuthorizationService = AUTH,
-):
-    user = await require_path_admin(auth)
-    return await BundleCouponService(db).save(bundle_id, data, user.id)
-
-
-@router.put("/admin/bundles/{bundle_id}/coupons/{coupon_id}")
-async def update_coupon(
-    bundle_id: UUID,
-    coupon_id: UUID,
-    data: BundleCouponInput,
-    db=SESSION,
-    auth: AuthorizationService = AUTH,
-):
-    user = await require_path_admin(auth)
-    return await BundleCouponService(db).save(
-        bundle_id, data, user.id, coupon_id=coupon_id
-    )
-
-
-@router.put("/admin/bundles/{bundle_id}/coupons/{coupon_id}/active")
-async def active_coupon(
-    bundle_id: UUID,
-    coupon_id: UUID,
-    active: bool,
-    db=SESSION,
-    auth: AuthorizationService = AUTH,
-):
-    await require_path_admin(auth)
-    return await BundleCouponService(db).active(bundle_id, coupon_id, active)
-
-
-@router.post("/admin/bundles/versions/{version_id}/publish")
-async def publish_bundle(
-    version_id: UUID, db=SESSION, auth: AuthorizationService = AUTH
-):
-    await require_path_admin(auth)
-    return await BundleService(db).publish(version_id)
-
-
 @router.put("/admin/learning-paths/{path_id}/active")
 async def active_path(
     path_id: UUID, active: bool, db=SESSION, auth: AuthorizationService = AUTH
@@ -371,19 +276,6 @@ async def active_path(
     item = await db.get(LearningPath, path_id)
     if not item or item.deleted_at:
         raise HTTPException(404, "Không tìm thấy lộ trình")
-    item.is_active = active
-    await db.commit()
-    return {"is_active": item.is_active}
-
-
-@router.put("/admin/bundles/{bundle_id}/active")
-async def active_bundle(
-    bundle_id: UUID, active: bool, db=SESSION, auth: AuthorizationService = AUTH
-):
-    await require_path_admin(auth)
-    item = await db.get(CourseBundle, bundle_id)
-    if not item or item.deleted_at:
-        raise HTTPException(404, "Không tìm thấy combo")
     item.is_active = active
     await db.commit()
     return {"is_active": item.is_active}

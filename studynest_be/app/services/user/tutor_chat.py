@@ -72,27 +72,8 @@ class TutorChatService:
         Kiểm tra user có quyền truy cập lesson không.
         Returns lesson info nếu hợp lệ.
         """
-        # Lấy lesson và course info
-        result = await self.db.execute(
-            select(Lessons, Courses)
-            .join(Courses, Courses.id == Lessons.course_id)
-            .where(Lessons.id == lesson_id)
-        )
-        row = result.first()
-
-        if not row:
-            raise HTTPException(status_code=404, detail="Lesson not found")
-
-        lesson, course = row
-
-        # Kiểm tra enrollment (trừ preview lessons)
-        if not lesson.is_preview:
-            await self.validate_enrollment(user_id, course.id)
-
-        return {
-            "lesson": lesson,
-            "course": course,
-        }
+        from app.services.user.learning_access import require_lesson_access
+        return await require_lesson_access(self.db, user_id, lesson_id)
 
     # =========================
     # THREAD OPERATIONS
@@ -237,8 +218,8 @@ class TutorChatService:
             "is_active": thread.is_active,
             "created_at": thread.created_at.isoformat(),
             "updated_at": thread.updated_at.isoformat(),
-            "course_id": str(thread.course_id),
-            "lesson_id": str(thread.lesson_id),
+            "course_id": str(thread.course_id) if thread.course_id else None,
+            "lesson_id": str(thread.lesson_id) if thread.lesson_id else None,
         }
 
     async def can_read_lesson(self, user_id: uuid.UUID, lesson_id: uuid.UUID) -> bool:
@@ -284,15 +265,32 @@ class TutorChatService:
             "is_active": thread.is_active,
             "created_at": thread.created_at.isoformat(),
             "updated_at": thread.updated_at.isoformat(),
-            "course_id": str(thread.course_id),
-            "lesson_id": str(thread.lesson_id),
+            "course_id": str(thread.course_id) if thread.course_id else None,
+            "lesson_id": str(thread.lesson_id) if thread.lesson_id else None,
         }
+
+    async def get_or_create_account_thread(self, user_id: uuid.UUID, *, commit: bool = True):
+        from sqlalchemy import text
+        # Owner lock serializes text/voice creation across API workers.
+        await self.db.execute(text("SELECT pg_advisory_xact_lock(hashtextextended(:key,0))"), {"key": f"account-thread:{user_id}"})
+        thread = await self.db.scalar(select(TutorChatThreads).where(
+            TutorChatThreads.user_id == user_id, TutorChatThreads.scope == 'account',
+            TutorChatThreads.is_active.is_(True), TutorChatThreads.is_deleted.is_(False)))
+        if thread is None:
+            thread = TutorChatThreads(user_id=user_id, course_id=None, lesson_id=None,
+                scope='account', is_active=True, is_deleted=False, title='Hannes — trợ lý của bạn')
+            self.db.add(thread)
+            await self.db.flush()
+        if commit:
+            await self.db.commit()
+        return {'thread': await self.get_thread_by_id(user_id, thread.id)}
 
     async def get_or_create_active_thread(
         self,
         user_id: uuid.UUID,
         lesson_id: uuid.UUID,
         title: Optional[str] = None,
+        *, commit: bool = True,
     ) -> Dict[str, Any]:
         """
         Lấy thread active hiện tại hoặc tạo mới nếu chưa có.
@@ -326,8 +324,11 @@ class TutorChatService:
             is_deleted=False,
         )
         self.db.add(new_thread)
-        await self.db.commit()
-        await self.db.refresh(new_thread)
+        if commit:
+            await self.db.commit()
+            await self.db.refresh(new_thread)
+        else:
+            await self.db.flush()
 
         return {
             "thread": {
@@ -510,8 +511,8 @@ class TutorChatService:
             "is_active": thread.is_active,
             "created_at": thread.created_at.isoformat(),
             "updated_at": thread.updated_at.isoformat(),
-            "course_id": str(thread.course_id),
-            "lesson_id": str(thread.lesson_id),
+            "course_id": str(thread.course_id) if thread.course_id else None,
+            "lesson_id": str(thread.lesson_id) if thread.lesson_id else None,
         }
 
     async def choose_thread(
@@ -570,8 +571,8 @@ class TutorChatService:
             "is_active": thread.is_active,
             "created_at": thread.created_at.isoformat(),
             "updated_at": thread.updated_at.isoformat(),
-            "course_id": str(thread.course_id),
-            "lesson_id": str(thread.lesson_id),
+            "course_id": str(thread.course_id) if thread.course_id else None,
+            "lesson_id": str(thread.lesson_id) if thread.lesson_id else None,
         }
 
 

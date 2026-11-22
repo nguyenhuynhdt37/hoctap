@@ -105,7 +105,7 @@ export function InstructorCard({
               {instructor.name}
             </h3>
 
-            {/* Môn học & Đơn vị trực thuộc */}
+            {/* Môn học */}
             <div className="mt-1 flex flex-wrap items-center gap-1.5">
               {instructor.subjects && instructor.subjects.length > 0 ? (
                 instructor.subjects.slice(0, 2).map((sub) => (
@@ -124,11 +124,6 @@ export function InstructorCard({
               )}
             </div>
 
-            {instructor.providers && instructor.providers.length > 0 && (
-              <p className="mt-1 text-xs text-primary font-medium line-clamp-1">
-                {instructor.providers[0].name}
-              </p>
-            )}
           </div>
         </div>
 

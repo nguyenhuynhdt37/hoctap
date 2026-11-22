@@ -18,6 +18,7 @@ import {
 } from "@/components/learning-paths/shared";
 import CoursePicker from "./course-picker";
 import SlugField from "./slug-field";
+import TiptapEditor from "@/components/shared/tiptap_editor";
 export const emptyBundle = (): BundleDraft => ({
   slug: "",
   title: "",
@@ -108,21 +109,22 @@ export default function BundleEditor({
                 locked={!!draft.bundle_id}
               />
             </div>
-            <label className="space-y-2 text-sm sm:col-span-2">
-              <span className="font-medium">Giới thiệu và quyền lợi</span>
-              <textarea
-                maxLength={20000}
-                rows={3}
-                className={control}
+            <div className="space-y-2 sm:col-span-2">
+              <label className="block text-sm font-medium text-foreground">
+                Giới thiệu và quyền lợi combo
+              </label>
+              <TiptapEditor
                 value={draft.description}
-                onChange={(e) =>
-                  setDraft({ ...draft, description: e.target.value })
+                onChange={(content) =>
+                  setDraft({ ...draft, description: content })
                 }
+                placeholder="Nhập giới thiệu chi tiết và quyền lợi khi mua combo..."
+                minHeight="140px"
               />
-              <span className="text-xs text-muted-foreground">
-                Cần ít nhất 20 ký tự khi xuất bản.
+              <span className="text-xs text-muted-foreground block">
+                Cần ít nhất 20 ký tự khi xuất bản. Hỗ trợ định dạng văn bản Markdown.
               </span>
-            </label>
+            </div>
             <label className="space-y-2 text-sm sm:col-span-2">
               <span className="font-medium">Lộ trình liên kết (tùy chọn)</span>
               <select

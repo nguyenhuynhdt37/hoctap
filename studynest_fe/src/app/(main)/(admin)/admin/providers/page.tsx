@@ -1,5 +1,5 @@
-import ProviderWorkspace from "@/components/catalog/provider-workspace";
-export const metadata = { title: "Quản lý đơn vị cung cấp | Mây Mây" };
+import { redirect } from "next/navigation";
+
 export default function Page() {
-  return <ProviderWorkspace admin />;
+  redirect("/admin/catalog");
 }

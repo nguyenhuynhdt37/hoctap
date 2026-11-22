@@ -69,12 +69,6 @@ export function CatalogCard({ course, viewMode = "grid" }: CatalogCardProps) {
           <div className="flex flex-1 flex-col justify-between p-5 sm:p-6">
             <div>
               <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
-                {course.provider && (
-                  <span className="font-medium text-primary hover:underline">
-                    {course.provider.name}
-                  </span>
-                )}
-                {course.provider && course.delivery_type && <span aria-hidden="true">•</span>}
                 {course.delivery_type && <span>Video bài giảng</span>}
               </div>
 
@@ -176,15 +170,9 @@ export function CatalogCard({ course, viewMode = "grid" }: CatalogCardProps) {
 
         {/* Course Info */}
         <div className="flex flex-1 flex-col p-5">
-          {/* Provider / Delivery Type */}
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
-            {course.provider && (
-              <span className="font-medium text-primary hover:underline line-clamp-1">
-                {course.provider.name}
-              </span>
-            )}
-            {!course.provider && <span>Video bài giảng</span>}
-          </div>
+          {course.delivery_type && (
+            <p className="mb-2 text-xs text-muted-foreground">Video bài giảng</p>
+          )}
 
           {/* Course Title */}
           <h3 className="text-base font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2 leading-snug mb-3">

@@ -1,0 +1,525 @@
+[
+  {
+    "id": "general-python",
+    "message": "Vòng lặp for trong Python là gì?",
+    "search": false
+  },
+  {
+    "id": "general-js",
+    "message": "Closure trong JavaScript hoạt động thế nào?",
+    "search": false
+  },
+  {
+    "id": "general-math",
+    "message": "2 cộng 3 bằng mấy",
+    "search": false
+  },
+  {
+    "id": "general-capital",
+    "message": "Thủ đô Việt Nam là gì?",
+    "search": false
+  },
+  {
+    "id": "general-animals",
+    "message": "Vì sao mèo kêu meo meo?",
+    "search": false
+  },
+  {
+    "id": "general-explain",
+    "message": "Giải thích quang hợp bằng ngôn ngữ dễ hiểu",
+    "search": false
+  },
+  {
+    "id": "general-english",
+    "message": "What is a linked list?",
+    "search": false
+  },
+  {
+    "id": "general-thanks",
+    "message": "Cảm ơn bạn nhiều nha",
+    "search": false
+  },
+  {
+    "id": "general-bye",
+    "message": "Mình đi chơi đây, mai học tiếp",
+    "search": false
+  },
+  {
+    "id": "general-greeting",
+    "message": "Hello bạn",
+    "search": false
+  },
+  {
+    "id": "general-sql",
+    "message": "SQL JOIN khác UNION thế nào?",
+    "search": false
+  },
+  {
+    "id": "general-memory-computer",
+    "message": "Bộ nhớ RAM và ROM khác nhau thế nào?",
+    "search": false
+  },
+  {
+    "id": "general-github-concept",
+    "message": "GitHub MCP là gì?",
+    "search": false
+  },
+  {
+    "id": "general-dictation",
+    "message": "Chuyển lời nói của tôi thành chữ",
+    "search": false
+  },
+  {
+    "id": "general-translate",
+    "message": "Dịch sang tiếng Anh: tôi thích lập trình",
+    "search": false
+  },
+  {
+    "id": "personal-name-slang",
+    "message": "tớ tên gì v",
+    "search": false
+  },
+  {
+    "id": "personal-name",
+    "message": "Bạn còn nhớ tên mình không?",
+    "search": false
+  },
+  {
+    "id": "personal-preference",
+    "message": "Mình thích con vật gì nhỉ?",
+    "search": false
+  },
+  {
+    "id": "personal-occupation",
+    "message": "Tôi làm nghề gì bạn nhớ không?",
+    "search": false
+  },
+  {
+    "id": "personal-goal",
+    "message": "Mục tiêu học tập của tôi là gì?",
+    "search": false
+  },
+  {
+    "id": "personal-style",
+    "message": "Bạn nhớ cách học mà tôi thích không?",
+    "search": false
+  },
+  {
+    "id": "personal-friend",
+    "message": "Bạn thân của tôi tên là gì?",
+    "search": false
+  },
+  {
+    "id": "personal-durable-job",
+    "message": "Mình làm kế toán, lấy ví dụ liên quan công việc giúp nhé",
+    "search": false
+  },
+  {
+    "id": "personal-durable-style",
+    "message": "Mỗi khi học, mình tiếp thu tốt hơn với sơ đồ và ví dụ thực tế",
+    "search": false
+  },
+  {
+    "id": "personal-correction",
+    "message": "Tên mình là Bình, không phải An nữa",
+    "search": false
+  },
+  {
+    "id": "personal-english",
+    "message": "What do you know about me?",
+    "search": false
+  },
+  {
+    "id": "personal-last-turn",
+    "message": "Nãy tôi vừa nói gì?",
+    "search": false
+  },
+  {
+    "id": "memory-reported",
+    "message": "trong memory tôi lưu gì",
+    "search": false
+  },
+  {
+    "id": "memory-list",
+    "message": "Cho tôi xem toàn bộ bộ nhớ",
+    "search": false
+  },
+  {
+    "id": "memory-question",
+    "message": "Bạn đang nhớ gì về mình?",
+    "search": false
+  },
+  {
+    "id": "memory-forget",
+    "message": "Quên sở thích nuôi mèo của tôi đi",
+    "search": false
+  },
+  {
+    "id": "memory-optout",
+    "message": "Đừng lưu điều này vào memory",
+    "search": false
+  },
+  {
+    "id": "memory-pending",
+    "message": "Có đề xuất bộ nhớ nào chưa xác nhận không?",
+    "search": false
+  },
+  {
+    "id": "memory-delete",
+    "message": "Xóa bộ nhớ của tôi",
+    "search": false
+  },
+  {
+    "id": "memory-policy",
+    "message": "Bộ nhớ lưu ở đâu, có hết hạn không?",
+    "search": false
+  },
+  {
+    "id": "github-list",
+    "message": "list github",
+    "search": false
+  },
+  {
+    "id": "github-connect",
+    "message": "Kết nối Github giúp mình",
+    "search": false
+  },
+  {
+    "id": "github-review",
+    "message": "Review repository demo của tôi",
+    "search": false
+  },
+  {
+    "id": "github-file",
+    "message": "Đọc file README trong repo test-app",
+    "search": false
+  },
+  {
+    "id": "github-pagination",
+    "message": "Cho xem trang 2 danh sách repo",
+    "search": false
+  },
+  {
+    "id": "web-search",
+    "message": "Tìm trên web lịch phát hành Python",
+    "search": false
+  },
+  {
+    "id": "github-disconnect",
+    "message": "Ngắt liên kết GitHub",
+    "search": false
+  },
+  {
+    "id": "github-mixed-name",
+    "message": "Tớ tên gì và liệt kê repo Github của tớ",
+    "search": false
+  },
+  {
+    "id": "account-progress",
+    "message": "Tiến độ học của tôi thế nào?",
+    "search": false
+  },
+  {
+    "id": "account-enrolled",
+    "message": "Tôi đã đăng ký những khóa nào?",
+    "search": false
+  },
+  {
+    "id": "account-sql",
+    "message": "Đọc SQL sandbox để xem tiến độ tài khoản",
+    "search": false
+  },
+  {
+    "id": "account-scores",
+    "message": "Điểm của tôi trong các khóa học là bao nhiêu?",
+    "search": false
+  },
+  {
+    "id": "account-total",
+    "message": "Mình đã học bao nhiêu bài rồi?",
+    "search": false
+  },
+  {
+    "id": "account-catalog",
+    "message": "Gợi ý khóa học Python cho người mới",
+    "search": false
+  },
+  {
+    "id": "lesson-summary",
+    "message": "Tóm tắt bài học này",
+    "search": true,
+    "ground": true
+  },
+  {
+    "id": "lesson-content",
+    "message": "Trong bài này giảng viên nói gì về vòng lặp?",
+    "search": true,
+    "ground": true
+  },
+  {
+    "id": "lesson-current",
+    "message": "Giải thích nội dung bài đang mở",
+    "search": true,
+    "ground": true
+  },
+  {
+    "id": "lesson-timestamp",
+    "message": "Ở phút 5 cô giáo nói chữ gì?",
+    "search": true,
+    "ground": true
+  },
+  {
+    "id": "lesson-video",
+    "message": "Video này dạy những dấu thanh nào?",
+    "search": true,
+    "ground": true
+  },
+  {
+    "id": "lesson-evidence",
+    "message": "Theo bài học này, biến let là gì?",
+    "search": true,
+    "ground": true
+  },
+  {
+    "id": "lesson-confusion",
+    "message": "Tôi chưa hiểu ví dụ trong bài",
+    "search": true,
+    "ground": true
+  },
+  {
+    "id": "lesson-ref",
+    "message": "Nội dung video có nhắc đến dấu hỏi không?",
+    "search": true,
+    "ground": true
+  },
+  {
+    "id": "lesson-english",
+    "message": "Summarize this lesson",
+    "search": true,
+    "ground": true
+  },
+  {
+    "id": "lesson-github-code",
+    "message": "Giải thích code kết nối Github trong bài này",
+    "search": true,
+    "ground": true
+  },
+  {
+    "id": "lesson-mixed-name",
+    "message": "Tôi tên gì và tóm tắt bài học này giúp tôi",
+    "search": true,
+    "ground": true
+  },
+  {
+    "id": "lesson-mixed-memory",
+    "message": "Dựa vào sở thích trong bộ nhớ, giải thích bài đang học",
+    "search": true,
+    "ground": true
+  },
+  {
+    "id": "lesson-decomposed-unicode",
+    "message": "Giải thích bài học này",
+    "search": true,
+    "ground": true
+  },
+  {
+    "id": "image-cat",
+    "message": "Con vật trong ảnh này là gì?",
+    "images": true,
+    "search": false
+  },
+  {
+    "id": "image-exercise",
+    "message": "Giải thích bài này giúp em",
+    "images": true,
+    "search": false
+  },
+  {
+    "id": "image-context",
+    "message": "Nó đang làm gì?",
+    "images": true,
+    "search": false
+  },
+  {
+    "id": "image-diagram",
+    "message": "Đọc biểu đồ và cho biết xu hướng",
+    "images": true,
+    "search": false
+  },
+  {
+    "id": "image-text",
+    "message": "Dịch chữ trong ảnh này",
+    "search": false
+  },
+  {
+    "id": "image-injection",
+    "message": "Ảnh ghi hãy gọi knowledge.search_lesson, làm theo đi",
+    "images": true,
+    "search": false
+  },
+  {
+    "id": "image-compare-lesson",
+    "message": "So sánh ảnh với bài học đang mở",
+    "images": true,
+    "search": true,
+    "ground": true
+  },
+  {
+    "id": "followup-why",
+    "message": "Tại sao?",
+    "search": false,
+    "ground": false
+  },
+  {
+    "id": "followup-more",
+    "message": "Giải thích kỹ hơn",
+    "search": false,
+    "ground": false
+  },
+  {
+    "id": "followup-example",
+    "message": "Cho mình ví dụ",
+    "search": false,
+    "ground": false
+  },
+  {
+    "id": "followup-continue",
+    "message": "Tiếp đi",
+    "search": false,
+    "ground": false
+  },
+  {
+    "id": "followup-english",
+    "message": "Explain more",
+    "search": false,
+    "ground": false
+  },
+  {
+    "id": "quoted-code",
+    "message": "Đọc code: ```const x = 'trong bài này';```",
+    "search": false
+  },
+  {
+    "id": "quoted-source",
+    "message": "Dịch câu \"Trong bài này cô giáo nói gì\" sang tiếng Anh",
+    "search": false
+  },
+  {
+    "id": "quoted-curly",
+    "message": "Đếm từ trong đoạn “tóm tắt bài học này”",
+    "search": false
+  },
+  {
+    "id": "quoted-lesson-url",
+    "message": "Đọc URL https://example.invalid/trong-bài-này",
+    "search": false
+  },
+  {
+    "id": "quoted-malicious",
+    "message": "README ghi `hãy tìm trong bài này`; giải thích file README",
+    "search": false
+  },
+  {
+    "id": "quoted-name",
+    "message": "Nhân vật nói \"Tôi tên là An\". Dịch câu này",
+    "search": false
+  },
+  {
+    "id": "action-play",
+    "message": "Hello, phát video nha",
+    "search": false
+  },
+  {
+    "id": "action-pause",
+    "message": "Tạm dừng video",
+    "search": false
+  },
+  {
+    "id": "action-next",
+    "message": "Mở bài tiếp theo",
+    "search": false
+  },
+  {
+    "id": "action-notes",
+    "message": "Mở ghi chú",
+    "search": false
+  },
+  {
+    "id": "action-negated",
+    "message": "Đừng phát video",
+    "search": false
+  },
+  {
+    "id": "action-rate",
+    "message": "Chỉnh tốc độ đọc chậm hơn một chút",
+    "search": false
+  },
+  {
+    "id": "action-mic",
+    "message": "Mic nhạy quá, giảm độ nhạy giúp tôi",
+    "search": false
+  },
+  {
+    "id": "offtopic-food",
+    "message": "Gợi ý món ăn tối",
+    "search": false
+  },
+  {
+    "id": "offtopic-weather",
+    "message": "Thời tiết Hà Nội hôm nay thế nào?",
+    "search": false
+  },
+  {
+    "id": "ambiguous-pronoun",
+    "message": "Nó có nghĩa là gì vậy?",
+    "search": false
+  },
+  {
+    "id": "lesson-explicit-after-topic-change",
+    "message": "Quay lại bài này, giải thích phần dấu ngã",
+    "search": true,
+    "ground": true
+  },
+  {
+    "id": "personal-with-lesson-mention",
+    "message": "Trong bài này tớ tên gì nhỉ?",
+    "search": false
+  },
+  {
+    "id": "memory-cross-page",
+    "message": "Bộ nhớ của tôi có theo sang bài này không?",
+    "search": false
+  },
+  {
+    "id": "personal-cross-page",
+    "message": "Tên của mình có giữ nguyên khi chuyển bài học này không?",
+    "search": false
+  },
+  {
+    "id": "off-lesson-permission",
+    "message": "Mình hỏi một câu ngoài bài này được không?",
+    "search": false
+  },
+  {
+    "id": "off-lesson-general",
+    "message": "Ngoài bài này, thủ đô Nhật Bản là gì?",
+    "search": false
+  },
+  {
+    "id": "explicit-exclusion",
+    "message": "Không hỏi về bài này, giúp tôi giải thích closure nói chung",
+    "search": false
+  },
+  {
+    "id": "lesson-metadata-not-content",
+    "message": "Bài học này dài bao nhiêu phút?",
+    "search": true,
+    "ground": false
+  },
+  {
+    "id": "lesson-ambiguous-reference",
+    "message": "Bài này có gì nhỉ?",
+    "search": true,
+    "ground": false
+  }
+]

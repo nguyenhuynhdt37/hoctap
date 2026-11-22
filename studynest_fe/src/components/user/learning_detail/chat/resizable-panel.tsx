@@ -37,7 +37,7 @@ export default function ResizablePanel({
       let newWidth = startWidthRef.current + deltaX;
       newWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
 
-      panelRef.current.style.width = `${newWidth}px`;
+      panelRef.current.style.setProperty("--chat-width", `${newWidth}px`);
     };
 
     const handleMouseUp = (e: MouseEvent) => {
@@ -45,7 +45,10 @@ export default function ResizablePanel({
       setIsResizing(false);
 
       if (panelRef.current) {
-        const finalWidth = parseInt(panelRef.current.style.width, 10);
+        const finalWidth = parseInt(
+          panelRef.current.style.getPropertyValue("--chat-width"),
+          10
+        );
         if (!isNaN(finalWidth)) {
           setWidth(finalWidth);
         }
@@ -99,13 +102,14 @@ export default function ResizablePanel({
 
       <div
         ref={panelRef}
-        className="relative flex-shrink-0 bg-surface border-l border-border"
-        style={{ width, maxWidth: "100vw" }}
+        data-learning-chat
+        className="fixed inset-x-0 bottom-16 top-16 z-40 flex w-full min-w-0 max-w-full flex-col overflow-hidden border-border bg-surface shadow-lg md:static md:inset-auto md:z-auto md:h-full md:w-[var(--chat-width)] md:max-w-[min(800px,50vw)] md:shrink-0 md:border-l md:shadow-none"
+        style={{ ["--chat-width" as string]: `${width}px` }}
       >
-        {/* Resize handle */}
+        {/* Resize handle — desktop only; a negative offset would widen the page on phones */}
         <div
           onMouseDown={startResize}
-          className="absolute left-0 top-0 bottom-0 w-4 -ml-2 cursor-ew-resize z-50 flex items-center justify-center group"
+          className="absolute bottom-0 left-0 top-0 z-50 -ml-2 hidden w-4 cursor-ew-resize items-center justify-center group md:flex"
         >
           <div className="absolute inset-0 group-hover:bg-primary/10" />
           <div

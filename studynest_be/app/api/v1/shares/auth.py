@@ -246,3 +246,12 @@ async def verify_otp(
     user_agent = req.headers.get("user-agent")
     ip = req.client.host if req.client else None
     return await auth_service.verify_otp_login_async(schema, res, user_agent=user_agent, ip=ip)
+
+
+@router.post("/github/start")
+async def github_login_start(
+    res: Response,
+    redirect_to: str = Body(default="/", embed=True, max_length=500),
+):
+    from app.services.shares.github_auth import begin_login
+    return await begin_login(res, redirect_to)

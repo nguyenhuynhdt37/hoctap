@@ -11,7 +11,6 @@ export interface FilterValues {
   subject: string;
   goal: string;
   exam: string;
-  provider: string;
   delivery_type: string;
   rating: string;
   currency: string;
@@ -43,7 +42,6 @@ export function FilterSidebar({
   const levelSelectId = useId();
   const goalSelectId = useId();
   const examSelectId = useId();
-  const providerSelectId = useId();
 
   // Lọc danh sách khối lớp: phải giao thoa giữa Cấp học (Level) và Môn học (Subject)
   const availableGrades = useMemo(() => {
@@ -319,30 +317,6 @@ export function FilterSidebar({
         </div>
       )}
 
-      {/* 6. Đơn Vị Đào Tạo */}
-      {options?.providers && options.providers.length > 0 && (
-        <div className="space-y-1.5">
-          <label
-            htmlFor={providerSelectId}
-            className="block text-xs font-semibold text-foreground uppercase tracking-wider"
-          >
-            Đơn vị đào tạo
-          </label>
-          <select
-            id={providerSelectId}
-            value={values.provider}
-            onChange={(e) => onFilterChange("provider", e.target.value)}
-            className={selectStyle}
-          >
-            <option value="">Tất cả đơn vị</option>
-            {options.providers.map((p) => (
-              <option key={p.id} value={p.slug}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
     </div>
   );
 

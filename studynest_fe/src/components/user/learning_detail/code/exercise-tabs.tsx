@@ -14,8 +14,8 @@ export default function ExerciseTabs({
   onSelectExercise,
 }: ExerciseTabsProps) {
   return (
-    <div className="bg-surface rounded-xl border border-border p-2 shadow-xs">
-      <div className="flex items-center gap-2 overflow-x-auto">
+    <div className="min-w-0 max-w-full rounded-xl border border-border bg-surface p-2 shadow-xs">
+      <div className="flex max-w-full items-center gap-2 overflow-x-auto">
         {exercises.map((ex, index) => (
           <button
             key={ex.id}

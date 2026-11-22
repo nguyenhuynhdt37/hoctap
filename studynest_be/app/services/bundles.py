@@ -7,7 +7,7 @@ from decimal import ROUND_DOWN, ROUND_HALF_UP, Decimal
 from uuid import UUID, uuid4
 
 from fastapi import HTTPException
-from sqlalchemy import delete, func, select, text, update
+from sqlalchemy import delete, func, literal_column, select, text, update
 
 from app.db.models.database import (
     CourseEnrollments,
@@ -34,6 +34,7 @@ from app.db.models.learning_paths import (
 )
 from app.libs.formats.datetime import VIETNAM_TIMEZONE
 from app.libs.formats.datetime import now as legacy_now
+from app.schemas.learning_paths import BUNDLE_PRESENTATION_FIELDS
 from app.services.bundle_coupons import BundleCouponService
 from app.services.catalog import public_course, record, require_real_course
 from app.services.catalog_slugs import create_slugged
@@ -73,23 +74,35 @@ class BundleService:
     def __init__(self, db):
         self.db = db
 
-    async def require_sales_policy(self, bundle_id):
-        # Staged rollout: management can be tested before V2 financial settlement.
-        # Old databases and legacy products retain their verified sales workflow.
-        if await self.db.scalar(
+    async def require_sales_policy(self, bundle_id, version_id=None):
+        # Legacy rows stay on the existing checkout. Lecturer combos sell as soon
+        # as the owner publishes them; there is no admin approval step.
+        if not await self.db.scalar(
             text("SELECT to_regclass('public.bundle_version_reviews')")
         ):
-            origin = await self.db.scalar(
-                text("SELECT origin FROM public.course_bundles WHERE id=:id"),
-                {"id": bundle_id},
-            )
-            if origin == "lecturer":
-                raise HTTPException(
-                    503,
-                    "Combo giảng viên đang chờ kích hoạt chính sách thanh toán và hoàn tiền toàn đơn",
+            return None
+        row = (
+            (
+                await self.db.execute(
+                    text(
+                        "SELECT origin, suspended_at FROM public.course_bundles WHERE id=:id"
+                    ),
+                    {"id": bundle_id},
                 )
+            )
+            .mappings()
+            .first()
+        )
+        if not row or row["origin"] != "lecturer":
+            return None
+        if row["suspended_at"]:
+            raise HTTPException(409, "Combo giảng viên đang tạm ngừng")
+        return "lecturer"
 
     async def create(self, data, admin_id, version_id=None, *, commit=True):
+        presentation = data.model_dump(
+            include=set(BUNDLE_PRESENTATION_FIELDS), exclude_unset=True
+        )
         version = None
         if version_id:
             version = await self.db.scalar(
@@ -134,6 +147,8 @@ class BundleService:
             )
             version.title = data.title
             version.description = data.description
+            for field, value in presentation.items():
+                setattr(version, field, value)
             version.price = data.price
             version.path_version_id = data.path_version_id
         else:
@@ -155,6 +170,7 @@ class BundleService:
                 path_version_id=data.path_version_id,
                 status="draft",
                 created_by=admin_id,
+                **presentation,
             )
             self.db.add(version)
         await self.db.flush()
@@ -175,6 +191,39 @@ class BundleService:
             await self.db.flush()
         return await self.detail(version.id, admin=True)
 
+    async def learning_metadata(self, version_ids):
+        """Public author and ordered course count, fetched once for a page."""
+        if not version_ids:
+            return {}
+        rows = (
+            await self.db.execute(
+                select(
+                    BundleVersion.id,
+                    User.id.label("instructor_id"),
+                    User.fullname,
+                    func.count(BundleItem.id).label("course_count"),
+                )
+                .select_from(BundleVersion)
+                .join(CourseBundle, CourseBundle.id == BundleVersion.bundle_id)
+                .outerjoin(
+                    User,
+                    User.id == literal_column("public.course_bundles.owner_id"),
+                )
+                .outerjoin(BundleItem, BundleItem.version_id == BundleVersion.id)
+                .where(BundleVersion.id.in_(version_ids))
+                .group_by(BundleVersion.id, User.id, User.fullname)
+            )
+        ).all()
+        return {
+            row.id: {
+                "course_count": row.course_count,
+                "instructor": {"id": row.instructor_id, "name": row.fullname}
+                if row.instructor_id
+                else None,
+            }
+            for row in rows
+        }
+
     async def listing(
         self,
         admin=False,
@@ -184,6 +233,8 @@ class BundleService:
         status=None,
         active=None,
         history_id=None,
+        price_filter="all",
+        sort="title",
     ):
         stmt = (
             select(BundleVersion, CourseBundle.slug, CourseBundle.is_active)
@@ -206,23 +257,38 @@ class BundleService:
             stmt = stmt.where(CourseBundle.id == history_id)
         if not admin:
             stmt = stmt.where(CourseBundle.is_active.is_(True))
+            stmt = stmt.where(text("public.course_bundles.origin = 'lecturer'"))
         if keyword:
             stmt = stmt.where(BundleVersion.title.ilike("%" + keyword + "%"))
         if status:
             stmt = stmt.where(BundleVersion.status == status)
         if active is not None:
             stmt = stmt.where(CourseBundle.is_active == active)
+        if price_filter == "free":
+            stmt = stmt.where(BundleVersion.price == 0)
+        elif price_filter == "paid":
+            stmt = stmt.where(BundleVersion.price > 0)
+
+        sort_columns = {
+            "title": BundleVersion.title,
+            "recent": BundleVersion.published_at.desc().nulls_last(),
+            "price_asc": BundleVersion.price.asc(),
+            "price_desc": BundleVersion.price.desc(),
+        }
         total = await self.db.scalar(select(func.count()).select_from(stmt.subquery()))
         rows = (
             await self.db.execute(
-                stmt.order_by(BundleVersion.title, BundleVersion.version.desc())
+                stmt.order_by(
+                    sort_columns[sort], BundleVersion.version.desc(), BundleVersion.id
+                )
                 .offset((page - 1) * limit)
                 .limit(limit)
             )
         ).all()
+        metadata = await self.learning_metadata([v.id for v, _, _ in rows])
         return {
             "items": [
-                {**record(v), "slug": slug, "is_active": visible}
+                {**record(v), "slug": slug, "is_active": visible, **metadata[v.id]}
                 for v, slug, visible in rows
             ],
             "total": total,
@@ -239,6 +305,7 @@ class BundleService:
                 CourseBundle.is_active.is_(True),
                 CourseBundle.deleted_at.is_(None),
                 BundleVersion.status == "published",
+                text("public.course_bundles.origin = 'lecturer'"),
             )
             .order_by(BundleVersion.version.desc())
             .limit(1)
@@ -273,13 +340,16 @@ class BundleService:
                 )
             ).all()
         )
+        metadata = await self.learning_metadata([version.id])
         return {
             **record(version),
+            **metadata[version.id],
             "is_active": root.is_active,
             "slug": root.slug,
             "items": [
                 {
                     "course_id": c.id,
+                    "position": item.position,
                     "title": c.title
                     if c.id in visible or admin
                     else "Khóa học tạm ngừng nhận đăng ký",
@@ -310,7 +380,7 @@ class BundleService:
         )
         if not root or root.deleted_at:
             raise HTTPException(404, "Combo đã lưu trữ")
-        await self.require_sales_policy(root.id)
+        await self.require_sales_policy(root.id, version.id)
         latest_published = await self.db.scalar(
             select(func.max(BundleVersion.version)).where(
                 BundleVersion.bundle_id == root.id, BundleVersion.status == "published"
@@ -394,7 +464,7 @@ class BundleService:
         if lock:
             root_stmt = root_stmt.with_for_update(read=True)
         root = await self.db.scalar(root_stmt)
-        await self.require_sales_policy(root.id)
+        lecturer_sale = await self.require_sales_policy(root.id, version.id)
         latest = await self.db.scalar(
             select(func.max(BundleVersion.version)).where(
                 BundleVersion.bundle_id == root.id, BundleVersion.status == "published"
@@ -446,6 +516,18 @@ class BundleService:
             raise HTTPException(
                 409, "Một khóa trong combo đang ngừng bán; chưa thể thanh toán"
             )
+        if lecturer_sale:
+            from app.services.bundle_ownership import BundleOwnershipPolicy
+
+            owner_id = await self.db.scalar(
+                text("SELECT owner_id FROM public.course_bundles WHERE id=:id"),
+                {"id": root.id},
+            )
+            await BundleOwnershipPolicy(self.db).lecturer(owner_id)
+            if any(course.instructor_id != owner_id for _, course in rows):
+                raise HTTPException(
+                    409, "Một khóa trong combo không còn thuộc giảng viên"
+                )
         if not rows or sum(i.allocated_price for i, _ in rows) != version.price:
             raise HTTPException(409, "Combo chưa được phân bổ giá hợp lệ")
         items = [

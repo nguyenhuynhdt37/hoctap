@@ -8,6 +8,7 @@ import CommentContent from "./comment-content";
 import CommentForm from "./comment-form";
 import ReactionButton from "./reaction-button";
 import ReactionSummary from "./reaction-summary";
+import { commentActionFlags, isHiddenComment } from "./qa-rules";
 
 // Helper functions (inline trong component)
 const formatDate = (dateString: string): string => {
@@ -227,7 +228,8 @@ export default memo(function CommentWithReplies({
   }, [shouldReload, isExpanded, loadReplies]);
 
   const depth1Replies = repliesData?.items.filter((r) => r.depth === 1) || [];
-  const isHidden = comment.content === "[Bình luận đã bị ẩn]";
+  const isHidden = isHiddenComment(comment.content);
+  const rootFlags = commentActionFlags(comment);
 
   return (
     <div className="p-3 border-b border-border last:border-b-0">
@@ -241,7 +243,7 @@ export default memo(function CommentWithReplies({
               className="w-10 h-10 rounded-full object-cover"
             />
           ) : (
-            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-semibold text-sm">
+            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold text-sm">
               {comment.user_name.charAt(0).toUpperCase()}
             </div>
           )}
@@ -255,7 +257,7 @@ export default memo(function CommentWithReplies({
               <span className="font-semibold text-foreground text-sm">
                 {comment.user_name}
               </span>
-              {comment.is_author && (
+              {rootFlags.showAuthorBadge && (
                 <span className="px-1.5 py-0.5 text-xs bg-primary-pastel text-primary rounded font-medium">
                   Tác giả
                 </span>
@@ -265,7 +267,7 @@ export default memo(function CommentWithReplies({
               </span>
             </div>
             {/* Owner actions */}
-            {comment.is_owner && !isHidden && (
+            {rootFlags.showEdit && (
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => onEdit(comment.id)}
@@ -281,7 +283,7 @@ export default memo(function CommentWithReplies({
                     isDeletingComment === comment.id ||
                     editingComment === comment.id
                   }
-                  className="p-1.5 rounded-full hover:bg-background text-muted-foreground hover:text-red-600 transition-colors disabled:opacity-50"
+                  className="p-1.5 rounded-full hover:bg-background text-muted-foreground hover:text-destructive-foreground transition-colors disabled:opacity-50"
                   title="Xóa"
                 >
                   <HiTrash className="w-4 h-4" />
@@ -297,20 +299,22 @@ export default memo(function CommentWithReplies({
 
           <div className="flex items-center gap-4">
             {/* Reactions */}
-            {comment.reactions?.total > 0 && (
+            {rootFlags.showReaction && comment.reactions?.total > 0 && (
               <ReactionSummary comment={comment} />
             )}
             {/* Actions */}
-            {!isHidden && (
+            {rootFlags.showReaction && (
               <div className="flex items-center gap-4 pt-1">
                 <ReactionButton comment={comment} onReaction={onReaction} />
-                <button
-                  onClick={() => onReply(comment.id)}
-                  disabled={editingComment === comment.id}
-                  className="text-sm text-muted-foreground hover:text-primary font-medium disabled:opacity-50 transition-colors"
-                >
-                  Phản hồi
-                </button>
+                {rootFlags.showReply && (
+                  <button
+                    onClick={() => onReply(comment.id)}
+                    disabled={editingComment === comment.id}
+                    className="text-sm text-muted-foreground hover:text-primary font-medium disabled:opacity-50 transition-colors"
+                  >
+                    Phản hồi
+                  </button>
+                )}
                 {hasReplies && (
                   <button
                     onClick={() => onToggleReplies(comment.id)}
@@ -360,7 +364,7 @@ export default memo(function CommentWithReplies({
           {isExpanded && !isHidden && (
             <div className="mt-3 space-y-3">
               {isLoadingReplies ? (
-                <div className="text-sm text-gray-500 py-2">
+                <div className="text-sm text-muted-foreground py-2">
                   Đang tải phản hồi...
                 </div>
               ) : depth1Replies.length > 0 ? (
@@ -372,8 +376,8 @@ export default memo(function CommentWithReplies({
                     const depth2Replies =
                       depth2RepliesData[reply.id]?.items || [];
                     const hasDepth2Replies = (reply.reply_count_all || 0) > 0;
-                    const isReplyHidden =
-                      reply.content === "[Bình luận đã bị ẩn]";
+                    const isReplyHidden = isHiddenComment(reply.content);
+                    const replyFlags = commentActionFlags(reply);
 
                     return (
                       <div
@@ -390,7 +394,7 @@ export default memo(function CommentWithReplies({
                               className="w-8 h-8 rounded-full object-cover"
                             />
                           ) : (
-                            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-semibold text-xs">
+                            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold text-xs">
                               {reply.user_name.charAt(0).toUpperCase()}
                             </div>
                           )}
@@ -401,25 +405,25 @@ export default memo(function CommentWithReplies({
                           {/* Header */}
                           <div className="flex items-start justify-between mb-1">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-semibold text-gray-900 text-sm">
+                              <span className="font-semibold text-foreground text-sm">
                                 {reply.user_name}
                               </span>
-                              {reply.is_author && (
-                                <span className="px-1.5 py-0.5 text-xs bg-primary-light text-primary-hover rounded font-medium">
+                              {replyFlags.showAuthorBadge && (
+                                <span className="px-1.5 py-0.5 text-xs bg-primary-pastel text-primary rounded font-medium">
                                   Tác giả
                                 </span>
                               )}
-                              <span className="text-xs text-gray-500">
+                              <span className="text-xs text-muted-foreground">
                                 {formatDate(reply.created_at)}
                               </span>
                             </div>
                             {/* Owner actions */}
-                            {reply.is_owner && !isReplyHidden && (
+                            {replyFlags.showEdit && (
                               <div className="flex items-center gap-1">
                                 <button
                                   onClick={() => onEdit(reply.id)}
                                   disabled={isDeletingComment === reply.id}
-                                  className="p-1 rounded-full hover:bg-gray-100 text-gray-600 hover:text-primary transition-colors disabled:opacity-50"
+                                  className="p-1 rounded-full hover:bg-background text-muted-foreground hover:text-primary transition-colors disabled:opacity-50"
                                   title="Chỉnh sửa"
                                 >
                                   <HiPencil className="w-3.5 h-3.5" />
@@ -430,7 +434,7 @@ export default memo(function CommentWithReplies({
                                     isDeletingComment === reply.id ||
                                     editingComment === reply.id
                                   }
-                                  className="p-1 rounded-full hover:bg-gray-100 text-gray-600 hover:text-red-600 transition-colors disabled:opacity-50"
+                                  className="p-1 rounded-full hover:bg-background text-muted-foreground hover:text-destructive-foreground transition-colors disabled:opacity-50"
                                   title="Xóa"
                                 >
                                   <HiTrash className="w-3.5 h-3.5" />
@@ -440,29 +444,29 @@ export default memo(function CommentWithReplies({
                           </div>
 
                           {/* Content */}
-                          <div className="text-gray-900 mb-2 text-sm leading-relaxed">
+                          <div className="text-foreground mb-2 text-sm leading-relaxed">
                             <CommentContent content={reply.content} />
                           </div>
 
                           {/* Reactions */}
-                          {reply.reactions?.total > 0 && (
+                          {replyFlags.showReaction && reply.reactions?.total > 0 && (
                             <div className="mb-2">
                               <ReactionSummary comment={reply} />
                             </div>
                           )}
 
                           {/* Actions */}
-                          {!isReplyHidden && (
+                          {replyFlags.showReaction && (
                             <div className="flex items-center gap-4 pt-1">
                               <ReactionButton
                                 comment={reply}
                                 onReaction={onReaction}
                               />
-                              {reply.depth < 2 && (
+                              {replyFlags.showReply && (
                                 <button
                                   onClick={() => onReply(reply.id)}
                                   disabled={editingComment === reply.id}
-                                  className="text-sm text-gray-600 hover:text-primary font-medium disabled:opacity-50 transition-colors"
+                                  className="text-sm text-muted-foreground hover:text-primary font-medium disabled:opacity-50 transition-colors"
                                 >
                                   Phản hồi
                                 </button>
@@ -472,7 +476,7 @@ export default memo(function CommentWithReplies({
                                   onClick={() =>
                                     onToggleDepth1Reply(reply.id, comment.id)
                                   }
-                                  className="text-sm text-gray-600 hover:text-primary font-medium transition-colors"
+                                  className="text-sm text-muted-foreground hover:text-primary font-medium transition-colors"
                                 >
                                   {isDepth1Expanded
                                     ? "Ẩn phản hồi"
@@ -519,9 +523,8 @@ export default memo(function CommentWithReplies({
                             <div className="mt-3 space-y-3">
                               {depth2Replies.length > 0 ? (
                                 depth2Replies.map((nestedReply) => {
-                                  const isNestedHidden =
-                                    nestedReply.content ===
-                                    "[Bình luận đã bị ẩn]";
+                                  const nestedFlags =
+                                    commentActionFlags(nestedReply);
                                   return (
                                     <div
                                       key={nestedReply.id}
@@ -536,7 +539,7 @@ export default memo(function CommentWithReplies({
                                             className="w-7 h-7 rounded-full object-cover"
                                           />
                                         ) : (
-                                          <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-white font-semibold text-xs">
+                                          <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold text-xs">
                                             {nestedReply.user_name
                                               .charAt(0)
                                               .toUpperCase()}
@@ -549,21 +552,20 @@ export default memo(function CommentWithReplies({
                                         {/* Header */}
                                         <div className="flex items-start justify-between mb-1">
                                           <div className="flex items-center gap-2 flex-wrap">
-                                            <span className="font-semibold text-gray-900 text-sm">
+                                            <span className="font-semibold text-foreground text-sm">
                                               {nestedReply.user_name}
                                             </span>
-                                            {nestedReply.is_author && (
-                                              <span className="px-1.5 py-0.5 text-xs bg-primary-light text-primary-hover rounded font-medium">
+                                            {nestedFlags.showAuthorBadge && (
+                                              <span className="px-1.5 py-0.5 text-xs bg-primary-pastel text-primary rounded font-medium">
                                                 Tác giả
                                               </span>
                                             )}
-                                            <span className="text-xs text-gray-500">
+                                            <span className="text-xs text-muted-foreground">
                                               {formatDate(nestedReply.created_at)}
                                             </span>
                                           </div>
                                           {/* Owner actions */}
-                                          {nestedReply.is_owner &&
-                                            !isNestedHidden && (
+                                          {nestedFlags.showEdit && (
                                               <div className="flex items-center gap-1">
                                                 <button
                                                   onClick={() =>
@@ -573,7 +575,7 @@ export default memo(function CommentWithReplies({
                                                     isDeletingComment ===
                                                     nestedReply.id
                                                   }
-                                                  className="p-1 rounded-full hover:bg-gray-100 text-gray-600 hover:text-primary transition-colors disabled:opacity-50"
+                                                  className="p-1 rounded-full hover:bg-background text-muted-foreground hover:text-primary transition-colors disabled:opacity-50"
                                                   title="Chỉnh sửa"
                                                 >
                                                   <HiPencil className="w-3 h-3" />
@@ -588,7 +590,7 @@ export default memo(function CommentWithReplies({
                                                     editingComment ===
                                                       nestedReply.id
                                                   }
-                                                  className="p-1 rounded-full hover:bg-gray-100 text-gray-600 hover:text-red-600 transition-colors disabled:opacity-50"
+                                                  className="p-1 rounded-full hover:bg-background text-muted-foreground hover:text-destructive-foreground transition-colors disabled:opacity-50"
                                                   title="Xóa"
                                                 >
                                                   <HiTrash className="w-3 h-3" />
@@ -598,28 +600,43 @@ export default memo(function CommentWithReplies({
                                         </div>
 
                                         {/* Content */}
-                                        <div className="text-gray-900 mb-2 text-sm leading-relaxed">
+                                        <div className="text-foreground mb-2 text-sm leading-relaxed">
                                           <CommentContent
                                             content={nestedReply.content}
                                           />
                                         </div>
 
                                         {/* Reactions */}
-                                        {nestedReply.reactions?.total > 0 && (
-                                          <div className="mb-2">
-                                            <ReactionSummary
-                                              comment={nestedReply}
-                                            />
-                                          </div>
-                                        )}
+                                        {nestedFlags.showReaction &&
+                                          nestedReply.reactions?.total > 0 && (
+                                            <div className="mb-2">
+                                              <ReactionSummary
+                                                comment={nestedReply}
+                                              />
+                                            </div>
+                                          )}
 
                                         {/* Actions */}
-                                        {!isNestedHidden && (
+                                        {nestedFlags.showReaction && (
                                           <div className="flex items-center gap-4 pt-1">
                                             <ReactionButton
                                               comment={nestedReply}
                                               onReaction={onReaction}
                                             />
+                                            {nestedFlags.showReply && (
+                                              <button
+                                                onClick={() =>
+                                                  onReply(nestedReply.id)
+                                                }
+                                                disabled={
+                                                  editingComment ===
+                                                  nestedReply.id
+                                                }
+                                                className="text-sm text-muted-foreground hover:text-primary font-medium disabled:opacity-50 transition-colors"
+                                              >
+                                                Phản hồi
+                                              </button>
+                                            )}
                                           </div>
                                         )}
 
@@ -648,7 +665,7 @@ export default memo(function CommentWithReplies({
                                   );
                                 })
                               ) : (
-                                <div className="text-sm text-gray-500 py-2">
+                                <div className="text-sm text-muted-foreground py-2">
                                   Đang tải phản hồi...
                                 </div>
                               )}
@@ -673,7 +690,7 @@ export default memo(function CommentWithReplies({
                   )}
                 </>
               ) : (
-                <div className="text-sm text-gray-500 py-2">
+                <div className="text-sm text-muted-foreground py-2">
                   Chưa có phản hồi nào.
                 </div>
               )}

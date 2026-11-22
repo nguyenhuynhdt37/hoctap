@@ -1,4 +1,5 @@
-import PathBundleAdmin from "@/components/admin/learning-paths";
+import { notFound } from "next/navigation";
+
 export default function Page() {
-  return <PathBundleAdmin kind="bundles" />;
+  notFound();
 }

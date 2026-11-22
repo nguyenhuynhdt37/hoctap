@@ -255,6 +255,7 @@ class User(Base):
     learning_goals: Mapped[Optional[str]] = mapped_column(Text)
     daily_goal_minutes: Mapped[Optional[int]] = mapped_column(Integer, server_default=text('30'))
     preferred_learning_style: Mapped[Optional[str]] = mapped_column(String(50), server_default=text("'''video'''::character varying"))
+    promotional_email_opt_in: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('true'), default=True)
 
     discounts: Mapped[list['Discounts']] = relationship('Discounts', back_populates='user')
     email_verifications: Mapped[list['EmailVerifications']] = relationship('EmailVerifications', back_populates='user')
@@ -1197,6 +1198,7 @@ class CourseEnrollments(Base):
     progress: Mapped[Optional[decimal.Decimal]] = mapped_column(Numeric(5, 2), server_default=text('0'))
     last_accessed: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
     status: Mapped[Optional[str]] = mapped_column(Text, server_default=text("'active'::text"))
+    archived_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
 
     course: Mapped[Optional['Courses']] = relationship('Courses', back_populates='course_enrollments')
     user: Mapped[Optional['User']] = relationship('User', back_populates='course_enrollments')
@@ -1661,6 +1663,12 @@ class LessonChunks(Base):
     token_count: Mapped[Optional[int]] = mapped_column(Integer)
     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True), server_default=text('now()'))
 
+    source_kind: Mapped[str] = mapped_column(String(32), nullable=False, server_default=text("'unknown'"), default="unknown")
+    source_reference: Mapped[Optional[str]] = mapped_column(Text)
+    source_content_hash: Mapped[Optional[str]] = mapped_column(String(64))
+    timestamps_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'), default=False)
+    timestamp_anchors: Mapped[list] = mapped_column(JSONB, nullable=False, server_default=text("'[]'::jsonb"), default=list)
+
     lesson: Mapped[Optional['Lessons']] = relationship('Lessons', back_populates='lesson_chunks')
 
 
@@ -1912,10 +1920,12 @@ class RefundRequests(Base):
 class TutorChatThreads(Base):
     __tablename__ = 'tutor_chat_threads'
     __table_args__ = (
-        CheckConstraint("scope = ANY (ARRAY['lesson'::text, 'section'::text, 'course'::text])", name='ck_tutor_threads_scope'),
-    ForeignKeyConstraint(['course_id'], ['public.courses.id'], ondelete='CASCADE', name='fk_tutor_threads_course'),
-    ForeignKeyConstraint(['lesson_id'], ['public.lessons.id'], ondelete='CASCADE', name='fk_tutor_threads_lesson'),
+        CheckConstraint("scope = ANY (ARRAY['lesson'::text, 'section'::text, 'course'::text, 'account'::text])", name='ck_tutor_threads_scope'),
+    ForeignKeyConstraint(['course_id'], ['public.courses.id'], ondelete='SET NULL', name='fk_tutor_threads_course'),
+    ForeignKeyConstraint(['lesson_id'], ['public.lessons.id'], ondelete='SET NULL', name='fk_tutor_threads_lesson'),
     ForeignKeyConstraint(['user_id'], ['public.user.id'], ondelete='CASCADE', name='fk_tutor_threads_user'),
+        CheckConstraint("scope <> 'account' OR (course_id IS NULL AND lesson_id IS NULL)", name='ck_tutor_threads_account_context'),
+        Index('uq_tutor_account_active', 'user_id', unique=True, postgresql_where=text("scope = 'account' AND is_active = true AND is_deleted = false")),
         PrimaryKeyConstraint('id', name='tutor_chat_threads_pkey'),
         Index('idx_tutor_threads_active', 'user_id', 'lesson_id', 'scope', postgresql_where='(is_active = true)'),
         Index('idx_tutor_threads_course', 'course_id', 'created_at'),
@@ -1925,8 +1935,8 @@ class TutorChatThreads(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
     user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
-    course_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
-    lesson_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    course_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, nullable=True)
+    lesson_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, nullable=True)
     scope: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'lesson'::text"))
     is_deleted: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
@@ -2109,5 +2119,7 @@ from app.db.models import catalog as _catalog  # noqa: E402,F401
 from app.db.models import learning_paths as _learning_paths  # noqa: E402,F401
 
 from app.db.models import instructor_favourites as _instructor_favourites  # noqa: E402,F401
+
+from app.db.models import learning_menu as _learning_menu  # noqa: E402,F401
 
 from app.db.models import bundle_commerce as _bundle_commerce  # noqa: E402,F401

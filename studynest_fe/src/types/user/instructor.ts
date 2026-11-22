@@ -1,13 +1,11 @@
 import type {
   BrowseGradeOption,
-  BrowseProvider,
   BrowseSubjectOption,
   BrowseTaxonomyOption,
 } from "@/types/catalog";
 
 export type {
   BrowseGradeOption,
-  BrowseProvider,
   BrowseSubjectOption,
   BrowseTaxonomyOption,
 };
@@ -45,12 +43,6 @@ export interface InstructorTaxonomyOption {
   name: string;
 }
 
-export interface InstructorProviderAffiliation {
-  id: string;
-  name: string;
-  slug: string;
-}
-
 /**
  * Instructor V2 Directory Item (GET /users/instructors)
  */
@@ -63,7 +55,6 @@ export interface InstructorItem {
   grades: InstructorGrade[];
   exams: InstructorTaxonomyOption[];
   learning_goals: InstructorTaxonomyOption[];
-  providers: InstructorProviderAffiliation[];
   public_course_count: number;
   course_count: number;
   student_count: number;
@@ -149,7 +140,6 @@ export interface InstructorFilterOptions {
   exams: BrowseTaxonomyOption[];
   grade_subjects: { grade_id: string; subject_id: string }[];
   delivery_types: { code: string; name: string }[];
-  providers: BrowseProvider[];
 }
 
 export interface SavedInstructorIdsResponse {

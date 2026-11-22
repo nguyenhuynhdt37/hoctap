@@ -4,6 +4,7 @@ const backendUrl =
   process.env.NEXT_PUBLIC_URL_BACKEND || "http://127.0.0.1:8000";
 
 const nextConfig: NextConfig = {
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   // cacheComponents: true,
   // reactCompiler: true,
   images: {

@@ -1,0 +1,43 @@
+{
+  "timestamp": "2026-11-12T19:29:36.649012+00:00",
+  "real_model": true,
+  "real_auth_api_sse_postgresql": true,
+  "ui": "SIMULATED CALLBACK RECEIPT",
+  "browser": "NOT EXERCISED",
+  "passed": true,
+  "events": [
+    "run.started",
+    "context.resolved",
+    "tool.proposed",
+    "tool.started",
+    "tool.completed",
+    "budget.reserved",
+    "model.usage",
+    "plan.created",
+    "tool.proposed",
+    "tool.started",
+    "ui.action_requested",
+    "ui.action_receipt",
+    "tool.completed",
+    "budget.reserved",
+    "model.usage",
+    "plan.updated",
+    "message.delta",
+    "run.completed"
+  ],
+  "state": "completed",
+  "usage": {
+    "last_model": "ag/gemini-3.8-flash",
+    "tool_calls": 2,
+    "cost_method": "monetary_limit_disabled_tokens_and_deadline_enforced",
+    "model_calls": 2,
+    "estimated_input_tokens": 5065,
+    "reserved_output_tokens": 6000,
+    "provider_usage_reported_calls": 2,
+    "provider_reported_total_tokens": 9349,
+    "provider_reported_prompt_tokens": 8813,
+    "reserved_input_token_upper_bound": 17409,
+    "provider_reported_completion_tokens": 536
+  },
+  "persisted_message": true
+}

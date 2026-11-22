@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CheckCircle2, Clock, Play, Star } from "lucide-react";
+import { CheckCircle2, Clock, Gift, Play, Star } from "lucide-react";
 import { Badge, Card, Progress } from "@/components/ui";
 import { formatDate, formatDuration } from "@/lib/utils/helpers/date";
 import { getImageUrl } from "@/lib/utils/helpers/image";
@@ -102,9 +102,24 @@ export const CourseCard = ({ course, variant }: CourseCardProps) => {
           </div>
 
           {/* Title */}
-          <h3 className="line-clamp-2 text-base font-semibold leading-snug text-foreground group-hover:text-primary transition-colors mb-4">
+          <h3
+            className={`line-clamp-2 text-base font-semibold leading-snug text-foreground transition-colors group-hover:text-primary ${
+              course.gifted_by_name ? "mb-2" : "mb-4"
+            }`}
+          >
             {course.title}
           </h3>
+          {course.gifted_by_name && (
+            <p className="mb-3 flex items-center gap-1.5 text-xs text-primary">
+              <Gift className="h-3.5 w-3.5 shrink-0" aria-hidden />
+              <span className="truncate">
+                Tặng bởi{" "}
+                <span className="font-semibold text-foreground">
+                  {course.gifted_by_name}
+                </span>
+              </span>
+            </p>
+          )}
 
           {/* Progress Section */}
           {variant === "purchased" && (

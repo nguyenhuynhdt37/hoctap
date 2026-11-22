@@ -7,6 +7,7 @@ from typing import ClassVar
 
 from app.db.models.database import Base
 from sqlalchemy import (
+    ARRAY,
     Boolean,
     CheckConstraint,
     DateTime,
@@ -193,6 +194,11 @@ class BundleVersion(Identity, Base):
     version: Mapped[int] = mapped_column(Integer)
     title: Mapped[str] = mapped_column(String(180))
     description: Mapped[str] = mapped_column(Text)
+    thumbnail_url: Mapped[str | None] = mapped_column(Text)
+    subtitle: Mapped[str | None] = mapped_column(String(240))
+    outcomes: Mapped[list[str] | None] = mapped_column(ARRAY(Text))
+    requirements: Mapped[list[str] | None] = mapped_column(ARRAY(Text))
+    target_audience: Mapped[list[str] | None] = mapped_column(ARRAY(Text))
     price: Mapped[Decimal] = mapped_column(Numeric(12, 2))
     currency: Mapped[str] = mapped_column(
         String(10), default="VND", server_default="VND"

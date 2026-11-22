@@ -190,7 +190,7 @@ export default function InstructorDetail({
               </div>
             </div>
 
-            {/* Badges môn học & đơn vị */}
+            {/* Môn học */}
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-4">
               {data.subjects?.map((sub) => (
                 <Badge key={sub.id} variant="primary" className="text-xs font-medium px-2.5 py-1">
@@ -198,13 +198,6 @@ export default function InstructorDetail({
                 </Badge>
               ))}
 
-              {data.providers?.map((p) => (
-                <Link key={p.id} href={`/providers/${encodeURIComponent(p.slug)}`} className="rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                  <Badge variant="vanilla" className="text-xs font-medium px-2.5 py-1 hover:underline">
-                    {p.name}
-                  </Badge>
-                </Link>
-              ))}
             </div>
 
             {/* Stats Bar */}

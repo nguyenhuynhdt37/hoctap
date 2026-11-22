@@ -26,12 +26,14 @@ function state(c: BundleCoupon) {
 }
 export default function CouponManager({
   bundleId,
+  couponUrl,
   onStateChange,
 }: {
   bundleId: string;
+  couponUrl?: string;
   onStateChange?: (value: { dirty: boolean; busy: boolean }) => void;
 }) {
-  const url = `/admin/bundles/${bundleId}/coupons`;
+  const url = couponUrl ?? `/admin/bundles/${bundleId}/coupons`;
   const { data, error, mutate } = useSWR<{ items: BundleCoupon[] }>(
     url,
     fetchLearning,

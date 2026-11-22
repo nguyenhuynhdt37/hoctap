@@ -1,0 +1,75 @@
+{
+  "sandbox_checks": {
+    "runtime_versions": {
+      "python": "3.11.0",
+      "c++": "10.2.0"
+    },
+    "checks": [
+      {
+        "name": "multi_file_stdin",
+        "exit_code": 0,
+        "status": null,
+        "signal": null,
+        "stdout_bytes": 3,
+        "stderr_bytes": 0,
+        "passed": true
+      },
+      {
+        "name": "timeout",
+        "exit_code": null,
+        "status": "TO",
+        "signal": "SIGKILL",
+        "stdout_bytes": 0,
+        "stderr_bytes": 0,
+        "passed": true
+      },
+      {
+        "name": "network_isolation",
+        "exit_code": 0,
+        "status": null,
+        "signal": null,
+        "stdout_bytes": 11,
+        "stderr_bytes": 0,
+        "observation": "DENIED:101",
+        "passed": true
+      },
+      {
+        "name": "output_cap",
+        "exit_code": null,
+        "status": "OL",
+        "signal": "SIGKILL",
+        "stdout_bytes": 65536,
+        "stderr_bytes": 39,
+        "passed": true
+      },
+      {
+        "name": "compile_error_separation",
+        "exit_code": 1,
+        "status": "RE",
+        "signal": null,
+        "stdout_bytes": 0,
+        "stderr_bytes": 715,
+        "verdict": "compile_error",
+        "passed": true
+      },
+      {
+        "name": "memory_limit",
+        "exit_code": 137,
+        "status": "RE",
+        "signal": null,
+        "stdout_bytes": 0,
+        "stderr_bytes": 90,
+        "passed": true
+      }
+    ],
+    "passed": true
+  },
+  "regression_summary": {
+    "runtimes_tested": 14,
+    "runtimes_passed": 14,
+    "exercises_tested": 26,
+    "exercises_passed": 26,
+    "cases_tested": 77,
+    "cases_passed": 77
+  }
+}

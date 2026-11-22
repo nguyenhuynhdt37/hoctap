@@ -24,6 +24,7 @@ interface CodeEditorPanelProps {
   onTestCode: () => void;
   onResetCode: () => void;
   onSaveFile: () => void;
+  onSelectionChange?: (selection: { start: number; end: number }) => void;
 }
 
 export default function CodeEditorPanel({
@@ -37,30 +38,32 @@ export default function CodeEditorPanel({
   onTestCode,
   onResetCode,
   onSaveFile,
+  onSelectionChange,
 }: CodeEditorPanelProps) {
   const activeFile = files.find((f) => f.id === activeFileId);
 
   return (
-    <div className="bg-surface rounded-2xl border border-border shadow-xs flex flex-col flex-1 min-h-0 overflow-hidden">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-xs">
       {/* Header */}
-      <div className="border-b border-border bg-primary-pastel/40 px-4 py-3 flex items-center justify-between flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <h2 className="text-lg font-bold text-foreground">
+      <div className="flex shrink-0 flex-col gap-2 border-b border-border bg-primary-pastel/40 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4">
+        <div className="flex min-w-0 items-center gap-2">
+          <h2 className="truncate text-base font-bold text-foreground sm:text-lg">
             {currentExercise?.title || "Luyện tập code"}
           </h2>
           {currentExercise?.language && (
-            <span className="text-xs bg-primary text-white px-2 py-0.5 rounded font-medium">
+            <span className="shrink-0 rounded bg-primary px-2 py-0.5 text-xs font-medium text-white">
               {currentExercise.language.name} {currentExercise.language.version}
             </span>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <button
+            type="button"
             onClick={onTestCode}
             disabled={
               isRunning || !files.length || currentExercise?.is_pass
             }
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary-hover text-white rounded-xl text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-xs cursor-pointer"
+            className="flex min-h-11 cursor-pointer items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 text-sm font-medium text-white shadow-xs transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isRunning ? (
               <>
@@ -75,8 +78,9 @@ export default function CodeEditorPanel({
             )}
           </button>
           <button
+            type="button"
             onClick={onResetCode}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-background hover:bg-border border border-border text-foreground rounded-xl text-sm font-medium transition-colors cursor-pointer"
+            className="flex min-h-11 cursor-pointer items-center gap-1.5 rounded-xl border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-border"
           >
             <HiRefresh className="w-4 h-4" />
             <span className="hidden sm:inline">Reset</span>
@@ -85,7 +89,7 @@ export default function CodeEditorPanel({
       </div>
 
       {/* Code Editor */}
-      <div className="flex flex-1 min-h-0">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col xl:flex-row">
         <FileExplorer
           files={files}
           activeFileId={activeFileId}
@@ -93,21 +97,25 @@ export default function CodeEditorPanel({
         />
 
         {/* Editor */}
-        <div className="flex-1 flex flex-col bg-surface min-w-0">
-          <div className="px-4 py-2 bg-background border-b border-border flex items-center justify-between flex-shrink-0">
-            <span className="text-xs text-muted-foreground font-medium truncate">
+        <div
+          data-learning-code-editor
+          className="flex min-h-[300px] min-w-0 flex-1 flex-col overflow-hidden bg-surface"
+        >
+          <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border bg-background px-3 py-2">
+            <span className="truncate text-xs font-medium text-muted-foreground">
               {activeFile?.filename || "No file selected"}
             </span>
             {activeFile?.role === "starter" && (
-              <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded">
+              <span className="shrink-0 rounded bg-accent-vanilla px-2 py-0.5 text-xs text-accent-vanilla-foreground">
                 Starter
               </span>
             )}
           </div>
           {activeFile && (
-            <div className="flex-1 min-h-[300px]">
+            <div className="min-h-[280px] min-w-0 flex-1 overflow-hidden">
               <CodeEditor
                 key={`code-${activeFile.id}-${language}`}
+                className="h-full max-w-full min-w-0 [&_.cm-editor]:max-w-full [&_.cm-scroller]:overflow-auto"
                 height="100%"
                 language={language}
                 value={activeFile.content || ""}
@@ -115,6 +123,7 @@ export default function CodeEditorPanel({
                   onUpdateFileContent(activeFile.id, value || "");
                 }}
                 onBlur={onSaveFile}
+                onSelectionChange={onSelectionChange}
                 options={{ minimap: { enabled: false } }}
               />
             </div>

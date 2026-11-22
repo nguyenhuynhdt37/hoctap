@@ -14,7 +14,10 @@ import api from "@/lib/utils/fetcher/client/axios";
 import { postChatStream } from "@/lib/utils/fetcher/client/chat-stream";
 import { ScopeSelector } from "./chat-chips";
 import { getImageUrl } from "@/lib/utils/helpers/image";
+import { useAssistantVoice } from "../../assistant/voice-provider";
+import { DictationButton } from "../../assistant/dictation-button";
 import { ImagePreviewModal } from "@/components/ui/image-preview-modal";
+import { AgentUnavailableError, useLearningAgent } from "../agent/agent-context";
 
 // ========== TYPES ==========
 
@@ -56,9 +59,12 @@ function MessageInput({
   onUpdateMessage,
   onThreadCreated,
 }: MessageInputProps) {
+  const agent = useLearningAgent();
+  const voice = useAssistantVoice();
   // State
   const [localImages, setLocalImages] = useState<LocalImage[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [dictating, setDictating] = useState(false);
   const [viewingImage, setViewingImage] = useState<string | null>(null);
 
   // Derived state
@@ -87,7 +93,7 @@ function MessageInput({
   // ========== UPLOAD ==========
 
   const uploadFiles = useCallback(async (files: File[]) => {
-    const imageFiles = files.filter((f) => f.type.startsWith("image/"));
+    const imageFiles = files.filter((f) => f.type.startsWith("image/")).slice(0, Math.max(0, 3 - localImages.length));
     if (!imageFiles.length) return;
 
     // 1. Create optimistic placeholders
@@ -107,7 +113,7 @@ function MessageInput({
           const form = new FormData();
           form.append("file", await prepareImageUpload(file, "chat"));
           const res = await api.post<UploadedImage>(
-            "/tutor-chat/upload/image",
+            "/agent/attachments/image",
             form,
             { headers: { "Content-Type": "multipart/form-data" } }
           );
@@ -131,7 +137,7 @@ function MessageInput({
         }
       })
     );
-  }, []);
+  }, [localImages.length]);
 
   const removeImage = useCallback((tempId: string) => {
     setLocalImages((prev) => {
@@ -150,7 +156,7 @@ function MessageInput({
         .filter((img) => !img.isUploading && img.data)
         .map((img) => img.data!);
 
-      if ((!text && !uploadedImages.length) || isLoading || isUploading) return;
+      if ((!text && !uploadedImages.length) || isLoading || isUploading || dictating || voice?.active) return;
 
       // 1. Tạo optimistically
       const userMsgId = `user-${Date.now()}-${Math.random()
@@ -190,30 +196,30 @@ function MessageInput({
         // 5. Gọi API
         streamRef.current = new AbortController();
         let streamedContent = "";
-        const response = await postChatStream<MessageResponse>(
+        const delta = (text: string) => {
+          streamedContent += text;
+          onUpdateMessage(assistantMsgId, { content: streamedContent, isStreaming: true });
+        };
+        const legacy = () => postChatStream<MessageResponse>(
           `/tutor-chat/lessons/${lessonId}/chat`,
-          {
-            message: text,
-            thread_id: threadId,
-            images: userMessage.images?.map((img) => ({
-              url: img.url,
-              file_size: img.file_size,
-              mime_type: img.mime_type,
-              ocr_text: img.ocr_text,
-            })),
-          },
-          (delta) => {
-            streamedContent += delta;
-            onUpdateMessage(assistantMsgId, { content: streamedContent, isStreaming: true });
-          },
-          streamRef.current.signal
+          { message: text, thread_id: threadId, images: userMessage.images?.map(img => ({ url: img.url, file_size: img.file_size, mime_type: img.mime_type, ocr_text: img.ocr_text })) },
+          delta, streamRef.current!.signal,
         );
+        const activity: import("../agent/contracts").AgentEvent[] = [];
+        let response: MessageResponse;
+        if (agent) {
+          try { response = await agent.send(text, threadId, delta, event => {
+            activity.push(event); onUpdateMessage(assistantMsgId, { activity: [...activity] });
+          }, uploadedImages); }
+          catch (error) { if (error instanceof AgentUnavailableError) response = await legacy(); else throw error; }
+        } else response = await legacy();
 
         // 6. Cập nhật assistant message
         onUpdateMessage(assistantMsgId, {
           id: response.id,
           content: response.content,
           sources: response.sources,
+          activity: response.activity,
           isStreaming: false,
         });
 
@@ -223,7 +229,7 @@ function MessageInput({
       } catch (err) {
         console.error("Send failed:", err);
         onUpdateMessage(assistantMsgId, {
-          content: "Lỗi! Vui lòng thử lại.",
+          content: err instanceof Error ? err.message : "Không hoàn tất được yêu cầu. Hãy kiểm tra lịch sử trước khi thử lại.",
           isStreaming: false,
         });
       } finally {
@@ -231,9 +237,12 @@ function MessageInput({
       }
     },
     [
+      agent,
       localImages,
       isLoading,
       isUploading,
+      dictating,
+      voice?.active,
       lessonId,
       threadId,
       onNewMessages,
@@ -246,9 +255,9 @@ function MessageInput({
   // ========== HANDLERS ==========
 
   const handleSubmit = useCallback(() => {
-    const text = inputRef.current?.value.trim() || "";
+    const text = inputRef.current?.value.trim() || (localImages.some(image=>image.data) ? "Bạn hãy xem và giải thích ảnh này." : "");
     sendMessage(text);
-  }, [sendMessage]);
+  }, [sendMessage, localImages]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -310,7 +319,7 @@ function MessageInput({
 
   // ========== RENDER ==========
 
-  const disabled = isLoading || isUploading;
+  const disabled = isLoading || isUploading || dictating || Boolean(voice?.active);
 
   return (
     <div
@@ -415,6 +424,7 @@ function MessageInput({
           <HiPhotograph className="w-5 h-5" />
         </button>
 
+        <DictationButton disabled={isLoading || isUploading || Boolean(voice?.active)} onBusyChange={setDictating} getValue={()=>inputRef.current?.value || ""} onValueChange={text=>{if(inputRef.current){inputRef.current.value=text;inputRef.current.scrollTop=inputRef.current.scrollHeight;}}} />
         <textarea
           ref={inputRef}
           onKeyDown={handleKeyDown}

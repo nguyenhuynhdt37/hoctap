@@ -165,4 +165,32 @@ find(header, n => n.type === 'input' && n.props.placeholder === 'Tìm khóa họ
 header.render();
 find(header, n => n.type === 'form').props.onSubmit({ preventDefault() {} });
 assert.equal(new URL(header.state.pushes.at(-1), 'http://test').searchParams.get('search'), 'Toán & Lý');
-console.log('Lecturer regression checks passed: topic hydration/change, nullable category, API error/retry recovery, resource routes, encoded search, search navigation, pagination and chapter isolation.');
+// Regression check for FastAPI / Pydantic validation error formatting
+const errorModuleCode = ts.transpileModule(fs.readFileSync(path.join(root, 'src/lib/utils/helpers/error.ts'), 'utf8'), {
+  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true },
+}).outputText;
+const errorModule = { exports: {} };
+vm.runInNewContext(errorModuleCode, { module: errorModule, exports: errorModule.exports });
+const { formatApiError } = errorModule.exports;
+
+const pydanticArrayError = {
+  response: {
+    data: {
+      detail: [
+        { type: 'string_too_short', loc: ['body', 'title'], msg: 'Tiêu đề phải có ít nhất 3 ký tự', input: '' },
+      ],
+    },
+  },
+};
+assert.equal(formatApiError(pydanticArrayError), 'title: Tiêu đề phải có ít nhất 3 ký tự');
+
+const pydanticObjectError = {
+  response: {
+    data: {
+      detail: { type: 'value_error', loc: ['body', 'price'], msg: 'Giá không hợp lệ', input: -1 },
+    },
+  },
+};
+assert.equal(formatApiError(pydanticObjectError), 'price: Giá không hợp lệ');
+
+console.log('Lecturer regression checks passed: topic hydration/change, nullable category, API error/retry recovery, resource routes, encoded search, search navigation, pagination, chapter isolation, and API error formatting.');

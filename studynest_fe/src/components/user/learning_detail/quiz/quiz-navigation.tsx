@@ -18,11 +18,12 @@ export default function QuizNavigation({
   onNext,
 }: QuizNavigationProps) {
   return (
-    <div className="flex justify-between items-center pt-4 border-t border-border">
+    <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-4">
       <button
+        type="button"
         onClick={onPrev}
         disabled={isFirstQuestion}
-        className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-colors ${
+        className={`flex min-h-11 items-center gap-2 rounded-xl px-4 py-2 transition-colors ${
           isFirstQuestion
             ? "bg-background text-muted-foreground/50 cursor-not-allowed"
             : "bg-background text-foreground hover:bg-border cursor-pointer"
@@ -33,9 +34,10 @@ export default function QuizNavigation({
       </button>
 
       <button
+        type="button"
         onClick={onNext}
         disabled={!isAnswered}
-        className={`flex items-center space-x-2 px-6 py-2 rounded-xl transition-colors ${
+        className={`flex min-h-11 items-center gap-2 rounded-xl px-4 py-2 transition-colors sm:px-6 ${
           isAnswered
             ? "bg-primary text-white hover:bg-primary-hover cursor-pointer shadow-sm"
             : "bg-background text-muted-foreground/50 cursor-not-allowed"

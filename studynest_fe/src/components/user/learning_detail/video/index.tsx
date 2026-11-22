@@ -7,6 +7,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import QuizModal from "./quiz-modal";
 import VideoOverlays from "./video-overlays";
 import YouTubePlayer from "./youtube-player";
+import { useLearningAgent, useAgentAction, useAgentSnapshot } from "../agent/agent-context";
+import { numberArg, waitForState } from "../agent/action-registry";
+import { submitQuizAttempt } from "../quiz/submit-attempt";
 
 declare global {
   interface Window {
@@ -53,6 +56,9 @@ export default function VideoLesson({
   const [isPaused, setIsPaused] = useState(false);
   const [isFastForwarding, setIsFastForwarding] = useState(false);
   const [isReady, setIsReady] = useState(false);
+  const [quizSaveError, setQuizSaveError] = useState("");
+  const quizAttemptKey = useRef("");
+  const quizSubmitting = useRef(false);
 
   const isCompleted =
     completedLessons?.has(lesson.id || "") || lesson.is_completed || false;
@@ -91,6 +97,45 @@ export default function VideoLesson({
     onMarkCompleted,
     lesson.id,
   ]);
+
+  const agent = useLearningAgent();
+  const readVideo = () => {
+    const player = playerRef.current;
+    if (!player?.getCurrentTime || !isReady) throw new Error("Trình phát video chưa sẵn sàng.");
+    return { current_time: Number(player.getCurrentTime()), duration: Number(player.getDuration()),
+      is_playing: player.getPlayerState() === 1, player_state: Number(player.getPlayerState()), playback_rate: Number(player.getPlaybackRate()), lesson_id: lesson.id };
+  };
+  useAgentSnapshot("video", () => {
+    try { const { lesson_id: _lesson, player_state: _state, ...video } = readVideo(); return { video }; } catch { return {}; }
+  });
+  useEffect(() => { agent?.changed(); }, [isReady, agent?.changed]);
+  useAgentAction("video.get_state", { execute: async () => readVideo(), verify: result => Number.isFinite((result as { current_time: number }).current_time) });
+  useAgentAction("video.seek", { execute: async (args, signal) => {
+    const state = readVideo();
+    const seconds = numberArg({ timestamp_seconds: args.timestamp_seconds ?? args.seconds ?? args.current_time }, "timestamp_seconds", 0, state.duration);
+    if (signal.aborted) throw new DOMException("Đã hủy", "AbortError");
+    playerRef.current.seekTo(seconds, true);
+    await waitForState(() => Math.abs(readVideo().current_time - seconds) < 1.5, signal);
+    return { ...readVideo(), requested_timestamp: seconds, verified: true };
+  }, verify: result => Boolean((result as { verified?: boolean }).verified) });
+  useAgentAction("video.play", { execute: async (_args, signal) => {
+    readVideo(); if (signal.aborted) throw new DOMException("Đã hủy", "AbortError");
+    playerRef.current.playVideo(); await waitForState(() => readVideo().is_playing, signal);
+    return { ...readVideo(), verified: true };
+  }, verify: result => Boolean((result as { is_playing: boolean }).is_playing) });
+  useAgentAction("video.pause", { execute: async (_args, signal) => {
+    readVideo(); if (signal.aborted) throw new DOMException("Đã hủy", "AbortError");
+    playerRef.current.pauseVideo(); await waitForState(() => [-1, 0, 2, 5].includes(readVideo().player_state), signal);
+    return { ...readVideo(), verified: true };
+  }, verify: result => (result as { is_playing: boolean }).is_playing === false });
+  useAgentAction("video.set_playback_rate", { execute: async (args, signal) => {
+    readVideo(); const rate = numberArg({ playback_rate: args.playback_rate ?? args.rate }, "playback_rate", 0.25, 2);
+    const allowed = playerRef.current.getAvailablePlaybackRates();
+    if (!allowed.includes(rate)) throw new Error("Video không hỗ trợ tốc độ này.");
+    if (signal.aborted) throw new DOMException("Đã hủy", "AbortError");
+    playerRef.current.setPlaybackRate(rate); await waitForState(() => readVideo().playback_rate === rate, signal);
+    return { ...readVideo(), verified: true };
+  }, verify: result => Boolean((result as { verified?: boolean }).verified) });
 
   const handlePlayerReady = useCallback((event: any) => {
     setIsReady(true);
@@ -330,38 +375,23 @@ export default function VideoLesson({
     }
   };
 
-  const handleQuizComplete = (score: number, total: number) => {
-    setQuizScore(score);
-    setShowResults(true);
-    const percent = (score / total) * 100;
-    if (percent >= 70) {
-      // Luôn nổ pháo hoa khi đạt >= 70%
-      playSuccessSound();
-      triggerCelebration(3, 2);
-      confetti({
-        particleCount: 150,
-        spread: 120,
-        origin: { y: 0.6 },
-        colors: [
-          "#356FA7",
-          "#7BAFD4",
-          "#BFD7ED",
-          "#F7C9D9",
-          "#E3D5F5",
-          "#F8E9C9",
-        ],
-        shapes: ["star", "circle"],
-        scalar: 1.2,
-      });
-
-      // Chỉ mark completed nếu chưa completed
-      if (!isCompleted) {
-        onMarkCompleted?.(lesson.id);
-      }
-    }
+  const handleQuizComplete = async (_score: number, _total: number) => {
+    if (quizSubmitting.current) return;
+    quizSubmitting.current = true; setQuizSaveError("");
+    if (!quizAttemptKey.current) quizAttemptKey.current = crypto.randomUUID();
+    try {
+      const answers = quizzes.map(quiz => ({ question_id: quiz.id, option_id: quiz.options[selectedAnswers[quiz.id]]?.id || "" }));
+      if (answers.some(answer => !answer.option_id)) throw new Error("Hãy trả lời đầy đủ câu hỏi trước khi nộp bài.");
+      const verified = await submitQuizAttempt(lesson.id, answers, quizAttemptKey.current);
+      setQuizScore(verified.correct); setShowResults(true);
+      if (verified.score_percent >= 70 && !isCompleted) { playSuccessSound(); triggerCelebration(3, 2); onMarkCompleted?.(lesson.id); }
+    } catch { setQuizSaveError("Chưa lưu được bài làm. Hãy nộp lại; tiến độ chưa được xác nhận hoàn thành."); }
+    finally { quizSubmitting.current = false; }
   };
 
   const handleAnswerSelect = (questionId: string, answerIndex: number) => {
+    if (quizSubmitting.current) return;
+    quizAttemptKey.current = "";
     setSelectedAnswers((prev) => ({ ...prev, [questionId]: answerIndex }));
     setAnsweredQuestions((prev) => new Set([...prev, questionId]));
   };
@@ -378,7 +408,7 @@ export default function VideoLesson({
           }
         }
       });
-      handleQuizComplete(correct, quizzes.length);
+      void handleQuizComplete(correct, quizzes.length);
     } else {
       setCurrentQuestionIndex((prev) => prev + 1);
     }
@@ -389,6 +419,7 @@ export default function VideoLesson({
   };
 
   const resetQuiz = () => {
+    quizAttemptKey.current = ""; setQuizSaveError("");
     setCurrentQuestionIndex(0);
     setSelectedAnswers({});
     setShowResults(false);
@@ -455,6 +486,7 @@ export default function VideoLesson({
         />
       </div>
 
+      {quizSaveError && <p role="alert" className="m-3 rounded-xl border border-warning-border bg-warning-bg p-3 text-sm text-warning-foreground">{quizSaveError}</p>}
       {showQuiz && hasQuizzes && (
         <QuizModal
           lessonTitle={lesson.title}

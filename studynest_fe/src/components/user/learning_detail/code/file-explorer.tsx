@@ -20,18 +20,18 @@ export default function FileExplorer({
   onSelectFile,
 }: FileExplorerProps) {
   return (
-    <div className="w-48 bg-background border-r border-border flex flex-col flex-shrink-0">
-      <div className="px-3 py-2 bg-surface border-b border-border">
-        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+    <div className="flex w-full min-w-0 shrink-0 flex-col border-b border-border bg-background xl:w-48 xl:border-b-0 xl:border-r">
+      <div className="border-b border-border bg-surface px-3 py-2">
+        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Files
         </span>
       </div>
-      <div className="flex-1 overflow-y-auto py-1">
+      <div className="flex gap-1 overflow-x-auto p-1 xl:flex-1 xl:flex-col xl:overflow-x-hidden xl:overflow-y-auto">
         {files.map((file) => (
           <button
             key={file.id}
             onClick={() => onSelectFile(file.id)}
-            className={`w-full flex items-center gap-2 px-3 py-2 text-left transition-colors cursor-pointer ${
+            className={`flex w-auto shrink-0 cursor-pointer items-center gap-2 px-3 py-2 text-left transition-colors xl:w-full ${
               activeFileId === file.id
                 ? "bg-primary-pastel/50 text-foreground border-r-2 border-r-primary"
                 : "text-foreground/80 hover:bg-surface"

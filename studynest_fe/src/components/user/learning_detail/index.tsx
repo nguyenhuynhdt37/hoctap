@@ -22,6 +22,8 @@ import LessonRenderer from "./LessonRenderer";
 import ProgressModal from "./ProgressModal";
 import Sidebar from "./Sidebar";
 import LearningTabs from "./tabs";
+import { LearningAgentProvider, useLearningAgent, useAgentAction, useAgentSnapshot } from "./agent/agent-context";
+import { stringArg, waitForState } from "./agent/action-registry";
 
 function LearningDetail(props: LearningDetailProps) {
   const { courseData, error, accessToken } = props;
@@ -279,6 +281,7 @@ function LearningDetail(props: LearningDetailProps) {
   // Function để set active lesson và refresh data
   const setActiveLessonAndRefresh = useCallback(
     async (lessonId: string) => {
+      if (!lessonId) throw new Error("Không tìm thấy bài học cần mở.");
       try {
         // Gọi API để set active lesson
         if (courseData?.id) {
@@ -319,8 +322,7 @@ function LearningDetail(props: LearningDetailProps) {
         }
       } catch (error) {
         console.error("Error setting active lesson:", error);
-        // Fallback: vẫn set lesson trong UI
-        setActiveLesson(lessonId);
+        throw error;
       }
     },
     [courseData?.id, curriculumData, mutateActiveLesson]
@@ -341,10 +343,72 @@ function LearningDetail(props: LearningDetailProps) {
       if (locked) return;
 
       // Gọi API để set active lesson và refresh data
-      setActiveLessonAndRefresh(lessonId);
+      void setActiveLessonAndRefresh(lessonId).catch(() => undefined);
     },
     [curriculumData, setActiveLessonAndRefresh]
   );
+
+  const agent = useLearningAgent();
+  useEffect(() => {
+    const refresh = () => { void Promise.all([mutateCurriculum(), mutateActiveLesson(), mutateNavigation()]); };
+    window.addEventListener('maymay:lesson-completed', refresh);
+    return () => window.removeEventListener('maymay:lesson-completed', refresh);
+  }, [mutateCurriculum, mutateActiveLesson, mutateNavigation]);
+  const screenState = useRef({ lessonId: initialActiveLesson?.id, activeTab, sidebarOpen, chatOpen });
+  screenState.current = { lessonId: initialActiveLesson?.id, activeTab, sidebarOpen, chatOpen };
+  useAgentSnapshot("learning", () => ({
+    course_id: courseData?.id, lesson_id: initialActiveLesson?.id, active_tab: activeTab,
+    active_panel: chatOpen ? "chat" : sidebarOpen ? "sidebar" : "content",
+  }));
+  useEffect(() => { agent?.changed(); }, [initialActiveLesson?.id, activeTab, sidebarOpen, chatOpen, agent?.changed]);
+  const navigateAgent = async (lessonId: string, signal: AbortSignal) => {
+    const target = curriculumData?.sections.flatMap(section => section.lessons).find(item => item.id === lessonId);
+    if (!target || target.is_locked) throw new Error("Bài học chưa được cấp quyền hoặc đang bị khóa.");
+    if (signal.aborted) throw new DOMException("Đã hủy", "AbortError");
+    await setActiveLessonAndRefresh(lessonId);
+    await waitForState(() => screenState.current.lessonId === lessonId, signal);
+    return { lesson_id: lessonId, verified: true };
+  };
+  useAgentAction("learning.navigate_lesson", { execute: (args, signal) => navigateAgent(stringArg(args, "lesson_id"), signal), verify: result => Boolean((result as { verified?: boolean })?.verified) });
+  useAgentAction("learning.next_lesson", { execute: (args, signal) => {
+    if (typeof args.lesson_id === "string") return navigateAgent(args.lesson_id, signal);
+    if (!navigationData?.can_next || !navigationData.next_lesson_id) throw new Error("Chưa thể mở bài tiếp theo.");
+    return navigateAgent(navigationData.next_lesson_id, signal);
+  }, verify: result => Boolean((result as { verified?: boolean })?.verified) });
+  useAgentAction("learning.previous_lesson", { execute: (args, signal) => {
+    if (typeof args.lesson_id === "string") return navigateAgent(args.lesson_id, signal);
+    if (!navigationData?.can_prev || !navigationData.prev_lesson_id) throw new Error("Chưa thể mở bài trước.");
+    return navigateAgent(navigationData.prev_lesson_id, signal);
+  }, verify: result => Boolean((result as { verified?: boolean })?.verified) });
+  const setPanel = async (args: Record<string, unknown>, signal: AbortSignal, open: boolean) => {
+    const panel = stringArg(args, "panel");
+    if (!["sidebar", "chat", "notes", "editor"].includes(panel)) throw new Error("Bảng này không khả dụng.");
+    if (panel === "notes") {
+      if (["code", "quiz"].includes(initialActiveLesson?.lesson_type || "")) throw new Error("Ghi chú chưa khả dụng ở loại bài này.");
+      setActiveTab(open ? "notes" : "lesson"); await waitForState(() => screenState.current.activeTab === (open ? "notes" : "lesson"), signal);
+      return { panel, is_open: open, verified: true };
+    }
+    if (panel === "editor") {
+      if (!open || initialActiveLesson?.lesson_type !== "code") throw new Error("Editor chỉ khả dụng trong bài tập lập trình.");
+      await waitForState(() => Boolean(agent?.snapshot().editor?.active_file_id), signal);
+      return { panel, is_open: true, verified: true };
+    }
+    if (signal.aborted) throw new DOMException("Đã hủy", "AbortError");
+    if (panel === "sidebar") { setSidebarOpen(open); if (open) setChatOpen(false); }
+    else { setChatOpen(open); if (open) setSidebarOpen(false); }
+    await waitForState(() => panel === "sidebar" ? screenState.current.sidebarOpen === open : screenState.current.chatOpen === open, signal);
+    return { panel, is_open: open, verified: true };
+  };
+  useAgentAction("ui.open_panel", { execute: (args, signal) => setPanel(args, signal, true), verify: result => Boolean((result as { verified?: boolean })?.verified) });
+  useAgentAction("ui.close_panel", { execute: (args, signal) => setPanel(args, signal, false), verify: result => Boolean((result as { verified?: boolean })?.verified) });
+  useAgentAction("ui.switch_tab", { execute: async (args, signal) => {
+    const tab = stringArg(args, "tab");
+    if (!["lesson", "tools", "notes", "overview"].includes(tab) || ["code", "quiz"].includes(initialActiveLesson?.lesson_type || "")) throw new Error("Tab này không khả dụng cho bài học hiện tại.");
+    if (signal.aborted) throw new DOMException("Đã hủy", "AbortError");
+    setActiveTab(tab); await waitForState(() => screenState.current.activeTab === tab, signal);
+    return { active_tab: tab, verified: true };
+  }, verify: result => Boolean((result as { verified?: boolean })?.verified) });
+  useAgentAction("ui.get_state", { execute: async () => agent?.snapshot(), verify: result => Boolean(result) });
 
   // Memoized computed values
   const instructorName = useMemo(() => {
@@ -430,31 +494,35 @@ function LearningDetail(props: LearningDetailProps) {
     );
   }
 
+  const closeTutorChat = () => {
+    setChatOpen(false);
+    // Below md the sidebar is a full-width overlay. Reopening it would cover the lesson.
+    if (window.matchMedia("(min-width: 768px)").matches) {
+      setSidebarOpen(true);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex h-dvh max-w-full flex-col overflow-hidden bg-background">
       <LearningHeader
         courseTitle={curriculumData.title}
+        courseId={courseData.id}
         onOpenProgress={() => setOpenProgress(true)}
         chatOpen={chatOpen}
         onToggleChat={() => {
-          const newChatOpen = !chatOpen;
-          setChatOpen(newChatOpen);
-          // Khi mở chat thì đóng sidebar, khi đóng chat thì mở lại sidebar
-          if (newChatOpen) {
-            setSidebarOpen(false);
-          } else {
-            setSidebarOpen(true);
+          if (chatOpen) {
+            closeTutorChat();
+            return;
           }
+          setChatOpen(true);
+          setSidebarOpen(false);
         }}
       />
 
       {/* Main Layout */}
-      <div className="flex">
+      <div className="flex min-h-0 min-w-0 w-full flex-1">
         {/* Main Content Area */}
-        <div
-          className="flex-1 overflow-y-auto"
-          style={{ height: "calc(100vh - 5rem - 4rem)" }}
-        >
+        <div data-learning-lesson className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
           <LessonRenderer
             activeLessonData={initialActiveLesson}
             onMarkCompleted={markLessonCompleted}
@@ -478,6 +546,7 @@ function LearningDetail(props: LearningDetailProps) {
               }
             }}
             accessToken={accessToken}
+            lessonAuthorId={instructorData?.id ?? null}
           />
 
           {/* Chỉ hiển thị LearningTabs khi không phải quiz và code lesson */}
@@ -538,7 +607,7 @@ function LearningDetail(props: LearningDetailProps) {
             maxWidth={800}
             defaultWidth={400}
           >
-            <div style={{ height: "calc(100vh - 5rem - 4rem)" }}>
+            <div className="h-full min-h-0 min-w-0">
               <Suspense
                 fallback={
                   <div className="h-full flex items-center justify-center">
@@ -567,10 +636,7 @@ function LearningDetail(props: LearningDetailProps) {
                       seekFn(timeSeconds);
                     }
                   }}
-                  onClose={() => {
-                    setChatOpen(false);
-                    setSidebarOpen(true);
-                  }}
+                  onClose={closeTutorChat}
                 />
               </Suspense>
             </div>
@@ -596,7 +662,7 @@ function LearningDetail(props: LearningDetailProps) {
           )}
           completedLessons={curriculumData.completed_lessons || 0}
           totalLessons={curriculumData.total_lessons || 0}
-          headerHeightPx={80}
+          headerHeightPx={64}
           footerHeightPx={64}
         />
       </div>
@@ -649,4 +715,7 @@ function LearningDetail(props: LearningDetailProps) {
   );
 }
 
-export default React.memo(LearningDetail);
+export default React.memo(function AgentLearningDetail(props: LearningDetailProps) {
+  const sharedAgent = useLearningAgent();
+  return sharedAgent ? <LearningDetail {...props} /> : <LearningAgentProvider><LearningDetail {...props} /></LearningAgentProvider>;
+});

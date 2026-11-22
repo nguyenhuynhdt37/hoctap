@@ -13,7 +13,7 @@ from app.core.security import SecurityService
 from app.db.models.database import Sessions, User, UserRoles
 from app.db.sesson import AsyncSessionLocal, get_session
 from app.libs.formats.datetime import now as get_now
-from app.libs.formats.datetime import strip_tz
+from app.libs.formats.datetime import strip_tz, has_expired
 from app.libs.formats.datetime import to_utc_naive
 
 
@@ -60,7 +60,7 @@ class AuthorizationService:
                     Sessions.is_revoked.is_(False),
                 )
             )
-            if not session or strip_tz(session.expired_at) < get_now():
+            if not session or has_expired(session.expired_at):
                 raise HTTPException(status_code=401, detail="Session revoked or expired")
 
             stmt = (
@@ -132,7 +132,7 @@ class AuthorizationService:
                     Sessions.is_revoked.is_(False),
                 )
             )
-            if not session or strip_tz(session.expired_at) < get_now():
+            if not session or has_expired(session.expired_at):
                 return None
 
             stmt = (
@@ -227,7 +227,7 @@ class AuthorizationService:
                         Sessions.is_revoked.is_(False),
                     )
                 )
-                if not session or strip_tz(session.expired_at) < get_now():
+                if not session or has_expired(session.expired_at):
                     await websocket.send_json({"error": "Phiên đăng nhập đã hết hạn"})
                     await websocket.close(code=1008)
                     return None

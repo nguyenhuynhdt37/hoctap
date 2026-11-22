@@ -89,6 +89,8 @@ class FileStorageService:
             prefix = f"public/users/{parts[2]}/editor/{date}/{category}"
         elif len(parts) == 3 and parts[0] == "courses" and parts[2] == "thumbnails":
             prefix = f"public/courses/{parts[1]}/thumbnails"
+        elif len(parts) == 3 and parts[0] == "bundles" and parts[2] == "thumbnails":
+            prefix = f"public/bundles/{parts[1]}/thumbnails"
         elif len(parts) == 5 and parts[0] == "courses" and parts[2] == "lessons" and parts[4] == "resources":
             prefix = f"private/courses/{parts[1]}/lessons/{parts[3]}/resources/{category}"
         elif len(parts) == 2 and parts[0] == "tutor_chat":

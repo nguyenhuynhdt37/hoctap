@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getLatestAccessToken } from "@/lib/utils/fetcher/client/refresh-session";
+import api from "@/lib/utils/fetcher/client/axios";
 import type { MessageSource } from "@/types/user/tutor-chat";
+import type { AgentEvent } from "../../agent/contracts";
 
 export type VoiceState = "idle" | "connecting" | "listening" | "thinking" | "speaking" | "ended" | "error";
 export interface VoiceTurn { role: "user" | "assistant"; content: string; sources?: MessageSource[] }
@@ -21,12 +22,39 @@ interface Resources {
 }
 const empty = (): Resources => ({ playback: new Set(), nextPlay: 0, ready: false, muted: false, stopped: false });
 
-export function useLessonVoice(lessonId: string, accessToken?: string) {
+export function useLessonVoice(lessonId: string | undefined, accessToken?: string, agentSessionId?: string, onAgentEvent?: (event: AgentEvent) => Promise<void>) {
+  const [voiceName, setVoiceName] = useState("eve");
+  const [speed, setSpeed] = useState(1);
+  const [micThreshold, setMicThreshold] = useState(0.012);
+  const [preferencesLoaded, setPreferencesLoaded] = useState(false);
+  const [preferencesError, setPreferencesError] = useState("");
+  useEffect(() => {
+    let active = true;
+    const refresh = () => { void api.get("/agent/voice-settings").then(({ data }) => {
+      if (!active) return;
+      setVoiceName(data.voice); setSpeed(data.speed); setMicThreshold(data.mic_threshold);
+      setPreferencesLoaded(true);
+    }).catch(() => { if (active) setPreferencesError("Chưa tải được cài đặt giọng nói. Đang dùng cài đặt mặc định."); });
+    };
+    refresh();
+    window.addEventListener("maymay:voice-settings-updated", refresh);
+    return () => { active = false; window.removeEventListener("maymay:voice-settings-updated", refresh); };
+  }, []);
+  useEffect(() => {
+    if (!preferencesLoaded) return;
+    const timer = setTimeout(() => {
+      void api.put("/agent/voice-settings", { voice: voiceName, speed, mic_threshold: micThreshold })
+        .then(() => setPreferencesError("")).catch(() => setPreferencesError("Chưa lưu được cài đặt giọng nói vào tài khoản."));
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [preferencesLoaded, voiceName, speed, micThreshold]);
+  useEffect(() => { resources.current.recorder?.port.postMessage({ threshold: micThreshold }); }, [micThreshold]);
   const [state, setState] = useState<VoiceState>("idle");
   const [error, setError] = useState("");
   const [muted, setMuted] = useState(false);
   const [level, setLevel] = useState(0);
   const [canRead, setCanRead] = useState<boolean | null>(null);
+  const [imageCount, setImageCount] = useState(0);
   const [threadId, setThreadId] = useState<string>();
   const [turns, setTurns] = useState<VoiceTurn[]>([]);
   const [draft, setDraft] = useState({ user: "", assistant: "" });
@@ -70,7 +98,7 @@ export function useLessonVoice(lessonId: string, accessToken?: string) {
     cleanup(resources.current);
     const r = empty(); resources.current = r;
     setStatus("connecting"); setError(""); setMuted(false); setElapsed(0);
-    setTurns([]); setSources([]); setCanRead(null);
+    setTurns([]); setSources([]); setCanRead(null); setImageCount(0);
     draftRef.current = { user: "", assistant: "" }; setDraft(draftRef.current);
     const fail = (message: string) => {
       if (r.stopped) return;
@@ -80,28 +108,40 @@ export function useLessonVoice(lessonId: string, accessToken?: string) {
       if (!navigator.mediaDevices?.getUserMedia || !window.AudioContext) {
         throw new Error("Trình duyệt cần hỗ trợ micro và Web Audio. Hãy mở trang bằng HTTPS hoặc localhost.");
       }
-      if (!accessToken) throw new Error("Vui lòng đăng nhập lại để sử dụng voice.");
       // Resume inside the user gesture; microphone acquisition may open a permission prompt.
       const context = new AudioContext(); r.context = context;
       await context.resume();
+      let resuming = false;
+      const resumeAudio = () => {
+        if (r.stopped || resuming || context.state === "running" || context.state === "closed") return;
+        resuming = true;
+        void context.resume().then(() => {
+          if (!r.stopped && context.state !== "running") fail("Âm thanh đang bị trình duyệt tạm dừng. Hãy kết nối lại cuộc gọi.");
+        }).catch(() => fail("Chưa bật lại được âm thanh. Hãy kết nối lại cuộc gọi.")).finally(() => { resuming = false; });
+      };
+      context.onstatechange = resumeAudio;
       const stream = await navigator.mediaDevices.getUserMedia({ audio: {
-        echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1,
+        echoCancellation: true, noiseSuppression: true, autoGainControl: false, channelCount: 1,
       } });
       if (r.stopped) { stream.getTracks().forEach(t => t.stop()); return; }
       r.stream = stream;
       const mic = context.createMediaStreamSource(stream);
       const analyser = context.createAnalyser(); analyser.fftSize = 256; r.analyser = analyser;
       mic.connect(analyser);
-      await context.audioWorklet.addModule("/audio/tutor-recorder.js");
+      await context.audioWorklet.addModule("/audio/tutor-recorder.js?v=2");
       if (r.stopped) return;
-      const recorder = new AudioWorkletNode(context, "tutor-recorder"); r.recorder = recorder;
+      const recorder = new AudioWorkletNode(context, "tutor-recorder", { processorOptions: { threshold: micThreshold } }); r.recorder = recorder;
       mic.connect(recorder);
       const silence = context.createGain(); silence.gain.value = 0;
       recorder.connect(silence).connect(context.destination);
       const base = process.env.NEXT_PUBLIC_URL_BACKEND_WS || "ws://127.0.0.1:8000";
-      const url = new URL(`${base.replace(/\/$/, "")}/api/v1/tutor-chat/lessons/${lessonId}/voice`);
-      const token = getLatestAccessToken(accessToken) || accessToken;
-      const ws = new WebSocket(url, ["studynest-voice", `bearer.${token}`]); r.ws = ws;
+      const url = new URL(`${base.replace(/\/$/, "")}/api/v1/tutor-chat/${lessonId ? `lessons/${lessonId}/voice` : "voice"}`);
+      url.searchParams.set("voice", voiceName);
+      url.searchParams.set("speed", String(speed));
+      if (agentSessionId) url.searchParams.set("agent_session_id", agentSessionId);
+      const { data: credentials } = await api.post<{ ticket: string }>("/tutor-chat/voice-ticket", {});
+      if (r.stopped) return;
+      const ws = new WebSocket(url, ["studynest-voice", `ticket.${credentials.ticket}`]); r.ws = ws;
       let setupTimer: ReturnType<typeof setTimeout> | undefined = setTimeout(() => fail("Kết nối voice quá lâu. Vui lòng thử lại."), 20000);
       recorder.port.onmessage = (event: MessageEvent<ArrayBuffer>) => {
         if (!r.stopped && r.ready && !r.muted && ws.readyState === WebSocket.OPEN) {
@@ -113,9 +153,13 @@ export function useLessonVoice(lessonId: string, accessToken?: string) {
         if (r.stopped) return;
         try {
           const message = JSON.parse(event.data);
-          if (message.type === "ready") {
+          if (message.type === "agent_event") {
+            if (onAgentEvent) void onAgentEvent(message.event).catch(() => fail("Không hoàn tất được thao tác. Hãy kiểm tra trạng thái bài học."));
+          } else if (message.type === "memory_saved") {
+            window.dispatchEvent(new CustomEvent("maymay:memory-proposed"));
+          } else if (message.type === "ready") {
             clearTimeout(setupTimer); setupTimer = undefined;
-            r.ready = true; setCanRead(message.can_read_lesson); setThreadId(message.thread_id);
+            r.ready = true; setImageCount(message.image_count || 0); setCanRead(message.can_read_lesson); setThreadId(message.thread_id);
             setStatus("listening");
           } else if (message.type === "audio") {
             const bytes = Uint8Array.from(atob(message.data), c => c.charCodeAt(0));
@@ -125,10 +169,13 @@ export function useLessonVoice(lessonId: string, accessToken?: string) {
             for (let i = 0; i < channel.length; i++) channel[i] = view.getInt16(i * 2, true) / 32768;
             if (r.nextPlay - context.currentTime > 45) { fail("Câu trả lời voice quá dài. Hãy thử hỏi ngắn hơn."); return; }
             const node = context.createBufferSource(); node.buffer = buffer;
+            // The backend adjusts pace while preserving the voice's pitch.
+            node.playbackRate.value = 1;
             node.connect(context.destination);
             node.connect(analyser);
             r.playback.add(node);
-            const when = Math.max(context.currentTime + 0.015, r.nextPlay);
+            // Small startup buffer absorbs packet jitter; later chunks stay contiguous.
+            const when = r.nextPlay > context.currentTime ? r.nextPlay : context.currentTime + 0.08;
             node.start(when); r.nextPlay = when + buffer.duration;
             node.onended = () => {
               r.playback.delete(node);
@@ -142,7 +189,8 @@ export function useLessonVoice(lessonId: string, accessToken?: string) {
           else if (message.type === "transcript") {
             const role = message.role as "user" | "assistant";
             if (!["user", "assistant"].includes(role)) return;
-            draftRef.current = { ...draftRef.current, [role]: draftRef.current[role] + message.delta };
+            const text = typeof message.text === "string" ? message.text : draftRef.current[role] + message.delta;
+            draftRef.current = { ...draftRef.current, [role]: text };
             setDraft(draftRef.current);
           } else if (message.type === "turn") {
             setTurns(previous => [...previous,
@@ -183,7 +231,7 @@ export function useLessonVoice(lessonId: string, accessToken?: string) {
         : e.name === "NotFoundError" ? "Không tìm thấy micro. Hãy kết nối micro rồi thử lại."
         : e.message || "Không thể mở voice.");
     }
-  }, [accessToken, lessonId, cleanup, clearPlayback, setStatus]);
+  }, [voiceName, speed, micThreshold, accessToken, lessonId, agentSessionId, onAgentEvent, cleanup, clearPlayback, setStatus]);
 
   const toggleMute = useCallback(() => {
     const r = resources.current;
@@ -192,5 +240,5 @@ export function useLessonVoice(lessonId: string, accessToken?: string) {
     if (r.muted && r.ready && r.ws?.readyState === WebSocket.OPEN) r.ws.send(JSON.stringify({ type: "audio_end" }));
   }, []);
 
-  return { state, error, muted, level, canRead, threadId, turns, draft, sources, elapsed, start, stop, toggleMute };
+  return { preferencesLoaded, preferencesError, voiceName, setVoiceName, speed, setSpeed, micThreshold, setMicThreshold, state, error, muted, level, canRead, imageCount, threadId, turns, draft, sources, elapsed, start, stop, toggleMute };
 }

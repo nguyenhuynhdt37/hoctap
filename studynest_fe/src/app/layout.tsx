@@ -1,3 +1,4 @@
+import AssistantRoot from "@/components/user/assistant/assistant-root";
 import HydrationFix from "@/components/shared/hydration-fix";
 import RouteProgressBar from "@/components/shared/route-progress-bar";
 import { NotificationToastListener } from "@/components/shared/toast/notification-toast-listener";
@@ -105,7 +106,7 @@ export default function RootLayout({
         <QueryProvider>
           <ToastProvider />
           <NotificationToastListener />
-          <UserLoader>{children}</UserLoader>
+          <UserLoader><AssistantRoot>{children}</AssistantRoot></UserLoader>
         </QueryProvider>
       </body>
     </html>

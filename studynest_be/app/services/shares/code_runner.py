@@ -31,6 +31,7 @@ class PistonService:
         files: list[dict[str, str]],
         version: str | None = None,
         stdin: str | None = None,
+        *, run_timeout_ms: int | None = None, memory_limit: int | None = None,
     ) -> dict[str, Any]:
         """
         Chạy code qua Piston API.
@@ -41,6 +42,15 @@ class PistonService:
         if not files or not isinstance(files, list):
             raise ValueError("files phải là mảng chứa ít nhất 1 phần tử")
 
+        from app.schemas.lecturer.lesson import validate_code_filename
+        if len(files) > 20 or sum(len(f.get("content", "").encode("utf-8")) for f in files) > 500_000:
+            raise ValueError("Code vượt giới hạn sandbox")
+        files = [dict(f) for f in files]
+        for file in files:
+            if "name" in file:
+                validate_code_filename(file["name"])
+        if len({f.get("name", "main") for f in files}) != len(files):
+            raise ValueError("Tên file bị trùng")
         # Nếu chỉ 1 file mà không có 'name', thêm mặc định
         if len(files) == 1 and "name" not in files[0]:
             files[0]["name"] = "main"
@@ -51,8 +61,17 @@ class PistonService:
             "version": version,
             "files": files,
         }
-        if stdin:
+        if stdin is not None:
+            if len(stdin.encode("utf-8")) > 200_000:
+                raise ValueError("Input vượt giới hạn sandbox")
             payload["stdin"] = stdin
+        if run_timeout_ms is not None:
+            bounded_timeout = max(100, min(run_timeout_ms, 3_000))
+            payload.update(run_timeout=bounded_timeout, run_cpu_time=bounded_timeout)
+        if memory_limit is not None:
+            payload["run_memory_limit"] = max(134_217_728, min(memory_limit, 268_435_456))
+        payload.update(compile_timeout=10_000, compile_cpu_time=10_000,
+                       compile_memory_limit=268_435_456)
 
         async with httpx.AsyncClient(timeout=20, headers=self.headers) as client:
             try:
@@ -64,10 +83,10 @@ class PistonService:
                 )
                 return data
             except httpx.HTTPStatusError as e:
-                logger.error(f"❌ HTTP {e.response.status_code}: {e.response.text}")
+                logger.error("Piston HTTP {}", e.response.status_code)
                 raise
             except Exception as e:
-                logger.error(f"❌ Lỗi gọi piston: {e}")
+                logger.error("Piston error {}", type(e).__name__)
                 raise
 
     # =========================================================

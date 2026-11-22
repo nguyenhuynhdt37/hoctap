@@ -12,7 +12,12 @@ import {
 } from "@/types/user/tutor-chat";
 import api from "@/lib/utils/fetcher/client/axios";
 import VoiceDialog from "./voice/voice-dialog";
+import { AssistantSettings } from "../../assistant/assistant-settings";
+import { useAssistantVoice } from "../../assistant/voice-provider";
 import { Alert } from "@/components/ui/states";
+import { AgentStatus } from "../agent/agent-status";
+import { AgentAwareness } from "../agent/agent-awareness";
+import { AgentUnavailableError, useLearningAgent } from "../agent/agent-context";
 
 import MessageBubble from "./message-bubble";
 import MessageInput from "./message-input";
@@ -45,6 +50,18 @@ function TutorChatPanel({
   onClose,
   accessToken,
 }: TutorChatPanelProps) {
+  const agent = useLearningAgent();
+  const sharedVoice = useAssistantVoice();
+  const [voiceError, setVoiceError] = useState("");
+  const openVoice = async () => {
+    if (agent?.busy) return;
+    setVoiceError("");
+    try {
+      if (sharedVoice) await sharedVoice.open({ lessonId, lessonTitle, accessToken,
+        onSourceClick: handleSourceClick, onClose: id => { if (id) { setThreadId(id); void fetchMessages(id); } } });
+      else { await agent?.prepareSession(); setVoiceOpen(true); }
+    } catch (error) { if (error instanceof AgentUnavailableError) setVoiceOpen(true); else setVoiceError("Chưa kết nối được phiên học. Hãy thử lại."); }
+  };
   // State cơ bản
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [messages, setMessages] = useState<TutorMessage[]>([]);
@@ -74,6 +91,7 @@ function TutorChatPanel({
           timestamp: new Date(msg.created_at),
           images: msg.images,
           sources: msg.sources,
+          activity: msg.activity,
         })
       );
 
@@ -235,10 +253,10 @@ function TutorChatPanel({
   // ========== RENDER ==========
 
   return (
-    <div className="h-full flex bg-white">
+    <div data-agent-private className="relative flex h-full min-w-0 bg-surface">
       {/* History Sidebar */}
       {showHistory && (
-        <div className="w-64 flex-shrink-0 border-r border-gray-200">
+        <div className="w-64 max-w-[70%] shrink-0 border-r border-border">
           <ChatHistorySidebar
             lessonId={lessonId}
             activeSessionId={threadId}
@@ -250,15 +268,15 @@ function TutorChatPanel({
         </div>
       )}
 
-      {voiceOpen && <VoiceDialog lessonId={lessonId} lessonTitle={lessonTitle} accessToken={accessToken}
+      {voiceOpen && <VoiceDialog lessonId={lessonId} lessonTitle={lessonTitle} accessToken={accessToken} agentSessionId={agent?.sessionId} onAgentEvent={agent?.handleEvent}
         onSourceClick={handleSourceClick}
         onClose={(id) => { setVoiceOpen(false); if (id) { setThreadId(id); void fetchMessages(id); } }} />}
 
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <header className="flex items-center justify-between px-4 py-3 border-b border-border bg-primary-light/40">
-          <div className="flex items-center gap-2">
+        <header className="flex items-center justify-between gap-2 border-b border-border bg-primary-light/40 px-3 py-3">
+          <div className="flex min-w-0 items-center gap-2">
             <button
               onClick={() => setShowHistory(!showHistory)}
               className={`p-1.5 rounded-lg transition-colors ${
@@ -274,17 +292,18 @@ function TutorChatPanel({
               alt="Mây Mây AI"
               className="w-5 h-5 object-contain"
             />
-            <div>
-              <h3 className="font-semibold text-sm text-foreground">
+            <div className="min-w-0">
+              <h3 className="truncate text-sm font-semibold text-foreground">
                 Trợ giảng Mây Mây AI
               </h3>
-              <p className="text-xs text-muted-foreground truncate max-w-[200px]">
+              <p className="truncate text-xs text-muted-foreground">
                 {lessonTitle}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-1">
-            <button type="button" onClick={() => setVoiceOpen(true)} title="Trò chuyện bằng giọng nói" aria-label="Mở voice Mây Mây"
+            <AssistantSettings />
+            <button type="button" onClick={() => void openVoice()} disabled={agent?.busy} title="Trò chuyện bằng giọng nói" aria-label="Mở voice Mây Mây"
               className="rounded-lg p-2 text-primary transition-colors hover:bg-primary-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               <HiMicrophone className="h-5 w-5" />
             </button>
@@ -296,14 +315,20 @@ function TutorChatPanel({
             </button>
             {onClose && (
               <button
+                type="button"
                 onClick={onClose}
-                className="p-1.5 text-muted-foreground hover:bg-background rounded-lg"
+                aria-label="Đóng trợ giảng"
+                className="rounded-lg p-1.5 text-muted-foreground hover:bg-background"
               >
                 <HiX className="w-4 h-4" />
               </button>
             )}
           </div>
         </header>
+
+        <AgentAwareness lessonTitle={lessonTitle} />
+        <AgentStatus />
+        {voiceError && <Alert variant="warning" className="mx-3 mt-3">{voiceError}</Alert>}
 
         {showUnreadableNotice && (
           <Alert
@@ -312,7 +337,7 @@ function TutorChatPanel({
             className="mx-3 mt-3 rounded-xl px-3 py-2 text-xs"
             onClose={() => setShowUnreadableNotice(false)}
           >
-            Mây Mây chưa hỗ trợ đọc nội dung bài giảng này. Bạn vẫn có thể đặt câu hỏi về kiến thức chung hoặc gửi nội dung cần giải thích.
+            Bài này chưa có nội dung được lập chỉ mục cho AI. Bạn vẫn có thể đặt câu hỏi về kiến thức chung hoặc gửi nội dung cần giải thích.
           </Alert>
         )}
 

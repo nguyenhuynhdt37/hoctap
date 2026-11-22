@@ -3,6 +3,7 @@
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import type { Editor } from "@tiptap/react";
 import TiptapEditor from "@/components/shared/tiptap_editor";
+import { isSendEnabled } from "./qa-rules";
 
 interface CommentFormProps {
   onSubmit: (content: string) => void;
@@ -109,8 +110,10 @@ export default memo(function CommentForm({
     };
   }, []);
 
+  const canSend = isSendEnabled(localContent);
+
   const handleSubmit = useCallback(() => {
-    if (localContent.trim()) {
+    if (isSendEnabled(localContent)) {
       onSubmit(localContent.trim());
       if (!onCancel) {
         setLocalContent("");
@@ -157,15 +160,15 @@ export default memo(function CommentForm({
           <button
             onClick={handleCancel}
             disabled={isSubmitting}
-            className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg disabled:opacity-50 transition-colors"
+            className="px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-background rounded-lg disabled:opacity-50 transition-colors cursor-pointer"
           >
             Hủy
           </button>
         )}
         <button
           onClick={handleSubmit}
-          disabled={!localContent.trim() || isSubmitting}
-          className="px-4 py-1.5 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          disabled={!canSend || isSubmitting}
+          className="px-4 py-1.5 bg-primary text-primary-foreground text-sm font-semibold rounded-lg hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {isSubmitting
             ? "Đang gửi..."

@@ -8,7 +8,7 @@ import json
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
-from uuid import UUID
+from uuid import UUID, uuid4
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from sqlalchemy import func, select, text
@@ -61,6 +61,20 @@ def validate(course):
     return lessons
 
 
+def record_owner_id(record, fallback):
+    raw = record.get("owner_id")
+    return UUID(str(raw)) if raw else fallback
+
+
+async def has_role(db, user_id, role_name):
+    return await db.scalar(
+        select(UserRoles.user_id)
+        .join(Role, Role.id == UserRoles.role_id)
+        .where(UserRoles.user_id == user_id, Role.role_name == role_name)
+        .limit(1)
+    )
+
+
 async def main(
     owner_id,
     apply=False,
@@ -68,6 +82,7 @@ async def main(
     report_path=None,
     publish=False,
     embed_courses=False,
+    approver_id=None,
 ):
     manifest = Path(manifest) if manifest else DATA / "vtv7-courses.json"
     records = json.loads(manifest.read_text())
@@ -76,24 +91,44 @@ async def main(
     report = []
     created = []
     async with AsyncSessionLocal() as db:
-        owner = await db.get(User, owner_id)
-        role = await db.scalar(
-            select(UserRoles.user_id)
-            .join(Role, Role.id == UserRoles.role_id)
-            .where(UserRoles.user_id == owner_id, Role.role_name == "LECTURER")
-            .limit(1)
+        owners = {}
+        lecturer_role_id = await db.scalar(
+            select(Role.id).where(Role.role_name == "LECTURER")
         )
-        if not owner or owner.is_banned or owner.deleted_at or not role:
-            raise ValueError("Active lecturer owner required")
-        if publish:
-            admin = await db.scalar(
-                select(UserRoles.user_id)
-                .join(Role, Role.id == UserRoles.role_id)
-                .where(UserRoles.user_id == owner_id, Role.role_name == "ADMIN")
-                .limit(1)
-            )
-            if not admin:
-                raise ValueError("Publishing requires an existing administrator owner")
+        for record in records:
+            oid = record_owner_id(record, owner_id)
+            if oid in owners:
+                continue
+            course_owner = await db.get(User, oid)
+            lecturer = await has_role(db, oid, "LECTURER")
+            if not course_owner or course_owner.is_banned or course_owner.deleted_at:
+                raise ValueError("Active owner required")
+            if not lecturer:
+                # Catalog instructors who already own courses can curate a new
+                # embed. They are not granted administrator access.
+                owned = await db.scalar(
+                    select(func.count())
+                    .select_from(Courses)
+                    .where(
+                        Courses.instructor_id == oid, Courses.deleted_at.is_(None)
+                    )
+                )
+                if not owned or not lecturer_role_id:
+                    raise ValueError("Active lecturer owner required")
+                if apply:
+                    db.add(
+                        UserRoles(id=uuid4(), user_id=oid, role_id=lecturer_role_id)
+                    )
+                    await db.flush()
+            owners[oid] = course_owner
+        publisher_id = approver_id or owner_id
+        if publish and not await has_role(db, publisher_id, "ADMIN"):
+            raise ValueError("Publishing requires an existing administrator")
+        publisher = await db.get(User, publisher_id) if publish else None
+        if publish and (
+            not publisher or publisher.is_banned or publisher.deleted_at
+        ):
+            raise ValueError("Publishing requires an existing administrator")
         # Deterministic import identities and one transaction prevent duplicate or partial courses.
         await db.execute(
             text(
@@ -102,6 +137,8 @@ async def main(
         )
         for record in records:
             lessons = validate(record)
+            oid = record_owner_id(record, owner_id)
+            course_owner = owners[oid]
             slug = (
                 "vtv7-"
                 + slugify(record["title"])
@@ -110,7 +147,7 @@ async def main(
             )
             existing = await db.scalar(select(Courses).where(Courses.slug == slug))
             if existing:
-                if existing.instructor_id != owner_id or record["source_url"] not in (
+                if existing.instructor_id != oid or record["source_url"] not in (
                     existing.description or ""
                 ):
                     raise ValueError(
@@ -120,11 +157,20 @@ async def main(
                     {
                         "id": str(existing.id),
                         "title": existing.title,
+                        "owner_id": str(oid),
+                        "owner_name": course_owner.fullname,
                         "status": "existing_preserved",
                         "lessons": len(lessons),
                     }
                 )
                 continue
+            duplicate_video = await db.scalar(
+                select(LessonVideos.file_id)
+                .where(LessonVideos.file_id.in_([item["video_id"] for item in lessons]))
+                .limit(1)
+            )
+            if duplicate_video:
+                raise ValueError("Video already imported")
             grade = await db.scalar(
                 select(Grade).where(
                     Grade.grade_number == record["grade"], Grade.is_active.is_(True)
@@ -144,6 +190,8 @@ async def main(
                 report.append(
                     {
                         "title": record["title"],
+                        "owner_id": str(oid),
+                        "owner_name": course_owner.fullname,
                         "status": "ready",
                         "lessons": len(lessons),
                         "duration_seconds": sum(x["duration_seconds"] for x in lessons),
@@ -152,7 +200,7 @@ async def main(
                 continue
             source = html.escape(record["source_url"], quote=True)
             course = Courses(
-                instructor_id=owner_id,
+                instructor_id=oid,
                 title=record["title"],
                 slug=slug,
                 category_id=category.id if category else None,
@@ -162,7 +210,7 @@ async def main(
                 currency="VND",
                 is_published=publish,
                 approval_status="approved" if publish else "pending",
-                approved_by=owner_id if publish else None,
+                approved_by=publisher.id if publish else None,
                 approved_at=datetime.now(UTC) if publish else None,
                 approval_note="Nhập và công khai bộ VTV7 miễn phí theo yêu cầu chủ dự án."
                 if publish
@@ -187,7 +235,7 @@ async def main(
                     grade_ids=[grade.id],
                     delivery_type="recorded_video",
                 ),
-                owner_id,
+                publisher.id if publish else oid,
                 admin=True,
                 commit=False,
             )
@@ -237,6 +285,8 @@ async def main(
                     "id": str(course.id),
                     "title": course.title,
                     "slug": course.slug,
+                    "owner_id": str(oid),
+                    "owner_name": course_owner.fullname,
                     "status": "published_created" if publish else "draft_created",
                     "lessons": count,
                     "price": "0",
@@ -270,11 +320,14 @@ async def main(
                     course.search_tsv = func.to_tsvector("simple", content)
         if apply and created:
             await db.flush()
-            owner.course_count = await db.scalar(
-                select(func.count())
-                .select_from(Courses)
-                .where(Courses.instructor_id == owner_id, Courses.deleted_at.is_(None))
-            )
+            for oid in {course.instructor_id for course in created}:
+                owners[oid].course_count = await db.scalar(
+                    select(func.count())
+                    .select_from(Courses)
+                    .where(
+                        Courses.instructor_id == oid, Courses.deleted_at.is_(None)
+                    )
+                )
         if apply:
             await db.commit()
         else:
@@ -295,6 +348,7 @@ if __name__ == "__main__":
     parser.add_argument("--report", type=Path)
     parser.add_argument("--publish", action="store_true")
     parser.add_argument("--embed-courses", action="store_true")
+    parser.add_argument("--approver-id", type=UUID)
     args = parser.parse_args()
     asyncio.run(
         main(
@@ -304,5 +358,6 @@ if __name__ == "__main__":
             args.report,
             args.publish,
             args.embed_courses,
+            args.approver_id,
         )
     )

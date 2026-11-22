@@ -1,6 +1,7 @@
 "use client";
 
 import AuthScenicLayout from "@/components/user/auth/auth-scenic-layout";
+import GitHubSignInButton from "@/components/shared/github-sign-in-button";
 import GoogleSignInButton from "@/components/shared/google-sign-in-button";
 import { Alert, Button, Card, Divider, Input, Modal } from "@/components/ui";
 import api from "@/lib/utils/fetcher/client/axios";
@@ -326,8 +327,8 @@ const Login = () => {
           ),
           actions: [
             {
-              label: "Liên hệ Support",
-              onClick: () => router.push("/support"),
+              label: "Trung tâm trợ giúp",
+              onClick: () => router.push("/help"),
             },
           ],
         });
@@ -361,8 +362,8 @@ const Login = () => {
           ),
           actions: [
             {
-              label: "Liên hệ Support",
-              onClick: () => router.push("/support"),
+              label: "Trung tâm trợ giúp",
+              onClick: () => router.push("/help"),
             },
           ],
         });
@@ -389,8 +390,8 @@ const Login = () => {
           ),
           actions: [
             {
-              label: "Liên hệ Support",
-              onClick: () => window.open("/support", "_blank"),
+              label: "Trung tâm trợ giúp",
+              onClick: () => router.push("/help"),
             },
           ],
         });
@@ -453,6 +454,8 @@ const Login = () => {
               onCredential={handleGoogleCredentialResponse}
               busy={isGoogleLoading}
             />
+
+            <GitHubSignInButton redirectTo={redirectUrl} callbackError={searchParams.get("github_error")} />
 
             {/* Divider */}
             <Divider label="HOẶC" />

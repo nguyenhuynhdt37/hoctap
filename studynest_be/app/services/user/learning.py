@@ -1,3 +1,4 @@
+import asyncio
 import random
 import uuid
 from datetime import datetime
@@ -8,13 +9,14 @@ from app.core.event_bus.redis_bus import event_bus
 
 from fastapi import BackgroundTasks, Depends, HTTPException, status
 from loguru import logger
-from sqlalchemy import asc, delete, desc, exists, func, insert, select, update
+from sqlalchemy import text, asc, delete, desc, exists, func, insert, select, update
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.embedding import get_embedding_service
 from app.core.ws_manager import ws_manager
+from app.core.settings import settings
 from app.db.models.database import (
     CourseEnrollments,
     Courses,
@@ -43,6 +45,9 @@ from app.schemas.user.learning import (
     UpdateLessonNote,
 )
 from app.services.shares.code_runner import PistonService
+from app.services.user.learning_access import require_lesson_access
+from app.services.user.code_security import content_hash, files_hash, files_manifest, classify_execution, exercise_suite_hash
+from app.db.models.code_attempts import CodeTestAttempt
 
 
 class LearningService:
@@ -70,6 +75,7 @@ class LearningService:
                 select(CourseEnrollments)
                 .where(CourseEnrollments.course_id == course.id)
                 .where(CourseEnrollments.user_id == user.id)
+                .where(CourseEnrollments.status == "active")
             )
             if enrolled is None:
                 raise HTTPException(
@@ -114,6 +120,7 @@ class LearningService:
                 select(CourseEnrollments)
                 .where(CourseEnrollments.course_id == course.id)
                 .where(CourseEnrollments.user_id == user.id)
+                .where(CourseEnrollments.status == "active")
             )
             if enrolled is None:
                 raise HTTPException(
@@ -163,6 +170,7 @@ class LearningService:
                 .where(
                     CourseEnrollments.course_id == course.id,
                     CourseEnrollments.user_id == user.id,
+                    CourseEnrollments.status == "active",
                 )
                 .limit(1)
             )
@@ -185,13 +193,14 @@ class LearningService:
             result = await self.db.execute(stmt)
             sections = [s for s in result.unique().scalars().all() if s is not None]
 
-            # 4️⃣ Gom toàn bộ bài học
+            # 4️⃣ Gom toàn bộ bài học theo đúng thứ tự (section.position -> lesson.position)
             all_lessons = []
             for s in sections:
-                s_lessons = getattr(s, "lessons", []) or []
-                all_lessons.extend([l for l in s_lessons if l is not None])
-
-            all_lessons.sort(key=lambda l: (l.position or 0))
+                s_lessons = sorted(
+                    [l for l in (getattr(s, "lessons", []) or []) if l is not None],
+                    key=lambda l: (l.position or 0),
+                )
+                all_lessons.extend(s_lessons)
             if not all_lessons:
                 return {
                     "course_id": str(course.id),
@@ -277,17 +286,20 @@ class LearningService:
             if is_lock_enabled:
                 gating_sequence = [l for l in all_lessons if not l.is_preview]
                 existing_progress_ids = set(progress_map.keys())
+                all_prior_completed = True
 
                 locked_ids.clear()
 
                 for lesson in gating_sequence:
-                    # Bỏ qua bài đầu tiên
-                    if lesson.id == first_lesson_id:
-                        continue
-
-                    # ❗Chỉ khóa nếu chưa từng có trong progress_map (tức là user chưa bao giờ học)
-                    if lesson.id not in existing_progress_ids:
+                    is_done = bool(progress_map.get(lesson.id, False))
+                    if (
+                        lesson.id != first_lesson_id
+                        and lesson.id not in existing_progress_ids
+                        and not all_prior_completed
+                    ):
                         locked_ids.add(lesson.id)
+                    if not is_done:
+                        all_prior_completed = False
 
             # 9️⃣ Build curriculum + thống kê
             curriculum = []
@@ -414,6 +426,7 @@ class LearningService:
                 .where(
                     CourseEnrollments.course_id == course.id,
                     CourseEnrollments.user_id == user.id,
+                    CourseEnrollments.status == "active",
                 )
                 .limit(1)
             )
@@ -451,6 +464,7 @@ class LearningService:
         """
 
         try:
+            await require_lesson_access(self.db, user.id, lesson_id)
             # 1️⃣ Kiểm tra user
             if user is None or getattr(user, "id", None) is None:
                 raise HTTPException(401, "Unauthorized")
@@ -570,6 +584,7 @@ class LearningService:
         """
 
         try:
+            await require_lesson_access(self.db, user.id, lesson_id)
             # 1️⃣ Lấy bài học đầy đủ thông tin
             lesson = await self.db.scalar(
                 select(Lessons)
@@ -658,6 +673,7 @@ class LearningService:
         """
 
         try:
+            await require_lesson_access(self.db, user.id, lesson_id)
             # 1️⃣ Lấy bài học đầy đủ thông tin
             lesson = await self.db.scalar(
                 select(Lessons)
@@ -731,6 +747,7 @@ class LearningService:
         self, course_id: uuid.UUID, lesson_id: uuid.UUID, user: User
     ):
         try:
+            await require_lesson_access(self.db, user.id, lesson_id, course_id=course_id)
 
             if user is None or getattr(user, "id", None) is None:
                 raise HTTPException(
@@ -748,6 +765,7 @@ class LearningService:
                 .where(
                     CourseEnrollments.course_id == course.id,
                     CourseEnrollments.user_id == user.id,
+                    CourseEnrollments.status == "active",
                 )
                 .limit(1)
             )
@@ -777,6 +795,9 @@ class LearningService:
 
             return lesson_active
 
+        except HTTPException:
+            await self.db.rollback()
+            raise
         except Exception as e:
             await self.db.rollback()
             raise HTTPException(500, f"Lỗi server {e}")
@@ -794,6 +815,9 @@ class LearningService:
         - Nếu khóa học bật is_lock_lesson = > các bài chưa có progress đều bị coi là "locked".
         """
 
+        if user is None:
+            raise HTTPException(401, "Unauthorized")
+        await require_lesson_access(self.db, user.id, current_lesson_id)
         current_lesson = await self.db.get(Lessons, current_lesson_id)
         if not current_lesson:
             return None
@@ -894,6 +918,7 @@ class LearningService:
         - Nếu khóa học bật khóa tuần tự = > kiểm tra quyền truy cập
         """
 
+        await require_lesson_access(self.db, user.id, current_lesson_id)
         # 1️⃣ Lấy bài học hiện tại
         current_lesson = await self.db.get(Lessons, current_lesson_id)
         if not current_lesson:
@@ -1003,10 +1028,22 @@ class LearningService:
         """
 
         try:
+            await require_lesson_access(self.db, user.id, lesson_id)
             # 1️⃣ Kiểm tra bài học hiện tại
             lesson = await self.db.get(Lessons, lesson_id)
             if not lesson:
                 raise HTTPException(404, "Bài học không tồn tại")
+
+            if lesson.lesson_type == "code":
+                exercise_ids = (await self.db.scalars(select(LessonCodes.id).where(
+                    LessonCodes.lesson_id == lesson_id, LessonCodes.is_active.is_(True)))).all()
+                saved_files = (await self.db.scalars(select(LessonCodeFiles).where(
+                    LessonCodeFiles.lesson_code_id.in_(exercise_ids),
+                    LessonCodeFiles.user_id == user.id, LessonCodeFiles.role == "user"))).all()
+                if not exercise_ids or any(not any(f.lesson_code_id == exercise_id for f in saved_files)
+                    or any(not f.is_pass for f in saved_files if f.lesson_code_id == exercise_id)
+                    for exercise_id in exercise_ids):
+                    raise HTTPException(409, "Cần lưu code và vượt qua toàn bộ bài test trước khi hoàn thành.")
 
             course_id = lesson.course_id
             now = func.now()
@@ -1086,6 +1123,7 @@ class LearningService:
                     }
 
             # 4️⃣ Tính tiến độ toàn khóa
+            await self.db.flush()
             total_lessons = await self.db.scalar(
                 select(func.count(Lessons.id)).where(Lessons.course_id == course_id)
             )
@@ -1098,6 +1136,21 @@ class LearningService:
             )
 
             completion_rate = completed_lessons / total_lessons if total_lessons else 0
+            progress_percent = round(min(completion_rate * 100, 100.0), 2)
+
+            enrollment = await self.db.scalar(
+                select(CourseEnrollments).where(
+                    CourseEnrollments.course_id == course_id,
+                    CourseEnrollments.user_id == user.id,
+                    CourseEnrollments.status == "active",
+                )
+            )
+            if enrollment is not None:
+                from decimal import Decimal
+
+                enrollment.progress = Decimal(str(progress_percent))
+                if progress_percent >= 100.0 and getattr(enrollment, "completed_at", None) is None:
+                    enrollment.completed_at = get_now()
 
             # 5️⃣ Nếu >=85% → mở khóa tất cả bài còn lại
             if completion_rate >= 0.85:
@@ -1199,6 +1252,7 @@ class LearningService:
         """
 
         try:
+            await require_lesson_access(self.db, user.id, lesson_id)
             # 1️⃣ Lấy lesson kèm code + testcases + file
             lesson = await self.db.scalar(
                 select(Lessons)
@@ -1268,6 +1322,7 @@ class LearningService:
                         "role": f.role,
                         "is_main": bool(f.is_main),
                         "is_pass": bool(getattr(f, "is_pass", False)),
+                        "content_hash": content_hash(f.content),
                     }
 
                 files_user_or_starter = [serialize_file(f) for f in active_files]
@@ -1287,7 +1342,7 @@ class LearningService:
                 # --- Testcases ---
                 testcase_items = []
                 for t in code.lesson_code_testcases or []:
-                    is_hidden = bool(t.is_sample) or (
+                    is_hidden = not bool(t.is_sample) or (
                         getattr(t, "is_active", True) is False
                     )
                     testcase_items.append(
@@ -1336,257 +1391,161 @@ class LearningService:
         except Exception as e:
             raise HTTPException(500, f"Lỗi server khi lấy bài học code: {e}")
 
-    async def save_single_user_code_async(
-        self, lesson_code_id: uuid.UUID, user, file_obj: LessonCodeSaveFile
-    ):
-        """
-        ✅ Lưu một file duy nhất khi user onLeave / blur khỏi file editor.
-        - Nếu đã có: update content
-        - Nếu chưa có: insert bản ghi mới
-        """
+    async def _code_exercise_access_async(self, lesson_code_id, user):
+        code = await self.db.scalar(select(LessonCodes).options(
+            selectinload(LessonCodes.lesson_code_files),
+            selectinload(LessonCodes.lesson_code_testcases)
+        ).where(LessonCodes.id == lesson_code_id).execution_options(populate_existing=True))
+        if not code or not code.is_active:
+            raise HTTPException(404, "Không tìm thấy bài code")
+        await require_lesson_access(self.db, user.id, code.lesson_id)
+        return code
 
+    async def _lock_code_async(self, exercise_id, user_id):
+        # Cross-worker transaction lock also covers first-file insert races.
+        await self.db.execute(text("SELECT pg_advisory_xact_lock(hashtextextended(:key,0))"),
+            {"key": f"student-code:{user_id}:{exercise_id}"})
+
+    async def save_single_user_code_async(self, lesson_code_id, user, file_obj):
         try:
-            # 1️⃣ Kiểm tra bài code tồn tại
-            code = await self.db.scalar(
-                select(LessonCodes)
-                .where(LessonCodes.id == lesson_code_id)
-                .options(selectinload(LessonCodes.lesson_code_files))
-            )
-            if not code:
-                raise HTTPException(404, "Không tìm thấy bài code")
-
-            filename = file_obj.filename
-            content = file_obj.content
-            is_main = file_obj.is_main
-
-            # 2️⃣ Kiểm tra file của user đã tồn tại chưa
-            existing = await self.db.scalar(
-                select(LessonCodeFiles).where(
-                    LessonCodeFiles.lesson_code_id == code.id,
-                    LessonCodeFiles.filename == filename,
-                    LessonCodeFiles.user_id == user.id,
-                    LessonCodeFiles.role == "user",
-                )
-            )
-
+            code = await self._code_exercise_access_async(lesson_code_id, user)
+            await self._lock_code_async(code.id, user.id)
+            existing = await self.db.scalar(select(LessonCodeFiles).where(
+                LessonCodeFiles.lesson_code_id == code.id,
+                LessonCodeFiles.filename == file_obj.filename,
+                LessonCodeFiles.user_id == user.id,
+                LessonCodeFiles.role == "user").with_for_update().execution_options(populate_existing=True))
+            baseline = existing or next((f for f in code.lesson_code_files
+                if f.role == "starter" and f.filename == file_obj.filename), None)
+            expected = file_obj.expected_content_hash
+            if expected is not None and expected != content_hash(baseline.content if baseline else ""):
+                raise HTTPException(409, "Code đã thay đổi ở phiên khác. Tải lại trước khi lưu.")
             if existing:
-                # update nội dung
-                await self.db.execute(
-                    update(LessonCodeFiles)
-                    .where(LessonCodeFiles.id == existing.id)
-                    .values(
-                        content=content,
-                        is_main=is_main,
-                        is_pass=False,
-                        updated_at=await to_utc_naive(get_now()),
-                    )
-                )
-                message = f"Đã cập nhật file '{filename}'"
+                existing.content, existing.is_main = file_obj.content, file_obj.is_main
+                existing.is_pass = False
+                existing.updated_at = await to_utc_naive(get_now())
             else:
-                # insert mới
-                await self.db.execute(
-                    insert(LessonCodeFiles).values(
-                        lesson_code_id=code.id,
-                        filename=filename,
-                        content=content,
-                        role="user",
-                        user_id=user.id,
-                        is_main=is_main,
-                        is_pass=False,
-                        created_at=await to_utc_naive(get_now()),
-                        updated_at=await to_utc_naive(get_now()),
-                    )
-                )
-                message = f"Đã tạo mới file '{filename}'"
-
+                self.db.add(LessonCodeFiles(lesson_code_id=code.id, filename=file_obj.filename,
+                    content=file_obj.content, is_main=file_obj.is_main, is_pass=False,
+                    role="user", user_id=user.id))
+            # An edit invalidates the whole submission, not only one of its files.
+            await self.db.execute(update(LessonCodeFiles).where(
+                LessonCodeFiles.lesson_code_id == code.id,
+                LessonCodeFiles.user_id == user.id, LessonCodeFiles.role == "user").values(is_pass=False))
             await self.db.commit()
-            return {"status": "ok", "message": message, "filename": filename}
-
-        except SQLAlchemyError as e:
-            await self.db.rollback()
-            raise HTTPException(500, f"Lỗi DB khi lưu code: {e}")
-        except Exception as e:
-            await self.db.rollback()
-            raise HTTPException(500, f"Lỗi server khi lưu code: {e}")
-
-    async def test_user_code_async(
-        self, payload: LessonCodeUserTest, user: User, lesson_code_id: uuid.UUID
-    ):
-        """
-        ✅ Test code người dùng:
-        - Lấy testcases từ DB → chạy từng cái
-        - So sánh output, kiểm tra thời gian / bộ nhớ
-        - Nếu pass toàn bộ → lưu file user + đánh dấu is_pass=True
-        - Dùng ORM + await to_utc_naive(get_now())
-        """
-
-        try:
-            # 1️⃣ Ngôn ngữ
-            lang = await self.db.scalar(
-                select(SupportedLanguages).where(
-                    SupportedLanguages.id == payload.language_id
-                )
-            )
-            if not lang:
-                raise HTTPException(400, "🚫 Ngôn ngữ không hợp lệ")
-
-            # 2️⃣ Lấy bài code + testcases
-            lesson_code = await self.db.scalar(
-                select(LessonCodes)
-                .options(selectinload(LessonCodes.lesson_code_testcases))
-                .where(LessonCodes.id == lesson_code_id)
-            )
-            if not lesson_code:
-                raise HTTPException(404, "❌ Không tìm thấy bài code")
-
-            testcases = sorted(
-                lesson_code.lesson_code_testcases or [],
-                key=lambda t: t.order_index or 0,
-            )
-            if not testcases:
-                raise HTTPException(400, "❌ Bài code chưa có testcase nào")
-
-            # 3️⃣ Giới hạn
-            time_limit = float(lesson_code.time_limit or 2.0)
-            memory_limit = int(lesson_code.memory_limit or 256_000_000)
-
-            # 4️⃣ Chuẩn bị file chạy (main đi trước)
-            files = [
-                {"name": f.filename, "content": f.content}
-                for f in sorted(payload.files, key=lambda x: not x.is_main)
-            ]
-
-            results = []
-
-            # 5️⃣ Duyệt từng testcase
-            for tc in testcases:
-                try:
-                    run_result = await self.piston.run_code(
-                        language=lang.name,
-                        version=lang.version,
-                        files=files,
-                        stdin=tc.input or "",
-                    )
-
-                    run = run_result.get("run") or run_result.get("compile") or {}
-                    stdout = (run.get("stdout") or "").strip()
-                    stderr = (run.get("stderr") or "").strip()
-                    raw_exit_code = run.get("code")
-                    exit_code = int(raw_exit_code) if raw_exit_code is not None else -1
-                    cpu_time = float(run.get("cpu_time") or 0)
-                    memory = int(run.get("memory") or 0)
-                    expected = (tc.expected_output or "").strip()
-
-                    # Phân loại kết quả
-                    if run.get("status") == "TO":
-                        verdict = "time_limit_exceeded"
-                    elif exit_code != 0 or stderr:
-                        verdict = "runtime_error"
-                    elif cpu_time > time_limit:
-                        verdict = "time_limit_exceeded"
-                    elif memory > memory_limit:
-                        verdict = "memory_limit_exceeded"
-                    elif stdout == expected:
-                        verdict = "passed"
-                    else:
-                        verdict = "failed"
-                    if tc.is_sample:
-                        results.append(
-                            {
-                                "id": str(tc.id),  # ✅ thêm id test case
-                                "index": tc.order_index or 0,
-                                "exit_code": exit_code,
-                                "cpu_time": cpu_time,
-                                "memory": memory,
-                                "language": lang.name,
-                                "version": lang.version,
-                                "result": verdict,
-                                "is_hidden": True,
-                            }
-                        )
-                    else:
-                        results.append(
-                            {
-                                "id": str(tc.id),  # ✅ thêm id test case
-                                "index": tc.order_index or 0,
-                                "input": tc.input,
-                                "expected": expected,
-                                "output": stdout,
-                                "stderr": stderr,
-                                "exit_code": exit_code,
-                                "cpu_time": cpu_time,
-                                "memory": memory,
-                                "language": lang.name,
-                                "version": lang.version,
-                                "result": verdict,
-                                "is_hidden": False,
-                            }
-                        )
-
-                except Exception as e:
-                    logger.error(f"❌ Lỗi khi chạy testcase {tc.id}: {e}")
-                    results.append(
-                        {
-                            "id": str(tc.id),
-                            "index": tc.order_index or 0,
-                            "result": "internal_error",
-                            "error_message": str(e),
-                        }
-                    )
-
-            # 6️⃣ Tổng kết
-            total = len(results)
-            passed = sum(1 for r in results if r["result"] == "passed")
-            all_passed = passed == total
-
-            # 7️⃣ Nếu pass toàn bộ → lưu code user
-            if all_passed:
-                logger.info(f"✅ User {user.id} pass toàn bộ test {lesson_code.id}")
-
-                await self.db.execute(
-                    update(LessonCodeFiles)
-                    .where(
-                        LessonCodeFiles.lesson_code_id == lesson_code.id,
-                        LessonCodeFiles.user_id == user.id,
-                        LessonCodeFiles.role == "user",
-                    )
-                    .values(is_pass=True, updated_at=await to_utc_naive(get_now()))
-                )
-                await self.db.commit()
-
-                # 🔔 Publish code.completed event
-                try:
-                    await event_bus.publish(
-                        BaseEvent(
-                            event_name="code.completed",
-                            user_id=user.id,
-                            source_type="lesson_code",
-                            source_id=lesson_code.id,
-                            payload={
-                                "lesson_id": str(lesson_code.lesson_id) if hasattr(lesson_code, 'lesson_id') else None,
-                            },
-                        )
-                    )
-                except Exception as evt_err:
-                    logger.warning(f"[EventBus] Failed to publish code.completed: {evt_err}")
-
-            # 8️⃣ Trả kết quả
-            return {
-                "status": "passed" if all_passed else "failed",
-                "passed": passed,
-                "failed": total - passed,
-                "total": total,
-                "saved": all_passed,
-                "language": lang.name,
-                "version": lang.version,
-                "details": results,
-            }
-
+            return {"status":"ok", "filename":file_obj.filename,
+                    "content_hash":content_hash(file_obj.content), "message":"Đã lưu code"}
         except HTTPException:
+            await self.db.rollback()
             raise
-        except Exception as e:
-            logger.exception(f"🔥 Lỗi server khi test code: {e}")
-            raise HTTPException(500, f"Lỗi server khi test code: {e}")
+        except Exception:
+            await self.db.rollback()
+            raise HTTPException(500, "Không lưu được code.") from None
+
+    async def _admit_code_execution_async(self, user_id):
+        # Transaction-scoped lease survives cross-worker requests and releases on
+        # commit/rollback/disconnect; student edits use a different lock key.
+        admitted = await self.db.scalar(text(
+            "SELECT pg_try_advisory_xact_lock(hashtextextended(:key,0))"),
+            {"key":f"student-code-execution:{user_id}"})
+        if not admitted:
+            raise HTTPException(409, "Bạn đang có một lượt chạy code. Hãy đợi kết quả.")
+        recent = await self.db.scalar(select(func.count()).select_from(CodeTestAttempt).where(
+            CodeTestAttempt.user_id == user_id,
+            CodeTestAttempt.created_at > func.now() - text("interval '1 minute'")))
+        if recent >= getattr(settings, "CODE_MAX_RUNS_PER_MINUTE", 6):
+            raise HTTPException(429, "Đã đạt giới hạn chạy code. Hãy thử lại sau một phút.")
+
+    async def test_user_code_async(self, payload, user, lesson_code_id):
+        code = await self._code_exercise_access_async(lesson_code_id, user)
+        if payload.language_id != code.language_id:
+            raise HTTPException(422, "Ngôn ngữ phải khớp với bài tập.")
+        lang = await self.db.get(SupportedLanguages, code.language_id)
+        if not lang or not lang.is_active:
+            raise HTTPException(422, "Runtime không khả dụng.")
+        sample_only = payload.sample_only
+        cases = sorted([t for t in code.lesson_code_testcases if not sample_only or t.is_sample],
+                       key=lambda t: t.order_index or 0)
+        if not cases:
+            raise HTTPException(422, "Bài tập chưa có test được phép chạy.")
+        if len(cases) > 100:
+            raise HTTPException(422, "Bài tập vượt giới hạn số testcase.")
+        await self._admit_code_execution_async(user.id)
+        suite_hash = exercise_suite_hash(code)
+        submitted_hash = files_hash(payload.files)
+        files = [{"name":f.filename,"content":f.content} for f in sorted(payload.files,key=lambda f:not f.is_main)]
+        results = []
+        deadline = asyncio.get_running_loop().time() + getattr(settings, "CODE_MAX_SECONDS", 90)
+        for tc in cases:
+            detail = {"id":str(tc.id),"index":tc.order_index or 0,"is_hidden":not bool(tc.is_sample)}
+            remaining = deadline - asyncio.get_running_loop().time()
+            try:
+                if remaining <= 0:
+                    raise TimeoutError()
+                raw_tl = int(code.time_limit or 2000)
+                tl_ms = raw_tl * 1000 if raw_tl <= 30 else raw_tl
+                response = await asyncio.wait_for(self.piston.run_code(
+                    language=lang.name, version=lang.version, files=files, stdin=tc.input or "",
+                    run_timeout_ms=max(1_500, min(tl_ms, 3_000)),
+                    memory_limit=max(134_217_728, min(int(code.memory_limit or 256_000_000), 268_435_456))),
+                    timeout=min(remaining,20))
+                verdict, run = classify_execution(response, tc.expected_output)
+                detail.update(result=verdict,exit_code=run.get("code"),cpu_time=run.get("cpu_time"),memory=run.get("memory"))
+                if tc.is_sample:
+                    detail.update(input=tc.input,expected=tc.expected_output,
+                                  output=(run.get("stdout") or "")[:16_384],stderr=(run.get("stderr") or "")[:16_384])
+            except TimeoutError:
+                detail["result"] = "time_limit_exceeded"
+            except Exception as exc:
+                logger.warning("Code runner failed type={}",type(exc).__name__)
+                detail["result"] = "internal_error"
+            results.append(detail)
+        passed = sum(r['result']=='passed' for r in results)
+        all_passed = passed == len(results)
+        saved = False
+        current_code = await self._code_exercise_access_async(lesson_code_id,user)
+        suite_stale = exercise_suite_hash(current_code) != suite_hash
+        if all_passed and not sample_only and not suite_stale:
+            # Never label DB version as passed using a newer/different unsaved buffer.
+            await self._lock_code_async(code.id,user.id)
+            saved_files = (await self.db.scalars(select(LessonCodeFiles).where(
+                LessonCodeFiles.lesson_code_id==code.id,LessonCodeFiles.user_id==user.id,
+                LessonCodeFiles.role=="user").execution_options(populate_existing=True))).all()
+            if saved_files and files_hash(saved_files) == submitted_hash:
+                for file in saved_files:
+                    file.is_pass = True
+                saved = True
+        # Recheck revoked entitlement before committing completion evidence.
+        await require_lesson_access(self.db,user.id,code.lesson_id)
+        attempt = CodeTestAttempt(user_id=user.id,exercise_id=code.id,content_hash=submitted_hash,
+            suite_hash=suite_hash,buffer_revision=payload.buffer_revision,mode="sample" if sample_only else "allowed",
+            status="passed" if all_passed else "failed",files_manifest=files_manifest(payload.files),
+            result={"passed":passed,"total":len(results),"details":results,"saved":saved,"suite_stale":suite_stale})
+        self.db.add(attempt)
+        await self.db.flush()
+        await self.db.commit()
+        if saved:
+            try:
+                await event_bus.publish(BaseEvent(event_name="code.completed",user_id=user.id,
+                    source_type="lesson_code",source_id=code.id,
+                    payload={"lesson_id":str(code.lesson_id),"attempt_id":str(attempt.id),"content_hash":submitted_hash}))
+            except Exception:
+                logger.warning("Code completion notification unavailable")
+        return {"status":attempt.status,"attempt_id":str(attempt.id),"content_hash":submitted_hash,
+                "buffer_revision":payload.buffer_revision,"sample_only":sample_only,"suite_stale":suite_stale,
+                "passed":passed,"failed":len(results)-passed,"total":len(results),"saved":saved,
+                "language":lang.name,"version":lang.version,"details":results}
+
+    async def get_code_test_result_async(self, attempt_id, user):
+        attempt = await self.db.scalar(select(CodeTestAttempt).where(
+            CodeTestAttempt.id == attempt_id, CodeTestAttempt.user_id == user.id))
+        if not attempt:
+            raise HTTPException(404, "Không tìm thấy kết quả chạy code.")
+        await self._code_exercise_access_async(attempt.exercise_id,user)
+        return {"attempt_id":str(attempt.id),"exercise_id":str(attempt.exercise_id),
+                "content_hash":attempt.content_hash,"buffer_revision":attempt.buffer_revision,
+                "sample_only":attempt.mode=="sample","status":attempt.status,
+                **attempt.result,"created_at":attempt.created_at.isoformat()}
 
     async def get_lesson_start_code_async(self, lesson_id: uuid.UUID, user: User):
         """
@@ -1597,6 +1556,7 @@ class LearningService:
         """
 
         try:
+            await require_lesson_access(self.db, user.id, lesson_id)
             # 1️⃣ Lấy lesson và toàn bộ lesson_codes + lesson_code_files
             lesson = await self.db.scalar(
                 select(Lessons)
@@ -1684,6 +1644,7 @@ class LearningService:
         background_tasks: BackgroundTasks,
     ):
         try:
+            await require_lesson_access(self.db, user_id, lesson_id)
             # 1️⃣ Kiểm tra bài học tồn tại
             lesson = await self.db.scalar(
                 select(Lessons).where(Lessons.id == lesson_id)

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hmac
 import json
 from datetime import timedelta
 from typing import Any
@@ -11,7 +12,7 @@ from google.auth.transport import requests
 from google.oauth2 import id_token
 from loguru import logger
 from redis.exceptions import RedisError
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlalchemy.sql.expression import desc
@@ -23,7 +24,7 @@ from app.core.ws_manager import ws_manager
 from app.db.models.database import EmailVerifications, Role, Sessions, User, UserRoles
 from app.db.sesson import get_session
 from app.libs.formats.datetime import now as get_now
-from app.libs.formats.datetime import strip_tz
+from app.libs.formats.datetime import strip_tz, has_expired, now_tzinfo
 from app.schemas.auth.user import (
     GoogleLogin,
     LoginUser,
@@ -76,7 +77,7 @@ class AuthService:
             refresh_token_hash=refresh_token_hash,
             user_agent=user_agent,
             ip_address=ip,
-            expired_at=get_now() + timedelta(days=30) # Refresh token sống 30 ngày
+            expired_at=now_tzinfo() + timedelta(days=30) # Refresh token sống 30 ngày
         )
         self.db.add(new_session)
         await self.db.flush() # Để lấy new_session.id gán vào JWT
@@ -118,7 +119,7 @@ class AuthService:
                     Sessions.user_id == user_id,
                     Sessions.id != session_id,
                     Sessions.is_revoked.is_(False),
-                    Sessions.expired_at >= get_now(),
+                    Sessions.expired_at >= now_tzinfo(),
                 )
             )
             if not active_other_session:
@@ -215,22 +216,51 @@ class AuthService:
                     },
                 )
 
-            # 2️⃣ TÀI KHOẢN ĐÃ BỊ XÓA, EMAIL CHƯA VERIFY, BANNED... (giữ nguyên)
+            # 2️⃣ TÀI KHOẢN ĐÃ BỊ XÓA, EMAIL CHƯA VERIFY, BANNED...
             if user.deleted_at:
                 raise HTTPException(
                     status_code=403,
-                    detail={"error_code": "ACCOUNT_DELETED", "message": "Tài khoản đã bị xóa"},
+                    detail={
+                        "error_code": "ACCOUNT_DELETED",
+                        "message": "Tài khoản đã bị xóa",
+                        "deleted_at": user.deleted_at.isoformat(),
+                        "reason": user.banned_reason,
+                    },
                 )
             if not user.is_verified_email:
                 raise HTTPException(
                     status_code=403,
-                    detail={"error_code": "EMAIL_NOT_VERIFIED", "message": "Vui lòng xác thực email"},
+                    detail={
+                        "error_code": "EMAIL_NOT_VERIFIED",
+                        "message": "Vui lòng xác thực email",
+                        "email": user.email,
+                    },
                 )
             if user.is_banned:
-                raise HTTPException(
-                    status_code=403,
-                    detail={"error_code": "ACCOUNT_BANNED", "message": "Tài khoản bị khóa"},
-                )
+                if user.banned_until and has_expired(user.banned_until):
+                    user.is_banned = False
+                    user.banned_until = None
+                    user.banned_reason = None
+                else:
+                    ban_code = (
+                        "ACCOUNT_BANNED_TEMPORARY"
+                        if user.banned_until
+                        else "ACCOUNT_BANNED_PERMANENT"
+                    )
+                    raise HTTPException(
+                        status_code=403,
+                        detail={
+                            "error_code": ban_code,
+                            "message": "Tài khoản bị khóa",
+                            "reason": user.banned_reason,
+                            "banned_until": (
+                                user.banned_until.isoformat()
+                                if user.banned_until
+                                else None
+                            ),
+                            "is_permanent": user.banned_until is None,
+                        },
+                    )
 
             # 5️⃣ TẠO PHIÊN (SESSION) MỚI
             login_result = await self._create_session(user.id, res, user_agent, ip)
@@ -291,7 +321,7 @@ class AuthService:
             self.db.add(UserRoles(user_id=new_user.id, role_id=role.id))
 
             code = await self.security.generate_otp()
-            expired_at = get_now() + timedelta(minutes=5)
+            expired_at = get_now() + timedelta(minutes=10)
             verification = EmailVerifications(
                 user_id=new_user.id, code=code, expired_at=expired_at
             )
@@ -364,16 +394,16 @@ class AuthService:
                 EmailVerifications(
                     user_id=user.id,
                     code=code,
-                    expired_at=get_now() + timedelta(minutes=5),
+                    expired_at=get_now() + timedelta(minutes=10),
+                )
+            )
+            await self.db.flush()
+            await self._send_mail_or_503(
+                self.mail_service.send_verification_email(
+                    email=schema.email, fullname=user.fullname or "", code=code
                 )
             )
             await self.db.commit()
-            await self.db.refresh(user)
-            await self._send_mail_or_503(
-                self.mail_service.send_verification_email(
-                    email=schema.email, fullname=user.fullname, code=code
-                )
-            )
             return True
 
         except Exception:
@@ -390,6 +420,12 @@ class AuthService:
             if not user:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND, detail={"error_code": "USER_NOT_FOUND", "message": "Không tìm thấy người dùng"}
+                )
+
+            if user.deleted_at or user.is_banned:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Tài khoản đã bị khóa hoặc xóa.",
                 )
 
             if user.is_verified_email:
@@ -414,6 +450,17 @@ class AuthService:
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Mã xác thực không hợp lệ hoặc đã hết hạn.",
                 )
+            submitted_code = (schema.code or "").strip()
+            stored_code = (email_verify.code or "").strip()
+            if not submitted_code or not hmac.compare_digest(stored_code, submitted_code):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Mã xác thực không hợp lệ hoặc đã hết hạn.",
+                )
+
+            await self.db.execute(
+                delete(EmailVerifications).where(EmailVerifications.user_id == user.id)
+            )
 
             # User đã được gán role USER từ lúc register, chỉ cần cập nhật trạng thái
             user.is_verified_email = True
@@ -612,7 +659,7 @@ class AuthService:
                     break
                 result = json.loads(cached)
                 session = await self.db.get(Sessions, UUID(result["session_id"]), populate_existing=True)
-                if not session or session.is_revoked or strip_tz(session.expired_at) < get_now():
+                if not session or session.is_revoked or has_expired(session.expired_at):
                     raise HTTPException(401, "Phiên đăng nhập đã hết hạn")
                 result_hash = await self.security.hash_token(result["refresh_token"])
                 if session.refresh_token_hash == result_hash:
@@ -622,13 +669,13 @@ class AuthService:
 
             stmt = select(Sessions).where(Sessions.refresh_token_hash == token_hash).with_for_update()
             session = (await self.db.execute(stmt)).scalar_one_or_none()
-            if not session or session.is_revoked or strip_tz(session.expired_at) < get_now():
+            if not session or session.is_revoked or has_expired(session.expired_at):
                 raise HTTPException(401, "Phiên đăng nhập không hợp lệ hoặc đã hết hạn")
             # Keep the device/session ID stable: another tab's valid access token
             # and WebSocket must not be revoked merely because one tab refreshes.
             new_refresh = await self.security.generate_refresh_token()
             session.refresh_token_hash = await self.security.hash_token(new_refresh)
-            session.expired_at = get_now() + timedelta(days=30)
+            session.expired_at = now_tzinfo() + timedelta(days=30)
             session.updated_at = get_now()
             access = await self.security.create_access_token(str(session.user_id), str(session.id))
             result = jsonable_encoder({"message": "Session refreshed", "session_id": str(session.id),
@@ -670,7 +717,7 @@ class AuthService:
             .where(
                 Sessions.user_id == user_id,
                 Sessions.is_revoked.is_(False),
-                Sessions.expired_at >= get_now(),
+                Sessions.expired_at >= now_tzinfo(),
             )
             .order_by(desc(Sessions.created_at))
         )
@@ -787,6 +834,15 @@ class AuthService:
             if not user:
                 raise HTTPException(404, "Không tìm thấy người dùng")
 
+            if user.deleted_at or user.is_banned:
+                raise HTTPException(
+                    status_code=403,
+                    detail={
+                        "error_code": "ACCOUNT_BANNED",
+                        "message": "Tài khoản đã bị khóa",
+                    },
+                )
+
             # 2. Kiểm tra OTP gần nhất
             stmt = (
                 select(EmailVerifications)
@@ -796,7 +852,9 @@ class AuthService:
             )
             verification = (await self.db.execute(stmt)).scalar_one_or_none()
 
-            if not verification or verification.code != schema.otp_code:
+            submitted_otp = (schema.otp_code or "").strip()
+            stored_otp = (verification.code or "").strip() if verification else ""
+            if not verification or not submitted_otp or not hmac.compare_digest(stored_otp, submitted_otp):
                 raise HTTPException(
                     status_code=401,
                     detail={
@@ -813,6 +871,10 @@ class AuthService:
                         "message": "Mã OTP đã hết hạn",
                     },
                 )
+
+            await self.db.execute(
+                delete(EmailVerifications).where(EmailVerifications.user_id == user.id)
+            )
 
             # 3. Tạo session mới
             login_result = await self._create_session(user.id, res, user_agent, ip)

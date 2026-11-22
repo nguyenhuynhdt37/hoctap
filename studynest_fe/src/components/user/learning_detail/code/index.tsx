@@ -11,6 +11,8 @@ import CodeEditorPanel from "./code-editor-panel";
 import ExerciseTabs from "./exercise-tabs";
 import InfoPanel from "./info-panel";
 import TestResults from "./test-results";
+import { useLearningAgent, useAgentAction, useAgentSnapshot } from "../agent/agent-context";
+import { applyEditorPatches, numberArg, stringArg } from "../agent/action-registry";
 
 const getMonacoLanguage = (languageName: string): string => {
   const mapping: Record<string, string> = {
@@ -38,6 +40,7 @@ interface CodeLessonProps {
   onMarkCompleted?: (lessonId: string) => void;
   completedLessons?: Set<string>;
   accessToken?: string;
+  lessonAuthorId?: string | null;
 }
 
 export default function CodeLesson({
@@ -45,6 +48,7 @@ export default function CodeLesson({
   onMarkCompleted,
   completedLessons,
   accessToken,
+  lessonAuthorId,
 }: CodeLessonProps) {
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [activeFileId, setActiveFileId] = useState<string | null>(null);
@@ -68,6 +72,14 @@ export default function CodeLesson({
     Record<string, boolean>
   >({});
 
+  const agent = useLearningAgent();
+  const editorRevision = useRef(0);
+  const selection = useRef({ start: 0, end: 0 });
+  const bufferRef = useRef(userFiles); bufferRef.current = userFiles;
+  const savedRef = useRef(savedFileContents); savedRef.current = savedFileContents;
+  const undoRef = useRef<{ exerciseId: string; revision: number; patchId: string; before: Record<string, string>; after: Record<string, string> } | null>(null);
+  const [saveError, setSaveError] = useState("");
+  const runningRef = useRef(false);
   const exercises: CodeExercise[] = lesson?.codes || [];
 
   useEffect(() => {
@@ -103,47 +115,64 @@ export default function CodeLesson({
     return currentExercise.files || [];
   }, [currentExercise]);
 
-  const currentUserFiles = useMemo(() => {
-    if (!currentExercise) return [];
-    const exerciseId = currentExercise.id;
-
-    if (!userFiles[exerciseId]) {
-      const initialFiles: Record<string, string> = {};
-      activeFiles.forEach((file) => {
-        initialFiles[file.id] = file.content;
-      });
-      setUserFiles((prev) => ({
-        ...prev,
-        [exerciseId]: initialFiles,
-      }));
-      setInitialFileContents((prev) => ({
-        ...prev,
-        [exerciseId]: { ...initialFiles },
-      }));
-      setSavedFileContents((prev) => ({
-        ...prev,
-        [exerciseId]: { ...initialFiles },
-      }));
-      return activeFiles.map((f) => ({
-        ...f,
-        content: f.content,
-      }));
-    }
-    return activeFiles.map((f) => ({
-      ...f,
-      content: userFiles[exerciseId][f.id] ?? f.content,
-    }));
-  }, [currentExercise, activeFiles, userFiles]);
-
   useEffect(() => {
-    if (currentExercise && currentUserFiles.length > 0) {
-      const mainFile =
-        currentUserFiles.find((f) => f.is_main) || currentUserFiles[0];
-      if (mainFile) {
-        setActiveFileId(mainFile.id);
+    setUserFiles(previous => {
+      const next = { ...previous }; let changed = false;
+      for (const exercise of exercises) {
+        const cur = next[exercise.id] ? { ...next[exercise.id] } : {};
+        let exChanged = !next[exercise.id];
+        for (const file of exercise.files) {
+          if (!(file.id in cur)) {
+            cur[file.id] = file.content;
+            exChanged = true;
+          }
+        }
+        if (exChanged) {
+          next[exercise.id] = cur;
+          changed = true;
+        }
       }
+      return changed ? next : previous;
+    });
+    setInitialFileContents(previous => {
+      const next = { ...previous };
+      for (const exercise of exercises) if (!next[exercise.id]) next[exercise.id] = Object.fromEntries(exercise.files.map(file => [file.id, file.content]));
+      return next;
+    });
+    setSavedFileContents(previous => {
+      const next = { ...previous }; let changed = false;
+      for (const exercise of exercises) {
+        const cur = next[exercise.id] ? { ...next[exercise.id] } : {};
+        let exChanged = !next[exercise.id];
+        for (const file of exercise.files) {
+          if (!(file.id in cur)) {
+            cur[file.id] = file.content;
+            exChanged = true;
+          }
+        }
+        if (exChanged) {
+          next[exercise.id] = cur;
+          changed = true;
+        }
+      }
+      if (changed) savedRef.current = next;
+      return changed ? next : previous;
+    });
+  }, [lesson.id, exercises]);
+  const currentUserFiles = useMemo(() => activeFiles.map(file => ({ ...file,
+    content: userFiles[currentExercise?.id]?.[file.id] ?? file.content,
+  })), [activeFiles, currentExercise?.id, userFiles]);
+  useEffect(() => {
+    if (!activeFiles.length) {
+      setActiveFileId(null);
+      return;
     }
-  }, [currentExercise, currentUserFiles]);
+    if (!activeFileId || !activeFiles.some(file => file.id === activeFileId)) {
+      const main = activeFiles.find(file => file.is_main) || activeFiles[0];
+      setActiveFileId(main?.id || null);
+      selection.current = { start: 0, end: 0 };
+    }
+  }, [currentExercise?.id, activeFiles, activeFileId]);
 
   const playSuccessSound = useCallback(() => {
     if (typeof window === "undefined") return;
@@ -221,44 +250,85 @@ export default function CodeLesson({
     return getMonacoLanguage(currentExercise.language.name);
   }, [currentExercise]);
 
-  const handleTestCode = async () => {
+  const runCodeTests = async (sampleOnly = false, signal?: AbortSignal) => {
     if (!currentExercise || !currentUserFiles.length) {
       return;
     }
 
+    if (runningRef.current) throw new Error("Một lần chạy test đang hoạt động.");
+    runningRef.current = true;
+    const testedRevision = editorRevision.current;
     setIsRunning(true);
     setTestResult(null);
 
     try {
+      if (!sampleOnly) {
+        const exerciseId = currentExercise.id;
+        for (const f of currentUserFiles) {
+          const currentContent =
+            bufferRef.current[exerciseId]?.[f.id] ?? f.content ?? "";
+          const prevSaved =
+            savedRef.current[exerciseId]?.[f.id] ?? f.content ?? "";
+          if (currentContent !== prevSaved) {
+            isSavingRef.current = true;
+            try {
+              await api.post(`/learning/code/${exerciseId}/save`, {
+                filename: f.filename,
+                content: currentContent,
+                is_main: f.is_main,
+                expected_content_hash: await sha256(prevSaved),
+              });
+              savedRef.current = {
+                ...savedRef.current,
+                [exerciseId]: {
+                  ...savedRef.current[exerciseId],
+                  [f.id]: currentContent,
+                },
+              };
+              setSavedFileContents(savedRef.current);
+              setSaveError("");
+            } finally {
+              isSavingRef.current = false;
+            }
+          }
+        }
+      }
+
       const payload = {
         language_id: currentExercise.language.id,
+        sample_only: sampleOnly,
+        buffer_revision: editorRevision.current,
         files: currentUserFiles.map((f) => ({
           filename: f.filename,
-          content: f.content || "",
+          content: bufferRef.current[currentExercise.id]?.[f.id] ?? f.content ?? "",
           is_main: f.is_main,
         })),
       };
 
       const response = await api.post<TestResult>(
         `/learning/code/${currentExercise.id}/test`,
-        payload
+        payload,
+        { signal }
       );
 
+      if (editorRevision.current !== testedRevision) throw new Error("Code đã thay đổi trong khi chạy test. Hãy chạy lại bản mới.");
       setTestResult(response.data);
 
       const passPercentage =
         response.data.total > 0
           ? Math.round((response.data.passed / response.data.total) * 100)
           : 0;
-      if (passPercentage >= 85) {
+      if (!sampleOnly && response.data.saved && passPercentage === 100) {
         setExercisePassStatus((prev) => ({
           ...prev,
           [currentExercise.id]: true,
         }));
       }
+      return response.data;
     } catch (error: any) {
-      console.error("Lỗi khi test code:", error);
+      throw error;
     } finally {
+      runningRef.current = false;
       setIsRunning(false);
     }
   };
@@ -271,28 +341,19 @@ export default function CodeLesson({
     activeFiles.forEach((file) => {
       resetFiles[file.id] = initialContents[file.id] ?? file.content;
     });
-    setUserFiles((prev) => ({
-      ...prev,
-      [exerciseId]: resetFiles,
-    }));
-    setSavedFileContents((prev) => ({
-      ...prev,
-      [exerciseId]: { ...initialContents },
-    }));
+    bufferRef.current = { ...bufferRef.current, [exerciseId]: resetFiles };
+    setUserFiles(bufferRef.current); editorRevision.current += 1; agent?.changed();
     setTestResult(null);
   };
 
   const updateFileContent = (fileId: string, content: string) => {
     if (!currentExercise) return;
     const exerciseId = currentExercise.id;
-    setUserFiles((prev) => ({
-      ...prev,
-      [exerciseId]: {
-        ...prev[exerciseId],
-        [fileId]: content,
-      },
-    }));
+    bufferRef.current = { ...bufferRef.current, [exerciseId]: { ...bufferRef.current[exerciseId], [fileId]: content } };
+    setUserFiles(bufferRef.current); editorRevision.current += 1; agent?.changed();
+    setExercisePassStatus(previous => ({ ...previous, [exerciseId]: false }));
   };
+  const sha256 = async (content: string) => Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(content)))).map(byte => byte.toString(16).padStart(2, "0")).join("");
 
   const saveFile = useCallback(
     async (
@@ -302,21 +363,31 @@ export default function CodeLesson({
       isMain: boolean
     ) => {
       try {
+        const file = exercises.find(exercise => exercise.id === exerciseId)?.files.find(item => item.filename === filename);
+        const savedContent = file ? savedRef.current[exerciseId]?.[file.id] ?? file.content : "";
         await api.post(`/learning/code/${exerciseId}/save`, {
           filename,
           content,
           is_main: isMain,
+          expected_content_hash: await sha256(savedContent),
         });
-        setExercisePassStatus((prev) => ({
-          ...prev,
-          [exerciseId]: false,
-        }));
-        setTestResult(null);
+        if (file) {
+          savedRef.current = {
+            ...savedRef.current,
+            [exerciseId]: {
+              ...savedRef.current[exerciseId],
+              [file.id]: content,
+            },
+          };
+          setSavedFileContents(savedRef.current);
+        }
+        setSaveError("");
       } catch (error: any) {
-        console.error("Lỗi khi lưu file:", error);
+        setSaveError("Chưa lưu được code. Nếu code đã đổi ở nơi khác, hãy tải lại trước khi ghi đè.");
+        throw error;
       }
     },
-    []
+    [exercises, savedFileContents]
   );
 
   const saveCurrentFileIfChanged = useCallback(() => {
@@ -329,7 +400,7 @@ export default function CodeLesson({
     const savedContent = savedFileContents[exerciseId]?.[activeFileId] ?? "";
     const currentContent = userFiles[exerciseId]?.[activeFileId] ?? "";
 
-    if (currentContent !== savedContent && currentContent.trim() !== "") {
+    if (currentContent !== savedContent) {
       isSavingRef.current = true;
       saveFile(exerciseId, file.filename, currentContent, file.is_main)
         .then(() => {
@@ -341,6 +412,7 @@ export default function CodeLesson({
             },
           }));
         })
+        .catch(() => undefined)
         .finally(() => {
           isSavingRef.current = false;
         });
@@ -364,7 +436,7 @@ export default function CodeLesson({
         const savedContent = savedFileContents[exerciseId]?.[oldFileId] ?? "";
         const currentContent = userFiles[exerciseId]?.[oldFileId] ?? "";
 
-        if (currentContent !== savedContent && currentContent.trim() !== "") {
+        if (currentContent !== savedContent) {
           isSavingRef.current = true;
           saveFile(
             exerciseId,
@@ -381,6 +453,7 @@ export default function CodeLesson({
                 },
               }));
             })
+            .catch(() => undefined)
             .finally(() => {
               isSavingRef.current = false;
             });
@@ -403,6 +476,65 @@ export default function CodeLesson({
     setTestResult(null);
   };
 
+  const dirty = () => currentUserFiles.some(file => (bufferRef.current[currentExercise?.id]?.[file.id] ?? file.content) !== (savedFileContents[currentExercise?.id]?.[file.id] ?? file.content));
+  const editorState = () => ({ exercise_id: currentExercise?.id, active_file_id: activeFileId || undefined,
+    revision: editorRevision.current, is_dirty: dirty(), selection: selection.current,
+    files: currentUserFiles.map(file => ({ id: file.id, filename: file.filename, is_main: file.is_main, role: file.role, size: (bufferRef.current[currentExercise.id]?.[file.id] ?? file.content).length })),
+    language: currentExercise?.language,
+  });
+  useAgentSnapshot("editor", () => ({ exercise_id: currentExercise?.id, editor: {
+    active_file_id: activeFileId || undefined, revision: editorRevision.current, is_dirty: dirty(), selection: selection.current,
+  } }));
+  useEffect(() => { agent?.changed(); }, [currentExercise?.id, activeFileId, agent?.changed]);
+  const assertExercise = (args: Record<string, unknown>) => {
+    if (!currentExercise || (args.exercise_id && args.exercise_id !== currentExercise.id)) throw new Error("Bài tập đã thay đổi.");
+  };
+  const fileContent = (id: string) => {
+    const file = currentUserFiles.find(file => file.id === id);
+    if (!file) throw new Error("File không thuộc bài tập đang mở.");
+    const content = bufferRef.current[currentExercise.id]?.[id] ?? file.content;
+    if (content.length > 100000) throw new Error("File vượt giới hạn đọc của trợ giảng.");
+    return { file_id: file.id, filename: file.filename, content, revision: editorRevision.current, is_dirty: dirty(), exercise_id: currentExercise.id };
+  };
+  useAgentAction("editor.get_state", { execute: async args => { assertExercise(args); return editorState(); }, verify: result => Boolean((result as { exercise_id?: string }).exercise_id) });
+  useAgentAction("editor.read_file", { execute: async args => { assertExercise(args); return fileContent(typeof args.file_id === "string" ? args.file_id : activeFileId || ""); }, verify: result => typeof (result as { content?: unknown }).content === "string" });
+  useAgentAction("editor.read_selection", { execute: async args => {
+    assertExercise(args); const file = fileContent(activeFileId || ""); const range = selection.current;
+    if (range.start === range.end) throw new Error("Bạn chưa chọn đoạn code nào.");
+    return { ...file, content: file.content.slice(range.start, range.end), selection: range };
+  }, verify: result => typeof (result as { content?: unknown }).content === "string" });
+  useAgentAction("editor.select_file", { execute: async args => {
+    assertExercise(args); const fileId = stringArg(args, "file_id"); fileContent(fileId); setActiveFileId(fileId);
+    return { file_id: fileId, verified: true };
+  }, verify: result => Boolean((result as { verified?: boolean }).verified) });
+  const checkPatch = (args: Record<string, unknown>) => {
+    assertExercise(args);
+    const base = numberArg({ base_revision: args.base_revision ?? args.expected_revision }, "base_revision", 0, Number.MAX_SAFE_INTEGER);
+    if (base !== editorRevision.current) throw new Error("Code đã thay đổi sau khi Mây Mây đọc. Hãy tạo lại bản sửa.");
+    const before = Object.fromEntries(currentUserFiles.map(file => [file.id, bufferRef.current[currentExercise.id]?.[file.id] ?? file.content]));
+    return { before, after: applyEditorPatches(before, args.patches), base };
+  };
+  useAgentAction("editor.propose_patch", { execute: async args => { checkPatch(args); return { ...args, preview: (args.patches as Array<Record<string, unknown>>).map(patch => ({ ...patch, filename: currentUserFiles.find(file => file.id === patch.file_id)?.filename || patch.file_id })), verified: true }; }, verify: result => Boolean((result as { verified?: boolean }).verified) });
+  useAgentAction("editor.apply_patch", { mutation: true, execute: async (args, signal) => {
+    const { before, after } = checkPatch(args);
+    const patchId = crypto.randomUUID();
+    if (signal.aborted) throw new DOMException("Đã hủy", "AbortError");
+    bufferRef.current = { ...bufferRef.current, [currentExercise.id]: after }; setUserFiles(bufferRef.current);
+    editorRevision.current += 1; undoRef.current = { exerciseId: currentExercise.id, before, after, patchId, revision: editorRevision.current };
+    setExercisePassStatus(previous => ({ ...previous, [currentExercise.id]: false })); setTestResult(null); agent?.changed();
+    return { ...editorState(), patch_id: patchId, applied: true, saved: false, verified: true };
+  }, verify: result => Boolean((result as { applied?: boolean }).applied) });
+  useAgentAction("editor.undo_patch", { mutation: true, execute: async (args, signal) => {
+    assertExercise(args); const undo = undoRef.current;
+    if (!undo || args.patch_id !== undo.patchId || undo.exerciseId !== currentExercise.id || undo.revision !== editorRevision.current || (args.base_revision !== undefined && args.base_revision !== editorRevision.current)) throw new Error("Code đã được sửa tiếp nên chưa thể hoàn tác tự động.");
+    for (const [id, content] of Object.entries(undo.after)) if ((bufferRef.current[currentExercise.id]?.[id] ?? currentUserFiles.find(file => file.id === id)?.content) !== content) throw new Error("Code đã thay đổi.");
+    if (signal.aborted) throw new DOMException("Đã hủy", "AbortError");
+    bufferRef.current = { ...bufferRef.current, [currentExercise.id]: undo.before }; setUserFiles(bufferRef.current);
+    editorRevision.current += 1; undoRef.current = null; setTestResult(null); agent?.changed();
+    return { ...editorState(), undone: true, saved: false, verified: true };
+  }, verify: result => Boolean((result as { undone?: boolean }).undone) });
+  useAgentAction("code.run_sample_tests", { timeout: 120000, execute: async (args, signal) => { assertExercise(args); return runCodeTests(true, signal); }, verify: result => Boolean((result as { attempt_id?: string }).attempt_id) });
+
   if (exercisesWithPassStatus.length === 0) {
     return (
       <div className="w-full h-full bg-surface border border-border rounded-2xl shadow-xs p-8 flex items-center justify-center">
@@ -414,17 +546,18 @@ export default function CodeLesson({
   }
 
   return (
-    <div className="w-full h-full bg-background overflow-y-auto">
-      <div className="w-full h-full p-4 md:p-6 flex flex-col gap-4 md:gap-6">
+    <div className="h-full min-w-0 overflow-x-hidden overflow-y-auto bg-background">
+      <div className="flex min-h-full min-w-0 flex-col gap-4 p-3 sm:p-6">
+        {saveError && <p role="alert" className="rounded-xl border border-warning-border bg-warning-bg p-3 text-sm text-warning-foreground">{saveError}</p>}
         <ExerciseTabs
           exercises={exercisesWithPassStatus}
           currentIndex={currentExerciseIndex}
           onSelectExercise={handleSelectExercise}
         />
 
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 min-h-0">
+        <div className="grid min-h-0 min-w-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-6">
           {/* Cột trái: Thông tin */}
-          <div className="lg:col-span-1 flex flex-col min-h-0">
+          <div data-learning-info className="flex min-h-[220px] min-w-0 flex-col lg:col-span-1 lg:min-h-0">
             <InfoPanel
               lesson={lesson}
               infoTab={infoTab}
@@ -432,11 +565,12 @@ export default function CodeLesson({
               currentExercise={currentExercise}
               testResult={testResult}
               accessToken={accessToken}
+              lessonAuthorId={lessonAuthorId}
             />
           </div>
 
           {/* Cột phải: Code Editor */}
-          <div className="lg:col-span-2 flex flex-col min-h-0">
+          <div className="flex min-h-[360px] min-w-0 flex-col lg:col-span-2 lg:min-h-0">
             <CodeEditorPanel
               currentExercise={currentExercise}
               files={currentUserFiles}
@@ -445,9 +579,10 @@ export default function CodeLesson({
               isRunning={isRunning}
               onSelectFile={setActiveFileId}
               onUpdateFileContent={updateFileContent}
-              onTestCode={handleTestCode}
+              onTestCode={() => void runCodeTests().catch(() => setSaveError("Không chạy được test. Code chưa được xác nhận PASS."))}
               onResetCode={handleResetCode}
               onSaveFile={saveCurrentFileIfChanged}
+              onSelectionChange={(value) => { if (selection.current.start !== value.start || selection.current.end !== value.end) { selection.current = value; agent?.changed(); } }}
             />
 
             {/* Test Cases */}
@@ -463,13 +598,14 @@ export default function CodeLesson({
         </div>
       </div>
 
-      <div className="fixed bottom-6 left-6 z-40">
+      <div className="fixed bottom-[4.75rem] left-3 z-30 sm:left-6">
         <button
+          type="button"
           onClick={() => setInfoTab("qa")}
           disabled={infoTab === "qa"}
-          className={`flex items-center gap-2 px-4 py-2 rounded-full shadow-lg transition-colors ${
+          className={`flex min-h-11 items-center gap-2 rounded-full px-4 py-2 shadow-lg transition-colors ${
             infoTab === "qa"
-              ? "bg-gray-200 text-gray-500 cursor-default"
+              ? "cursor-default bg-border text-muted-foreground"
               : "bg-primary text-white hover:bg-primary-hover"
           }`}
         >

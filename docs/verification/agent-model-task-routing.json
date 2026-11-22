@@ -1,0 +1,306 @@
+{
+  "timestamp": "2026-11-13T17:05:18.235646+00:00",
+  "model": "ag/gemini-3-flash",
+  "synthetic_conversations": true,
+  "tools_executed": false,
+  "results": [
+    {
+      "id": "technology_today_after_cat",
+      "passed": true,
+      "trace": [
+        [
+          {
+            "name": "mcp.web_search",
+            "arguments": {
+              "category": "news",
+              "limit": 3,
+              "query": "tin tức công nghệ mới nhất",
+              "timelimit": "d"
+            }
+          }
+        ]
+      ],
+      "tool_calls": [
+        {
+          "name": "mcp.web_search",
+          "arguments": {
+            "category": "news",
+            "limit": 3,
+            "query": "tin tức công nghệ mới nhất",
+            "timelimit": "d"
+          }
+        }
+      ],
+      "message": "Chào bạn, để mình cập nhật các tin tức công nghệ mới nhất hôm nay cho bạn nhé.",
+      "latency_ms": 2574,
+      "prompt_chars": 17484
+    },
+    {
+      "id": "gold_today_after_cat",
+      "passed": true,
+      "trace": [
+        [
+          {
+            "name": "mcp.web_search",
+            "arguments": {
+              "category": "news",
+              "query": "du bao gia vang hom nay",
+              "timelimit": "d"
+            }
+          }
+        ]
+      ],
+      "tool_calls": [
+        {
+          "name": "mcp.web_search",
+          "arguments": {
+            "category": "news",
+            "query": "du bao gia vang hom nay",
+            "timelimit": "d"
+          }
+        }
+      ],
+      "message": "Mình đang tìm thông tin dự báo giá vàng hôm nay trên mạng giúp bạn nhé.",
+      "latency_ms": 1724,
+      "prompt_chars": 17500
+    },
+    {
+      "id": "nvidia_rumor_followup",
+      "passed": true,
+      "trace": [
+        [
+          {
+            "name": "mcp.web_search",
+            "arguments": {
+              "category": "news",
+              "query": "NVIDIA tin mới nhất",
+              "timelimit": "w"
+            }
+          }
+        ]
+      ],
+      "tool_calls": [
+        {
+          "name": "mcp.web_search",
+          "arguments": {
+            "category": "news",
+            "query": "NVIDIA tin mới nhất",
+            "timelimit": "w"
+          }
+        }
+      ],
+      "message": "Để mình kiểm tra các tin tức mới nhất về NVIDIA xem có thông tin nào đáng chú ý không nhé.",
+      "latency_ms": 1835,
+      "prompt_chars": 17607
+    },
+    {
+      "id": "public_course_price",
+      "passed": true,
+      "trace": [
+        [
+          {
+            "name": "catalog.get_course",
+            "arguments": {
+              "course_id": "11111111-1111-4111-8111-111111111111"
+            }
+          }
+        ]
+      ],
+      "tool_calls": [
+        {
+          "name": "catalog.get_course",
+          "arguments": {
+            "course_id": "11111111-1111-4111-8111-111111111111"
+          }
+        }
+      ],
+      "message": "Mình đang kiểm tra học phí của khóa học này cho bạn nhé.",
+      "latency_ms": 2023,
+      "prompt_chars": 17483
+    },
+    {
+      "id": "correct_false_capability_denial",
+      "passed": true,
+      "trace": [
+        [
+          {
+            "name": "catalog.get_course",
+            "arguments": {
+              "course_id": "11111111-1111-4111-8111-111111111111"
+            }
+          }
+        ]
+      ],
+      "tool_calls": [
+        {
+          "name": "catalog.get_course",
+          "arguments": {
+            "course_id": "11111111-1111-4111-8111-111111111111"
+          }
+        }
+      ],
+      "message": "",
+      "latency_ms": 1635,
+      "prompt_chars": 17588
+    },
+    {
+      "id": "open_course",
+      "passed": true,
+      "trace": [
+        [
+          {
+            "name": "mcp.browser_snapshot",
+            "arguments": {}
+          }
+        ]
+      ],
+      "tool_calls": [
+        {
+          "name": "mcp.browser_snapshot",
+          "arguments": {}
+        }
+      ],
+      "message": "Chào bạn, mình đang mở khóa JavaScript cho bạn nhé.",
+      "latency_ms": 1585,
+      "prompt_chars": 17492
+    },
+    {
+      "id": "visible_screen",
+      "passed": true,
+      "trace": [
+        [
+          {
+            "name": "mcp.browser_snapshot",
+            "arguments": {}
+          }
+        ]
+      ],
+      "tool_calls": [
+        {
+          "name": "mcp.browser_snapshot",
+          "arguments": {}
+        }
+      ],
+      "message": "Để mình xem bạn đang ở trang nào nhé.",
+      "latency_ms": 1467,
+      "prompt_chars": 17496
+    },
+    {
+      "id": "friend_identity",
+      "passed": true,
+      "trace": [
+        [
+          {
+            "name": "memory.read",
+            "arguments": {}
+          }
+        ],
+        []
+      ],
+      "tool_calls": [],
+      "message": "Bạn thân của bạn tên là An.",
+      "latency_ms": 3205,
+      "prompt_chars": 17560
+    },
+    {
+      "id": "own_identity",
+      "passed": true,
+      "trace": [
+        []
+      ],
+      "tool_calls": [],
+      "message": "Bạn tên là Huỳnh.",
+      "latency_ms": 1610,
+      "prompt_chars": 17450
+    },
+    {
+      "id": "image_followup",
+      "passed": true,
+      "trace": [
+        [
+          {
+            "name": "memory.view_images",
+            "arguments": {}
+          }
+        ]
+      ],
+      "tool_calls": [
+        {
+          "name": "memory.view_images",
+          "arguments": {}
+        }
+      ],
+      "message": "",
+      "latency_ms": 1895,
+      "prompt_chars": 17448
+    },
+    {
+      "id": "empty_catalog_retry",
+      "passed": true,
+      "trace": [
+        [
+          {
+            "name": "catalog.search_courses",
+            "arguments": {
+              "query": "lập trình"
+            }
+          }
+        ]
+      ],
+      "tool_calls": [
+        {
+          "name": "catalog.search_courses",
+          "arguments": {
+            "query": "lập trình"
+          }
+        }
+      ],
+      "message": "Để mình tìm các khóa học lập trình phù hợp cho bạn nhé.",
+      "latency_ms": 1775,
+      "prompt_chars": 17566
+    },
+    {
+      "id": "casual_hunger",
+      "passed": true,
+      "trace": [
+        []
+      ],
+      "tool_calls": [],
+      "message": "Bạn muốn ăn món gì hay cần tìm quán ăn nào quanh đây không?",
+      "latency_ms": 1449,
+      "prompt_chars": 17448
+    },
+    {
+      "id": "discover_github_schema",
+      "passed": true,
+      "trace": [
+        [
+          {
+            "name": "mcp.github_read_file",
+            "arguments": {
+              "commit_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "owner": "example",
+              "path": "src/main.py",
+              "repo": "demo"
+            }
+          }
+        ]
+      ],
+      "tool_calls": [
+        {
+          "name": "mcp.github_read_file",
+          "arguments": {
+            "commit_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "owner": "example",
+            "path": "src/main.py",
+            "repo": "demo"
+          }
+        }
+      ],
+      "message": "Mình đang đọc file `src/main.py` trong repo `example/demo`.",
+      "latency_ms": 1736,
+      "prompt_chars": 17437
+    }
+  ],
+  "passed": true
+}

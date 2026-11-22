@@ -1,0 +1,75 @@
+{
+  "real_auth_api_database_browser": true,
+  "database": "isolated_verification",
+  "model_planner": "real_configured_provider",
+  "tool_outputs": "real",
+  "ui_receipts": "not_mocked",
+  "cases": [
+    {
+      "kind": "web",
+      "state": "completed",
+      "selected_tool": true,
+      "response": "Dưới đây là tài liệu chính thức từ MDN về `Array.prototype.map()` trong JavaScript tìm được qua công cụ tìm kiếm web:\n\n- **Tài liệu MDN**: [Array.prototype.map() - JavaScript | MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/map) [3]\n- **Mô tả vắn tắt**: Phương thức `map()` của đối tượng Array tạo một mảng mới chứa kết quả của việc thực thi một hàm được cung cấp (callback) lên từng phần tử của mảng ban đầu [3].\n\n*Lưu ý: Nguồn tìm kiếm web bên ngoài mang tính chất tham khảo độc lập, không phải nội dung trực tiếp từ bài giảng.*",
+      "sources": [
+        {
+          "index": 3,
+          "summary": "Oct 26, 2026 · The map () method of Array instances creates a new array populated with the results of calling a provided function on every element in the calling array.",
+          "chunk_id": "external:https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/map:",
+          "commit_sha": null,
+          "source_kind": "external_web",
+          "source_type": "resource",
+          "resource_url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/map",
+          "resource_title": "Web · Array.prototype.map () - JavaScript | MDN - MDN Web Docs"
+        },
+        {
+          "index": 4,
+          "summary": "Jun 15, 2017 · The map () method creates a new array with the results of calling a provided function on every element in the calling array.",
+          "chunk_id": "external:https://devdoc.net/web/developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/map.html:",
+          "commit_sha": null,
+          "source_kind": "external_web",
+          "source_type": "resource",
+          "resource_url": "https://devdoc.net/web/developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/map.html",
+          "resource_title": "Web · Array.prototype.map () - JavaScript | MDN - devdoc.net"
+        },
+        {
+          "index": 5,
+          "summary": "Oct 26, 2026 · The map () method of Iterator instances returns a new iterator helper object that yields elements of the iterator, each transformed by a mapping function.",
+          "chunk_id": "external:https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Iterator/map:",
+          "commit_sha": null,
+          "source_kind": "external_web",
+          "source_type": "resource",
+          "resource_url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Iterator/map",
+          "resource_title": "Web · Iterator.prototype.map () - JavaScript - MDN"
+        }
+      ]
+    },
+    {
+      "kind": "github",
+      "state": "completed",
+      "selected_tool": true,
+      "response": "Dưới đây là thông tin và nội dung file `README` từ kho lưu trữ GitHub công khai [octocat/Hello-World](https://github.com/octocat/Hello-World) [3]:\n\n- **Commit SHA đã đọc**: `7fd1a60b01f91b314f59955a4e4d4e80d8edf11d` [3]\n- **Đường dẫn file**: [README](https://github.com/octocat/Hello-World/blob/7fd1a60b01f91b314f59955a4e4d4e80d8edf11d/README) [4]\n- **Tóm tắt nội dung**: File `README` có nội dung ngắn gọn gồm duy nhất dòng chữ:\n  ```text\n  Hello World!\n  ``` [4]\n\n*Lưu ý: Dữ liệu từ kho lưu trữ ngoài mang tính chất tham khảo độc lập, không phải nội dung bài giảng chính thức. Thao tác đọc file không đồng nghĩa với việc thực thi mã hay chấm điểm.*",
+      "sources": [
+        {
+          "index": 3,
+          "summary": "My first repository on GitHub!",
+          "chunk_id": "external:https://github.com/octocat/Hello-World:7fd1a60b01f91b314f59955a4e4d4e80d8edf11d",
+          "commit_sha": "7fd1a60b01f91b314f59955a4e4d4e80d8edf11d",
+          "source_kind": "github_public",
+          "source_type": "resource",
+          "resource_url": "https://github.com/octocat/Hello-World",
+          "resource_title": "GitHub · octocat/Hello-World"
+        },
+        {
+          "index": 4,
+          "summary": "",
+          "chunk_id": "external:https://github.com/octocat/Hello-World/blob/7fd1a60b01f91b314f59955a4e4d4e80d8edf11d/README:7fd1a60b01f91b314f59955a4e4d4e80d8edf11d",
+          "commit_sha": "7fd1a60b01f91b314f59955a4e4d4e80d8edf11d",
+          "source_kind": "github_public",
+          "source_type": "resource",
+          "resource_url": "https://github.com/octocat/Hello-World/blob/7fd1a60b01f91b314f59955a4e4d4e80d8edf11d/README",
+          "resource_title": "GitHub · README"
+        }
+      ]
+    }
+  ]
+}

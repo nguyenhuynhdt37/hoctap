@@ -1,7 +1,11 @@
 "use client";
 
-import { validateOTP } from "@/lib/utils/validators";
+import AuthScenicLayout from "@/components/user/auth/auth-scenic-layout";
+import { Alert, Button, Card, Input } from "@/components/ui";
 import api from "@/lib/utils/fetcher/client/axios";
+import { formatApiError } from "@/lib/utils/helpers/error";
+import { validateOTP } from "@/lib/utils/validators";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { HiCheckCircle, HiMail, HiRefresh } from "react-icons/hi";
@@ -9,97 +13,43 @@ import { HiCheckCircle, HiMail, HiRefresh } from "react-icons/hi";
 const EmailAuthentication = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const registered = searchParams.get("registered"); // "true"
-  const email_register = searchParams.get("email"); // "nguyenhuynhtk37@gmail.com"
+  const emailFromQuery = (searchParams.get("email") || "").trim();
   const redirectUrl = searchParams.get("redirect") || "/";
-  // Email state - bạn có thể lấy từ context, state management, hoặc API
-  const [email, setEmail] = useState("user@example.com");
-  // OTP state
+
+  const [email, setEmail] = useState(emailFromQuery);
   const [otp, setOtp] = useState<string[]>(["", "", "", "", "", ""]);
   const [otpError, setOtpError] = useState<string>("");
+  const [infoMessage, setInfoMessage] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
 
-  // Countdown state
   const [countdown, setCountdown] = useState(0);
   const [canResend, setCanResend] = useState(true);
 
-  // Refs for input focus management
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // Countdown effect
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-
-    if (countdown > 0) {
-      interval = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            setCanResend(true);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+    if (emailFromQuery) {
+      setEmail(emailFromQuery);
     }
+  }, [emailFromQuery]);
 
-    return () => {
-      if (interval) clearInterval(interval);
-    };
+  useEffect(() => {
+    if (countdown <= 0) return;
+    const interval = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          setCanResend(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
   }, [countdown]);
 
-  // Handle OTP input change
-  const handleOtpChange = (index: number, value: string) => {
-    // Only allow numbers
-    if (value && !/^\d$/.test(value)) return;
-
-    const newOtp = [...otp];
-    newOtp[index] = value;
-    setOtp(newOtp);
-
-    // Clear error when user starts typing
-    if (otpError) setOtpError("");
-
-    // Auto focus next input
-    if (value && index < 5) {
-      inputRefs.current[index + 1]?.focus();
-    }
-
-    // Auto validate when all fields are filled
-    if (newOtp.every((digit) => digit !== "") && !value) {
-      validateOtpInput(newOtp.join(""));
-    }
-  };
-
-  // Handle backspace and navigation
-  const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
-    if (e.key === "Backspace") {
-      if (!otp[index] && index > 0) {
-        // If current field is empty, focus previous field
-        inputRefs.current[index - 1]?.focus();
-      }
-    } else if (e.key === "ArrowLeft" && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-    } else if (e.key === "ArrowRight" && index < 5) {
-      inputRefs.current[index + 1]?.focus();
-    }
-  };
-
-  // Handle paste
-  const handlePaste = (e: React.ClipboardEvent) => {
-    e.preventDefault();
-    const pastedData = e.clipboardData.getData("text").replace(/\D/g, "");
-
-    if (pastedData.length === 6) {
-      const newOtp = pastedData.split("").slice(0, 6);
-      setOtp(newOtp);
-      validateOtpInput(pastedData);
-      // Focus last input
-      inputRefs.current[5]?.focus();
-    }
-  };
-
-  // Validate OTP
   const validateOtpInput = (otpString: string) => {
     const validation = validateOTP(otpString);
     if (!validation.isValid) {
@@ -110,67 +60,138 @@ const EmailAuthentication = () => {
     return validation.isValid;
   };
 
-  // Handle form submit
+  const handleOtpChange = (index: number, value: string) => {
+    if (value && !/^\d$/.test(value)) return;
+
+    const newOtp = [...otp];
+    newOtp[index] = value;
+    setOtp(newOtp);
+
+    if (otpError) setOtpError("");
+    if (infoMessage) setInfoMessage("");
+
+    if (value && index < 5) {
+      inputRefs.current[index + 1]?.focus();
+    }
+
+    if (value && newOtp.every((digit) => digit !== "")) {
+      validateOtpInput(newOtp.join(""));
+    }
+  };
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === "Backspace") {
+      if (!otp[index] && index > 0) {
+        inputRefs.current[index - 1]?.focus();
+      }
+    } else if (e.key === "ArrowLeft" && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    } else if (e.key === "ArrowRight" && index < 5) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData("text").replace(/\D/g, "");
+
+    if (pastedData.length >= 6) {
+      const codeSlice = pastedData.slice(0, 6);
+      setOtp(codeSlice.split(""));
+      validateOtpInput(codeSlice);
+      inputRefs.current[5]?.focus();
+    }
+  };
+
+  const targetEmail = (emailFromQuery || email).trim();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!targetEmail) {
+      setOtpError("Vui lòng nhập địa chỉ email cần xác thực.");
+      return;
+    }
 
     const otpString = otp.join("");
     if (!validateOtpInput(otpString)) return;
 
     setIsLoading(true);
+    setInfoMessage("");
 
     try {
       await api.post("/auth/verify-email", {
-        email: email_register,
+        email: targetEmail,
         code: otpString,
       });
       setIsVerified(true);
-      // Redirect về URL được chỉ định hoặc về trang chủ sau khi xác thực thành công
       setTimeout(() => {
         router.push(redirectUrl);
         router.refresh();
       }, 1000);
     } catch (error: any) {
-      if (error?.response?.status === 400 || error?.response?.status === 404) {
-        setOtpError("Mã xác thực không đúng. Vui lòng thử lại.");
+      const status = error?.response?.status ?? error?.status;
+      if (status === 400) {
+        setOtpError(
+          formatApiError(error, "Mã xác thực không đúng hoặc đã hết hạn.")
+        );
+      } else if (status === 404) {
+        setOtpError("Không tìm thấy tài khoản với email này.");
+      } else if (status === 409) {
+        setOtpError("Email này đã được xác thực. Bạn có thể đăng nhập ngay.");
       } else {
-        setOtpError("Đã có lỗi xảy ra. Vui lòng thử lại sau.");
+        setOtpError(
+          formatApiError(error, "Đã có lỗi xảy ra. Vui lòng thử lại sau.")
+        );
       }
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Handle resend code
   const handleResendCode = async () => {
-    if (!canResend) return;
+    if (!canResend || isResending) return;
+    if (!targetEmail) {
+      setOtpError("Vui lòng nhập địa chỉ email trước khi gửi lại mã.");
+      return;
+    }
+
+    setIsResending(true);
+    setOtpError("");
+    setInfoMessage("");
     try {
-      const res = await api.post("/auth/refesh-email", {
-        email: email_register,
+      await api.post("/auth/refesh-email", {
+        email: targetEmail,
       });
       setCanResend(false);
       setCountdown(60);
       setOtp(["", "", "", "", "", ""]);
-      setOtpError("");
+      setInfoMessage("Đã gửi mã xác thực mới tới hộp thư của bạn.");
+      inputRefs.current[0]?.focus();
     } catch (e: any) {
-      if (e?.status === 429) {
+      const status = e?.response?.status ?? e?.status;
+      if (status === 429) {
         setOtpError(
-          "Bạn đã gửi yêu cầu quá 5 lần. Vui lòng thử lại vào ngày mai."
+          "Bạn đã gửi yêu cầu quá 5 lần trong hôm nay. Vui lòng thử lại vào ngày mai."
         );
-      } else if (e?.status === 404) {
+        setCanResend(false);
+        setCountdown(0);
+      } else if (status === 404) {
         setOtpError("Email không tồn tại trong hệ thống.");
-      } else if (e?.status === 409) {
-        setOtpError("Email đã được xác thực.");
+      } else if (status === 409) {
+        setOtpError("Email đã được xác thực. Bạn có thể đăng nhập ngay.");
+        setCanResend(false);
+        setCountdown(0);
       } else {
-        setOtpError("Không thể gửi lại mã. Vui lòng thử lại.");
+        setOtpError(
+          formatApiError(e, "Không thể gửi lại mã lúc này. Vui lòng thử lại.")
+        );
       }
-      setCanResend(false);
+    } finally {
+      setIsResending(false);
     }
-    // Focus first input
-    inputRefs.current[0]?.focus();
   };
 
-  // Format countdown time
   const formatCountdown = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -179,50 +200,77 @@ const EmailAuthentication = () => {
 
   if (isVerified) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
-          <div className="text-center">
-            <div className="mx-auto h-24 w-24 bg-green-100 rounded-full flex items-center justify-center">
-              <HiCheckCircle className="h-12 w-12 text-green-600" />
-            </div>
-            <h2 className="mt-6 text-3xl font-bold text-gray-900">
-              Xác thực thành công!
-            </h2>
-            <p className="mt-2 text-sm text-gray-600">
-              Email của bạn đã được xác thực thành công.
-            </p>
+      <AuthScenicLayout>
+        <Card className="rounded-[24px] p-6 sm:p-8 text-center space-y-4">
+          <div className="mx-auto h-20 w-20 bg-success-bg rounded-full flex items-center justify-center border border-success-border">
+            <HiCheckCircle className="h-11 w-11 text-success-foreground" />
           </div>
-        </div>
-      </div>
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground">
+            Xác thực thành công!
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Email của bạn đã được xác thực. Đang chuyển hướng vào không gian học tập...
+          </p>
+        </Card>
+      </AuthScenicLayout>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <div className="mx-auto h-16 w-16 bg-teal-100 rounded-full flex items-center justify-center">
-            <HiMail className="h-8 w-8 text-teal-600" />
+    <AuthScenicLayout>
+      <Card className="rounded-[24px] p-6 sm:p-8 space-y-6">
+        <div className="text-center space-y-2">
+          <div className="mx-auto h-14 w-14 bg-primary-soft rounded-full flex items-center justify-center border border-border">
+            <HiMail className="h-7 w-7 text-primary" />
           </div>
-          <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground">
             Xác thực email
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
+          </h1>
+          <p className="text-sm text-muted-foreground">
             Chúng tôi đã gửi mã xác thực 6 chữ số đến
           </p>
-          <p className="text-center text-sm font-medium text-teal-600">
-            {email_register}
-          </p>
+          {emailFromQuery ? (
+            <p className="text-sm font-semibold text-primary break-all">
+              {emailFromQuery}
+            </p>
+          ) : null}
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        {!emailFromQuery && (
+          <Input
+            id="verifyEmailInput"
+            name="email"
+            type="email"
+            label="Email cần xác thực"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              if (otpError) setOtpError("");
+            }}
+            placeholder="you@example.com"
+            required
+          />
+        )}
+
+        {infoMessage && (
+          <Alert variant="success" onClose={() => setInfoMessage("")}>
+            {infoMessage}
+          </Alert>
+        )}
+
+        {otpError && (
+          <Alert variant="destructive" onClose={() => setOtpError("")}>
+            {otpError}
+          </Alert>
+        )}
+
+        <form className="space-y-6" onSubmit={handleSubmit}>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-4 text-center">
-              Nhập mã xác thực
+            <label className="block text-sm font-medium text-foreground mb-3 text-center">
+              Nhập mã xác thực 6 chữ số
             </label>
 
-            {/* OTP Input Fields */}
-            <div className="flex justify-center space-x-2 mb-4">
+            <div className="flex justify-center gap-2 sm:gap-2.5">
               {otp.map((digit, index) => (
                 <input
                   key={index}
@@ -230,79 +278,76 @@ const EmailAuthentication = () => {
                     inputRefs.current[index] = el;
                   }}
                   type="text"
+                  inputMode="numeric"
+                  aria-label={`Chữ số xác thực thứ ${index + 1}`}
                   maxLength={1}
                   value={digit}
                   onChange={(e) => handleOtpChange(index, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(index, e)}
                   onPaste={index === 0 ? handlePaste : undefined}
-                  className={`w-12 h-12 text-center text-xl font-bold border rounded-lg focus:outline-none focus:ring-2 focus:z-10 ${
+                  className={`w-11 h-12 sm:w-12 sm:h-13 text-center text-xl font-bold bg-surface text-foreground border rounded-xl transition-all focus:outline-none focus:ring-2 ${
                     otpError
-                      ? "border-red-300 focus:ring-red-500 focus:border-red-500"
-                      : "border-gray-300 focus:ring-teal-500 focus:border-teal-500"
+                      ? "border-destructive-border focus:ring-destructive/25"
+                      : "border-border focus:border-primary focus:ring-primary/25"
                   }`}
                   disabled={isLoading}
                 />
               ))}
             </div>
-
-            {/* Error Message */}
-            {otpError && (
-              <div className="text-red-600 text-sm text-center mb-4">
-                {otpError}
-              </div>
-            )}
           </div>
 
-          {/* Verify Button */}
-          <div>
-            <button
-              type="submit"
-              disabled={isLoading || otp.some((digit) => digit === "")}
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {isLoading ? (
-                <div className="flex items-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Đang xác thực...
-                </div>
-              ) : (
-                "Xác thực"
-              )}
-            </button>
-          </div>
+          <Button
+            type="submit"
+            variant="primary"
+            size="lg"
+            fullWidth
+            disabled={isLoading || !targetEmail || otp.some((digit) => digit === "")}
+            isLoading={isLoading}
+            loadingText="Đang xác thực..."
+          >
+            Xác thực
+          </Button>
 
-          {/* Resend Code */}
-          <div className="text-center">
-            <p className="text-sm text-gray-600 mb-2">Không nhận được mã?</p>
+          <div className="text-center space-y-1.5">
+            <p className="text-sm text-muted-foreground">Không nhận được mã?</p>
 
             {canResend ? (
               <button
                 type="button"
                 onClick={handleResendCode}
-                className="inline-flex items-center text-sm text-teal-600 hover:text-teal-500 font-medium transition-colors"
+                disabled={isResending}
+                className="inline-flex items-center text-sm text-primary hover:text-primary-hover font-semibold transition-colors cursor-pointer disabled:opacity-50"
               >
-                <HiRefresh className="h-4 w-4 mr-1" />
-                Gửi lại mã
+                <HiRefresh
+                  className={`h-4 w-4 mr-1.5 ${isResending ? "animate-spin" : ""}`}
+                />
+                {isResending ? "Đang gửi lại..." : "Gửi lại mã"}
               </button>
-            ) : (
-              <div className="inline-flex items-center text-sm text-gray-500">
-                <HiRefresh className="h-4 w-4 mr-1" />
+            ) : countdown > 0 ? (
+              <div className="inline-flex items-center text-sm text-subtle-foreground">
+                <HiRefresh className="h-4 w-4 mr-1.5" />
                 Gửi lại sau {formatCountdown(countdown)}
               </div>
-            )}
+            ) : null}
           </div>
         </form>
 
-        {/* Instructions */}
-        <div className="mt-6 text-center">
-          <p className="text-xs text-gray-500">
-            Mã xác thực có hiệu lực trong 10 phút.
-            <br />
-            Kiểm tra thư mục spam nếu không thấy email.
+        <div className="text-center space-y-2 pt-1 border-t border-border/60">
+          <p className="text-xs text-muted-foreground">
+            Mã xác thực có hiệu lực trong 10 phút. Kiểm tra thư mục spam nếu chưa thấy email.
           </p>
+          <div className="text-sm text-muted-foreground">
+            Đã xác thực tài khoản?{" "}
+            <Link
+              href="/login"
+              className="text-primary hover:text-primary-hover font-semibold"
+            >
+              Đăng nhập
+            </Link>
+          </div>
         </div>
-      </div>
-    </div>
+      </Card>
+    </AuthScenicLayout>
   );
 };
 
