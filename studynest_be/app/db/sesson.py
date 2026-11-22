@@ -12,7 +12,10 @@ DATABASE_URL = os.getenv(
 )
 
 # Phân giải host psql-maymay qua IP Tailscale trực tiếp khi domain đi qua Cloudflare proxy (chỉ forward HTTP/HTTPS)
-connect_args = {}
+connect_args = {
+    "timeout": 10,
+    "command_timeout": 15,
+}
 if DATABASE_URL and "psql-maymay.itup.io.vn" in DATABASE_URL:
     connect_args["host"] = "100.122.190.92"
     connect_args["port"] = 5435
@@ -23,6 +26,8 @@ engine = create_async_engine(
     connect_args=connect_args,
     echo=False,  # bật True chỉ khi debug
     pool_pre_ping=True,  # tự kiểm tra connection còn sống
+    pool_recycle=180,  # tái chế connection trước khi NAT/Tailscale cắt idle TCP
+    pool_timeout=15,
 )
 
 # ✅ Tạo session factory

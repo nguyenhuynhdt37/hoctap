@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import hmac
 import json
 from datetime import timedelta
@@ -561,7 +562,8 @@ class AuthService:
                 503, "Đăng nhập Google chưa được cấu hình trên máy chủ."
             )
         try:
-            info = id_token.verify_oauth2_token(
+            info = await asyncio.to_thread(
+                id_token.verify_oauth2_token,
                 schema.credential,
                 requests.Request(),
                 client_id,
