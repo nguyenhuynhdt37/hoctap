@@ -155,3 +155,34 @@ async def test_only_earned_coin_counts_toward_what_can_be_withdrawn(db_session):
     info = await WithdrawService(db_session).check_can_withdraw_request_async(user)
     assert info["balance"] == 0 and info["paid_balance"] == 100
     assert (await CoinService(db_session).get_balances_async(user_id)).paid == 100
+
+
+async def test_two_simultaneous_requests_cannot_exceed_what_was_earned(async_engine):
+    """Hai yêu cầu song song (session riêng, commit thật trên DB test cô lập): chỉ một được tạo."""
+    import asyncio
+
+    from sqlalchemy.ext.asyncio import async_sessionmaker
+
+    factory = async_sessionmaker(async_engine, expire_on_commit=False)
+    async with factory() as setup:
+        user = await lecturer(setup, paid=30, topup=100)  # rút được 30, còn 100 Coin nạp không rút được
+        user_id = user.id
+        await setup.commit()
+
+    async def attempt():
+        async with factory() as session:
+            lecturer_row = await session.get(User, user_id)
+            try:
+                await WithdrawService(session).request_withdraw_async(lecturer_row, 30, Notifier())
+                await session.commit()
+                return "ok"
+            except HTTPException as error:
+                await session.rollback()
+                return error.status_code
+
+    results = await asyncio.gather(attempt(), attempt())
+    assert sorted(map(str, results)) == ["400", "ok"]
+    async with factory() as check:
+        assert (await CoinService(check).get_balances_async(user_id)).paid == 100
+        assert await check.scalar(select(func.count()).select_from(WithdrawalRequests).where(
+            WithdrawalRequests.lecturer_id == user_id)) == 1

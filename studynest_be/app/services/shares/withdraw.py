@@ -160,6 +160,10 @@ class WithdrawService:
             if not isinstance(coin_amount, int) or coin_amount <= 0:
                 raise HTTPException(400, "Số Coin rút không hợp lệ.")
 
+            # Khóa dòng số dư của giảng viên trước mọi kiểm tra: hai yêu cầu song song phải xếp hàng, nếu không
+            # cả hai cùng thấy "chưa có yêu cầu chờ" và còn đủ Coin rút được.
+            await CoinService(self.db)._lock_rows(lecturer.id)
+
             settings = await self.db.scalar(select(PlatformSettings))
             if not settings:
                 raise HTTPException(500, "Thiếu cấu hình nền tảng.")
