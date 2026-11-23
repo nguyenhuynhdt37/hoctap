@@ -19,6 +19,7 @@ from app.repositories.gamification.balances import get_or_create_account_row
 from app.services.coin_math import split_payment
 from app.services.coupon_settlement import billing_policy
 
+TOPUP_SOURCE = "topup"
 PURCHASE_SOURCE = "course_purchase"
 REFUND_SOURCE = "refund"
 
