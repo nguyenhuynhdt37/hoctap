@@ -29,6 +29,8 @@ from app.db.models.database import (
     WithdrawalRequests,
 )
 from app.services.billing_ledger import check_coupon_budget, hold_payment, lock_treasury, record_coupon_cost
+from app.services.coin_math import allocate, price_to_coin
+from app.services.coin_service import CoinService, PaymentSplit
 from app.services.coupon_settlement import billing_policy, earning_for_purchase, settle
 from app.services.gamification.coupon_rewards import consume_discount
 from app.services.catalog import public_course, require_real_course
@@ -426,29 +428,41 @@ class TransactionsService:
             total_price = sum(amount.paid for amount in amounts_by_course.values())
             now = get_now()
             transaction = None
+            price_coin = 0
+            split = PaymentSplit(0, 0)
             if total_price:
                 wallet = await self.db.scalar(select(Wallets).where(Wallets.user_id == user.id)
                     .with_for_update().execution_options(populate_existing=True))
-                if wallet is None or wallet.is_locked or wallet.currency != "VND":
-                    raise HTTPException(400, "Ví không tồn tại, đang khóa hoặc không dùng VND.")
-                await wallets_service.ensure_wallet_balance(user.id, total_price)
+                if wallet is not None and wallet.is_locked:
+                    raise HTTPException(400, "Tài khoản đang bị khóa thanh toán.")
                 treasury = await lock_treasury(self.db)
                 await check_coupon_budget(self.db, policy, sum(
                     amount.discount for course_id, amount in amounts_by_course.items()
                     if items[course_id].get("sponsor") == "platform"
                 ))
-                wallet.balance -= total_price
-                wallet.total_out = (wallet.total_out or Decimal(0)) + total_price
-                wallet.last_transaction_at = now
+                # Thanh toán bằng Coin: tính trên số tiền sau giảm; trừ Coin thưởng trước, thiếu Coin thật thì từ chối.
+                price_coin = price_to_coin(total_price, policy.coin_vnd_rate)
+                transaction_id = uuid.uuid4()
+                split = await CoinService(self.db).debit_for_purchase_async(
+                    user.id, price_coin, ref_id=transaction_id)
                 transaction = Transactions(
-                    id=uuid.uuid4(), user_id=user.id, amount=total_price, type="purchase",
+                    id=transaction_id, user_id=user.id, amount=total_price, type="purchase",
                     currency="VND", direction="out", method="wallet", gateway="internal_wallet",
-                    status="completed", description=f"Mua {len(courses)} khóa học bằng ví nội bộ",
+                    status="completed",
+                    description=(f"Mua {len(courses)} khóa học bằng {price_coin} Coin "
+                                 f"({split.bonus_use} thưởng + {split.paid_use} thật)"),
                     created_at=now, confirmed_at=now,
                 )
                 self.db.add(transaction)
                 await self.db.flush()
+                # Giảng viên vẫn được tính theo giá VND đầy đủ; phần Coin thưởng do nền tảng chịu.
                 hold_payment(self.db, treasury, total_price, transaction_id=transaction.id)
+            ordered = sorted(courses, key=lambda course: course.id)
+            weights = [amounts_by_course[course.id].paid for course in ordered]
+            coin_split = {
+                course.id: (bonus, paid) for course, bonus, paid in zip(
+                    ordered, allocate(split.bonus_use, weights), allocate(split.paid_use, weights))
+            }
 
             for course in courses:
                 amounts = amounts_by_course[course.id]
@@ -460,6 +474,7 @@ class TransactionsService:
                         discount_amount=amounts.discount or None,
                         discount_id=discount_id if amounts.discount else None,
                         coupon_sponsor=items[course.id].get("sponsor"),
+                        coin_bonus_used=coin_split[course.id][0], coin_paid_used=coin_split[course.id][1],
                         status="completed", created_at=now,
                         course_snapshot={
                             "title": course.title, "base_price": float(amounts.base),
@@ -516,7 +531,7 @@ class TransactionsService:
                             user_id=transaction.user_id,
                             roles=roles,
                             title="Mua khóa học thành công 💰",
-                            content=f"Bạn đã mua khóa học với tổng giá {transaction.amount:,} VND thành công.",
+                            content=f"Bạn đã mua khóa học với tổng {price_coin:,} Coin thành công.",
                             type="wallet",
                             role_target=["USER"],
                             metadata={"transaction_id": str(transaction.id)},
@@ -583,6 +598,9 @@ class TransactionsService:
                 "is_free": not total_price,
                 "transaction_id": str(transaction.id) if transaction else None,
                 "total_paid": str(total_price),
+                "total_coin": price_coin,
+                "coin_bonus_used": split.bonus_use,
+                "coin_paid_used": split.paid_use,
                 "items": [
                     {
                         "course_id": str(course_id),

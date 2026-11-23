@@ -25,15 +25,17 @@ def split_payment(price_coin: int, bonus_balance: int, max_share: Decimal) -> tu
 
 
 def allocate(total: int, weights: list[Decimal]) -> list[int]:
-    """Chia `total` theo tỷ lệ `weights`; phần dư dồn vào dòng cuối, tổng luôn bằng `total`."""
-    weight_sum = sum(weights)
+    """Chia `total` theo tỷ lệ `weights`; phần dư dồn vào dòng cuối có trọng số > 0, tổng luôn bằng `total`."""
     if not weights:
         return []
+    weight_sum = sum(weights)
+    positive = [index for index, weight in enumerate(weights) if weight > 0]
     if weight_sum <= 0:
-        shares = [0] * (len(weights) - 1)
-    else:
-        shares = [
-            int((Decimal(total) * weight / weight_sum).to_integral_value(rounding=ROUND_FLOOR))
-            for weight in weights[:-1]
-        ]
-    return [*shares, total - sum(shares)]
+        return [0] * (len(weights) - 1) + [total]
+    last = positive[-1]
+    shares = [
+        0 if index == last else int((Decimal(total) * weight / weight_sum).to_integral_value(rounding=ROUND_FLOOR))
+        for index, weight in enumerate(weights)
+    ]
+    shares[last] = total - sum(shares)
+    return shares

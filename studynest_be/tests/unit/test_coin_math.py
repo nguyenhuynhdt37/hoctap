@@ -25,3 +25,8 @@ def test_allocate_sums_to_total_with_remainder_last():
     assert sum(parts) == 10
     assert parts == [3, 3, 4]
     assert allocate(0, [Decimal(5), Decimal(5)]) == [0, 0]
+
+
+def test_allocate_remainder_goes_to_last_positive_weight():
+    assert allocate(7, [Decimal(1), Decimal(1), Decimal(0)]) == [3, 4, 0]
+    assert allocate(5, [Decimal(0), Decimal(2)]) == [0, 5]
