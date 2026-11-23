@@ -36,6 +36,8 @@ from app.libs.formats.datetime import VIETNAM_TIMEZONE
 from app.libs.formats.datetime import now as legacy_now
 from app.schemas.learning_paths import BUNDLE_PRESENTATION_FIELDS
 from app.services.billing_ledger import check_coupon_budget, hold_payment, lock_treasury, record_coupon_cost
+from app.services.coin_math import allocate, price_to_coin
+from app.services.coin_service import CoinService, PaymentSplit
 from app.services.bundle_coupons import BundleCouponService
 from app.services.coupon_settlement import CENT, billing_policy, coupon_cap, money, settle
 from app.services.gamification.coupon_rewards import (
@@ -699,8 +701,6 @@ class BundleService:
             )
             if wallet and (wallet.is_locked or wallet.currency != "VND"):
                 raise HTTPException(409, "Ví đang khóa hoặc không dùng VND")
-            if total and (not wallet or Decimal(wallet.balance or 0) < total):
-                raise HTTPException(402, "Số dư ví không đủ để mua combo")
             fee = Decimal(quote["platform_fee"])
             hold_days = quote["refund_days"]
             sponsor = quote["coupon_sponsor"]
@@ -745,11 +745,22 @@ class BundleService:
             )
             self.db.add(order)
             await self.db.flush()
+            split = PaymentSplit(0, 0)
             if total:
                 hold_payment(self.db, treasury, total, note=f"Combo {order.id}: giữ chờ đối soát")
-                wallet.balance -= total
-                wallet.total_out = Decimal(wallet.total_out or 0) + total
-                wallet.last_transaction_at = now
+                # Trả bằng Coin: thưởng trước (có trần), thiếu Coin thật thì từ chối (HTTP 400, chưa trừ gì).
+                split = await CoinService(self.db).debit_for_purchase_async(
+                    user_id, price_to_coin(total, policy.coin_vnd_rate), ref_id=order.id)
+            line_paid = {
+                item["course_id"]: settle(
+                    Decimal(item["allocated_price"]), fee, sponsor, Decimal(item["coupon_discount"]),
+                    instructor_max=Decimal(policy.discount_max_percent),
+                ).paid
+                for item in quote["items"] if not item["already_owned"]
+            }
+            weights = list(line_paid.values())
+            bonus_parts = dict(zip(line_paid, allocate(split.bonus_use, weights)))
+            paid_parts = dict(zip(line_paid, allocate(split.paid_use, weights)))
             for item in quote["items"]:
                 course = await self.db.get(Courses, UUID(item["course_id"]))
                 line = BundleOrderLine(
@@ -805,6 +816,8 @@ class BundleService:
                         settlement_base_price=base,
                         settlement_platform_fee=fee,
                         coupon_sponsor=sponsor if reduction else None,
+                        coin_bonus_used=bonus_parts.get(item["course_id"], 0),
+                        coin_paid_used=paid_parts.get(item["course_id"], 0),
                         status="completed",
                         course_snapshot={
                             "title": course.title,

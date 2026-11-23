@@ -12,10 +12,8 @@ from app.core.settings import settings
 from app.db.models.database import (
     PlatformWalletHistory,
     PlatformWallets,
-    Role,
     Transactions,
     User,
-    UserRoles,
     Wallets,
 )
 from app.db.sesson import get_session
@@ -505,16 +503,8 @@ class WalletsService:
     async def credit_topup_async(
         self, wallet: Wallets, *, transaction_id: uuid.UUID, amount: Decimal,
     ) -> int:
-        """Ghi nhận tiền nạp: học viên nhận Coin thật theo tỷ giá (phần dư dưới 1 Coin ở lại ví VND),
-        giảng viên giữ nguyên VND để còn rút tiền. Trả về số Coin đã cộng."""
-        is_lecturer = await self.db.scalar(
-            select(UserRoles.user_id).join(Role, Role.id == UserRoles.role_id)
-            .where(UserRoles.user_id == wallet.user_id, Role.role_name == "LECTURER").limit(1)
-        )
-        if is_lecturer:
-            wallet.balance = (wallet.balance or 0) + amount
-            wallet.total_in = (wallet.total_in or 0) + amount
-            return 0
+        """Ghi nhận tiền nạp: mọi người dùng nhận Coin thật theo tỷ giá (phần dư dưới 1 Coin ở lại ví VND).
+        Ví VND của giảng viên chỉ chứa thu nhập để rút. Trả về số Coin đã cộng."""
         policy = await billing_policy(self.db)
         coin, remainder = topup_to_coin(amount, policy.coin_vnd_rate)
         coins = CoinService(self.db)

@@ -1,4 +1,5 @@
 import uuid
+from decimal import Decimal
 
 from fastapi import Depends, HTTPException
 from sqlalchemy import select
@@ -14,6 +15,9 @@ from app.db.models.database import (
 from app.db.sesson import get_session
 from app.libs.formats.datetime import now as get_now
 from app.schemas.shares.notification import NotificationCreateSchema
+from app.services.coin_math import price_to_coin
+from app.services.coin_service import CoinService
+from app.services.coupon_settlement import billing_policy
 from app.services.shares.notification import NotificationService
 
 SESSION = Depends(get_session)
@@ -63,21 +67,11 @@ class LecturerService:
                 if ur.role and ur.role.role_name == "LECTURER":
                     raise HTTPException(400, "Bạn đã là giảng viên rồi")
 
-            # 2) Lấy ví
-            wallet = await self.db.scalar(
-                select(Wallets).where(Wallets.user_id == user.id)
-            )
-            if not wallet:
-                raise HTTPException(404, "Không tìm thấy ví")
-
-            if wallet.balance < FEE:
-                raise HTTPException(
-                    400, f"Bạn cần {FEE:,} VNĐ để đăng ký làm giảng viên"
-                )
-
-            # 3) Trừ tiền
-            wallet.balance -= FEE
-            wallet.updated_at = get_now()
+            # 2) Trả phí bằng Coin (1.000.000đ quy đổi theo tỷ giá nền tảng); thiếu Coin thật thì từ chối
+            transaction_id = uuid.uuid4()
+            policy = await billing_policy(self.db)
+            fee_coin = price_to_coin(Decimal(FEE), policy.coin_vnd_rate)
+            await CoinService(self.db).debit_for_purchase_async(user.id, fee_coin, ref_id=transaction_id)
 
             # 4) Lấy/tạo role LECTURER
             lecturer_role = await self.db.scalar(
@@ -96,7 +90,7 @@ class LecturerService:
 
             # 6) Log transaction
             transaction = Transactions(
-                id=uuid.uuid4(),
+                id=transaction_id,
                 user_id=user.id,
                 amount=FEE,
                 currency="VND",
@@ -104,7 +98,7 @@ class LecturerService:
                 method="wallet",
                 direction="out",
                 status="completed",
-                description="Đăng ký trở thành giảng viên",
+                description=f"Đăng ký trở thành giảng viên ({fee_coin} Coin)",
                 created_at=get_now(),
             )
             self.db.add(transaction)
@@ -118,7 +112,7 @@ class LecturerService:
                 user_id=user.id,
                 roles=["USER", "LECTURER"],
                 title="Trừ tiền đăng ký giảng viên 💰",
-                content=f"Số tiền {FEE:,} VNĐ đã được trừ khỏi ví của bạn.",
+                content=f"{fee_coin:,} Coin đã được trừ khỏi tài khoản của bạn.",
                 url="/lecturer/wallets",
                 type="wallet",
                 role_target=["USER", "LECTURER"],

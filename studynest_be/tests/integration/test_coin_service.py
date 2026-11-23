@@ -53,19 +53,76 @@ async def test_credit_is_idempotent_per_ref(db_session):
     assert (await service.get_balances_async(user_id)).paid == 100
 
 
+async def debit(db, user_id, price_coin, ref):
+    return await CoinService(db).debit_for_purchase_async(user_id, price_coin, ref_id=ref)
+
+
 async def test_refund_restores_each_kind_and_is_idempotent(db_session):
     user_id = await make_user(db_session, bonus=100, paid=100)
     service = CoinService(db_session)
-    ref = uuid4()
-    await service.refund_async(user_id, bonus=15, paid=35, ref_id=ref)
-    await service.refund_async(user_id, bonus=15, paid=35, ref_id=ref)
+    purchase = uuid4()
+    await debit(db_session, user_id, 50, purchase)  # bonus 15, paid 35
+    item = uuid4()
+    await service.refund_async(user_id, bonus=15, paid=35, ref_id=item, debit_ref=purchase)
+    await service.refund_async(user_id, bonus=15, paid=35, ref_id=item, debit_ref=purchase)
     balances = await service.get_balances_async(user_id)
-    assert (balances.bonus, balances.paid) == (115, 135)
+    assert (balances.bonus, balances.paid) == (100, 100)
+
+
+async def test_refund_without_a_matching_debit_is_rejected(db_session):
+    user_id = await make_user(db_session, bonus=0, paid=0)
+    with pytest.raises(HTTPException) as error:
+        await CoinService(db_session).refund_async(user_id, bonus=0, paid=40, ref_id=uuid4(), debit_ref=uuid4())
+    assert error.value.status_code == 409
+    assert (await CoinService(db_session).get_balances_async(user_id)).paid == 0
+
+
+async def test_refund_cannot_exceed_what_was_debited_across_items(db_session):
+    user_id = await make_user(db_session, bonus=100, paid=100)
+    service = CoinService(db_session)
+    purchase = uuid4()
+    await debit(db_session, user_id, 50, purchase)  # bonus 15, paid 35
+    await service.refund_async(user_id, bonus=10, paid=20, ref_id=uuid4(), debit_ref=purchase)
+    with pytest.raises(HTTPException) as error:
+        await service.refund_async(user_id, bonus=10, paid=20, ref_id=uuid4(), debit_ref=purchase)
+    assert error.value.status_code == 409
+    balances = await service.get_balances_async(user_id)
+    assert (balances.bonus, balances.paid) == (95, 85)
 
 
 async def test_refund_of_zero_kind_writes_no_row(db_session):
-    user_id = await make_user(db_session, bonus=0, paid=0)
-    await CoinService(db_session).refund_async(user_id, bonus=0, paid=40, ref_id=uuid4())
+    user_id = await make_user(db_session, bonus=0, paid=100)
+    purchase = uuid4()
+    await debit(db_session, user_id, 40, purchase)  # all paid (no bonus)
+    await CoinService(db_session).refund_async(user_id, bonus=0, paid=40, ref_id=uuid4(), debit_ref=purchase)
     kinds = (await db_session.scalars(select(PeakTransactions.coin_kind).where(
         PeakTransactions.user_id == user_id, PeakTransactions.source == "refund"))).all()
     assert kinds == ["paid"]
+
+
+async def test_refund_purchase_restores_coin_split_and_skips_legacy_vnd_purchases(db_session):
+    from types import SimpleNamespace
+    user_id = await make_user(db_session, bonus=100, paid=100)
+    service = CoinService(db_session)
+    tx = uuid4()
+    await debit(db_session, user_id, 50, tx)  # bonus 15, paid 35
+    item = SimpleNamespace(id=uuid4(), user_id=user_id, transaction_id=tx, course_snapshot={},
+                           coin_bonus_used=15, coin_paid_used=35)
+    assert await service.refund_purchase_async(item) is True
+    balances = await service.get_balances_async(user_id)
+    assert (balances.bonus, balances.paid) == (100, 100)
+    legacy = SimpleNamespace(id=uuid4(), user_id=user_id, transaction_id=uuid4(), course_snapshot={},
+                             coin_bonus_used=None, coin_paid_used=None)
+    assert await service.refund_purchase_async(legacy) is False
+
+
+async def test_refund_purchase_uses_bundle_order_as_debit_reference(db_session):
+    from types import SimpleNamespace
+    user_id = await make_user(db_session, bonus=0, paid=100)
+    service = CoinService(db_session)
+    order = uuid4()
+    await debit(db_session, user_id, 30, order)
+    item = SimpleNamespace(id=uuid4(), user_id=user_id, transaction_id=uuid4(),
+                           course_snapshot={"bundle_order_id": str(order)}, coin_bonus_used=0, coin_paid_used=30)
+    assert await service.refund_purchase_async(item) is True
+    assert (await service.get_balances_async(user_id)).paid == 100

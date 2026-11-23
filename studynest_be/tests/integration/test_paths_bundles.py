@@ -8,7 +8,7 @@ from uuid import uuid4
 import pytest
 import pytest_asyncio
 from fastapi import HTTPException
-from sqlalchemy import func, select, text
+from sqlalchemy import func, select, text, update
 from sqlalchemy.exc import DBAPIError
 
 from app.db.models.catalog import Subject
@@ -23,6 +23,7 @@ from app.db.models.database import (
     User,
     Wallets,
 )
+from app.db.models.coins import UserPaidCoinBalances
 from app.db.models.learning_paths import BundleOrderLine
 from app.libs.formats.datetime import now
 from app.schemas.learning_paths import (
@@ -64,6 +65,11 @@ async def db_session(async_engine):
             await transaction.rollback()
 
 
+async def coin(db, uid):
+    """Số dư Coin thật hiện tại của một người dùng."""
+    return await db.scalar(select(UserPaidCoinBalances.balance).where(UserPaidCoinBalances.user_id == uid))
+
+
 async def setup_fixture(db):
     subject = await db.scalar(select(Subject).where(Subject.code == "toan"))
     category = await db.scalar(select(Categories).where(Categories.slug == "lop-12"))
@@ -87,6 +93,7 @@ async def setup_fixture(db):
                 is_locked=False,
             )
         )
+        db.add(UserPaidCoinBalances(user_id=user.id, balance=1000))
     courses = []
     for index, price in enumerate([100000, 200000]):
         course = Courses(
@@ -179,13 +186,12 @@ async def test_allocation_exact():
 async def test_exact_split_idempotency_and_already_owned(fixture):
     db, users, _, _, treasury = fixture
     service, version = await published_bundle(fixture)
-    wallet = await db.scalar(select(Wallets).where(Wallets.user_id == users[0].id))
-    before = wallet.balance
+    before = await coin(db, users[0].id)
     held = treasury.holding_amount
     request, receipt = await checkout(service, version, users[0].id)
     assert (
         receipt["total_paid"] == 150000
-        and wallet.balance == before - 150000
+        and await coin(db, users[0].id) == before - 15
         and treasury.holding_amount == held + 150000
     )
     assert sorted(line["paid"] for line in receipt["lines"]) == [50000, 100000]
@@ -201,9 +207,9 @@ async def test_exact_split_idempotency_and_already_owned(fixture):
         and len({e.transaction_id for e in earnings}) == 2
     )
     assert (await service.checkout(request, users[0].id))["id"] == receipt["id"]
-    assert wallet.balance == before - 150000
+    assert await coin(db, users[0].id) == before - 15
     _, second = await checkout(service, version, users[0].id)
-    assert second["total_paid"] == 0 and wallet.balance == before - 150000
+    assert second["total_paid"] == 0 and await coin(db, users[0].id) == before - 15
 
 
 async def test_owned_credit_and_frozen_price(fixture):
@@ -236,19 +242,19 @@ async def test_refund_exact_line(fixture):
         first, users[0].id, "Không phù hợp nhu cầu học tập"
     )
     assert Decimal(request["refund_amount"]) == first.paid
-    wallet = await db.scalar(select(Wallets).where(Wallets.user_id == users[0].id))
-    balance = wallet.balance
+    balance = await coin(db, users[0].id)
+    refund_coin = int(first.paid / 10000)
     result = await settlement.review(
         first, request["refund_id"], first.instructor_id, "LECTURER", "approve"
     )
-    assert result["status"] == "refunded" and wallet.balance == balance + first.paid
+    assert result["status"] == "refunded" and await coin(db, users[0].id) == balance + refund_coin
     assert (await db.get(InstructorEarnings, second.earning_id)).status == "holding"
     assert (await db.get(PurchaseItems, second.purchase_item_id)).status == "completed"
     with pytest.raises(HTTPException):
         await settlement.review(
             first, request["refund_id"], first.instructor_id, "LECTURER", "approve"
         )
-    assert wallet.balance == balance + first.paid
+    assert await coin(db, users[0].id) == balance + refund_coin
 
 
 async def test_release_no_double_credit(fixture):
@@ -347,8 +353,7 @@ async def test_atomic_rollback_after_partial_writes(fixture):
     db, users, _, _, treasury = fixture
     service, version = await published_bundle(fixture)
     uid, tid = users[0].id, treasury.id
-    wallet = await db.scalar(select(Wallets).where(Wallets.user_id == uid))
-    balance, held = wallet.balance, treasury.holding_amount
+    balance, held = await coin(db, uid), treasury.holding_amount
     quote = await service.quote(version["id"], uid)
     request = BundleCheckout(
         version_id=version["id"],
@@ -365,9 +370,7 @@ async def test_atomic_rollback_after_partial_writes(fixture):
             await service.checkout(request, uid)
     finally:
         event.remove(BundleOrderLine, "before_insert", fail)
-    assert (
-        await db.scalar(select(Wallets).where(Wallets.user_id == uid))
-    ).balance == balance
+    assert await coin(db, uid) == balance
     assert (await db.get(PlatformWallets, tid)).holding_amount == held
     assert not await db.scalar(
         select(BundleOrder.id).where(
@@ -399,8 +402,7 @@ async def test_insufficient_wallet(fixture):
     db, users, _, _, _ = fixture
     service, version = await published_bundle(fixture)
     uid = users[0].id
-    wallet = await db.scalar(select(Wallets).where(Wallets.user_id == uid))
-    wallet.balance = 1
+    await db.execute(update(UserPaidCoinBalances).where(UserPaidCoinBalances.user_id == uid).values(balance=1))
     await db.commit()
     quote = await service.quote(version["id"], uid)
     with pytest.raises(HTTPException) as error:
@@ -412,8 +414,8 @@ async def test_insufficient_wallet(fixture):
             ),
             uid,
         )
-    assert error.value.status_code == 402
-    assert (await db.scalar(select(Wallets).where(Wallets.user_id == uid))).balance == 1
+    assert error.value.status_code == 400
+    assert await coin(db, uid) == 1
 
 
 async def test_pending_refund_blocks_release(fixture):
@@ -454,8 +456,7 @@ async def test_concurrent_retry_one_charge(async_engine):
             quote_hash=quote["quote_hash"],
             idempotency_key=uuid4(),
         )
-        wallet = await db.scalar(select(Wallets).where(Wallets.user_id == uid))
-        before = wallet.balance
+        before = await coin(db, uid)
         await db.commit()
 
     async def purchase():
@@ -465,9 +466,7 @@ async def test_concurrent_retry_one_charge(async_engine):
     a, b = await asyncio.gather(purchase(), purchase())
     assert a["id"] == b["id"]
     async with factory() as db:
-        assert (
-            await db.scalar(select(Wallets).where(Wallets.user_id == uid))
-        ).balance == before - 150000
+        assert await coin(db, uid) == before - 15
         assert (
             await db.scalar(
                 select(func.count())
@@ -883,8 +882,7 @@ async def test_coupon_exact_allocation_receipt_retry_and_refund(fixture):
         .where(BundleOrderLine.order_id == receipt["id"], BundleOrderLine.paid > 0)
         .limit(1)
     )
-    wallet = await db.scalar(select(Wallets).where(Wallets.user_id == users[0].id))
-    before_refund = wallet.balance
+    before_refund = await coin(db, users[0].id)
     settlement = BundleSettlement(db)
     refund = await settlement.request(
         line, users[0].id, "Khóa học không phù hợp với nhu cầu"
@@ -892,8 +890,7 @@ async def test_coupon_exact_allocation_receipt_retry_and_refund(fixture):
     await settlement.review(
         line, refund["refund_id"], line.instructor_id, "LECTURER", "approve"
     )
-    await db.refresh(wallet)
-    assert wallet.balance == before_refund + line.paid
+    assert await coin(db, users[0].id) == before_refund + int(line.paid / 10000)
     from app.services.bundle_coupons import BundleCouponService
 
     with pytest.raises(HTTPException):
@@ -1018,6 +1015,8 @@ async def test_last_coupon_use_concurrent_buyers(async_engine):
                 currency="VND",
                 is_locked=False,
             )
+        )
+        db.add(UserPaidCoinBalances(user_id=second.id, balance=1000)
         )
         coupon = await make_coupon(db, version, fixture[1][1].id, max_uses=1)
         users = [fixture[1][0].id, second.id]

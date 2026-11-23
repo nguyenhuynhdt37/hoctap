@@ -66,11 +66,11 @@ class CoinService:
 
     def _record(
         self, user_id: uuid.UUID, kind: str, direction: str, amount: int, before: int, after: int,
-        source: str, ref_id: uuid.UUID | None,
+        source: str, ref_id: uuid.UUID | None, metadata: dict | None = None,
     ) -> None:
         self.db.add(PeakTransactions(
             user_id=user_id, amount=amount, type=direction, before_balance=before, after_balance=after,
-            source=source, event_id=ref_id, coin_kind=kind,
+            source=source, event_id=ref_id, coin_kind=kind, metadata_=metadata,
         ))
 
     async def credit_paid_async(
@@ -120,21 +120,60 @@ class CoinService:
         await self.db.flush()
         return PaymentSplit(bonus_use, paid_use)
 
-    async def refund_async(self, user_id: uuid.UUID, *, bonus: int, paid: int, ref_id: uuid.UUID) -> None:
-        """Hoàn đúng loại Coin đã trừ; gọi lại với cùng `ref_id` không hoàn thêm."""
+    async def _sum_kind(self, user_id: uuid.UUID, kind: str, *conditions) -> int:
+        return int(await self.db.scalar(
+            select(func.coalesce(func.sum(PeakTransactions.amount), 0)).where(
+                PeakTransactions.user_id == user_id, PeakTransactions.coin_kind == kind, *conditions)
+        ) or 0)
+
+    async def refund_async(
+        self, user_id: uuid.UUID, *, bonus: int, paid: int, ref_id: uuid.UUID, debit_ref: uuid.UUID,
+    ) -> None:
+        """Hoàn đúng loại Coin đã trừ cho một khoản mua.
+
+        `debit_ref` là mã đơn đã bị trừ Coin (giao dịch mua hoặc đơn combo); mỗi loại chỉ được hoàn tối đa
+        số đã trừ trừ đi số đã hoàn của cùng đơn, và đơn không có dòng trừ thì bị từ chối. Gọi lại với cùng
+        `ref_id` (mã khoản mua) không hoàn thêm.
+        """
         paid_row, bonus_row = await self._lock_rows(user_id)
         if await self._already_recorded(user_id, REFUND_SOURCE, ref_id):
             return
+        marker = {"debit_ref": str(debit_ref)}
+        for kind, amount in (("bonus", bonus), ("paid", paid)):
+            if amount <= 0:
+                continue
+            debited = await self._sum_kind(
+                user_id, kind, PeakTransactions.source == PURCHASE_SOURCE,
+                PeakTransactions.event_id == debit_ref, PeakTransactions.type == "debit")
+            refunded = await self._sum_kind(
+                user_id, kind, PeakTransactions.source == REFUND_SOURCE,
+                PeakTransactions.metadata_["debit_ref"].astext == str(debit_ref))
+            if amount > debited - refunded:
+                raise HTTPException(409, "Số Coin hoàn vượt quá số Coin đã dùng cho đơn này.")
         if bonus > 0:
             before = bonus_row.current_balance
             bonus_row.current_balance = before + bonus
             bonus_row.version += 1
             bonus_row.updated_at = func.now()
-            self._record(user_id, "bonus", "credit", bonus, before, bonus_row.current_balance, REFUND_SOURCE, ref_id)
+            self._record(user_id, "bonus", "credit", bonus, before, bonus_row.current_balance,
+                         REFUND_SOURCE, ref_id, marker)
         if paid > 0:
             before = paid_row.balance
             paid_row.balance = before + paid
             paid_row.version += 1
             paid_row.updated_at = func.now()
-            self._record(user_id, "paid", "credit", paid, before, paid_row.balance, REFUND_SOURCE, ref_id)
+            self._record(user_id, "paid", "credit", paid, before, paid_row.balance,
+                         REFUND_SOURCE, ref_id, marker)
         await self.db.flush()
+
+    async def refund_purchase_async(self, purchase) -> bool:
+        """Hoàn Coin cho một khoản mua đã trả bằng Coin. Trả False với khoản mua cũ (VND) để người gọi hoàn ví."""
+        if purchase.coin_bonus_used is None and purchase.coin_paid_used is None:
+            return False
+        bundle_order = (purchase.course_snapshot or {}).get("bundle_order_id")
+        debit_ref = uuid.UUID(str(bundle_order)) if bundle_order else purchase.transaction_id
+        await self.refund_async(
+            purchase.user_id, bonus=purchase.coin_bonus_used or 0, paid=purchase.coin_paid_used or 0,
+            ref_id=purchase.id, debit_ref=debit_ref,
+        )
+        return True

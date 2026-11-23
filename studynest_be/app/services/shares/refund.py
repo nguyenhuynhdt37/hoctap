@@ -19,6 +19,7 @@ from app.db.models.database import (
 from app.db.sesson import get_session
 from app.libs.formats.datetime import now as get_now
 from app.schemas.shares.notification import NotificationCreateSchema
+from app.services.coin_service import CoinService
 from app.services.shares.notification import NotificationService
 
 
@@ -806,9 +807,10 @@ class RefundService:
                         self.db.add(refund_txn)
                         await self.db.flush()
 
-                        # Ví học viên
-                        wallet.balance += refund_amount
-                        wallet.total_in += refund_amount
+                        # Hoàn đúng loại Coin đã trừ; khoản mua cũ (VND) vẫn hoàn vào ví
+                        if not await CoinService(self.db).refund_purchase_async(purchase):
+                            wallet.balance += refund_amount
+                            wallet.total_in += refund_amount
                         wallet.updated_at = now
 
                         # purchase -> refunded
@@ -963,8 +965,9 @@ class RefundService:
                         self.db.add(refund_txn)
                         await self.db.flush()
 
-                        wallet.balance += refund_amount
-                        wallet.total_in += refund_amount
+                        if not await CoinService(self.db).refund_purchase_async(purchase):
+                            wallet.balance += refund_amount
+                            wallet.total_in += refund_amount
                         wallet.updated_at = now
 
                         purchase.status = "refunded"

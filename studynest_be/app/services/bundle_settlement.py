@@ -15,6 +15,7 @@ from app.db.models.database import (
     Wallets,
 )
 from app.libs.formats.datetime import now
+from app.services.coin_service import CoinService
 from app.services.bundles import lock_purchase_user
 from fastapi import HTTPException
 from sqlalchemy import delete, func, select, update
@@ -155,9 +156,9 @@ class BundleSettlement:
                 .limit(1)
                 .with_for_update()
             )
+            coin_refund = purchase.coin_bonus_used is not None or purchase.coin_paid_used is not None
             if (
-                not wallet
-                or wallet.currency != "VND"
+                (not coin_refund and (not wallet or wallet.currency != "VND"))
                 or not treasury
                 or treasury.holding_amount < line.paid
             ):
@@ -178,8 +179,10 @@ class BundleSettlement:
                 confirmed_at=timestamp,
             )
             self.db.add(refund_tx)
-            wallet.balance = Decimal(wallet.balance or 0) + line.paid
-            wallet.total_in = Decimal(wallet.total_in or 0) + line.paid
+            # Hoàn đúng loại Coin đã trừ; khoản mua cũ (VND) vẫn hoàn vào ví
+            if not await CoinService(self.db).refund_purchase_async(purchase):
+                wallet.balance = Decimal(wallet.balance or 0) + line.paid
+                wallet.total_in = Decimal(wallet.total_in or 0) + line.paid
             treasury.holding_amount -= line.paid
             self.db.add(
                 PlatformWalletHistory(
