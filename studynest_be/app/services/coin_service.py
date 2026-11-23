@@ -90,6 +90,31 @@ class CoinService:
         await self.db.flush()
         return paid.balance
 
+    async def debit_paid_async(
+        self, user_id: uuid.UUID, amount: int, *, source: str, ref_id: uuid.UUID,
+    ) -> int:
+        """Trừ Coin thật (không dùng Coin thưởng), ví dụ khi rút tiền. Thiếu Coin thì từ chối, không trừ gì.
+
+        Gọi lại với cùng (source, ref_id) không trừ thêm. Trả số dư Coin thật sau khi trừ.
+        """
+        if amount <= 0:
+            raise ValueError("amount must be positive")
+        paid, _ = await self._lock_rows(user_id)
+        if await self._already_recorded(user_id, source, ref_id, "paid"):
+            return paid.balance
+        if paid.balance < amount:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Không đủ Coin thật. Cần {amount} Coin nhưng bạn chỉ có {paid.balance}.",
+            )
+        before = paid.balance
+        paid.balance = before - amount
+        paid.version += 1
+        paid.updated_at = func.now()
+        self._record(user_id, "paid", "debit", amount, before, paid.balance, source, ref_id)
+        await self.db.flush()
+        return paid.balance
+
     async def debit_for_purchase_async(
         self, user_id: uuid.UUID, price_coin: int, *, ref_id: uuid.UUID,
     ) -> PaymentSplit:

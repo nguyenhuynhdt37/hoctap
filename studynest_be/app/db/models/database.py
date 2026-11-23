@@ -1756,6 +1756,7 @@ class WithdrawalRequests(Base):
     rejected_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
     transaction_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
     reason: Mapped[Optional[str]] = mapped_column(Text)
+    coin_amount: Mapped[Optional[int]] = mapped_column(Integer)
 
     lecturer: Mapped['User'] = relationship('User', back_populates='withdrawal_requests')
     transaction: Mapped[Optional['Transactions']] = relationship('Transactions', back_populates='withdrawal_requests')

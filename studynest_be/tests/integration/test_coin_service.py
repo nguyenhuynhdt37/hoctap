@@ -126,3 +126,23 @@ async def test_refund_purchase_uses_bundle_order_as_debit_reference(db_session):
                            course_snapshot={"bundle_order_id": str(order)}, coin_bonus_used=0, coin_paid_used=30)
     assert await service.refund_purchase_async(item) is True
     assert (await service.get_balances_async(user_id)).paid == 100
+
+
+async def test_debit_paid_only_uses_paid_coin(db_session):
+    user_id = await make_user(db_session, bonus=999, paid=100)
+    with pytest.raises(HTTPException) as error:
+        await CoinService(db_session).debit_paid_async(user_id, 150, source="withdraw_hold", ref_id=uuid4())
+    assert error.value.status_code == 400
+    balances = await CoinService(db_session).get_balances_async(user_id)
+    assert (balances.bonus, balances.paid) == (999, 100)
+
+
+async def test_debit_paid_reduces_balance_and_is_idempotent(db_session):
+    user_id = await make_user(db_session, bonus=0, paid=100)
+    service = CoinService(db_session)
+    ref = uuid4()
+    assert await service.debit_paid_async(user_id, 40, source="withdraw_hold", ref_id=ref) == 60
+    assert await service.debit_paid_async(user_id, 40, source="withdraw_hold", ref_id=ref) == 60
+    rows = await db_session.scalar(select(func.count()).select_from(PeakTransactions).where(
+        PeakTransactions.user_id == user_id, PeakTransactions.source == "withdraw_hold"))
+    assert rows == 1

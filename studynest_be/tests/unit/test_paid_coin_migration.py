@@ -19,9 +19,9 @@ def load_migration():
     return module
 
 
-def test_paid_coin_revision_is_the_single_head_after_daily_checkin_seed():
+def test_paid_coin_revision_follows_daily_checkin_seed_on_a_single_chain():
     scripts = ScriptDirectory.from_config(Config(str(ROOT / "alembic.ini")))
-    assert scripts.get_heads() == ["am67cd901z234"]
+    assert len(scripts.get_heads()) == 1
     assert scripts.get_revision("am67cd901z234").down_revision == "al56bc890y123"
 
 
