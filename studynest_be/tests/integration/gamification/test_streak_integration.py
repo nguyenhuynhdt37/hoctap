@@ -242,9 +242,15 @@ class TestStreakApiEndpoints:
     @pytest.fixture
     def client_with_user(self):
         """Tạo TestClient với user đã authenticate."""
+        from fastapi import FastAPI
         from fastapi.testclient import TestClient
-        from app.main import app
+        from app.api.v1.gamification.streak import router
         from app.core.deps import AuthorizationService
+        from app.db.sesson import get_session
+
+        app = FastAPI()
+        app.include_router(router, prefix="/api/v1")
+        app.dependency_overrides[get_session] = lambda: object()
 
         user_id = uuid.uuid4()
         mock_user = MagicMock()

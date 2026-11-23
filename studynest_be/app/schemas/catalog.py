@@ -50,9 +50,48 @@ class BrowseFiltersResponse(BaseModel):
     delivery_types: list[BrowseDeliveryOption]
 
 
+class CatalogTaxonomyOption(BrowseTaxonomyOption):
+    model_config = ConfigDict(extra="allow")
+    is_active: bool
+    order_index: int
+    slug: str | None = None
+    education_level_id: UUID | None = None
+    grade_number: int | None = None
+    description: str | None = None
+    exam_type: str | None = None
+
+
+class CatalogSubjectCourseCounts(BaseModel):
+    total: int = Field(ge=0)
+    by_level: dict[str, int]
+    by_grade: dict[int, int]
+
+
+class CatalogCourseCounts(BaseModel):
+    total: int = Field(ge=0)
+    by_level: dict[str, int]
+    by_subject: dict[UUID, CatalogSubjectCourseCounts]
+
+
+class CatalogOptionsResponse(BaseModel):
+    levels: list[CatalogTaxonomyOption]
+    grades: list[CatalogTaxonomyOption]
+    subjects: list[CatalogTaxonomyOption]
+    learning_goals: list[CatalogTaxonomyOption]
+    exams: list[CatalogTaxonomyOption]
+    grade_subjects: list[BrowseGradeSubject]
+    delivery_types: list[BrowseDeliveryOption]
+    course_counts: CatalogCourseCounts | None = None
+
+
 class CatalogInstructor(BaseModel):
     id: UUID
     fullname: str
+    avatar: str | None
+
+
+class CatalogLecturer(BaseModel):
+    name: str
     avatar: str | None
 
 
@@ -86,6 +125,15 @@ class CatalogCourseResponse(BaseModel):
     subject: CatalogSubject | None
     provider: BrowseProviderOption | None
     grades: list[CatalogGrade]
+    students_count: int
+    lessons_count: int
+    duration_seconds: int
+    original_price: float | None
+    discount_price: float | None
+    is_free: bool
+    is_new: bool
+    is_bestseller: bool
+    lecturer: CatalogLecturer
 
 
 class CatalogCoursesResponse(BaseModel):

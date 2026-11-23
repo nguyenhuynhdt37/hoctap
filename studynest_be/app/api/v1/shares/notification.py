@@ -3,7 +3,7 @@ import json
 import uuid
 from uuid import UUID
 
-from app.core.deps import AuthorizationService
+from app.core.deps import AuthorizationService, receive_bounded_ws_text_async
 from app.core.settings import settings
 from app.core.ws_manager import ws_manager
 from app.db.models.database import User
@@ -15,7 +15,7 @@ from app.schemas.shares.presence import (
 )
 from app.services.shares.notification import NotificationService
 from app.services.shares.presence import PresenceService
-from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect, WebSocketException
 from loguru import logger
 
 router = APIRouter(prefix="/notifications", tags=["Notifications"])
@@ -25,28 +25,18 @@ router = APIRouter(prefix="/notifications", tags=["Notifications"])
 async def ws_notifications(websocket: WebSocket):
     await websocket.accept()
 
-    # Lấy user từ JWT
-    user: User | None = await AuthorizationService.get_require_role_ws(
-        websocket, ["USER", "LECTURER", "ADMIN"]
-    )
+    active_role = websocket.query_params.get("role_name")
+    if active_role not in {"USER", "LECTURER", "ADMIN"}:
+        await websocket.close(code=4401)
+        return
+    user: User | None = await AuthorizationService.get_require_role_ws(websocket, [active_role])
 
     # Không có user → đóng luôn (đã đóng trong deps.py)
     if not user:
         logger.warning("[WS][Notifications] Rejecting WS: user is None (already closed in deps)")
         return
 
-    # Lấy role đang active trên FE
-    active_role = websocket.query_params.get("role_name")
     user_id = str(user.id)
-
-    # Lấy danh sách role thực tế của user
-    user_roles = await AuthorizationService.get_list_role_in_user(user)
-
-    # Nếu role FE gửi lên không thuộc user → đóng luôn
-    if active_role not in user_roles:
-        logger.warning(f"[WS][Notifications] Rejecting WS: active_role='{active_role}' not in user_roles={user_roles}")
-        await websocket.close()
-        return
     channel = ""
     auth_channel = f"AUTH_{user_id}"
     connection_id = str(uuid.uuid4())
@@ -68,7 +58,7 @@ async def ws_notifications(websocket: WebSocket):
         while True:
             try:
                 raw_message = await asyncio.wait_for(
-                    websocket.receive_text(),
+                    receive_bounded_ws_text_async(websocket),
                     timeout=max(settings.PRESENCE_TTL_SECONDS / 2, 15),
                 )
             except asyncio.TimeoutError:
@@ -84,7 +74,9 @@ async def ws_notifications(websocket: WebSocket):
                 pass
 
             await presence_service.heartbeat(user_id, connection_id, status=status)
-    except WebSocketDisconnect:
+    except (WebSocketDisconnect, WebSocketException) as exc:
+        if isinstance(exc, WebSocketException):
+            await websocket.close(code=exc.code)
         ws_manager.disconnect(websocket, channel)
         if auth_channel != channel:
             ws_manager.disconnect(websocket, auth_channel)

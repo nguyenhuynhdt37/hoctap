@@ -423,6 +423,9 @@ class EmailVerifications(Base):
     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, server_default=text('now()'))
     user_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
 
+    purpose: Mapped[Optional[str]] = mapped_column(String(24))
+    pending_password_hash: Mapped[Optional[str]] = mapped_column(String)
+
     user: Mapped[Optional['User']] = relationship('User', back_populates='email_verifications')
 
 
@@ -552,6 +555,47 @@ class Missions(Base):
 
     season: Mapped[Optional['Seasons']] = relationship('Seasons', back_populates='missions')
     user_missions: Mapped[list['UserMissions']] = relationship('UserMissions', back_populates='mission')
+
+
+class MissionTemplates(Base):
+    __tablename__ = 'mission_templates'
+    __table_args__ = (
+        CheckConstraint(
+            "(scope = 'daily' AND template IN ('lesson.completed', 'quiz.completed', "
+            "'code.completed', 'daily_checkin.completed')) OR "
+            "(scope = 'course' AND template IN ('chapter.complete', 'chapter.quiz_pass', "
+            "'course.complete', 'course.weekly_streak'))",
+            name='chk_mission_templates_scope',
+        ),
+        CheckConstraint('target_count > 0 AND reward_xp >= 0 AND reward_peak >= 0',
+                        name='chk_mission_templates_amounts'),
+        CheckConstraint("quiz_pass_percent BETWEEN 0 AND 100 AND "
+                        "(template <> 'chapter.quiz_pass' OR target_count = 1) AND "
+                        "(template <> 'course.weekly_streak' OR target_count <= 7)",
+                        name='chk_mission_templates_criteria'),
+        CheckConstraint(
+            "(coupon_max_percent IS NULL AND coupon_valid_days IS NULL) OR "
+            "(coupon_max_percent IS NOT NULL AND coupon_valid_days IS NOT NULL AND "
+            "coupon_max_percent BETWEEN 1 AND 100 AND coupon_valid_days > 0)",
+            name='chk_mission_templates_coupon',
+        ),
+        Index('uq_mission_templates_course_kind', 'template', unique=True,
+              postgresql_where=text("scope = 'course'")),
+        {'schema': 'public'},
+    )
+
+    key: Mapped[str] = mapped_column(String(80), primary_key=True)
+    scope: Mapped[str] = mapped_column(String(12))
+    template: Mapped[str] = mapped_column(String(40))
+    title: Mapped[str] = mapped_column(Text)
+    description: Mapped[str] = mapped_column(Text)
+    target_count: Mapped[int] = mapped_column(Integer)
+    quiz_pass_percent: Mapped[int] = mapped_column(Integer, server_default=text('70'))
+    reward_xp: Mapped[int] = mapped_column(Integer, server_default=text('0'))
+    reward_peak: Mapped[int] = mapped_column(Integer, server_default=text('0'))
+    coupon_max_percent: Mapped[Optional[int]] = mapped_column(Integer)
+    coupon_valid_days: Mapped[Optional[int]] = mapped_column(Integer)
+    is_active: Mapped[bool] = mapped_column(Boolean, server_default=text('true'))
 
 
 class Notifications(Base):
@@ -719,6 +763,8 @@ class Sessions(Base):
     ForeignKeyConstraint(['user_id'], ['public.user.id'], ondelete='CASCADE', name='sessions_user_id_fkey'),
         PrimaryKeyConstraint('id', name='sessions_pkey'),
         Index('idx_sessions_refresh_token_hash', 'refresh_token_hash'),
+        Index('idx_sessions_previous_refresh_hash', 'previous_refresh_hash'),
+        Index('ix_sessions_dpop_jkt', 'dpop_jkt'),
         Index('idx_sessions_user_id', 'user_id'),
         {'schema': 'public'}
     )
@@ -726,6 +772,9 @@ class Sessions(Base):
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
     user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
     refresh_token_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    dpop_jkt: Mapped[Optional[str]] = mapped_column(String)
+    previous_refresh_hash: Mapped[Optional[str]] = mapped_column(Text)
+    previous_rotated_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(timezone=True))
     expired_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False)
     user_agent: Mapped[Optional[str]] = mapped_column(Text)
     device_name: Mapped[Optional[str]] = mapped_column(Text)
@@ -735,6 +784,21 @@ class Sessions(Base):
     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True), server_default=text('now()'))
 
     user: Mapped['User'] = relationship('User', back_populates='sessions')
+
+
+class SpentRefreshTokens(Base):
+    __tablename__ = 'spent_refresh_tokens'
+    __table_args__ = (
+        ForeignKeyConstraint(['session_id'], ['public.sessions.id'], ondelete='CASCADE'),
+        Index('ix_spent_refresh_tokens_session_id', 'session_id'),
+        {'schema': 'public'},
+    )
+
+    token_hash: Mapped[str] = mapped_column(Text, primary_key=True)
+    session_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    rotated_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    operation_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    encrypted_result: Mapped[Optional[str]] = mapped_column(Text)
 
 
 class Topics(Base):
@@ -1061,6 +1125,8 @@ class RewardInstances(Base):
     ForeignKeyConstraint(['reward_id'], ['public.rewards.id'], ondelete='CASCADE', name='fk_reward_instances_reward_id'),
         PrimaryKeyConstraint('id', name='reward_instances_pkey'),
         Index('idx_reward_instances_lookup', 'reward_id', 'status'),
+        Index('ix_reward_instances_source_mission', 'source_mission_id',
+              postgresql_where=text("source_mission_id IS NOT NULL")),
         {'schema': 'public'}
     )
 
@@ -1071,6 +1137,12 @@ class RewardInstances(Base):
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
     assigned_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
     expires_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+
+    code_masked: Mapped[Optional[str]] = mapped_column(String(80))
+    max_percent: Mapped[Optional[int]] = mapped_column(Integer)
+    source_mission_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        ForeignKey('public.user_missions.id', ondelete='SET NULL', name='fk_reward_instances_source_mission')
+    )
 
     reward: Mapped['Rewards'] = relationship('Rewards', back_populates='reward_instances')
     user_reward_inventory: Mapped[list['UserRewardInventory']] = relationship('UserRewardInventory', back_populates='reward_instance')
@@ -1156,13 +1228,30 @@ class UserMissions(Base):
     ForeignKeyConstraint(['user_id'], ['public.user.id'], ondelete='CASCADE', name='fk_user_missions_user_id'),
         PrimaryKeyConstraint('id', name='user_missions_pkey'),
         UniqueConstraint('user_id', 'mission_id', 'cycle_date', name='uq_user_missions_cycle'),
+        CheckConstraint(
+            "CASE WHEN scope IS NULL THEN mission_id IS NOT NULL "
+            "WHEN scope = 'daily' THEN mission_id IS NULL AND template_key IS NOT NULL "
+            "AND template IS NOT NULL AND course_id IS NULL AND section_id IS NULL "
+            "WHEN scope = 'course' THEN mission_id IS NULL AND template_key IS NOT NULL "
+            "AND course_id IS NOT NULL AND template IS NOT NULL AND "
+            "((section_id IS NOT NULL AND template IN ('chapter.complete', 'chapter.quiz_pass')) OR "
+            "(section_id IS NULL AND template IN ('course.complete', 'course.weekly_streak'))) "
+            "ELSE false END",
+            name='chk_user_missions_scope',
+        ),
         Index('idx_user_missions_status', 'user_id', 'status', 'cycle_date'),
+        Index('uq_user_missions_daily_template', 'user_id', 'cycle_date', 'template_key', unique=True,
+              postgresql_where=text("scope = 'daily'")),
+        Index('uq_user_missions_course_template', 'user_id', 'course_id', 'template', unique=True,
+              postgresql_where=text("scope = 'course' AND section_id IS NULL")),
+        Index('uq_user_missions_chapter_template', 'user_id', 'course_id', 'section_id', 'template', unique=True,
+              postgresql_where=text("scope = 'course' AND section_id IS NOT NULL")),
         {'schema': 'public'}
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
     user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
-    mission_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    mission_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
     title: Mapped[str] = mapped_column(Text, nullable=False)
     event_type: Mapped[str] = mapped_column(String(100), nullable=False)
     target_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('1'))
@@ -1177,13 +1266,46 @@ class UserMissions(Base):
     completed_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
     claimed_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
 
-    mission: Mapped['Missions'] = relationship('Missions', back_populates='user_missions')
+    scope: Mapped[Optional[str]] = mapped_column(String(12))
+    template: Mapped[Optional[str]] = mapped_column(String(40))
+    template_key: Mapped[Optional[str]] = mapped_column(
+        ForeignKey('public.mission_templates.key', name='fk_user_missions_template')
+    )
+    # Keep scoped identifiers after curriculum deletion for reward history and claim replay.
+    course_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    section_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    quiz_pass_percent: Mapped[Optional[int]] = mapped_column(Integer)
+    coupon_max_percent: Mapped[Optional[int]] = mapped_column(Integer)
+    coupon_valid_days: Mapped[Optional[int]] = mapped_column(Integer)
+    claim_result: Mapped[Optional[dict]] = mapped_column(JSONB)
+
+    mission: Mapped[Optional['Missions']] = relationship('Missions', back_populates='user_missions')
     user: Mapped['User'] = relationship('User', back_populates='user_missions')
+
+
+class RewardGrants(Base):
+    __tablename__ = 'reward_grants'
+    __table_args__ = (
+        UniqueConstraint('user_id', 'mission_id', 'reward_kind', name='uq_reward_grants_mission_kind'),
+        CheckConstraint("reward_kind IN ('xp', 'peak', 'level_up_peak', 'coupon') AND amount > 0",
+                        name='chk_reward_grants_kind_amount'),
+        Index('ix_reward_grants_mission', 'mission_id'),
+        {'schema': 'public'},
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey('public.user.id', ondelete='CASCADE'))
+    mission_id: Mapped[uuid.UUID] = mapped_column(ForeignKey('public.user_missions.id', ondelete='CASCADE'))
+    reward_kind: Mapped[str] = mapped_column(String(20))
+    amount: Mapped[int] = mapped_column(Integer)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), server_default=text('now()'))
 
 
 class CourseEnrollments(Base):
     __tablename__ = 'course_enrollments'
     __table_args__ = (
+        Index('ix_enrollments_active_user_course', 'user_id', 'course_id',
+              postgresql_where=text("status = 'active'")),
         Index("ix_enrollments_active_course_user", "course_id", "user_id", postgresql_where=text("status='active'")),
     ForeignKeyConstraint(['course_id'], ['public.courses.id'], ondelete='CASCADE', name='course_enrollments_course_id_fkey'),
     ForeignKeyConstraint(['user_id'], ['public.user.id'], ondelete='CASCADE', name='course_enrollments_user_id_fkey'),
@@ -1430,6 +1552,10 @@ class UserRewardInventory(Base):
     ForeignKeyConstraint(['reward_instance_id'], ['public.reward_instances.id'], ondelete='SET NULL', name='fk_user_reward_inventory_instance_id'),
     ForeignKeyConstraint(['user_id'], ['public.user.id'], ondelete='CASCADE', name='fk_user_reward_inventory_user_id'),
         PrimaryKeyConstraint('id', name='user_reward_inventory_pkey'),
+        Index('ix_user_reward_inventory_coupons', 'user_id',
+              postgresql_where=text("reward_type = 'coupon' AND reward_instance_id IS NOT NULL")),
+        Index('uq_user_reward_inventory_coupon_instance', 'reward_instance_id', unique=True,
+              postgresql_where=text("reward_type = 'coupon' AND reward_instance_id IS NOT NULL")),
         {'schema': 'public'}
     )
 
@@ -1769,6 +1895,8 @@ class LessonProgress(Base):
         PrimaryKeyConstraint('id', name='lesson_progress_pkey'),
         UniqueConstraint('user_id', 'lesson_id', name='lesson_progress_unique'),
         Index('idx_lesson_progress_user_course', 'user_id', 'course_id'),
+        Index('ix_lesson_progress_user_completed_at', 'user_id', 'completed_at',
+              postgresql_where=text('is_completed IS TRUE')),
         {'schema': 'public'}
     )
 
@@ -1793,6 +1921,7 @@ class LessonQuizzes(Base):
     ForeignKeyConstraint(['lesson_id'], ['public.lessons.id'], ondelete='CASCADE', name='lesson_quizzes_lesson_id_fkey'),
     ForeignKeyConstraint(['section_id'], ['public.course_sections.id'], ondelete='CASCADE', name='lesson_quizzes_section_id_fkey'),
         PrimaryKeyConstraint('id', name='lesson_quizzes_pkey'),
+        Index('ix_lesson_quizzes_lesson', 'lesson_id'),
         Index('lesson_quizzes_embedding_idx', 'embedding', postgresql_ops={'embedding': 'vector_cosine_ops'}, postgresql_using='hnsw'),
         {'schema': 'public'}
     )
@@ -2018,6 +2147,7 @@ class LessonQuizOptions(Base):
     __table_args__ = (
     ForeignKeyConstraint(['quiz_id'], ['public.lesson_quizzes.id'], ondelete='CASCADE', name='lesson_quiz_options_quiz_id_fkey'),
         PrimaryKeyConstraint('id', name='lesson_quiz_options_pkey'),
+        Index('ix_lesson_quiz_options_quiz', 'quiz_id'),
         {'schema': 'public'}
     )
 

@@ -11,6 +11,7 @@ from uuid import UUID
 from fastapi import HTTPException, WebSocket, WebSocketDisconnect
 from app.agent.runtime import AgentService
 from app.agent.multimodal import rate_limit
+from app.core.deps import AuthorizationService
 from app.core.redis import get_redis
 from app.core.settings import settings
 from app.core.xai_voice import open_audio, send_event, wait_for_event
@@ -135,34 +136,61 @@ async def relay(ws, live, check_auth, *, max_seconds=120, finalize_seconds=3):
 
 
 async def run(ws: WebSocket):
-    lease_key=None;lease=None;accepted=False
+    lease_key = lease = None
+    accepted = closed = False
     try:
         enabled()
         if ws.query_params or not origin_allowed(ws.headers.get('origin')):
-            raise HTTPException(403,'Origin or credentials invalid')
-        protocols=ws.scope.get('subprotocols',[])
-        credential=next((p[7:] for p in protocols if p.startswith('ticket.')),None)
-        if PROTOCOL not in protocols or not credential or not 30<=len(credential)<=100:
-            raise HTTPException(401,'One-use ticket required')
-        value=await get_redis().getdel('dictation:ticket:'+hashlib.sha256(credential.encode()).hexdigest())
-        if not value:raise HTTPException(401,'Ticket expired')
-        binding=json.loads(value)
-        user_id,sid=binding['user_id'],binding['sid']
-        await principal(user_id,sid)
+            raise HTTPException(403, 'Origin or credentials invalid')
+        protocols = ws.scope.get('subprotocols', [])
+        credential = next((p[7:] for p in protocols if p.startswith('ticket.')), None)
+        if credential is not None:
+            if (
+                not (settings.AUTH_ALLOW_COOKIE_COMPAT or settings.AUTH_ALLOW_UNBOUND_BEARER)
+                or PROTOCOL not in protocols or not 30 <= len(credential) <= 100
+            ):
+                raise HTTPException(401, 'Invalid one-use ticket')
+            key = 'dictation:ticket:' + hashlib.sha256(credential.encode()).hexdigest()
+            value = await get_redis().getdel(key)
+            if not value:
+                raise HTTPException(401, 'Ticket expired')
+            binding = json.loads(value)
+            user_id, sid = binding['user_id'], binding['sid']
+        else:
+            await ws.accept(subprotocol=PROTOCOL if PROTOCOL in protocols else None)
+            accepted = True
+            if not await AuthorizationService.get_require_role_ws(ws, require_frame=True, defer_auth_ack=True):
+                closed = True
+                return
+            identity = ws.state.access_identity
+            user_id, sid = str(identity.user_id), str(identity.sid)
+
+        async def check_auth():
+            nonlocal closed
+            if credential is None and not await AuthorizationService.get_require_role_ws(ws, require_frame=True):
+                closed = True
+                raise WebSocketDisconnect(4401)
+            await principal(user_id, sid)
+
+        await principal(user_id, sid)
+        if credential is None:
+            await AuthorizationService.acknowledge_ws_auth_async(ws)
         lease_key='dictation:live:'+user_id
         lease=secrets.token_urlsafe(24)
         seconds=max(10,min(settings.TUTOR_DICTATION_MAX_SECONDS,300))
         if not await get_redis().set(lease_key,lease,ex=seconds+30,nx=True):
             lease_key=None
             raise HTTPException(409,'Một phiên nhập giọng nói khác đang chạy.')
-        await ws.accept(subprotocol=PROTOCOL);accepted=True
+        if not accepted:
+            await ws.accept(subprotocol=PROTOCOL)
+            accepted = True
         async with open_audio(
             'stt', sample_rate=16000, encoding='pcm', language='vi',
             interim_results='true', model=settings.TUTOR_DICTATION_MODEL or 'grok-voice-transcribe-2.0',
         ) as live:
             await wait_for_event(live, 'transcript.created')
             await ws.send_json({'type':'ready','sample_rate':16000,'max_seconds':seconds})
-            await relay(ws,live,lambda:principal(user_id,sid),max_seconds=seconds)
+            await relay(ws, live, check_auth, max_seconds=seconds)
     except WebSocketDisconnect:
         pass
     except asyncio.CancelledError:
@@ -175,4 +203,6 @@ async def run(ws: WebSocket):
         if lease_key and lease:
             with suppress(Exception):
                 async with asyncio.timeout(3):await get_redis().eval(RELEASE,1,lease_key,lease)
-        with suppress(Exception):await ws.close(code=1000 if accepted else 1008)
+        if not closed:
+            with suppress(Exception):
+                await ws.close(code=1000 if accepted else 1008)

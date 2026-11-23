@@ -1,3 +1,4 @@
+import base64
 import hashlib
 import json
 from types import SimpleNamespace
@@ -20,7 +21,20 @@ def test_internal_return_path():
 
 @pytest.mark.asyncio
 async def test_login_pkce_nonce_and_minimal_scopes(monkeypatch):
-    redis = SimpleNamespace(set=AsyncMock(return_value=True), getdel=AsyncMock())
+    states = {}
+
+    async def save(key, value, *, ex, nx):
+        assert ex == 600 and nx is True
+        if key in states:
+            return False
+        states[key] = value
+        return True
+
+    async def consume(key):
+        return states.pop(key, None)
+
+    redis = SimpleNamespace(set=save, getdel=consume)
+    monkeypatch.setattr(auth.settings, 'AUTH_ALLOW_COOKIE_COMPAT', True)
     monkeypatch.setattr(gh, 'get_redis', lambda: redis)
     monkeypatch.setattr(auth, 'get_redis', lambda: redis)
     monkeypatch.setattr(gh, 'configured', lambda: True)
@@ -29,19 +43,24 @@ async def test_login_pkce_nonce_and_minimal_scopes(monkeypatch):
     query = parse_qs(urlsplit(result['authorize_url']).query)
     assert query['scope'] == ['read:user user:email']
     assert query['code_challenge_method'] == ['S256']
-    saved = json.loads(redis.set.call_args.args[1])
+    state = query['state'][0]
+    saved = json.loads(states[f'github:oauth:{state}'])
+    challenge = base64.urlsafe_b64encode(hashlib.sha256(saved['verifier'].encode()).digest()).decode().rstrip('=')
+    assert query['code_challenge'] == [challenge]
     assert saved['purpose'] == 'login' and saved['return_to'] == '/'
     assert 'HttpOnly' in response.headers['set-cookie']
     nonce = response.headers['set-cookie'].split(';')[0].split('=', 1)[1]
     assert saved['nonce_hash'] == hashlib.sha256(nonce.encode()).hexdigest()
-    redis.getdel.return_value = json.dumps(saved)
-    assert (await auth.consume_login_state(query['state'][0], nonce))['purpose'] == 'login'
+    assert (await auth.consume_login_state(state, nonce))['purpose'] == 'login'
     with pytest.raises(HTTPException) as exc:
-        await auth.consume_login_state(query['state'][0], 'wrong-browser')
+        await auth.consume_login_state(state, nonce)
+    assert exc.value.status_code == 400
+
+    other = await auth.begin_login(Response())
+    other_state = parse_qs(urlsplit(other['authorize_url']).query)['state'][0]
+    with pytest.raises(HTTPException) as exc:
+        await auth.consume_login_state(other_state, nonce)
     assert exc.value.status_code == 403
-    redis.getdel.return_value = None
-    with pytest.raises(HTTPException):
-        await auth.consume_login_state(query['state'][0], nonce)
 
 
 @pytest.mark.asyncio

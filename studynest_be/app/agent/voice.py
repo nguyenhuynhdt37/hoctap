@@ -6,7 +6,7 @@ from fastapi import HTTPException
 from sqlalchemy import select
 from app.agent.runtime import AgentService, execute_external_tool_async
 from app.agent.tools import available
-from app.core.security import SecurityService
+from app.core.security import AuthError
 from app.core.settings import settings
 from app.db.models.agent import AgentEvent
 from app.db.models.database import User
@@ -42,16 +42,10 @@ class VoiceAgentAdapter:
             raise HTTPException(503, 'Agent chưa được bật')
         if settings.AGENT_MAX_RUN_COST_USD is not None:
             raise HTTPException(503, 'Voice chưa có đo chi phí audio đủ để thực thi ngân sách tiền tệ; chưa thể mở phiên.')
-        ws=relay.ws
-        # Existing voice authenticates subprotocol into Authorization before bind.
-        token=ws.headers.get('authorization') or ws.cookies.get('access_token')
-        if token and token.lower().startswith('bearer '): token=token.split(' ',1)[1]
-        if not token: raise HTTPException(401,'Thiếu phiên đăng nhập voice')
-        async with SecurityService() as security:
-            payload=await security.decode_access_token(token)
-        if str(payload.get('sub')) != str(relay.user.id) or not payload.get('sid'):
-            raise HTTPException(401,'Voice identity mismatch')
-        adapter=cls(relay,session_id,payload['sid'])
+        identity = getattr(relay.ws.state, 'access_identity', None)
+        if identity is None or identity.user_id != relay.user.id:
+            raise AuthError("invalid_token")
+        adapter = cls(relay, session_id, identity.sid)
         async with AsyncSessionLocal() as db:
             svc=AgentService(db,relay.user,adapter.auth_sid)
             await svc.principal_async()

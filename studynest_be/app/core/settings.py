@@ -2,6 +2,7 @@
 from pathlib import Path
 from typing import Literal
 
+from pydantic import Field
 from pydantic_settings import BaseSettings
 
 
@@ -66,6 +67,9 @@ class Settings(BaseSettings):
     AGENT_MODEL_PRICES_JSON: str = "{}"
     AGENT_EVENT_RETENTION_DAYS: int = 30
     AGENT_MCP_ENABLED: bool = True
+    MISSION_COUPON_REWARDS_ENABLED: bool = False
+    LEVEL_COUPON_REWARDS_ENABLED: bool = False
+
     CODE_MAX_RUNS_PER_MINUTE: int = 6
     CODE_MAX_SECONDS: int = 90
 
@@ -87,7 +91,16 @@ class Settings(BaseSettings):
     # JWT
     SECRET_KEY: str = ""
     JWT_SECRET: str = ""
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 10
+    AUTH_ALLOW_COOKIE_COMPAT: bool = True
+    AUTH_ALLOW_UNBOUND_BEARER: bool = True
+    AUTH_INTERNAL_REFRESH_SECRET: str = Field(default="", repr=False)
+    PUBLIC_API_URL: str = ""
+    # Set only when the upstream ASGI path omits the public prefix.
+    DPOP_STRIPPED_PUBLIC_PATH_PREFIX: str = Field(default="", pattern=r"^(?:/[A-Za-z0-9_-]+)*$")
+    DPOP_IAT_LEEWAY_SECONDS: int = Field(default=60, gt=0)
+    DPOP_JTI_TTL_SECONDS: int = Field(default=120, gt=0)
+    DPOP_JTI_FAIL_OPEN_ON_GET: bool = False
     ALGORITHM: str = "HS256"
 
     # Mail

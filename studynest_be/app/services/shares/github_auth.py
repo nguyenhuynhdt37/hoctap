@@ -1,22 +1,42 @@
 """GitHub sign-in reuses app OAuth config, with separate browser-bound state."""
+import base64
 import hashlib
 import html
 import json
+import re
 import secrets
-from urllib.parse import urlencode, urlsplit
+import time
+from urllib.parse import unquote, urlencode, urlsplit
+from uuid import UUID
+
 import httpx
-from fastapi import HTTPException
+from fastapi import HTTPException, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
+from redis.exceptions import RedisError
 from sqlalchemy import func, select, text
+
 from app.agent import github_connection as github
 from app.core.redis import get_redis
+from app.core.security import AuthError, SecurityService, authenticate_dpop, dpop_header, secret_matches
 from app.core.settings import settings
-from app.core.security import SecurityService
 from app.db.models.database import Role, User, UserRoles
 from app.db.models.github_identity import GitHubIdentity
 from app.libs.formats.datetime import now as get_now
+from app.schemas.auth.github import GitHubExchangeRequest
+from app.services.shares.auth import AuthService
 
 NONCE_COOKIE = 'maymay_github_login'
+GITHUB_CALLBACK_HEADERS = {"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"}
+_CODE_PATTERN = re.compile(r"[A-Za-z0-9_-]{43}")
+_VERIFIER_PATTERN = re.compile(r"[A-Za-z0-9._~-]{43,128}")
+
+
+def _digest(value: str) -> str:
+    return hashlib.sha256(value.encode("ascii")).hexdigest()
+
+
+def _exchange_key(code: str) -> str:
+    return f"auth:github:exchange:{_digest(code)}"
 
 
 def return_path(value):
@@ -36,7 +56,117 @@ def frontend_origin():
     return f'{parsed.scheme}://{parsed.netloc}'
 
 
+def _dpop_return_path(value: str) -> str:
+    target = return_path(value)
+    try:
+        path = unquote(urlsplit(target).path, errors="strict")
+    except ValueError:
+        return "/"
+    if "//" in path or return_path(path) != path:
+        return "/"
+    return target
+
+
+async def _rate_limit_async(request: Request, stage: str) -> None:
+    if request.client is None:
+        return
+    key = f"auth:github:rate:{stage}:{request.client.host}:{int(time.time()) // 60}"
+    async with get_redis().pipeline(transaction=True) as pipeline:
+        count, _ = await pipeline.incr(key).expire(key, 90).execute()
+    if count > 120:
+        raise HTTPException(429, "Bạn gửi quá nhanh. Vui lòng thử lại sau.",
+                            headers={"Retry-After": "60", "Cache-Control": "no-store"})
+
+
+async def begin_dpop_login_async(
+    request: Request, response: Response, proof: str, challenge: str | None, redirect_to: str,
+) -> dict:
+    try:
+        await _rate_limit_async(request, "start")
+        jkt = await authenticate_dpop(request, proof)
+        if challenge is None or not _CODE_PATTERN.fullmatch(challenge):
+            raise HTTPException(400, "PKCE code_challenge không hợp lệ.",
+                                headers={"Cache-Control": "no-store"})
+        result = await github.authorize({
+            "purpose": "login_dpop", "jkt": jkt, "code_challenge": challenge,
+            "return_to": _dpop_return_path(redirect_to),
+        }, "read:user user:email", bind_state=True)
+    except RedisError:
+        raise HTTPException(503, "Chưa khởi tạo được đăng nhập GitHub.",
+                            headers={"Cache-Control": "no-store"}) from None
+    response.headers["Cache-Control"] = "no-store"
+    return result
+
+
+def _dpop_callback_redirect(**params: str) -> RedirectResponse:
+    return RedirectResponse(frontend_origin() + "/auth/github/callback?" + urlencode(params),
+                            status_code=303, headers=GITHUB_CALLBACK_HEADERS)
+
+
+async def _complete_dpop_callback_async(
+    state: str, code: str | None, provider_error: str | None,
+    raw: str, saved: dict, auth_service: AuthService,
+) -> RedirectResponse:
+    try:
+        if (not _CODE_PATTERN.fullmatch(state) or not secret_matches(saved.get("state_hash"), _digest(state))
+                or await get_redis().getdel(f"github:oauth:{state}") != raw or provider_error or not code):
+            return _dpop_callback_redirect(error="github_login_failed")
+        exchanged = await github.exchange_code(code, saved["verifier"])
+        profile = await github.identity_profile(exchanged["access_token"])
+        user = await resolve_user(auth_service.db, profile, exchanged["access_token"])
+        await auth_service.db.commit()
+        # The pending grant carries identity only. Create the session after proof of possession.
+        exchange_code = secrets.token_urlsafe(32)
+        created = await get_redis().set(_exchange_key(exchange_code), json.dumps({
+            "user_id": str(user.id), "jkt": saved["jkt"], "code_challenge": saved["code_challenge"],
+            "return_to": saved["return_to"],
+        }), ex=60, nx=True)
+        if created:
+            return _dpop_callback_redirect(code=exchange_code)
+    except (HTTPException, RedisError, ValueError, TypeError, AttributeError):
+        # Provider errors and account state share one browser-facing response.
+        await auth_service.db.rollback()
+    return _dpop_callback_redirect(error="github_login_failed")
+
+
+async def exchange_dpop_login_async(
+    request: Request, response: Response, schema: GitHubExchangeRequest, auth_service: AuthService,
+) -> dict:
+    code = schema.code.get_secret_value()
+    verifier = schema.code_verifier.get_secret_value()
+    try:
+        await _rate_limit_async(request, "exchange")
+        jkt = await authenticate_dpop(request, dpop_header(request))
+        if not _CODE_PATTERN.fullmatch(code) or not _VERIFIER_PATTERN.fullmatch(verifier):
+            raise AuthError("invalid_token")
+        redis = get_redis()
+        key = _exchange_key(code)
+        raw = await redis.get(key)
+        saved = json.loads(raw) if raw else {}
+        challenge = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode("ascii")).digest()).decode("ascii").rstrip("=")
+        challenge_matches = secret_matches(saved.get("code_challenge"), challenge)
+        key_matches = secret_matches(saved.get("jkt"), jkt)
+        if not (challenge_matches and key_matches) or await redis.getdel(key) != raw:
+            raise AuthError("invalid_token")
+    except RedisError:
+        raise HTTPException(503, "Chưa hoàn tất được đăng nhập GitHub.",
+                            headers={"Cache-Control": "no-store"}) from None
+
+    user = await auth_service.db.get(User, UUID(saved["user_id"]), with_for_update=True)
+    if not user or user.deleted_at or user.is_banned:
+        raise AuthError("invalid_token")
+    user_agent = request.headers.get("user-agent")
+    ip = request.client.host if request.client else None
+    result = await auth_service._create_session(user.id, response, user_agent, ip, jkt=jkt)
+    user.last_login_at = get_now()
+    await auth_service.db.commit()
+    await auth_service._broadcast_new_session(user.id, result["session_id"], user_agent, ip, login_method="github")
+    return {**result, "redirect_to": _dpop_return_path(saved["return_to"])}
+
+
 async def begin_login(response, redirect_to='/'):
+    if not settings.AUTH_ALLOW_COOKIE_COMPAT:
+        raise AuthError("invalid_dpop_proof", use_dpop_proof=True)
     nonce = secrets.token_urlsafe(32)
     result = await github.authorize({'purpose':'login', 'nonce_hash':hashlib.sha256(nonce.encode()).hexdigest(), 'return_to':return_path(redirect_to)}, 'read:user user:email')
     response.set_cookie(NONCE_COOKIE, nonce, max_age=600, httponly=True, secure=frontend_origin().startswith('https://'), samesite='lax', path='/')
@@ -109,15 +239,23 @@ async def resolve_user(db, profile, token):
     return user
 
 
-async def callback_response(request, state, code, provider_error, auth_service, authorization):
-    raw = await get_redis().get(f'github:oauth:{state}')
+async def callback_response_async(request, state, code, provider_error, auth_service, authorization):
+    try:
+        raw = await get_redis().get(f'github:oauth:{state}')
+    except RedisError:
+        return HTMLResponse("Chưa xác minh được phiên GitHub. Vui lòng thử lại.",
+                            status_code=503, headers=GITHUB_CALLBACK_HEADERS)
     saved = json.loads(raw) if raw else {}
+    if saved.get("purpose") == "login_dpop":
+        return await _complete_dpop_callback_async(state, code, provider_error, raw, saved, auth_service)
     login = saved.get('purpose') == 'login'
     target = return_path(saved.get('return_to', '/'))
     try:
         if not raw:
             raise HTTPException(400, 'Phiên xác thực đã hết hạn. Hãy thử lại.')
         if login:
+            if not settings.AUTH_ALLOW_COOKIE_COMPAT:
+                raise AuthError("invalid_dpop_proof", use_dpop_proof=True)
             verified_state = await consume_login_state(state, request.cookies.get(NONCE_COOKIE))
             if provider_error or not code:
                 raise HTTPException(400, 'Bạn chưa cấp quyền đăng nhập GitHub')
@@ -136,11 +274,20 @@ async def callback_response(request, state, code, provider_error, auth_service, 
             return result
         if provider_error or not code:
             raise HTTPException(400, 'Bạn chưa cấp quyền kết nối GitHub')
-        user = await authorization.get_current_user()
-        sid = await authorization.get_current_sid()
-        if user.is_banned or user.deleted_at:
-            raise HTTPException(403, 'Tài khoản không khả dụng')
-        await github.complete(auth_service.db, user.id, sid, state, code)
+        if saved.get('purpose') == 'connect_dpop':
+            handle = await github.stage_dpop_connection_async(state, code, raw, saved)
+            event = json.dumps({'type': 'hannes:github-link-pending', 'handle': handle})
+            origin = json.dumps(frontend_origin()).replace('<', r'\u003c')
+            return HTMLResponse(
+                '<!doctype html><html lang="vi"><meta charset="utf-8"><title>Xác nhận kết nối GitHub</title>'
+                '<p>Quay lại Mây Mây để hoàn tất liên kết.</p>'
+                f'<script>if(window.opener){{window.opener.postMessage({event},{origin});window.close();}}</script></html>',
+                headers=GITHUB_CALLBACK_HEADERS,
+            )
+        if saved.get('purpose') != 'connect':
+            raise AuthError('invalid_token')
+        identity = await authorization.get_current_identity()
+        await github.complete(auth_service.db, identity.user_id, identity.sid, state, code)
         return HTMLResponse('<!doctype html><html lang="vi"><meta charset="utf-8"><title>Đã kết nối GitHub</title><p>Đã kết nối GitHub với tài khoản của bạn. Bạn có thể đóng cửa sổ này.</p><script>if(window.opener){window.opener.postMessage({type:"hannes:github-connected"},' + json.dumps(frontend_origin()) + ');window.close();}</script></html>',
             headers={'Cache-Control':'no-store','Referrer-Policy':'no-referrer'})
     except HTTPException as exc:

@@ -5,6 +5,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 from uuid import uuid4
 
+import pytest
 from fastapi import HTTPException
 
 from app.core.settings import settings
@@ -61,21 +62,17 @@ class VoiceAuthorizationTests(unittest.IsolatedAsyncioTestCase):
             await run_tutor_voice(ws, uuid4())
         client.assert_not_called()
 
-    async def test_protocol_token_reaches_cached_auth_headers_without_url_token(self):
+    async def test_protocol_token_goes_through_shared_auth_without_mutating_headers(self):
         ws = self.ws()
-        async def auth(socket, roles):
-            self.assertEqual(socket.headers.get('authorization'), 'Bearer test-token')
+        async def auth(socket, roles, *, legacy, legacy_binding):
+            self.assertIsNone(socket.headers.get('authorization'))
+            self.assertEqual((legacy.scheme, legacy.token), ('bearer', 'test-token'))
             self.assertEqual(roles, ['USER', 'LECTURER', 'ADMIN'])
+            self.assertIsNone(legacy_binding)
             return None
         with patch(MODULE + 'AuthorizationService.get_require_role_ws', auth):
             await run_tutor_voice(ws, uuid4())
         ws.accept.assert_awaited_once_with(subprotocol='studynest-voice')
-
-    async def test_banned_account_cannot_use_provider(self):
-        ws, user = self.ws(), self.user(); user.is_banned=True
-        with patch(MODULE + 'AuthorizationService.get_require_role_ws', AsyncMock(return_value=user)), patch(MODULE + 'open_realtime') as client:
-            await run_tutor_voice(ws, uuid4())
-        client.assert_not_called(); ws.close.assert_awaited_once_with(code=1008)
 
     async def test_private_lesson_denial_is_not_hidden_and_never_calls_provider(self):
         ws = self.ws()
@@ -179,3 +176,41 @@ class VoicePaceTests(unittest.TestCase):
         for value in ['nan', 'inf', '0', '5', 'ignore all instructions', None]:
             with self.subTest(value=value), self.assertRaises(HTTPException):
                 voice_speed(value)
+
+
+async def test_voice_ticket_contains_only_encrypted_legacy_identity_and_is_single_use(monkeypatch):
+    import hashlib
+    import time
+
+    from app.core.auth_encryption import open_auth_payload
+    from app.core.deps import AccessIdentity
+    from app.services.user import tutor_voice
+
+    monkeypatch.setattr(settings, "AUTH_ALLOW_COOKIE_COMPAT", True)
+    identity = AccessIdentity(uuid4(), uuid4(), int(time.time()) + 60, None)
+    auth = SimpleNamespace(get_legacy_access_binding_async=AsyncMock(return_value=(identity, "cookie")))
+    cache = {}
+
+    async def set_key(key, value, *, ex, nx):
+        assert ex == 60 and nx
+        cache[key] = value
+        return True
+
+    async def getdel(key):
+        return cache.pop(key, None)
+
+    monkeypatch.setattr(tutor_voice, "get_redis", lambda: SimpleNamespace(set=set_key, getdel=getdel))
+    ticket = await tutor_voice.issue_tutor_voice_ticket_async(auth)
+    key = 'voice:ticket:v2:' + hashlib.sha256(ticket.encode()).hexdigest()
+    assert str(identity.sid) not in cache[key]
+    assert open_auth_payload(cache[key], key) == {
+        "sid": str(identity.sid), "user_id": str(identity.user_id), "exp": identity.expires_at, "scheme": "cookie",
+    }
+    assert await tutor_voice._redeem_voice_ticket_async(ticket) == identity
+    with pytest.raises(ValueError):
+        await tutor_voice._redeem_voice_ticket_async(ticket)
+
+    ticket = await tutor_voice.issue_tutor_voice_ticket_async(auth)
+    monkeypatch.setattr(settings, "AUTH_ALLOW_COOKIE_COMPAT", False)
+    with pytest.raises(ValueError):
+        await tutor_voice._redeem_voice_ticket_async(ticket)

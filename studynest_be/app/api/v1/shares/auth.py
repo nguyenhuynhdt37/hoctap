@@ -1,4 +1,4 @@
-from typing import Optional
+from uuid import UUID
 
 from fastapi import (
     APIRouter,
@@ -11,10 +11,12 @@ from fastapi import (
     Response,
     status,
 )
-from fastapi.responses import JSONResponse
 
-from app.core.deps import AuthorizationService
+from app.core.deps import AuthorizationService, require_cookie_origin
+from app.core.security import AuthError, auth_error_response, dpop_header
+from app.core.settings import settings
 from app.core.ws_manager import ws_manager
+from app.schemas.auth.github import GitHubExchangeRequest, GitHubExchangeResponse, GitHubStartResponse
 from app.schemas.auth.user import (
     GoogleLogin,
     LoginUser,
@@ -25,6 +27,7 @@ from app.schemas.auth.user import (
     VerifyOtp,
 )
 from app.services.shares.auth import AuthService
+from app.services.shares import github_auth
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -38,15 +41,16 @@ async def login(
 ):
     user_agent = req.headers.get("user-agent")
     ip = req.client.host if req.client else None
-    return await auth_service.login_async(schema, res, user_agent=user_agent, ip=ip)
+    return await auth_service.login_async(schema, res, user_agent=user_agent, ip=ip, request=req)
 
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register(
+    req: Request,
     schema: UserCreate = Body(),
     auth_service: AuthService = Depends(AuthService),
 ):
-    return await auth_service.register_async(schema)
+    return await auth_service.register_async(schema, ip=req.client.host if req.client else None)
 
 
 @router.post("/logout", status_code=status.HTTP_200_OK)
@@ -56,32 +60,47 @@ async def logout(
     auth_service: AuthService = Depends(AuthService),
     authorization: AuthorizationService = Depends(AuthorizationService),
 ):
-    sid = session_id or await authorization.get_current_sid()
-    return await auth_service.logout_async(res, sid=sid)
+    identity = await authorization.get_current_identity()
+    if session_id is not None:
+        try:
+            requested_sid = UUID(session_id)
+        except ValueError:
+            raise AuthError("invalid_token") from None
+        if requested_sid != identity.sid:
+            raise AuthError("invalid_token")
+    return await auth_service.logout_async(
+        res, sid=identity.sid, user_id=identity.user_id, bound=identity.jkt is not None,
+    )
 
 
 @router.post("/refresh", status_code=status.HTTP_200_OK)
 async def refresh(
     req: Request,
     res: Response,
-    refresh_token: Optional[str] = Cookie(None),
+    refresh_token: str | None = Cookie(None),
     body: dict = Body(None),
     auth_service: AuthService = Depends(AuthService),
 ):
-    # Ưu tiên lấy từ body nếu mobile gửi lên, nếu không thì lấy từ cookie
-    token = refresh_token or (body.get("refresh_token") if body else None)
-    
-    user_agent = req.headers.get("user-agent")
-    ip = req.client.host if req.client else None
+    from_body = body is not None and "refresh_token" in body
+    from_cookie = not from_body and settings.AUTH_ALLOW_COOKIE_COMPAT and bool(refresh_token)
+    token = body["refresh_token"] if from_body else (refresh_token if from_cookie else None)
+    if from_cookie:
+        require_cookie_origin(req, internal_refresh="dpop" not in req.headers)
+    options = {}
+    if from_body and body.get("operation_id") is not None:
+        try:
+            options["operation_id"] = UUID(body["operation_id"])
+        except (ValueError, TypeError, AttributeError):
+            raise HTTPException(422, "operation_id phải là UUID.") from None
     try:
-        return await auth_service.refresh_token_async(token, res, user_agent=user_agent, ip=ip)
-    except HTTPException as exc:
-        if exc.status_code != 401:
-            raise
-        response = JSONResponse({"detail": exc.detail}, status_code=401,
-                                headers={"Cache-Control": "no-store"})
-        response.delete_cookie("access_token", path="/")
-        response.delete_cookie("refresh_token", path="/")
+        return await auth_service.refresh_token_async(
+            token, res, request=req, from_cookie=from_cookie, **options,
+        )
+    except AuthError as exc:
+        response = auth_error_response(req, exc)
+        if from_cookie and exc.clear_cookies and "dpop" not in req.headers and exc.code != "invalid_dpop_proof":
+            response.delete_cookie("access_token", path="/")
+            response.delete_cookie("refresh_token", path="/")
         return response
 
 
@@ -174,19 +193,21 @@ async def revoke_session(
 
 @router.post("/refesh-email", status_code=status.HTTP_200_OK)
 async def refesh_email(
+    req: Request,
     schema: RefreshEmail = Body(),
     auth_service: AuthService = Depends(AuthService),
 ):
-    return await auth_service.refesh_email_async(schema)
+    return await auth_service.refesh_email_async(schema, ip=req.client.host if req.client else None)
 
 
 @router.post("/verify-email", status_code=status.HTTP_200_OK)
 async def verify_email(
+    req: Request,
     res: Response,
     schema: VerifyEmail = Body(),
     auth_service: AuthService = Depends(AuthService),
 ):
-    return await auth_service.verify_email_async(schema, res=res)
+    return await auth_service.verify_email_async(schema, res=res, request=req)
 
 
 @router.get("/me")
@@ -215,17 +236,19 @@ async def login_with_google(
     body: GoogleLogin = Body(),
     service: AuthService = Depends(AuthService),
 ):
+    """Đăng nhập bằng định danh trong ID token đã xác minh của Google."""
     user_agent = req.headers.get("user-agent")
     ip = req.client.host if req.client else None
-    return await service.login_google_async(body, res, user_agent=user_agent, ip=ip)
+    return await service.login_google_async(body, res, user_agent=user_agent, ip=ip, request=req)
 
 
 @router.post("/send-otp")
 async def send_otp(
+    req: Request,
     schema: SendOtp = Body(),
     auth_service: AuthService = Depends(AuthService),
 ):
-    return await auth_service.send_otp_async(schema)
+    return await auth_service.send_otp_async(schema, ip=req.client.host if req.client else None)
 
 
 @router.get("/check-email")
@@ -245,13 +268,27 @@ async def verify_otp(
 ):
     user_agent = req.headers.get("user-agent")
     ip = req.client.host if req.client else None
-    return await auth_service.verify_otp_login_async(schema, res, user_agent=user_agent, ip=ip)
+    return await auth_service.verify_otp_login_async(schema, res, user_agent=user_agent, ip=ip, request=req)
 
 
-@router.post("/github/start")
-async def github_login_start(
+@router.post("/github/start", response_model=GitHubStartResponse)
+async def github_login_start_async(
+    req: Request,
     res: Response,
     redirect_to: str = Body(default="/", embed=True, max_length=500),
+    code_challenge: str | None = Body(default=None, embed=True, max_length=43),
 ):
-    from app.services.shares.github_auth import begin_login
-    return await begin_login(res, redirect_to)
+    proof = dpop_header(req)
+    if proof is None:
+        return await github_auth.begin_login(res, redirect_to)
+    return await github_auth.begin_dpop_login_async(req, res, proof, code_challenge, redirect_to)
+
+
+@router.post("/github/exchange", response_model=GitHubExchangeResponse)
+async def github_login_exchange_async(
+    req: Request,
+    res: Response,
+    schema: GitHubExchangeRequest,
+    auth_service: AuthService = Depends(AuthService),
+):
+    return await github_auth.exchange_dpop_login_async(req, res, schema, auth_service)

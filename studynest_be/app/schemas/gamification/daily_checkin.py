@@ -60,7 +60,7 @@ class CheckinStatusResponse(BaseModel):
         default_factory=list, description="Lịch check-in của chu kỳ hiện tại"
     )
     current_peak_balance: int = Field(
-        ..., description="Số dư Peak Wallet hiện tại"
+        ..., description="Số dư Coin hiện tại"
     )
 
 
@@ -76,7 +76,7 @@ class CheckinClaimResponse(BaseModel):
     message: str = Field(..., description="Thông báo kết quả")
     current_day: int = Field(..., description="Ngày trong chu kỳ vừa check-in (1-based)")
     reward: Optional[RewardDTO] = Field(None, description="Phần thưởng vừa nhận")
-    current_peak_balance: int = Field(..., description="Số dư Peak Wallet sau khi nhận")
+    current_peak_balance: int = Field(..., description="Số dư Coin sau khi nhận")
     current_streak: int = Field(..., description="Chuỗi streak sau khi check-in")
     best_streak: int = Field(..., description="Chuỗi streak cao nhất")
     calendar: list[CalendarDayDTO] = Field(

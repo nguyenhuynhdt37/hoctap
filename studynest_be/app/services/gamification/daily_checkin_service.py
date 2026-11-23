@@ -11,6 +11,7 @@ import datetime
 import uuid
 from typing import Optional
 
+from app.services.gamification.mission_clock import VIETNAM
 from app.core.event_bus.base import BaseEvent
 from app.core.event_bus.redis_bus import event_bus
 from fastapi import Depends, HTTPException, Request
@@ -273,7 +274,7 @@ class DailyCheckinService:
                 checkin = await self.repo.create_checkin(
                     user_id=user.id,
                     event_id=event.id,
-                    checkin_date=datetime.date.today(),
+                    checkin_date=datetime.datetime.now(VIETNAM).date(),
                     consecutive_day=consecutive_day,
                 )
 

@@ -14,7 +14,7 @@ REST API Convention:
 import uuid
 from typing import Optional
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, WebSocket, Request
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, WebSocket, Response
 from pydantic import BaseModel
 
 from app.core.chat_stream import chat_stream_response
@@ -311,17 +311,9 @@ async def account_voice(websocket: WebSocket):
 
 
 @router.post('/voice-ticket')
-async def voice_ticket(request: Request, auth: AuthorizationService = Depends(AuthorizationService)):
-    import secrets
-    import hashlib
-    from app.core.redis import get_redis
-    user = await auth.get_current_user()
-    if user.is_banned or user.deleted_at:
-        raise HTTPException(403, 'Tài khoản không khả dụng')
-    header = request.headers.get('authorization', '')
-    token = header[7:] if header.lower().startswith('bearer ') else request.cookies.get('access_token')
-    if not token:
-        raise HTTPException(401, 'Vui lòng đăng nhập')
-    ticket = secrets.token_urlsafe(32)
-    await get_redis().set('voice:ticket:' + hashlib.sha256(ticket.encode()).hexdigest(), token, ex=60, nx=True)
+async def voice_ticket(response: Response, auth: AuthorizationService = Depends(AuthorizationService)):
+    from app.services.user.tutor_voice import issue_tutor_voice_ticket_async
+
+    ticket = await issue_tutor_voice_ticket_async(auth)
+    response.headers["Cache-Control"] = "no-store"
     return {'ticket': ticket}

@@ -20,8 +20,20 @@ def fixture():
 @pytest.mark.asyncio
 async def test_grading_uses_server_answer_not_client_score():
     u,l,q,db,p=fixture()
-    with patch('app.services.user.quiz_attempts.require_lesson_access',AsyncMock()):
+    commits_at_publish = []
+
+    async def published(_event):
+        commits_at_publish.append(db.commit.await_count)
+
+    with (
+        patch("app.services.user.quiz_attempts.require_lesson_access", AsyncMock()),
+        patch("app.services.user.quiz_attempts.event_bus.publish", AsyncMock(side_effect=published)) as publish,
+    ):
         result=await QuizAttemptService(db).submit_async(u,l,p)
+    publish.assert_awaited_once()
+    event = publish.await_args.args[0]
+    assert (event.event_name, event.user_id, event.source_id) == ("quiz.attempted", u, l)
+    assert commits_at_publish == [1]
     assert result['correct']==0;assert result['total']==1
     assert result['details'][0]['selected_option_id']==str(q.lesson_quiz_options[1].id)
     assert result['details'][0]['correct_option_id']==str(q.lesson_quiz_options[0].id)

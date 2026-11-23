@@ -3,15 +3,32 @@
 import base64
 import hashlib
 import json
-from datetime import UTC, datetime
+from asyncio import timeout
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from uuid import UUID
 
 from fastapi import Depends, HTTPException
-from sqlalchemy import and_, delete, exists, func, or_, select
+from pydantic import ValidationError
+from redis.exceptions import RedisError
+from sqlalchemy import (
+    Integer,
+    String,
+    and_,
+    case,
+    cast,
+    delete,
+    exists,
+    func,
+    null,
+    or_,
+    select,
+    union_all,
+)
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.redis import get_redis
 from app.db.models.catalog import (
     EducationLevel,
     Exam,
@@ -25,9 +42,23 @@ from app.db.models.catalog import (
     course_learning_goals,
     grade_subjects,
 )
-from app.db.models.database import Courses, User
+from app.db.models.database import (
+    Courses,
+    CourseSections,
+    Discounts,
+    DiscountTargets,
+    Lessons,
+    LessonVideos,
+    User,
+)
 from app.db.sesson import get_session
-from app.schemas.catalog import CatalogFilters, CourseTaxonomy
+from app.libs.formats.datetime import now as discount_clock
+from app.schemas.catalog import (
+    CatalogCourseCounts,
+    CatalogFilters,
+    CatalogSubjectCourseCounts,
+    CourseTaxonomy,
+)
 from app.services.catalog_slugs import create_slugged
 
 ENTITIES = {
@@ -113,6 +144,10 @@ def decode_cursor(cursor, converter, signature):
 
 
 SESSION_DEP = Depends(get_session)
+COURSE_COUNTS_CACHE_KEY = "catalog:course-counts:v1"
+COURSE_COUNTS_CACHE_TTL = 60
+COURSE_NEW_WINDOW = timedelta(days=30)
+COURSE_BESTSELLER_MIN_ENROLLMENTS = 100
 
 
 class CatalogService:
@@ -138,6 +173,97 @@ class CatalogService:
         ]
         data["delivery_types"] = [{"code": "recorded_video", "name": "Video bài giảng"}]
         return data
+
+    async def course_counts(self) -> CatalogCourseCounts:
+        redis = get_redis()
+        can_cache = True
+        try:
+            async with timeout(0.25):
+                cached = await redis.get(COURSE_COUNTS_CACHE_KEY)
+            if cached is not None:
+                return CatalogCourseCounts.model_validate_json(cached)
+        except (RedisError, TimeoutError):
+            can_cache = False
+        except ValidationError:
+            pass
+
+        result = await self._query_course_counts()
+        if can_cache:
+            try:
+                async with timeout(0.25):
+                    await redis.set(
+                        COURSE_COUNTS_CACHE_KEY,
+                        result.model_dump_json(),
+                        ex=COURSE_COUNTS_CACHE_TTL,
+                    )
+            except (RedisError, TimeoutError):
+                pass
+        return result
+
+    async def _query_course_counts(self) -> CatalogCourseCounts:
+        active_grades = (
+            select(
+                course_grades.c.course_id,
+                EducationLevel.code.label("level_code"),
+                Grade.grade_number,
+            )
+            .join(Grade, Grade.id == course_grades.c.grade_id)
+            .join(EducationLevel, EducationLevel.id == Grade.education_level_id)
+            .where(Grade.is_active.is_(True), EducationLevel.is_active.is_(True))
+            .subquery()
+        )
+        offerings = (
+            select(
+                Courses.id.label("course_id"),
+                Subject.id.label("subject_id"),
+                active_grades.c.level_code,
+                active_grades.c.grade_number,
+            )
+            .join(User, User.id == Courses.instructor_id)
+            .outerjoin(
+                Subject, and_(Subject.id == Courses.subject_id, Subject.is_active.is_(True))
+            )
+            .outerjoin(active_grades, active_grades.c.course_id == Courses.id)
+            .where(public_course(), Courses.currency == CatalogFilters().currency)
+            .cte("public_course_scopes")
+        ).c
+        # A course can target multiple grades. Count it once in each applicable scope.
+        count = func.count(offerings.course_id.distinct()).label("course_count")
+        grouped = union_all(
+            select(
+                offerings.subject_id,
+                cast(null(), String).label("level_code"),
+                cast(null(), Integer).label("grade_number"),
+                count,
+            )
+            .group_by(offerings.subject_id),
+            select(offerings.subject_id, offerings.level_code, null(), count)
+            .where(offerings.level_code.is_not(None))
+            .group_by(offerings.subject_id, offerings.level_code),
+            select(offerings.subject_id, null(), offerings.grade_number, count)
+            .where(offerings.subject_id.is_not(None), offerings.grade_number.is_not(None))
+            .group_by(offerings.subject_id, offerings.grade_number),
+        )
+
+        result = CatalogCourseCounts(total=0, by_level={}, by_subject={})
+        for subject_id, level, grade, course_count in await self.db.execute(grouped):
+            subject = None
+            if subject_id is not None:
+                subject = result.by_subject.get(subject_id)
+                if subject is None:
+                    subject = CatalogSubjectCourseCounts(total=0, by_level={}, by_grade={})
+                    result.by_subject[subject_id] = subject
+            if grade is not None and subject is not None:
+                subject.by_grade[grade] = course_count
+            elif level is not None:
+                result.by_level[level] = result.by_level.get(level, 0) + course_count
+                if subject is not None:
+                    subject.by_level[level] = course_count
+            else:
+                result.total += course_count
+                if subject is not None:
+                    subject.total = course_count
+        return result
 
     async def browse_filters(self):
         """Small public choices; keep the richer editor endpoint unchanged."""
@@ -435,8 +561,93 @@ class CatalogService:
             )
         }
 
+    async def _course_lesson_stats(
+        self, course_ids: list[UUID]
+    ) -> dict[UUID, tuple[int, int]]:
+        # Some legacy lessons only have a section FK. Keep the branches disjoint.
+        lessons = union_all(
+            select(Lessons.id, Lessons.course_id).where(Lessons.course_id.in_(course_ids)),
+            select(Lessons.id, CourseSections.course_id)
+            .join(CourseSections, CourseSections.id == Lessons.section_id)
+            .where(Lessons.course_id.is_(None), CourseSections.course_id.in_(course_ids)),
+        ).subquery()
+        rows = await self.db.execute(
+            select(lessons.c.course_id, func.count(), func.sum(LessonVideos.duration))
+            .outerjoin(
+                LessonVideos,
+                and_(
+                    LessonVideos.lesson_id == lessons.c.id,
+                    LessonVideos.duration > 0,
+                    LessonVideos.duration < float("inf"),
+                ),
+            )
+            .group_by(lessons.c.course_id)
+        )
+        return {
+            course_id: (count, round(duration or 0))
+            for course_id, count, duration in rows
+        }
+
+    async def _course_public_discounts(
+        self, course_ids: list[UUID]
+    ) -> dict[UUID, Decimal]:
+        clock = discount_clock()
+        targets = select(DiscountTargets.discount_id).where(
+            DiscountTargets.discount_id == Discounts.id
+        )
+        matching_target = targets.where(
+            or_(
+                DiscountTargets.course_id == Courses.id,
+                DiscountTargets.category_id == Courses.category_id,
+            )
+        ).correlate(Discounts, Courses)
+        # A global coupon with explicit targets still uses those targets at checkout.
+        applies = or_(
+            matching_target.exists(),
+            and_(Discounts.applies_to == "global", ~targets.correlate(Discounts).exists()),
+        )
+        amount = case(
+            (
+                Discounts.discount_type == "percent",
+                Courses.base_price * Discounts.percent_value / 100,
+            ),
+            (Discounts.discount_type == "fixed", Discounts.fixed_value),
+            else_=0,
+        )
+        rows = await self.db.execute(
+            select(Courses.id, func.max(amount))
+            .join(Discounts, applies)
+            .where(
+                Courses.id.in_(course_ids),
+                Courses.base_price > 0,
+                Discounts.is_active.is_(True),
+                Discounts.is_hidden.is_(False),
+                Discounts.discount_code.is_not(None),
+                func.trim(Discounts.discount_code) != "",
+                Discounts.start_at <= clock,
+                Discounts.end_at >= clock,
+                or_(
+                    Discounts.usage_limit.is_(None),
+                    Discounts.usage_limit == 0,
+                    func.coalesce(Discounts.usage_count, 0) < Discounts.usage_limit,
+                ),
+            )
+            .group_by(Courses.id)
+        )
+        return {
+            course_id: reduction
+            for course_id, reduction in rows
+            if reduction and reduction > 0
+        }
+
     async def courses(
-        self, filters: CatalogFilters, category_ids=None, extra_conditions=(), scope=""
+        self,
+        filters: CatalogFilters,
+        category_ids=None,
+        extra_conditions=(),
+        scope="",
+        *,
+        include_card_details: bool = False,
     ):
         f = filters
         stmt = (
@@ -469,6 +680,8 @@ class CatalogService:
             .outerjoin(Provider, Provider.id == Courses.provider_id)
             .where(public_course())
         )
+        if include_card_details:
+            stmt = stmt.add_columns(Courses.approved_at)
         stmt = stmt.where(*extra_conditions)
         if category_ids is not None:
             stmt = stmt.where(Courses.category_id.in_(category_ids))
@@ -522,7 +735,10 @@ class CatalogService:
                 )
             )
         sorts = {
-            "newest": (Courses.created_at, datetime.fromisoformat),
+            "newest": (
+                func.coalesce(Courses.created_at, datetime(1970, 1, 1, tzinfo=UTC)),
+                datetime.fromisoformat,
+            ),
             "popular": (func.coalesce(Courses.total_enrolls, 0), int),
             "rating": (func.coalesce(Courses.rating_avg, 0), Decimal),
             "price_asc": (func.coalesce(Courses.base_price, 0), Decimal),
@@ -574,6 +790,7 @@ class CatalogService:
             .all()
         )
         selected = rows[: f.limit]
+        course_ids = [row.id for row in selected]
         # One batched lookup for grades, no per-card queries.
         grade_rows = (
             (
@@ -585,7 +802,7 @@ class CatalogService:
                         Grade.grade_number,
                     )
                     .join(Grade, Grade.id == course_grades.c.grade_id)
-                    .where(course_grades.c.course_id.in_([r.id for r in selected]))
+                    .where(course_grades.c.course_id.in_(course_ids))
                     .order_by(Grade.grade_number)
                 )
             ).all()
@@ -597,43 +814,77 @@ class CatalogService:
             grades_by_course.setdefault(r.course_id, []).append(
                 {"id": r.id, "name": r.name, "grade_number": r.grade_number}
             )
+        lesson_stats = {}
+        public_discounts = {}
+        if include_card_details and course_ids:
+            lesson_stats = await self._course_lesson_stats(course_ids)
+            paid_ids = [row.id for row in selected if row.base_price and row.base_price > 0]
+            if paid_ids:
+                public_discounts = await self._course_public_discounts(paid_ids)
+        clock = datetime.now(UTC)
         items = []
-        for r in selected:
-            c = r
-            items.append(
-                {
-                    "id": c.id,
-                    "slug": c.slug,
-                    "title": c.title,
-                    "thumbnail": c.thumbnail_url,
-                    "base_price": float(c.base_price or 0),
-                    "currency": c.currency,
-                    "rating_avg": float(c.rating_avg or 0),
-                    "rating_count": c.rating_count or 0,
-                    "total_enrolls": c.total_enrolls or 0,
-                    "total_hours": round((c.total_length_seconds or 0) / 3600, 1),
-                    "created_at": c.created_at,
-                    "level": c.level,
-                    "language": c.language,
-                    "delivery_type": c.delivery_type,
-                    "instructor": {
-                        "id": c.instructor_id,
-                        "fullname": r.fullname,
-                        "avatar": r.avatar,
-                    },
-                    "subject": {"id": c.subject_id, "name": r.subject_name}
-                    if c.subject_id
-                    else None,
-                    "provider": {
-                        "id": c.provider_id,
-                        "name": r.provider_name,
-                        "slug": r.provider_slug,
-                    }
-                    if c.provider_id
-                    else None,
-                    "grades": grades_by_course.get(c.id, []),
+        for c in selected:
+            item = {
+                "id": c.id,
+                "slug": c.slug,
+                "title": c.title,
+                "thumbnail": c.thumbnail_url,
+                "base_price": float(c.base_price or 0),
+                "currency": c.currency,
+                "rating_avg": float(c.rating_avg or 0),
+                "rating_count": c.rating_count or 0,
+                "total_enrolls": c.total_enrolls or 0,
+                "total_hours": round((c.total_length_seconds or 0) / 3600, 1),
+                "created_at": c.created_at,
+                "level": c.level,
+                "language": c.language,
+                "delivery_type": c.delivery_type,
+                "instructor": {
+                    "id": c.instructor_id,
+                    "fullname": c.fullname,
+                    "avatar": c.avatar,
+                },
+                "subject": {"id": c.subject_id, "name": c.subject_name}
+                if c.subject_id
+                else None,
+                "provider": {
+                    "id": c.provider_id,
+                    "name": c.provider_name,
+                    "slug": c.provider_slug,
                 }
-            )
+                if c.provider_id
+                else None,
+                "grades": grades_by_course.get(c.id, []),
+            }
+            if include_card_details:
+                lessons_count, duration = lesson_stats.get(c.id, (0, 0))
+                if lessons_count and not duration:
+                    duration = max(c.total_length_seconds or 0, 0)
+                price = c.base_price
+                reduction = public_discounts.get(c.id)
+                published_at = c.approved_at or c.created_at
+                if published_at and published_at.tzinfo is None:
+                    published_at = published_at.replace(tzinfo=UTC)
+                item.update(
+                    students_count=max(c.total_enrolls or 0, 0),
+                    lessons_count=lessons_count,
+                    duration_seconds=duration,
+                    original_price=float(price) if price is not None and price >= 0 else None,
+                    discount_price=float(max(price - reduction, 0))
+                    if price is not None and reduction is not None
+                    else None,
+                    is_free=price == 0,
+                    is_new=bool(
+                        published_at and clock - COURSE_NEW_WINDOW <= published_at <= clock
+                    ),
+                    is_bestseller=(
+                        price is not None
+                        and price > 0
+                        and (c.total_enrolls or 0) >= COURSE_BESTSELLER_MIN_ENROLLMENTS
+                    ),
+                    lecturer={"name": c.fullname, "avatar": c.avatar},
+                )
+            items.append(item)
         more = len(rows) > f.limit
         return {
             "items": items,

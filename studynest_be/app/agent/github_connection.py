@@ -2,6 +2,7 @@
 import base64
 import hashlib
 import json
+import re
 import secrets
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode
@@ -9,12 +10,16 @@ from urllib.parse import urlencode
 import httpx
 from cryptography.fernet import Fernet, InvalidToken
 from fastapi import HTTPException
+from redis.exceptions import RedisError
 from sqlalchemy import select
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import ForeignKey, String, Text, BigInteger, DateTime
+from app.core.auth_encryption import open_auth_payload, seal_auth_payload
+from app.core.security import AuthError, require_active_account, secret_matches
 from app.core.settings import settings
 from app.core.redis import get_redis
-from app.db.models.database import Base
+from app.db.models.database import Base, Sessions, User
+from app.libs.formats.datetime import has_expired
 from uuid import UUID
 
 
@@ -49,19 +54,80 @@ async def connection_status(db, user_id):
     return {'configured': configured(), 'connected': row is not None, 'login': row.login if row else None, 'read_only': True}
 
 
-async def authorize(payload, scope):
+async def authorize(payload, scope, *, bind_state=False):
     if not configured():
         raise HTTPException(503, 'Kết nối GitHub chưa được bật trên hệ thống. Vui lòng liên hệ quản trị viên.')
     state = secrets.token_urlsafe(32)
     verifier = secrets.token_urlsafe(64)
     challenge = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).decode().rstrip('=')
-    await get_redis().set(f'github:oauth:{state}', json.dumps({**payload, 'verifier':verifier}), ex=600, nx=True)
+    saved = {**payload, 'verifier': verifier}
+    if bind_state:
+        saved['state_hash'] = hashlib.sha256(state.encode('ascii')).hexdigest()
+    created = await get_redis().set(f'github:oauth:{state}', json.dumps(saved), ex=600, nx=True)
+    if bind_state and not created:
+        raise HTTPException(503, 'Chưa khởi tạo được đăng nhập GitHub.')
     return {'authorize_url': 'https://github.com/login/oauth/authorize?' + urlencode({'client_id':settings.GITHUB_OAUTH_CLIENT_ID,
         'redirect_uri':redirect_uri(),'scope':scope,'state':state,'code_challenge':challenge,'code_challenge_method':'S256'})}
 
 
-async def begin(db, user_id, sid):
-    return await authorize({'purpose':'connect','user_id':str(user_id),'sid':str(sid)}, 'read:user repo')
+async def begin(db, user_id, sid, *, jkt=None):
+    payload = {'purpose': 'connect', 'user_id': str(user_id), 'sid': str(sid)}
+    if jkt is not None:
+        payload.update(purpose='connect_dpop', jkt=jkt)
+    try:
+        return await authorize(payload, 'read:user repo', bind_state=jkt is not None)
+    except RedisError:
+        raise HTTPException(503, 'Chưa thể khởi tạo liên kết GitHub.') from None
+
+
+def _connect_grant_key(handle: str) -> str:
+    return 'github:connect:finish:' + hashlib.sha256(handle.encode('ascii')).hexdigest()
+
+
+async def stage_dpop_connection_async(state: str, code: str, raw: str, saved: dict) -> str:
+    if not re.fullmatch(r'[A-Za-z0-9_-]{43}', state) or not secret_matches(
+        saved.get('state_hash'), hashlib.sha256(state.encode('ascii')).hexdigest(),
+    ):
+        raise AuthError('invalid_token')
+    try:
+        redis = get_redis()
+        if await redis.getdel(f'github:oauth:{state}') != raw:
+            raise AuthError('invalid_token')
+        handle = secrets.token_urlsafe(32)
+        key = _connect_grant_key(handle)
+        grant = {field: saved[field] for field in ('user_id', 'sid', 'jkt', 'verifier')}
+        grant['code'] = code
+        if await redis.set(key, seal_auth_payload(grant, key), ex=60, nx=True):
+            return handle
+    except RedisError:
+        pass
+    raise HTTPException(503, 'Chưa thể hoàn tất liên kết GitHub.')
+
+
+async def finish_dpop_connection_async(db, identity, handle: str) -> dict:
+    if identity.jkt is None or not re.fullmatch(r'[A-Za-z0-9_-]{43}', handle):
+        raise AuthError('invalid_token')
+    try:
+        redis = get_redis()
+        key = _connect_grant_key(handle)
+        raw = await redis.get(key)
+        grant = open_auth_payload(raw, key)
+        if (grant is None or grant['user_id'] != str(identity.user_id) or grant['sid'] != str(identity.sid)
+                or not secret_matches(grant['jkt'], identity.jkt) or await redis.getdel(key) != raw):
+            raise AuthError('invalid_token')
+    except RedisError:
+        raise HTTPException(503, 'Chưa thể hoàn tất liên kết GitHub.') from None
+
+    exchanged = await exchange_code(grant['code'], grant['verifier'])
+    profile = await identity_profile(exchanged['access_token'])
+    user = await db.scalar(select(User).where(User.id == identity.user_id).with_for_update(read=True)
+                           .execution_options(populate_existing=True))
+    require_active_account(user)
+    session = await db.get(Sessions, identity.sid, populate_existing=True, with_for_update={'read': True})
+    if (session is None or session.user_id != identity.user_id or session.is_revoked is not False
+            or has_expired(session.expired_at) or not secret_matches(session.dpop_jkt, identity.jkt)):
+        raise AuthError('session_revoked')
+    return await _store_connection_async(db, identity.user_id, profile, exchanged)
 
 
 async def exchange_code(code, verifier):
@@ -105,12 +171,16 @@ async def complete(db, user_id, sid, state, code):
     if saved.get('purpose', 'connect') != 'connect':
         raise HTTPException(400, 'Phiên xác thực không dùng để kết nối repository')
     exchanged = await exchange_code(code, saved['verifier'])
-    token = exchanged['access_token']
-    profile = await identity_profile(token)
-    row = await db.get(GitHubConnection, user_id)
+    profile = await identity_profile(exchanged['access_token'])
+    return await _store_connection_async(db, user_id, profile, exchanged)
+
+
+async def _store_connection_async(db, user_id, profile, exchanged):
+    row = await db.get(GitHubConnection, user_id, with_for_update=True)
     if not row:
         row = GitHubConnection(user_id=user_id)
         db.add(row)
+    row.encrypted_refresh_token = None
     row.github_user_id, row.login = profile['id'], profile['login']
     store_credentials(row, exchanged)
     await db.commit()

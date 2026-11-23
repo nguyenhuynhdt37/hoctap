@@ -3,7 +3,7 @@ import asyncio
 import json
 from uuid import UUID
 
-from fastapi import WebSocket, APIRouter, Depends, Header, HTTPException, Query, Request, UploadFile, File
+from fastapi import WebSocket, APIRouter, Depends, Header, HTTPException, Query, Request, Response, UploadFile, File
 from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,7 +18,9 @@ from app.agent.contracts import (
 )
 from app.agent.runtime import AgentService
 from app.core.deps import AuthorizationService
+from app.core.security import AuthError
 from app.core.settings import settings
+from app.schemas.auth.github import GitHubConnectFinishRequest
 from app.services.shares.auth import AuthService
 from app.db.models.agent import AgentEvent
 from app.db.sesson import AsyncSessionLocal, get_session
@@ -166,14 +168,33 @@ async def github_status(service: AgentService = Depends(agent_service)):
 
 
 @router.post('/github/connect')
-async def github_connect(service: AgentService = Depends(agent_service)):
+async def github_connect(
+    response: Response,
+    authorization: AuthorizationService = Depends(AuthorizationService),
+    service: AgentService = Depends(agent_service),
+):
     from app.agent.github_connection import begin
     await service.principal_async()
-    return await begin(service.db, service.user.id, service.auth_sid)
+    identity = await authorization.get_current_identity()
+    response.headers['Cache-Control'] = 'no-store'
+    return await begin(service.db, identity.user_id, identity.sid, jkt=identity.jkt)
+
+
+@router.post('/github/finish')
+async def github_connect_finish(
+    body: GitHubConnectFinishRequest,
+    response: Response,
+    authorization: AuthorizationService = Depends(AuthorizationService),
+    service: AgentService = Depends(agent_service),
+):
+    from app.agent.github_connection import finish_dpop_connection_async
+    identity = await authorization.get_current_identity()
+    response.headers['Cache-Control'] = 'no-store'
+    return await finish_dpop_connection_async(service.db, identity, body.handle.get_secret_value())
 
 
 @router.get('/github/callback')
-async def github_callback(
+async def github_callback_async(
     request: Request,
     state: str = Query(min_length=20, max_length=150),
     code: str | None = Query(default=None, min_length=1, max_length=500),
@@ -181,8 +202,8 @@ async def github_callback(
     auth_service: AuthService = Depends(AuthService),
     authorization: AuthorizationService = Depends(AuthorizationService),
 ):
-    from app.services.shares.github_auth import callback_response
-    return await callback_response(request, state, code, error, auth_service, authorization)
+    from app.services.shares.github_auth import callback_response_async
+    return await callback_response_async(request, state, code, error, auth_service, authorization)
 
 
 @router.delete('/github')
@@ -257,8 +278,15 @@ async def transcribe_assistant_audio(file: UploadFile = File(...), service: Agen
 
 
 @router.post('/dictation-ticket')
-async def dictation_ticket(service: AgentService = Depends(agent_service)):
+async def dictation_ticket(
+    response: Response, service: AgentService = Depends(agent_service),
+    auth: AuthorizationService = Depends(AuthorizationService),
+):
     from app.agent.dictation import ticket
+
+    if (await auth.get_current_identity()).jkt is not None:
+        raise AuthError("invalid_dpop_proof", use_dpop_proof=True)
+    response.headers["Cache-Control"] = "no-store"
     return await ticket(service)
 
 

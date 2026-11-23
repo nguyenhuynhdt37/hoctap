@@ -34,6 +34,7 @@ class RefreshEmail(BaseModel):
 class VerifyEmail(BaseModel):
     email: EmailStr
     code: str
+    new_password: Annotated[str, Field(min_length=6, max_length=72)] | None = Field(default=None, repr=False)
 
 
 class RoleOut(BaseModel):
@@ -56,7 +57,7 @@ class BlockUser(BaseModel):
 
 
 class GoogleLogin(BaseModel):
-    credential: str
+    credential: str = Field(repr=False, description="ID token do Google cấp.")
     device_type: str | None = None
 
 

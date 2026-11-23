@@ -1,31 +1,33 @@
 from __future__ import annotations
 
 import asyncio
-import hmac
-import json
 from datetime import timedelta
 from typing import Any
 from uuid import UUID
 
-from fastapi import Depends, HTTPException, Response, status
+from fastapi import Depends, HTTPException, Request, Response, status
 from fastapi.encoders import jsonable_encoder
 from google.auth.transport import requests
 from google.oauth2 import id_token
 from loguru import logger
 from redis.exceptions import RedisError
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, select, text, update
+from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlalchemy.sql.expression import desc
 
+from app.core.auth_encryption import open_auth_payload, seal_auth_payload
 from app.core.redis import get_redis
-from app.core.security import SecurityService
+from app.core.security import AuthError, SecurityService, authenticate_dpop, dpop_header, require_active_account, secret_matches
 from app.core.settings import settings
 from app.core.ws_manager import ws_manager
-from app.db.models.database import EmailVerifications, Role, Sessions, User, UserRoles
+from app.db.models.database import EmailVerifications, Role, Sessions, SpentRefreshTokens, User, UserRoles
+from app.db.models.user_identity import UserIdentity
 from app.db.sesson import get_session
 from app.libs.formats.datetime import now as get_now
-from app.libs.formats.datetime import strip_tz, has_expired, now_tzinfo
+from app.libs.formats.datetime import has_expired, now_tzinfo
 from app.schemas.auth.user import (
     GoogleLogin,
     LoginUser,
@@ -37,8 +39,30 @@ from app.schemas.auth.user import (
 )
 from app.schemas.shares.notification import NotificationCreateSchema
 from app.services.shares.mailer import MailerService
+from app.services.shares.otp import LOGIN, OTP_TTL, VERIFY_EMAIL, limit_attempt_async, limit_issue_async
 from app.services.shares.notification import NotificationService
 from app.services.shares.wallets import WalletsService
+
+
+REFRESH_GRACE_SECONDS = 15
+REFRESH_RETRY_SECONDS = 300
+REFRESH_CACHE_PREFIX = "auth:refresh:result:v2:"
+GOOGLE_PROVIDER = "google"
+LEGACY_GOOGLE_PASSWORD = "google-oauth"
+
+
+def _invalid_google_token(*, bound: bool) -> HTTPException:
+    if bound:
+        return AuthError("invalid_token")
+    return HTTPException(400, "Không thể xác thực thông tin đăng nhập Google.")
+
+
+async def revoke_user_sessions_async(db: AsyncSession, user_id: UUID) -> None:
+    # Flush the account state first to keep the same user -> session lock order as refresh.
+    await db.flush()
+    await db.execute(update(Sessions).where(
+        Sessions.user_id == user_id, Sessions.is_revoked.is_not(True),
+    ).values(is_revoked=True))
 
 
 class AuthService:
@@ -63,40 +87,56 @@ class AuthService:
                 detail={
                     "error_code": "MAIL_SEND_FAILED",
                     "message": "Không gửi được email. Vui lòng kiểm tra SMTP hoặc đổi tài khoản gửi mail.",
-                    "provider_error": str(exc),
                 },
             ) from exc
 
-    async def _create_session(self, user_id: Any, res: Response, user_agent: str | None = None, ip: str | None = None):
-        # 1. Tạo session_id và refresh_token
-        refresh_token = await self.security.generate_refresh_token()
-        refresh_token_hash = await self.security.hash_token(refresh_token)
+    async def _login_jkt(self, request: Request | None) -> str | None:
+        proof = dpop_header(request) if request is not None else None
+        if proof is not None:
+            return await authenticate_dpop(request, proof)
+        if not (settings.AUTH_ALLOW_COOKIE_COMPAT or settings.AUTH_ALLOW_UNBOUND_BEARER):
+            raise AuthError("invalid_dpop_proof", use_dpop_proof=True)
+        return None
 
-        # 2. Lưu vào DB (Sessions)
+    async def _create_session(
+        self, user_id: Any, res: Response, user_agent: str | None = None,
+        ip: str | None = None, *, jkt: str | None = None,
+    ):
+        refresh_token = await self.security.generate_refresh_token()
         new_session = Sessions(
             user_id=user_id,
-            refresh_token_hash=refresh_token_hash,
+            refresh_token_hash=await self.security.hash_token(refresh_token),
+            dpop_jkt=jkt,
             user_agent=user_agent,
             ip_address=ip,
-            expired_at=now_tzinfo() + timedelta(days=30) # Refresh token sống 30 ngày
+            expired_at=now_tzinfo() + timedelta(days=30),
         )
         self.db.add(new_session)
-        await self.db.flush() # Để lấy new_session.id gán vào JWT
+        await self.db.flush()
+        result = await self._session_tokens(new_session, refresh_token, "Login successful")
+        self._set_token_response(res, result, bound=jkt is not None)
+        return result
 
-        # 3. Tạo Access Token (chứa sid)
-        access_token = await self.security.create_access_token(sub=str(user_id), sid=str(new_session.id))
-
-        self._set_session_cookies(res, access_token, refresh_token)
-        return {
-            "message": "Login successful",
-            "session_id": str(new_session.id),
-            "access_token": access_token,
+    async def _session_tokens(self, session: Sessions, refresh_token: str, message: str) -> dict:
+        result = {
+            "message": message,
+            "session_id": str(session.id),
+            "expired_at": session.expired_at,
             "refresh_token": refresh_token,
-            "expired_at": new_session.expired_at
+            "access_token": await self.security.create_access_token(
+                str(session.user_id), str(session.id), jkt=session.dpop_jkt,
+            ),
         }
+        if session.dpop_jkt is not None:
+            result.update(token_type="DPoP", expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60)
+        return result
+
+    def _set_token_response(self, res: Response, result: dict, *, bound: bool) -> None:
+        res.headers["Cache-Control"] = "no-store"
+        if not bound and settings.AUTH_ALLOW_COOKIE_COMPAT:
+            self._set_session_cookies(res, result["access_token"], result["refresh_token"])
 
     def _set_session_cookies(self, res, access_token, refresh_token):
-        res.headers["Cache-Control"] = "no-store"
         for name, value, max_age in [
             ("access_token", access_token, int(float(settings.ACCESS_TOKEN_EXPIRE_MINUTES) * 60)),
             ("refresh_token", refresh_token, 60 * 60 * 24 * 30),
@@ -187,7 +227,11 @@ class AuthService:
             
         return "WEB"
 
-    async def login_async(self, schema: LoginUser, res: Response, user_agent: str | None = None, ip: str | None = None):
+    async def login_async(
+        self, schema: LoginUser, res: Response, user_agent: str | None = None,
+        ip: str | None = None, *, request: Request | None = None,
+    ):
+        jkt = await self._login_jkt(request)
         try:
             stmt = (
                 select(User)
@@ -198,17 +242,9 @@ class AuthService:
             user: User | None = result.scalar()
 
             # 1️⃣ KHÔNG TÌM THẤY USER HOẶC SAI MẬT KHẨU
-            if not user:
-                raise HTTPException(
-                    status_code=401,
-                    detail={
-                        "error_code": "INVALID_CREDENTIALS",
-                        "message": "Email hoặc mật khẩu không đúng",
-                    },
-                )
-            if not await self.security.verify_password(
-                schema.password, user.password or ""
-            ):
+            if not user or not await self.security.verify_password(schema.password, user.password or ""):
+                if jkt is not None:
+                    raise AuthError("invalid_token")
                 raise HTTPException(
                     status_code=401,
                     detail={
@@ -264,7 +300,7 @@ class AuthService:
                     )
 
             # 5️⃣ TẠO PHIÊN (SESSION) MỚI
-            login_result = await self._create_session(user.id, res, user_agent, ip)
+            login_result = await self._create_session(user.id, res, user_agent, ip, jkt=jkt)
             
             # Cập nhật last_login_at
             user.last_login_at = get_now()
@@ -284,134 +320,124 @@ class AuthService:
             raise
 
     async def check_email_async(self, email: str) -> dict[str, Any]:
-        existing_id = (
-            await self.db.scalars(select(User.id).where(User.email == email))
-        ).first()
-        if existing_id:
+        user = await self.db.scalar(select(User).where(User.email == email))
+        if user is not None and (user.is_verified_email or user.deleted_at or user.is_banned):
             return {"available": False, "message": "Email đã được sử dụng"}
         return {"available": True, "message": "Email khả dụng"}
 
-    async def register_async(self, schema: UserCreate) -> dict[str, Any]:
+    async def _issue_otp_async(
+        self, user: User, purpose: str, *, pending_password_hash: str | None = None,
+    ) -> None:
+        # Callers lock existing users before replacing their challenge.
+        await self.db.execute(delete(EmailVerifications).where(
+            EmailVerifications.user_id == user.id,
+            EmailVerifications.purpose == purpose,
+        ))
+        code = await self.security.generate_otp()
+        self.db.add(EmailVerifications(
+            user_id=user.id, purpose=purpose, code=code,
+            expired_at=get_now() + timedelta(seconds=OTP_TTL),
+            pending_password_hash=pending_password_hash,
+        ))
+        send = (self.mail_service.send_verification_email if purpose == VERIFY_EMAIL
+                else self.mail_service.send_login_otp_email)
+        await self.db.commit()
+        await self._send_mail_or_503(send(email=user.email, fullname=user.fullname or "", code=code))
+
+    async def register_async(self, schema: UserCreate, *, ip: str | None = None) -> dict[str, Any]:
+        await limit_issue_async(schema.email, VERIFY_EMAIL, ip)
+        password_hash = await self.security.hash_password(schema.password)
         try:
-            existing_id = (
-                await self.db.scalars(select(User.id).where(User.email == schema.email))
-            ).first()
-            if existing_id:
+            user = await self.db.scalar(select(User).where(User.email == schema.email).with_for_update())
+            if user is not None and (user.is_verified_email or user.deleted_at or user.is_banned):
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
                     detail={"error_code": "EMAIL_TAKEN", "message": "Email đã được sử dụng"},
                 )
-            new_user = User()
-            new_user.email = schema.email
-            new_user.fullname = schema.full_name if schema.full_name else ""
-            password_hash = await self.security.hash_password(schema.password)
-            new_user.password = password_hash
-            new_user.create_at = get_now()
-            self.db.add(new_user)
-            await self.db.flush()
-
-            # ✅ GÁN ROLE USER MẶC ĐỊNH NGAY KHI TẠO TÀI KHOẢN
-            role = await self.db.scalar(select(Role).where(Role.role_name == "USER"))
-            if not role:
-                role = Role(
-                    role_name="USER",
-                    details="Customers use the service of the system",
-                )
-                self.db.add(role)
+            if user is None:
+                user = User(email=schema.email, fullname=schema.full_name or "", password="", create_at=get_now())
+                self.db.add(user)
                 await self.db.flush()
-            self.db.add(UserRoles(user_id=new_user.id, role_id=role.id))
-
-            code = await self.security.generate_otp()
-            expired_at = get_now() + timedelta(minutes=10)
-            verification = EmailVerifications(
-                user_id=new_user.id, code=code, expired_at=expired_at
-            )
-            self.db.add(verification)
-            await self._send_mail_or_503(
-                self.mail_service.send_verification_email(
-                    schema.email, schema.full_name or "", code
-                )
-            )
-            await self.db.commit()
+                role = await self.db.scalar(select(Role).where(Role.role_name == "USER"))
+                if not role:
+                    role = Role(role_name="USER", details="Customers use the service of the system")
+                    self.db.add(role)
+                    await self.db.flush()
+                self.db.add(UserRoles(user_id=user.id, role_id=role.id))
+            else:
+                user.password = ""
+                user.fullname = schema.full_name or ""
+            await self._issue_otp_async(user, VERIFY_EMAIL, pending_password_hash=password_hash)
             return {"message": "send Email ok"}
         except Exception:
             await self.db.rollback()
             raise
 
-    async def logout_async(self, res: Response, sid: str | None = None):
+    async def logout_async(self, res: Response, *, sid: UUID, user_id: UUID, bound: bool):
         try:
-            if sid:
-                # Vô hiệu hóa session trong DB
-                stmt = select(Sessions).where(Sessions.id == sid)
-                session = (await self.db.execute(stmt)).scalar_one_or_none()
-                if session:
-                    session.is_revoked = True
-                    await self.db.commit()
+            stmt = select(Sessions).where(Sessions.id == sid, Sessions.user_id == user_id).with_for_update()
+            session = (await self.db.execute(stmt)).scalar_one_or_none()
+            if not session:
+                raise AuthError("session_revoked")
+            session.is_revoked = True
+            await self.db.commit()
 
-            # Xóa cookies
-            res.delete_cookie(key="access_token", path="/")
-            res.delete_cookie(key="refresh_token", path="/")
+            if not bound and settings.AUTH_ALLOW_COOKIE_COMPAT:
+                res.delete_cookie(key="access_token", path="/")
+                res.delete_cookie(key="refresh_token", path="/")
             return "Logout done"
         except Exception:
             await self.db.rollback()
             raise
 
-    async def refesh_email_async(self, schema: RefreshEmail):
+    async def refesh_email_async(self, schema: RefreshEmail, *, ip: str | None = None):
+        await limit_issue_async(schema.email, VERIFY_EMAIL, ip)
         try:
-            today_start = get_now().replace(hour=0, minute=0, second=0, microsecond=0)
-            tomorrow_start = today_start + timedelta(days=1)
-            user = (
-                await self.db.scalars(select(User).where(User.email == schema.email))
-            ).first()
+            user = await self.db.scalar(select(User).where(User.email == schema.email).with_for_update())
             if not user:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND, detail={"error_code": "USER_NOT_FOUND", "message": "Không tìm thấy người dùng"}
-                )
+                raise HTTPException(404, {"error_code": "USER_NOT_FOUND", "message": "Không tìm thấy người dùng"})
+            if user.deleted_at or user.is_banned:
+                raise HTTPException(403, "Tài khoản đã bị khóa hoặc xóa.")
             if user.is_verified_email:
-                raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT, detail={"error_code": "EMAIL_ALREADY_VERIFIED", "message": "Email đã được xác thực"}
-                )
-
-            stmt = (
-                select(func.count())
-                .select_from(EmailVerifications)
-                .join(User, User.id == EmailVerifications.user_id)
-                .where(
-                    User.id == user.id,
-                    EmailVerifications.created_at >= today_start,
-                    EmailVerifications.created_at < tomorrow_start,
-                )
-            )
-            count_result = await self.db.execute(stmt)
-            verification_count = count_result.scalar_one()
-            # return verification_count
-            if verification_count > 5:
-                raise HTTPException(
-                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                    detail="Bạn đã gửi quá 5 lần trong hôm nay",
-                )
-            code = await self.security.generate_otp()
-            self.db.add(
-                EmailVerifications(
-                    user_id=user.id,
-                    code=code,
-                    expired_at=get_now() + timedelta(minutes=10),
-                )
-            )
-            await self.db.flush()
-            await self._send_mail_or_503(
-                self.mail_service.send_verification_email(
-                    email=schema.email, fullname=user.fullname or "", code=code
-                )
-            )
-            await self.db.commit()
+                raise HTTPException(409, {"error_code": "EMAIL_ALREADY_VERIFIED", "message": "Email đã được xác thực"})
+            # An email-only resend cannot endorse a password from an earlier registration.
+            user.password = ""
+            await self._issue_otp_async(user, VERIFY_EMAIL)
             return True
-
         except Exception:
             await self.db.rollback()
             raise
 
-    async def verify_email_async(self, schema: VerifyEmail, res: Response):
+    async def _check_otp_async(
+        self, user: User, purpose: str, submitted: str,
+        ip: str | None, error: HTTPException,
+    ) -> EmailVerifications:
+        verification = await self.db.scalar(
+            select(EmailVerifications).where(
+                EmailVerifications.user_id == user.id,
+                EmailVerifications.purpose == purpose,
+            ).order_by(desc(EmailVerifications.created_at), desc(EmailVerifications.id)).limit(1)
+        )
+        await limit_attempt_async(str(user.id), str(verification.id) if verification else None, ip)
+        if (not verification or has_expired(verification.expired_at)
+                or not secret_matches(submitted.strip(), verification.code)):
+            raise error
+        return verification
+
+    async def _consume_otp_async(self, user: User, verification: EmailVerifications, error: HTTPException):
+        consumed = await self.db.scalar(
+            delete(EmailVerifications).where(
+                EmailVerifications.id == verification.id,
+                EmailVerifications.user_id == user.id,
+                EmailVerifications.purpose == verification.purpose,
+                EmailVerifications.expired_at > get_now(),
+            ).returning(EmailVerifications.id)
+        )
+        if consumed != verification.id:
+            raise error
+
+    async def verify_email_async(self, schema: VerifyEmail, res: Response, *, request: Request | None = None):
+        jkt = await self._login_jkt(request)
         try:
             user: User | None = await self.db.scalar(
                 select(User)
@@ -434,36 +460,19 @@ class AuthService:
                     status_code=status.HTTP_409_CONFLICT,
                     detail="Người dùng đã xác thực email",
                 )
-            email_verify = (
-                await self.db.scalars(
-                    select(EmailVerifications)
-                    .where(EmailVerifications.user_id == user.id)
-                    .order_by(desc(EmailVerifications.created_at))
-                )
-            ).first()
-            if not email_verify:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Mã xác thực không hợp lệ hoặc đã hết hạn.",
-                )
-            if email_verify.expired_at < get_now():
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Mã xác thực không hợp lệ hoặc đã hết hạn.",
-                )
-            submitted_code = (schema.code or "").strip()
-            stored_code = (email_verify.code or "").strip()
-            if not submitted_code or not hmac.compare_digest(stored_code, submitted_code):
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Mã xác thực không hợp lệ hoặc đã hết hạn.",
-                )
-
-            await self.db.execute(
-                delete(EmailVerifications).where(EmailVerifications.user_id == user.id)
-            )
-
-            # User đã được gán role USER từ lúc register, chỉ cần cập nhật trạng thái
+            error = HTTPException(400, "Mã xác thực không hợp lệ hoặc đã hết hạn.")
+            ip = request.client.host if request is not None and request.client else None
+            verification = await self._check_otp_async(user, VERIFY_EMAIL, schema.code, ip, error)
+            password_hash = (await self.security.hash_password(schema.new_password)
+                             if schema.new_password is not None else verification.pending_password_hash)
+            await self.db.refresh(user, attribute_names=["is_verified_email", "is_banned", "deleted_at"],
+                                  with_for_update=True)
+            if user.deleted_at or user.is_banned:
+                raise HTTPException(403, "Tài khoản đã bị khóa hoặc xóa.")
+            if user.is_verified_email:
+                raise HTTPException(409, "Người dùng đã xác thực email")
+            await self._consume_otp_async(user, verification, error)
+            user.password = password_hash or ""
             user.is_verified_email = True
             user.email_verified_at = get_now()
             user.update_at = get_now()
@@ -472,7 +481,7 @@ class AuthService:
             user.last_login_at = get_now()
             
             # Tạo session mới
-            login_result = await self._create_session(user.id, res)
+            login_result = await self._create_session(user.id, res, jkt=jkt)
             
             # Tự động tạo ví cho người dùng mới xác thực
             await self.wallet_service.get_or_create_wallet_async(user.id)
@@ -555,7 +564,109 @@ class AuthService:
             "updated_at": user.update_at,
         }
 
-    async def login_google_async(self, schema: GoogleLogin, res: Response, user_agent: str | None = None, ip: str | None = None):
+    async def _create_google_user(self, email: str, info: dict[str, Any]) -> User | None:
+        fullname = info.get("name")
+        avatar = info.get("picture")
+        now = get_now()
+        user = await self.db.scalar(
+            insert(User).values(
+                email=email,
+                fullname=fullname if isinstance(fullname, str) else "",
+                avatar=avatar if isinstance(avatar, str) else None,
+                password="",
+                is_verified_email=True,
+                email_verified_at=now,
+                create_at=now,
+                update_at=now,
+            ).on_conflict_do_nothing(index_elements=[User.email]).returning(User)
+        )
+        if user is None:
+            return None
+
+        role_query = select(Role.id).where(Role.role_name == "USER")
+        role_id = await self.db.scalar(role_query)
+        if role_id is None:
+            await self.db.execute(
+                insert(Role).values(role_name="USER", details="Default customer role")
+                .on_conflict_do_nothing(index_elements=[Role.role_name])
+            )
+            role_id = (await self.db.execute(role_query)).scalar_one()
+        self.db.add(UserRoles(user_id=user.id, role_id=role_id))
+        return user
+
+    @staticmethod
+    def _require_active_google_account(user: User) -> None:
+        if user.deleted_at is not None or user.is_banned:
+            raise HTTPException(403, "Tài khoản đã bị khóa hoặc xóa.")
+
+    async def _resolve_google_user(self, subject: str, info: dict[str, Any], *, bound: bool) -> User:
+        linked_user_query = (
+            select(User).join(UserIdentity, UserIdentity.user_id == User.id)
+            .where(
+                UserIdentity.provider == GOOGLE_PROVIDER,
+                UserIdentity.provider_subject == subject,
+            ).with_for_update(of=User)
+        )
+        user = await self.db.scalar(linked_user_query)
+        if user is None:
+            # Serialize first logins for the same subject, including when their emails differ.
+            await self.db.execute(
+                text("SELECT pg_advisory_xact_lock(hashtextextended(:key, 0))"),
+                {"key": f"google-login:{subject}"},
+            )
+            user = await self.db.scalar(linked_user_query)
+        if user is not None:
+            self._require_active_google_account(user)
+            return user
+
+        email = info.get("email")
+        if (
+            not isinstance(email, str) or len(email) > 254 or email.count("@") != 1
+            or email.startswith("@") or email.endswith("@")
+            or any(char.isspace() or char == "\0" for char in email)
+        ):
+            raise _invalid_google_token(bound=bound)
+
+        by_email = select(User).where(User.email == email).with_for_update()
+        user = await self.db.scalar(by_email)
+        if user is None:
+            user = await self._create_google_user(email, info)
+            if user is not None:
+                self.db.add(UserIdentity(
+                    provider=GOOGLE_PROVIDER, provider_subject=subject, user_id=user.id, email_at_link=email,
+                ))
+                return user
+            # Another signup inserted this email after the first lookup.
+            user = await self.db.scalar(by_email)
+            if user is None:
+                raise HTTPException(409, "Chưa thể đăng nhập Google. Vui lòng thử lại.")
+
+        self._require_active_google_account(user)
+        # Google controls consumer Gmail addresses. Neither a current Workspace
+        # address nor a verified third-party email proves historical ownership.
+        can_link_legacy = (
+            user.password == LEGACY_GOOGLE_PASSWORD and user.is_verified_email is True
+            and email.rsplit("@", 1)[1].lower() == "gmail.com" and "hd" not in info
+        )
+        if not can_link_legacy or await self.db.scalar(
+            select(UserIdentity.user_id).where(
+                UserIdentity.user_id == user.id, UserIdentity.provider == GOOGLE_PROVIDER,
+            )
+        ) is not None:
+            raise HTTPException(
+                409, "Không thể tự liên kết tài khoản với Google. Vui lòng dùng cách đăng nhập trước đây hoặc liên hệ hỗ trợ.",
+            )
+
+        self.db.add(UserIdentity(
+            provider=GOOGLE_PROVIDER, provider_subject=subject, user_id=user.id, email_at_link=email,
+        ))
+        return user
+
+    async def login_google_async(
+        self, schema: GoogleLogin, res: Response, user_agent: str | None = None,
+        ip: str | None = None, *, request: Request | None = None,
+    ):
+        jkt = await self._login_jkt(request)
         client_id = settings.GOOGLE_API_CLIENT_ID_LOGIN_GOOGLE.strip()
         if not client_id:
             raise HTTPException(
@@ -568,54 +679,20 @@ class AuthService:
                 requests.Request(),
                 client_id,
             )
+        except Exception:
+            raise _invalid_google_token(bound=jkt is not None) from None
 
-            email = info.get("email")
-            fullname = info.get("name")
-            avatar = info.get("picture")
+        subject = info.get("sub")
+        if (
+            info.get("email_verified") is not True
+            or not isinstance(subject, str) or not 1 <= len(subject) <= 255
+            or not all("!" <= char <= "~" for char in subject)
+        ):
+            raise _invalid_google_token(bound=jkt is not None)
 
-            if not email:
-                raise HTTPException(400, "Google không trả về email hợp lệ")
-
-            # 2) TÌM USER TRONG DB
-            stmt = (
-                select(User)
-                .where(User.email == email)
-                .options(selectinload(User.user_roles).selectinload(UserRoles.role))
-            )
-            user = (await self.db.execute(stmt)).scalar_one_or_none()
-
-            # 3) TỰ TẠO USER MỚI (khi chưa có)
-            if not user:
-                user = User(
-                    email=email,
-                    fullname=fullname or "",
-                    avatar=avatar,
-                    password="google-oauth",
-                    is_verified_email=True,
-                    email_verified_at=get_now(),
-                    create_at=get_now(),
-                    update_at=get_now(),
-                )
-                self.db.add(user)
-                await self.db.flush()
-
-                role = await self.db.scalar(select(Role).where(Role.role_name == "USER"))
-                if not role:
-                    role = Role(role_name="USER", details="Default customer role")
-                    self.db.add(role)
-                    await self.db.flush()
-                self.db.add(UserRoles(user_id=user.id, role_id=role.id))
-                await self.db.commit()
-                await self.db.refresh(user)
-
-            # 4) CHECK BANNED / DELETED
-            if user.deleted_at or user.is_banned:
-                raise HTTPException(status_code=403, detail="Tài khoản đã bị khóa hoặc xóa")
-
-            # 6) TẠO PHIÊN (SESSION) MỚI
-            login_result = await self._create_session(user.id, res, user_agent, ip)
-            
-            # Cập nhật last_login_at
+        try:
+            user = await self._resolve_google_user(subject, info, bound=jkt is not None)
+            login_result = await self._create_session(user.id, res, user_agent, ip, jkt=jkt)
             user.last_login_at = get_now()
             await self.db.commit()
             await self._broadcast_new_session(
@@ -626,76 +703,203 @@ class AuthService:
                 login_method="google",
                 explicit_device_type=schema.device_type,
             )
-            
             return login_result
 
-        except HTTPException:
-            raise
-        except Exception as e:
-            import traceback
-            print("Google login error detail:", str(e))
-            traceback.print_exc()
+        except DBAPIError:
             await self.db.rollback()
-            raise HTTPException(400, f"Token Google không hợp lệ: {e!s}")
+            raise HTTPException(503, "Chưa thể đăng nhập Google. Vui lòng thử lại.") from None
+        except Exception:
+            await self.db.rollback()
+            raise
 
-    async def refresh_token_async(self, refresh_token: str | None, res: Response, user_agent: str | None = None, ip: str | None = None):
-        if not refresh_token:
-            raise HTTPException(status_code=401, detail={"error_code": "MISSING_REFRESH_TOKEN", "message": "Thiếu mã làm mới phiên"})
+    async def _authorize_refresh_async(
+        self, jkt: str | None, token: str, request: Request | None, proof: str | None, from_cookie: bool,
+    ) -> None:
+        if jkt is not None:
+            if from_cookie or request is None:
+                raise AuthError("invalid_dpop_proof", use_dpop_proof=True)
+            await authenticate_dpop(request, proof, hash_claim="rth", token=token, expected_jkt=jkt)
+        elif proof is not None:
+            raise AuthError("invalid_dpop_proof")
+        elif not (settings.AUTH_ALLOW_COOKIE_COMPAT if from_cookie else settings.AUTH_ALLOW_UNBOUND_BEARER):
+            raise AuthError("invalid_token")
 
+    async def _find_refresh_session_async(self, token_hash: str) -> Sessions | None:
+        for column in (Sessions.refresh_token_hash, Sessions.previous_refresh_hash):
+            session = await self.db.scalar(select(Sessions).where(column == token_hash))
+            if session is not None:
+                return session
+        return None
+
+    async def _refresh_grace_async(self, redis, token_hash: str, session_id: UUID | None):
+        # Resolve the Redis chain before taking a row lock. Validate its tip against the locked row.
+        candidate = None
+        for _ in range(5):
+            cache_key = REFRESH_CACHE_PREFIX + token_hash
+            result = open_auth_payload(await redis.get(cache_key), cache_key)
+            if not result:
+                break
+            if session_id is None:
+                session_id = UUID(result["session_id"])
+            if result["session_id"] != str(session_id):
+                break
+            token_hash = await self.security.hash_token(result["refresh_token"])
+            candidate = (result, token_hash)
+        return session_id, candidate
+
+    async def refresh_token_async(
+        self, refresh_token: str | None, res: Response, *, request: Request | None = None,
+        from_cookie: bool = False, operation_id: UUID | None = None,
+    ):
+        if (
+            not isinstance(refresh_token, str) or not refresh_token
+            or not refresh_token.isascii() or len(refresh_token) > 2048
+            or (from_cookie and not settings.AUTH_ALLOW_COOKIE_COMPAT)
+        ):
+            raise AuthError("invalid_token")
+
+        proof = dpop_header(request) if request is not None else None
         token_hash = await self.security.hash_token(refresh_token)
         redis = get_redis()
-        key = "auth:refresh:result:" + token_hash
-        lock = redis.lock("auth:refresh:lock:" + token_hash, timeout=30, blocking_timeout=10)
+        cache_key = REFRESH_CACHE_PREFIX + token_hash
+        lock = redis.lock("auth:refresh:lock:" + token_hash, timeout=15, blocking_timeout=0.5)
         try:
-            acquired = await lock.acquire()
-        except RedisError:
+            async with asyncio.timeout(2):
+                acquired = await lock.acquire()
+        except (RedisError, TimeoutError):
             raise HTTPException(503, "Chưa thể làm mới phiên. Vui lòng thử lại.") from None
         if not acquired:
             raise HTTPException(503, "Phiên đang được làm mới. Vui lòng thử lại.")
-        try:
-            # A short grace period makes concurrent page/API/tab refreshes return
-            # the same rotation. Never reissue credentials for a revoked session.
-            cached = await redis.get(key)
-            for _ in range(5):
-                if not cached:
-                    break
-                result = json.loads(cached)
-                session = await self.db.get(Sessions, UUID(result["session_id"]), populate_existing=True)
-                if not session or session.is_revoked or has_expired(session.expired_at):
-                    raise HTTPException(401, "Phiên đăng nhập đã hết hạn")
-                result_hash = await self.security.hash_token(result["refresh_token"])
-                if session.refresh_token_hash == result_hash:
-                    self._set_session_cookies(res, result["access_token"], result["refresh_token"])
-                    return result
-                cached = await redis.get("auth:refresh:result:" + result_hash)
 
-            stmt = select(Sessions).where(Sessions.refresh_token_hash == token_hash).with_for_update()
-            session = (await self.db.execute(stmt)).scalar_one_or_none()
-            if not session or session.is_revoked or has_expired(session.expired_at):
-                raise HTTPException(401, "Phiên đăng nhập không hợp lệ hoặc đã hết hạn")
-            # Keep the device/session ID stable: another tab's valid access token
-            # and WebSocket must not be revoked merely because one tab refreshes.
+        try:
+            snapshot = await self._find_refresh_session_async(token_hash)
+            spent = None
+            if snapshot is None or (
+                operation_id is not None and snapshot.dpop_jkt is not None
+                and not secret_matches(snapshot.refresh_token_hash, token_hash)
+            ):
+                spent = await self.db.get(SpentRefreshTokens, token_hash)
+                if snapshot is None and spent is not None:
+                    snapshot = await self.db.get(Sessions, spent.session_id)
+
+            candidate = None
+            if snapshot is None:
+                # A legacy chain can still resolve a token older than the previous hash.
+                async with asyncio.timeout(2):
+                    session_id, candidate = await self._refresh_grace_async(redis, token_hash, None)
+                if session_id is None:
+                    raise AuthError("invalid_token")
+                snapshot = await self.db.get(Sessions, session_id)
+            if snapshot is None:
+                raise AuthError("invalid_token")
+            session_id, user_id, jkt = snapshot.id, snapshot.user_id, snapshot.dpop_jkt
+            async with asyncio.timeout(2):
+                await self._authorize_refresh_async(jkt, refresh_token, request, proof, from_cookie)
+                matching_operation = spent is not None and operation_id is not None and spent.operation_id == operation_id
+                if candidate is None and not matching_operation and not secret_matches(snapshot.refresh_token_hash, token_hash):
+                    _, candidate = await self._refresh_grace_async(redis, token_hash, session_id)
+
+            await self.db.execute(text("SET LOCAL lock_timeout = '2s'"))
+            user = await self.db.scalar(
+                select(User).where(User.id == user_id).with_for_update(read=True).execution_options(
+                    populate_existing=True,
+                )
+            )
+            require_active_account(user)
+            session = await self.db.get(Sessions, session_id, populate_existing=True, with_for_update=True)
+            if session is None or session.user_id != user_id or session.dpop_jkt != jkt:
+                raise AuthError("invalid_token")
+            if session.is_revoked is not False or has_expired(session.expired_at):
+                raise AuthError("session_revoked")
+            bound = jkt is not None
+            current = secret_matches(session.refresh_token_hash, token_hash)
+
+            if not current:
+                spent = (await self.db.get(SpentRefreshTokens, token_hash, populate_existing=True)
+                         if bound else None)
+                if spent is not None and spent.session_id != session_id:
+                    raise AuthError("invalid_token")
+                rotated_at = (session.previous_rotated_at
+                              if secret_matches(session.previous_refresh_hash, token_hash)
+                              else spent.rotated_at if spent is not None else None)
+                if spent is not None and operation_id is not None and spent.operation_id == operation_id:
+                    binding = f"refresh-operation:{session_id}:{token_hash}:{operation_id}"
+                    result = open_auth_payload(spent.encrypted_result, binding)
+                    if (result is None or now_tzinfo() >= spent.rotated_at + timedelta(seconds=REFRESH_RETRY_SECONDS)
+                            or not secret_matches(
+                                session.refresh_token_hash, await self.security.hash_token(result["refresh_token"]),
+                            )):
+                        raise AuthError("invalid_token")
+                    result = jsonable_encoder(await self._session_tokens(
+                        session, result["refresh_token"], "Session refreshed",
+                    ))
+                    await self.db.rollback()
+                    self._set_token_response(res, result, bound=True)
+                    return result
+                if rotated_at is not None and now_tzinfo() >= rotated_at + timedelta(seconds=REFRESH_GRACE_SECONDS):
+                    if not bound:
+                        # A delayed response must not erase a different tab's new cookie.
+                        raise AuthError("invalid_token", clear_cookies=False)
+                    session.is_revoked = True
+                    await self.db.commit()
+                    logger.warning("Bound refresh token reused after grace period; session revoked")
+                    raise AuthError("session_revoked")
+                if candidate is not None and secret_matches(session.refresh_token_hash, candidate[1]):
+                    await self.db.rollback()
+                    self._set_token_response(res, candidate[0], bound=bound)
+                    return candidate[0]
+                stale_legacy = not bound and (rotated_at is not None or candidate is not None)
+                raise AuthError("invalid_token", clear_cookies=not stale_legacy)
+
             new_refresh = await self.security.generate_refresh_token()
+            rotated_at = now_tzinfo()
+            prior_hash = session.previous_refresh_hash
+            session.previous_refresh_hash = token_hash
+            session.previous_rotated_at = rotated_at
             session.refresh_token_hash = await self.security.hash_token(new_refresh)
-            session.expired_at = now_tzinfo() + timedelta(days=30)
-            session.updated_at = get_now()
-            access = await self.security.create_access_token(str(session.user_id), str(session.id))
-            result = jsonable_encoder({"message": "Session refreshed", "session_id": str(session.id),
-                "access_token": access, "refresh_token": new_refresh, "expired_at": session.expired_at})
+            session.expired_at = rotated_at + timedelta(days=30)
+            session.updated_at = rotated_at
+            result = jsonable_encoder(await self._session_tokens(session, new_refresh, "Session refreshed"))
+            sealed = seal_auth_payload(result, cache_key)
+            if bound:
+                if prior_hash is not None:
+                    await self.db.execute(
+                        update(SpentRefreshTokens).where(
+                            SpentRefreshTokens.token_hash == prior_hash,
+                            SpentRefreshTokens.session_id == session_id,
+                            SpentRefreshTokens.encrypted_result.is_not(None),
+                        ).values(encrypted_result=None)
+                    )
+                binding = f"refresh-operation:{session_id}:{token_hash}:{operation_id}"
+                self.db.add(SpentRefreshTokens(
+                    token_hash=token_hash, session_id=session_id, rotated_at=rotated_at,
+                    operation_id=operation_id,
+                    encrypted_result=seal_auth_payload(result, binding) if operation_id else None,
+                ))
             await self.db.commit()
-            self._set_session_cookies(res, access, new_refresh)
+            self._set_token_response(res, result, bound=bound)
             try:
-                await redis.set(key, json.dumps(result), ex=15)
-            except RedisError:
-                # The committed rotation and its cookies must still reach the browser.
+                async with asyncio.timeout(2):
+                    await redis.set(cache_key, sealed, ex=REFRESH_GRACE_SECONDS)
+            except (RedisError, TimeoutError):
                 logger.warning("Refresh rotation committed; short grace cache unavailable")
             return result
-        except RedisError:
+        except (RedisError, TimeoutError):
+            await self.db.rollback()
             raise HTTPException(503, "Chưa thể làm mới phiên. Vui lòng thử lại.") from None
+        except DBAPIError as exc:
+            await self.db.rollback()
+            if getattr(exc.orig, "sqlstate", None) in {"55P03", "40P01"}:
+                raise HTTPException(503, "Phiên đang được làm mới. Vui lòng thử lại.") from None
+            raise
+        except BaseException:
+            await self.db.rollback()
+            raise
         finally:
             try:
-                await lock.release()
-            except RedisError:
+                async with asyncio.timeout(2):
+                    await lock.release()
+            except (RedisError, TimeoutError):
                 logger.warning("Refresh lock release failed; lock will expire")
 
     def _serialize_session(self, session: Sessions, current_sid: str | None = None) -> dict[str, Any]:
@@ -769,137 +973,68 @@ class AuthService:
         await self.db.commit()
         return {"message": "Đã đăng xuất thiết bị thành công", "revoked_session_id": str(session.id)}
 
-    async def send_otp_async(self, schema: SendOtp):
+    async def send_otp_async(self, schema: SendOtp, *, ip: str | None = None):
+        self._require_login_otp_purpose(schema.purpose)
+        await limit_issue_async(schema.email, LOGIN, ip)
         try:
-            # 1. Tìm user theo email
-            stmt = select(User).where(User.email == schema.email)
-            user = (await self.db.execute(stmt)).scalar_one_or_none()
-
-            if not user:
-                raise HTTPException(
-                    status_code=404,
-                    detail={
-                        "error_code": "USER_NOT_FOUND",
-                        "message": "Không tìm thấy người dùng với email này",
-                    },
-                )
-
-            if user.is_banned:
-                raise HTTPException(
-                    status_code=403,
-                    detail={"error_code": "ACCOUNT_BANNED", "message": "Tài khoản đã bị khóa"},
-                )
-
-            # 2. Tạo mã OTP
-            code = await self.security.generate_otp()
-            expired_at = get_now() + timedelta(minutes=10)
-
-            # 3. Lưu OTP vào DB
-            verification = EmailVerifications(
-                user_id=user.id,
-                code=code,
-                expired_at=expired_at
-            )
-            self.db.add(verification)
-            await self.db.commit()
-
-            # 4. Gửi email
-            await self._send_mail_or_503(
-                self.mail_service.send_login_otp_email(
-                    email=user.email,
-                    fullname=user.fullname,
-                    code=code,
-                )
-            )
-
+            user = await self.db.scalar(select(User).where(User.email == schema.email).with_for_update())
+            self._require_otp_user(user)
+            await self._issue_otp_async(user, LOGIN)
             return {
                 "message": "Mã OTP đã được gửi đến email của bạn",
                 "resend_available_in": 60,
-                "otp_expires_in": 600
+                "otp_expires_in": OTP_TTL,
             }
-        except HTTPException:
-            raise
         except Exception:
             await self.db.rollback()
             raise
 
-    async def verify_otp_login_async(self, schema: VerifyOtp, res: Response, user_agent: str | None = None, ip: str | None = None):
+    @staticmethod
+    def _require_login_otp_purpose(purpose: str) -> None:
+        # "authenticate" is the existing mobile login purpose.
+        if purpose not in {LOGIN, "authenticate"}:
+            raise HTTPException(400, "Mục đích mã OTP không hợp lệ.")
+
+    @staticmethod
+    def _require_otp_user(user: User | None) -> None:
+        if user is None:
+            raise HTTPException(404, "Không tìm thấy người dùng")
+        if user.deleted_at or user.is_banned:
+            raise HTTPException(403, {"error_code": "ACCOUNT_BANNED", "message": "Tài khoản không khả dụng"})
+        if not user.is_verified_email:
+            raise HTTPException(403, {"error_code": "EMAIL_NOT_VERIFIED", "message": "Vui lòng xác thực email"})
+
+    async def verify_otp_login_async(
+        self, schema: VerifyOtp, res: Response, user_agent: str | None = None,
+        ip: str | None = None, *, request: Request | None = None,
+    ):
+        self._require_login_otp_purpose(schema.purpose)
+        jkt = await self._login_jkt(request)
         try:
             identifier = schema.email or schema.phone
             if not identifier:
                 raise HTTPException(400, "Email hoặc số điện thoại là bắt buộc")
-
-            # 1. Tìm user
             stmt = select(User).where(User.email == identifier)
             user = (await self.db.execute(stmt)).scalar_one_or_none()
+            self._require_otp_user(user)
 
-            if not user:
-                raise HTTPException(404, "Không tìm thấy người dùng")
-
-            if user.deleted_at or user.is_banned:
-                raise HTTPException(
-                    status_code=403,
-                    detail={
-                        "error_code": "ACCOUNT_BANNED",
-                        "message": "Tài khoản đã bị khóa",
-                    },
-                )
-
-            # 2. Kiểm tra OTP gần nhất
-            stmt = (
-                select(EmailVerifications)
-                .where(EmailVerifications.user_id == user.id)
-                .order_by(desc(EmailVerifications.created_at))
-                .limit(1)
+            error = AuthError("invalid_token") if jkt is not None else HTTPException(
+                401, {"error_code": "INVALID_OTP", "message": "Mã OTP không đúng hoặc đã hết hạn"},
             )
-            verification = (await self.db.execute(stmt)).scalar_one_or_none()
+            verification = await self._check_otp_async(user, LOGIN, schema.otp_code, ip, error)
+            await self.db.refresh(user, attribute_names=["is_verified_email", "is_banned", "deleted_at"],
+                                  with_for_update=True)
+            self._require_otp_user(user)
+            await self._consume_otp_async(user, verification, error)
 
-            submitted_otp = (schema.otp_code or "").strip()
-            stored_otp = (verification.code or "").strip() if verification else ""
-            if not verification or not submitted_otp or not hmac.compare_digest(stored_otp, submitted_otp):
-                raise HTTPException(
-                    status_code=401,
-                    detail={
-                        "error_code": "INVALID_OTP",
-                        "message": "Mã OTP không đúng hoặc đã hết hạn",
-                    },
-                )
-
-            if verification.expired_at < get_now():
-                raise HTTPException(
-                    status_code=401,
-                    detail={
-                        "error_code": "OTP_EXPIRED",
-                        "message": "Mã OTP đã hết hạn",
-                    },
-                )
-
-            await self.db.execute(
-                delete(EmailVerifications).where(EmailVerifications.user_id == user.id)
-            )
-
-            # 3. Tạo session mới
-            login_result = await self._create_session(user.id, res, user_agent, ip)
-
-            # Cập nhật thông tin đăng nhập
+            login_result = await self._create_session(user.id, res, user_agent, ip, jkt=jkt)
             user.last_login_at = get_now()
-            if not user.is_verified_email:
-                user.is_verified_email = True
-                user.email_verified_at = get_now()
-            
             await self.db.commit()
             await self._broadcast_new_session(
-                user.id,
-                login_result["session_id"],
-                user_agent,
-                ip,
-                login_method="otp",
+                user.id, login_result["session_id"], user_agent, ip, login_method="otp",
                 explicit_device_type=schema.device_type,
             )
-
             return login_result
-        except HTTPException:
-            raise
         except Exception:
             await self.db.rollback()
             raise

@@ -7,6 +7,7 @@ from sqlalchemy import asc, delete, desc, func, insert, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.services.shares.auth import revoke_user_sessions_async
 from app.db.models.database import (
     Courses,
     CourseSections,
@@ -250,6 +251,7 @@ class LecturerService:
             user.deleted_until = reason or "Không có lý do cụ thể"
             user.update_at = await to_utc_naive(get_now())
 
+            await revoke_user_sessions_async(self.db, user.id)
             await self.db.commit()
             await self.db.refresh(user)
 
@@ -507,6 +509,7 @@ class LecturerService:
                 lecturer.banned_until = await to_utc_naive(schema.banned_until or get_now())
             lecturer.update_at = await to_utc_naive(get_now())
 
+            await revoke_user_sessions_async(self.db, lecturer.id)
             await self.db.commit()
             await self.db.refresh(lecturer)
 

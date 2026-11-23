@@ -24,6 +24,8 @@ from app.db.models.database import (
     UserStatistics,
 )
 from app.libs.formats.datetime import now as get_now
+from app.repositories.gamification.balances import get_or_create_account_row
+from app.services.gamification.mission_clock import VIETNAM
 
 
 class DailyCheckinRepository:
@@ -41,7 +43,7 @@ class DailyCheckinRepository:
 
     async def get_active_event(self) -> Optional[DailyCheckinEvents]:
         """Lấy sự kiện Check-in đang hoạt động (is_active=True)."""
-        today = datetime.date.today()
+        today = datetime.datetime.now(VIETNAM).date()
         stmt = (
             select(DailyCheckinEvents)
             .where(DailyCheckinEvents.is_active.is_(True))
@@ -68,7 +70,7 @@ class DailyCheckinRepository:
         event_id: uuid.UUID,
     ) -> Optional[UserCheckins]:
         """Lấy bản ghi Check-in của user trong ngày hôm nay cho sự kiện."""
-        today = datetime.date.today()
+        today = datetime.datetime.now(VIETNAM).date()
         stmt = select(UserCheckins).where(
             and_(
                 UserCheckins.user_id == user_id,
@@ -120,7 +122,7 @@ class DailyCheckinRepository:
         )
         total: int = (await self.db.scalar(count_stmt)) or 0
         day_in_cycle = total % cycle_days  # 0-indexed vị trí hôm nay trong chu kỳ
-        today = datetime.date.today()
+        today = datetime.datetime.now(VIETNAM).date()
         cycle_start = today - datetime.timedelta(days=day_in_cycle)
         return cycle_start
 
@@ -134,7 +136,7 @@ class DailyCheckinRepository:
         Tra cứu ngày check-in ngay hôm qua; nếu tồn tại thì lấy
         consecutive_day + 1, ngược lại reset về 1.
         """
-        yesterday = datetime.date.today() - datetime.timedelta(days=1)
+        yesterday = datetime.datetime.now(VIETNAM).date() - datetime.timedelta(days=1)
         stmt = select(UserCheckins).where(
             and_(
                 UserCheckins.user_id == user_id,
@@ -214,13 +216,7 @@ class DailyCheckinRepository:
         user_id: uuid.UUID,
     ) -> UserGamificationProfiles:
         """Lấy hoặc tạo mới profile gamification."""
-        profile = await self.get_gamification_profile(user_id)
-        if profile is None:
-            profile = UserGamificationProfiles(user_id=user_id)
-            self.db.add(profile)
-            await self.db.flush()
-            await self.db.refresh(profile)
-        return profile
+        return await get_or_create_account_row(self.db, UserGamificationProfiles, user_id)
 
     async def update_streak(
         self,
@@ -231,7 +227,7 @@ class DailyCheckinRepository:
         profile.current_streak = new_streak
         if new_streak > profile.best_streak:
             profile.best_streak = new_streak
-        profile.last_active_date = datetime.date.today()
+        profile.last_active_date = datetime.datetime.now(VIETNAM).date()
         profile.updated_at = get_now()
         await self.db.flush()
 
@@ -251,13 +247,7 @@ class DailyCheckinRepository:
         user_id: uuid.UUID,
     ) -> UserPeakBalances:
         """Lấy hoặc tạo mới Peak Wallet."""
-        balance = await self.get_peak_balance(user_id)
-        if balance is None:
-            balance = UserPeakBalances(user_id=user_id)
-            self.db.add(balance)
-            await self.db.flush()
-            await self.db.refresh(balance)
-        return balance
+        return await get_or_create_account_row(self.db, UserPeakBalances, user_id)
 
     async def credit_peak_wallet(
         self,
@@ -269,13 +259,21 @@ class DailyCheckinRepository:
         Returns:
             (before_balance, after_balance)
         """
-        before = balance.current_balance
-        balance.current_balance += amount
-        balance.total_earned += amount
-        balance.version += 1
-        balance.updated_at = get_now()
-        await self.db.flush()
-        return before, balance.current_balance
+        # A concurrent check-in or mission claim may have changed the cached ORM row.
+        after = await self.db.scalar(
+            update(UserPeakBalances)
+            .where(UserPeakBalances.user_id == balance.user_id)
+            .values(
+                current_balance=UserPeakBalances.current_balance + amount,
+                total_earned=UserPeakBalances.total_earned + amount,
+                version=UserPeakBalances.version + 1,
+                updated_at=func.now(),
+            )
+            .returning(UserPeakBalances.current_balance)
+            .execution_options(synchronize_session=False)
+        )
+        await self.db.refresh(balance)
+        return after - amount, after
 
     # ──────────────────────────────────────────────────────────────────
     # PEAK TRANSACTIONS (LEDGER)

@@ -26,7 +26,7 @@ if database_url:
     config.set_main_option("sqlalchemy.url", database_url.replace("%", "%%"))
 
 from app.db.models.database import Base
-from app.db.models import github_identity
+from app.db.models import github_identity, learning_hub, user_identity
 from app.db.models import catalog  # register additive metadata
 from app.agent import github_connection  # account-linked credentials metadata
 from app.db.models import agent, code_attempts, learning_memory, quiz_attempts  # additive learner/agent state

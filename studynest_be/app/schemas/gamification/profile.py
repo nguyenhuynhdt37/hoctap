@@ -8,6 +8,6 @@ class GamificationProfileResponse(BaseModel):
     current_xp: int = Field(..., description="XP hiện tại trong level")
     total_xp: int = Field(..., description="Tổng XP tích lũy")
     required_xp: int = Field(..., description="XP cần cho level kế tiếp từ levels_config.xp_required")
-    current_peak_balance: int = Field(..., description="Số dư Peak hiện tại")
+    current_peak_balance: int = Field(..., description="Số dư Coin hiện tại")
     streak: StreakResponse = Field(..., description="Thông tin streak hiện tại")
 

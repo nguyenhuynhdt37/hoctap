@@ -9,10 +9,11 @@ from fastapi import (
     Query,
     WebSocket,
     WebSocketDisconnect,
+    WebSocketException,
 )
 from fastapi.websockets import WebSocketState
 
-from app.core.deps import AuthorizationService
+from app.core.deps import AuthorizationService, receive_bounded_ws_text_async
 from app.core.ws_manager import ws_manager
 from app.schemas.auth.user import UserCreate
 from app.schemas.lecturer.lesson import LessonCodeSaveFile, LessonCodeUserTest
@@ -341,7 +342,7 @@ async def lesson_comment_ws(websocket: WebSocket, lesson_id: uuid.UUID):
         while True:
             # nhận data client gửi lên
             try:
-                raw = await websocket.receive_text()
+                raw = await receive_bounded_ws_text_async(websocket)
                 data = json.loads(raw)
                 msg_type = data.get("type")
             except json.JSONDecodeError:
@@ -349,6 +350,9 @@ async def lesson_comment_ws(websocket: WebSocket, lesson_id: uuid.UUID):
                 continue
             except WebSocketDisconnect:
                 break  # client đóng kết nối
+            except WebSocketException as exc:
+                await websocket.close(code=exc.code)
+                break
             except Exception as e:
                 await send_safe({"error": f"Lỗi nhận dữ liệu: {e}"})
                 continue

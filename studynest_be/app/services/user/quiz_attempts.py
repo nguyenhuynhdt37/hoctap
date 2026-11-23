@@ -2,12 +2,27 @@
 import json
 from uuid import UUID
 from fastapi import HTTPException
+from loguru import logger
 from sqlalchemy import select, text
 from sqlalchemy.orm import selectinload
+from app.core.event_bus.base import BaseEvent
+from app.core.event_bus.redis_bus import event_bus
 from app.db.models.database import LessonQuizzes
 from app.db.models.quiz_attempts import QuizAttempt
 from app.services.user.code_security import content_hash
 from app.services.user.learning_access import require_lesson_access
+
+
+def question_snapshot(question, options):
+    return {
+        "question_id": str(question.id), "question": question.question, "explanation": question.explanation,
+        "options": [{"id": str(option.id), "text": option.text_, "is_correct": bool(option.is_correct)}
+                    for option in options],
+    }
+
+
+def quiz_snapshot_hash(snapshot):
+    return content_hash(json.dumps(snapshot, ensure_ascii=False, sort_keys=True))
 
 
 def serialize_attempt(row):
@@ -26,12 +41,10 @@ class QuizAttemptService:
         questions = (await self.db.scalars(select(LessonQuizzes).options(
             selectinload(LessonQuizzes.lesson_quiz_options)).where(LessonQuizzes.lesson_id == lesson_id)
             .order_by(LessonQuizzes.id))).all()
-        snapshot = [{'question_id': str(question.id), 'question': question.question,
-            'explanation': question.explanation,
-            'options': [{'id': str(option.id), 'text': option.text_, 'is_correct': bool(option.is_correct)}
-                for option in sorted(question.lesson_quiz_options, key=lambda option: (option.position or 0, str(option.id)))]}
-            for question in questions]
-        return content_hash(json.dumps(snapshot, ensure_ascii=False, sort_keys=True)) if snapshot else None
+        snapshot = [question_snapshot(question, sorted(
+            question.lesson_quiz_options, key=lambda option: (option.position or 0, str(option.id)),
+        )) for question in questions]
+        return quiz_snapshot_hash(snapshot) if snapshot else None
 
     async def submit_async(self,user_id,lesson_id,payload):
         await require_lesson_access(self.db,user_id,lesson_id)
@@ -68,12 +81,20 @@ class QuizAttemptService:
                 'selected_option_id':str(selected.id),'is_correct':bool(selected.is_correct),
                 'correct_option_id':str(correct_options[0].id),'explanation':q.explanation or '',
                 'options':[{'id':str(o.id),'text':o.text_} for o in options]})
-            snapshot.append({'question_id':str(q.id),'question':q.question,'explanation':q.explanation,
-                'options':[{'id':str(o.id),'text':o.text_,'is_correct':bool(o.is_correct)} for o in options]})
+            snapshot.append(question_snapshot(q, options))
         attempt=QuizAttempt(user_id=user_id,lesson_id=lesson_id,idempotency_key=payload.idempotency_key,
-            request_hash=request_hash,content_hash=content_hash(json.dumps(snapshot,ensure_ascii=False,sort_keys=True)),
+            request_hash=request_hash,content_hash=quiz_snapshot_hash(snapshot),
             correct=sum(d['is_correct'] for d in details),total=len(details),details=details)
-        self.db.add(attempt);await self.db.flush();await self.db.commit()
+        self.db.add(attempt)
+        await self.db.flush()
+        await self.db.commit()
+        try:
+            await event_bus.publish(BaseEvent(
+                event_name="quiz.attempted", user_id=user_id, source_type="quiz",
+                source_id=lesson_id,
+            ))
+        except Exception as exc:
+            logger.warning("Không gửi được sự kiện nộp bài trắc nghiệm ({})", type(exc).__name__)
         return serialize_attempt(attempt)
 
     async def get_async(self,user_id,attempt_id):

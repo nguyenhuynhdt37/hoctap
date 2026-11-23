@@ -4,6 +4,7 @@ from typing import List, Optional, Set
 from sqlalchemy import select, and_, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.models.database import UserGamificationProfiles, GamificationActivityLogs
+from app.repositories.gamification.balances import get_or_create_account_row
 
 
 class StreakRepository:
@@ -20,23 +21,7 @@ class StreakRepository:
 
     async def get_or_create_profile(self, user_id: uuid.UUID) -> UserGamificationProfiles:
         """Fetch profile, or create it if not found."""
-        profile = await self.get_profile(user_id)
-        if profile is None:
-            profile = UserGamificationProfiles(
-                user_id=user_id,
-                level=1,
-                current_xp=0,
-                total_xp=0,
-                total_peak_score=0,
-                current_streak=0,
-                best_streak=0,
-                streak_freezes=0,
-                version=1,
-                last_active_date=None,
-            )
-            self.db.add(profile)
-            await self.db.flush()
-        return profile
+        return await get_or_create_account_row(self.db, UserGamificationProfiles, user_id)
 
     async def has_logged_event(self, user_id: uuid.UUID, event_name: str, source_id: uuid.UUID) -> bool:
         """

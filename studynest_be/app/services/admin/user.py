@@ -9,6 +9,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.services.shares.auth import revoke_user_sessions_async
 from app.db.models.database import CourseEnrollments, Role, User, UserRoles
 from app.db.sesson import get_session
 from app.libs.formats.datetime import now as get_now
@@ -362,6 +363,7 @@ class UserService:
                 )
             user.update_at = await to_utc_naive(get_now())
 
+            await revoke_user_sessions_async(self.db, user.id)
             await self.db.commit()
             await self.db.refresh(user)
 
@@ -612,6 +614,7 @@ class UserService:
             user.deleted_until = reason or "Không có lý do cụ thể"
             user.update_at = get_now()
 
+            await revoke_user_sessions_async(self.db, user.id)
             await self.db.commit()
             await self.db.refresh(user)
 

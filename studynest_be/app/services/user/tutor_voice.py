@@ -4,6 +4,7 @@ import base64
 import json
 import hashlib
 import math
+import secrets
 import time
 import uuid
 from contextlib import suppress
@@ -13,9 +14,11 @@ from urllib.parse import urlsplit
 
 from fastapi import HTTPException, WebSocket, WebSocketDisconnect
 from loguru import logger
+from redis.exceptions import RedisError
 from sqlalchemy import desc, select
 
-from app.core.deps import AuthorizationService
+from app.core.auth_encryption import open_auth_payload, seal_auth_payload
+from app.core.deps import AccessCredentials, AccessIdentity, AuthorizationService
 from app.core.embedding import EmbeddingService
 from app.core.redis import get_redis
 from app.core.settings import settings
@@ -356,6 +359,37 @@ Lịch sử gần đây: {json.dumps(context, ensure_ascii=False)}'''
             await asyncio.gather(*tasks, return_exceptions=True)
 
 
+async def issue_tutor_voice_ticket_async(auth: AuthorizationService) -> str:
+    identity, scheme = await auth.get_legacy_access_binding_async()
+    ticket = secrets.token_urlsafe(32)
+    key = 'voice:ticket:v2:' + hashlib.sha256(ticket.encode()).hexdigest()
+    binding = {
+        'sid': str(identity.sid), 'user_id': str(identity.user_id),
+        'exp': identity.expires_at, 'scheme': scheme,
+    }
+    try:
+        if await get_redis().set(key, seal_auth_payload(binding, key), ex=60, nx=True):
+            return ticket
+    except RedisError:
+        pass
+    raise HTTPException(503, 'Chưa thể cấp vé voice.')
+
+
+async def _redeem_voice_ticket_async(ticket: str) -> AccessIdentity:
+    if not (settings.AUTH_ALLOW_COOKIE_COMPAT or settings.AUTH_ALLOW_UNBOUND_BEARER):
+        raise ValueError
+    if not (30 <= len(ticket) <= 100 and ticket.isascii()):
+        raise ValueError
+    key = 'voice:ticket:v2:' + hashlib.sha256(ticket.encode()).hexdigest()
+    payload = open_auth_payload(await get_redis().getdel(key), key)
+    if (not payload or type(payload.get('exp')) is not int or not {
+        'cookie': settings.AUTH_ALLOW_COOKIE_COMPAT,
+        'bearer': settings.AUTH_ALLOW_UNBOUND_BEARER,
+    }.get(payload.get('scheme'))):
+        raise ValueError
+    return AccessIdentity(uuid.UUID(payload['user_id']), uuid.UUID(payload['sid']), payload['exp'], None)
+
+
 async def run_tutor_voice(websocket: WebSocket, lesson_id: uuid.UUID | None = None):
     if any(key in getattr(websocket, 'query_params', {}) for key in ('token', 'access_token', 'refresh_token')):
         await websocket.close(code=1008)
@@ -366,21 +400,19 @@ async def run_tutor_voice(websocket: WebSocket, lesson_id: uuid.UUID | None = No
     protocols = websocket.scope.get('subprotocols', [])
     bearer = next((p[7:] for p in protocols if p.startswith('bearer.')), None)
     ticket = next((p[7:] for p in protocols if p.startswith('ticket.')), None)
-    if ticket:
-        redeemed = await get_redis().getdel('voice:ticket:' + hashlib.sha256(ticket.encode()).hexdigest())
-        if not redeemed:
-            await websocket.close(code=1008)
-            return
-        bearer = redeemed.decode() if isinstance(redeemed, bytes) else redeemed
-    if bearer:
-        websocket.scope['headers'][:] = [(k, v) for k, v in websocket.scope['headers'] if k != b'authorization'] + [(b'authorization', f'Bearer {bearer}'.encode())]
     await websocket.accept(subprotocol='studynest-voice' if 'studynest-voice' in protocols else None)
-    user = await AuthorizationService.get_require_role_ws(websocket, ['USER', 'LECTURER', 'ADMIN'])
+    legacy = AccessCredentials('bearer', bearer) if bearer is not None else None
+    binding = None
+    if ticket is not None:
+        try:
+            binding = await _redeem_voice_ticket_async(ticket)
+        except (RedisError, ValueError, KeyError, TypeError):
+            await websocket.close(code=4401)
+            return
+    user = await AuthorizationService.get_require_role_ws(
+        websocket, ['USER', 'LECTURER', 'ADMIN'], legacy=legacy, legacy_binding=binding,
+    )
     if not user:
-        return
-    if user.is_banned or user.deleted_at:
-        await websocket.send_json({'type': 'error', 'message': 'Tài khoản hiện không được sử dụng voice.'})
-        await websocket.close(code=1008)
         return
     relay = TutorVoiceSession(websocket, user, lesson_id)
     lease_key, lease_id = f'tutor:voice:{user.id}', uuid.uuid4().hex
