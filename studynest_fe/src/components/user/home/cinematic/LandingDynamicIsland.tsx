@@ -1,7 +1,7 @@
 "use client";
 
 import { Badge } from "@/components/ui";
-import api from "@/lib/utils/fetcher/client/axios";
+import { logoutEverywhere } from "@/lib/auth/logout";
 import { getImageUrl } from "@/lib/utils/helpers/image";
 import { useRealtimeNotiStore } from "@/stores/notifications";
 import { useUserStore } from "@/stores/user";
@@ -240,7 +240,7 @@ const LandingDynamicIsland: React.FC<LandingDynamicIslandProps> = ({
   const handleLogout = useCallback(async () => {
     closeIsland(false);
     try {
-      await api.post("/auth/logout");
+      await logoutEverywhere();
       clearUser();
       clearNotifications();
     } catch {

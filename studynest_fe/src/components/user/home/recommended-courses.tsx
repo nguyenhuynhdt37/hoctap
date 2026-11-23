@@ -1,20 +1,21 @@
 "use client";
 
-import { Badge, Button, Card, Skeleton } from "@/components/ui";
+import { Badge, Button, EmptyState, Skeleton } from "@/components/ui";
 import api from "@/lib/utils/fetcher/client/axios";
-import { getImageUrl } from "@/lib/utils/helpers/image";
 import { useUserStore } from "@/stores/user";
 import { RecommendedItem, RecommendedResponse } from "@/types/user/course";
-import Autoplay from "embla-carousel-autoplay";
 import useEmblaCarousel from "embla-carousel-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { HiChevronLeft, HiChevronRight } from "react-icons/hi";
-import useSWR from "swr";
+import { useAuthedSWR } from "@/hooks/auth/useAuthedSWR";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
+import { GlassCard } from "./landing-ui";
+import { CourseLecturer } from "./courses/course-card";
+import { mayPortrait, StudyImage } from "./study-image";
 
-const fetcher = (url: string) => api.get(url).then((res) => res.data);
-
-const RecommendedCourseCard = ({ course }: { course: RecommendedItem }) => {
+const RecommendedCourseCard = ({ course, compact = false }: { course: RecommendedItem; compact?: boolean }) => {
   const router = useRouter();
   const [isChecking, setIsChecking] = useState(false);
 
@@ -35,116 +36,63 @@ const RecommendedCourseCard = ({ course }: { course: RecommendedItem }) => {
     }
   };
 
-  return (
-    <Card
-      density="none"
-      interactive
-      onClick={handleClick}
-      className="w-full group rounded-[24px] overflow-hidden flex flex-col md:flex-row h-[280px] md:h-[320px] relative"
-    >
-      <div className="w-full md:w-[38rem] flex-shrink-0 h-full relative overflow-hidden bg-primary-light">
-        <div className="absolute inset-0 bg-gradient-to-t from-foreground/25 via-transparent to-transparent z-10" />
-        <img
-          src={getImageUrl(course.thumbnail || "")}
-          alt={course.title}
-          className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
-          onError={(e) => {
-            e.currentTarget.onerror = null;
-            e.currentTarget.src = "/logo/maymay-logo.svg";
-          }}
-        />
-        {course.similarity && (
-          <div className="absolute top-4 right-4 z-20">
-            <Badge
-              variant="default"
-              size="md"
-              className="bg-primary-light/95 backdrop-blur-sm shadow-xs"
-            >
-              {Math.round(course.similarity * 100)}% phù hợp
-            </Badge>
-          </div>
-        )}
-      </div>
-
-      <div className="flex-1 p-6 md:p-8 flex flex-col justify-between relative z-10">
-        <div>
-          <Badge variant="default" size="sm" className="uppercase tracking-wider mb-3">
-            Đề xuất cá nhân hóa
-          </Badge>
-          <h3 className="text-xl md:text-2xl font-semibold text-foreground mb-4 line-clamp-2 group-hover:text-primary transition-colors leading-snug">
-            {course.title}
-          </h3>
+  if (compact) {
+    return (
+      <article className="grid min-h-33 min-w-0 grid-cols-[5.5rem_minmax(0,1fr)] items-start gap-2.5 rounded-lg border border-border bg-background p-2.5">
+        <StudyImage src={course.thumbnail} alt={`Ảnh bìa khóa học ${course.title}`} sizes="88px" className="aspect-[4/3] rounded-md" />
+        <div className="min-w-0">
+          <h4 className="line-clamp-2 text-sm leading-snug font-semibold wrap-anywhere">{course.title}</h4>
           {course.instructor && (
-            <div className="flex items-center gap-3 mb-6">
-              {course.instructor.avatar && (
-                <div className="relative">
-                  <img
-                    src={getImageUrl(course.instructor.avatar)}
-                    alt={course.instructor.name}
-                    className="w-10 h-10 md:w-11 md:h-11 rounded-full object-cover ring-2 ring-primary-light group-hover:ring-primary-pastel transition-all"
-                    onError={(e) => {
-                      (
-                        e.target as HTMLImageElement
-                      ).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                        course.instructor.name
-                      )}&size=48`;
-                    }}
-                  />
-                </div>
-              )}
-              <div>
-                <p className="text-xs text-subtle-foreground font-medium">
-                  Giảng viên
-                </p>
-                <p className="text-sm text-foreground font-semibold group-hover:text-primary transition-colors">
-                  {course.instructor.name}
-                </p>
-              </div>
-            </div>
+            <p className="mt-1 flex items-center gap-1.5 text-xs wrap-anywhere">
+              <StudyImage src={course.instructor.avatar} fallback={mayPortrait} sizes="20px" className="size-5 shrink-0 rounded-full" />
+              {course.instructor.name}
+            </p>
           )}
+          {course.similarity > 0 && <p className="mt-1.5 text-xs leading-snug text-info-foreground">Gần với sở thích đã chọn ({Math.round(course.similarity * 100)}% phù hợp).</p>}
+          <Button variant="ghost" className="-ml-2 mt-1 min-h-9 px-2 text-xs text-info-foreground motion-reduce:transition-none"
+            rightIcon={<ArrowRight className="size-3.5" />} onClick={() => void handleClick()} isLoading={isChecking} loadingText="Đang mở…">
+            Xem khóa học<span className="sr-only"> {course.title}</span>
+          </Button>
         </div>
-        <div className="flex items-center gap-2 text-primary font-semibold text-sm group-hover:gap-3 transition-all">
-          <span>Khám phá khóa học</span>
-          <svg
-            className="w-4 h-4 group-hover:translate-x-1 transition-transform"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M13 7l5 5m0 0l-5 5m5-5H6"
-            />
-          </svg>
+      </article>
+    );
+  }
+
+  return (
+    <GlassCard as="article" className="flex min-w-0 flex-col gap-2 bg-linear-to-br from-surface to-primary-light/60 p-3 sm:flex-row">
+      <StudyImage src={course.thumbnail} alt={`Ảnh bìa khóa học ${course.title}`} sizes="(min-width: 1280px) 250px, (min-width: 768px) 22vw, (min-width: 640px) 34vw, 85vw" className="aspect-video shrink-0 sm:w-2/5 sm:self-center" />
+      <div className="min-w-0 flex-1 space-y-3 p-5 sm:p-6">
+        <h4 className="wrap-anywhere text-lg font-semibold">{course.title}</h4>
+        {course.instructor && <CourseLecturer name={course.instructor.name} avatar={course.instructor.avatar} />}
+        {Boolean(course.similarity) && (
+          <Badge variant="info">{Math.round(course.similarity * 100)}% phù hợp</Badge>
+        )}
+        <div>
+          <Button className="min-h-11 rounded-full" rightIcon={<ArrowRight className="size-4" />} onClick={() => void handleClick()} isLoading={isChecking} loadingText="Đang mở khóa học…">
+            Khám phá khóa học
+          </Button>
         </div>
       </div>
-    </Card>
+    </GlassCard>
   );
 };
 
-const RecommendedCourses = () => {
+const RecommendedCourses = ({ embedded = false }: { embedded?: boolean }) => {
   const user = useUserStore((s) => s.user);
   const [prevBtnDisabled, setPrevBtnDisabled] = useState(true);
   const [nextBtnDisabled, setNextBtnDisabled] = useState(true);
 
-  const { data, isLoading } = useSWR<RecommendedResponse>(
+  const { data, error, isValidating, mutate } = useAuthedSWR<RecommendedResponse>(
     user ? "/courses/feed/recommend" : null,
-    fetcher,
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: false, shouldRetryOnError: false }
   );
 
   const courses = data?.items || [];
 
-  const plugins = useMemo(() => {
-    return [Autoplay({ delay: 4000, stopOnInteraction: false })];
-  }, []);
-
-  const [emblaRef, emblaApi] = useEmblaCarousel(
-    { loop: courses.length > 1, duration: 20 },
-    courses.length > 1 ? plugins : []
-  );
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    loop: courses.length > 1,
+    breakpoints: { "(prefers-reduced-motion: reduce)": { duration: 0 } },
+  });
 
   const scrollPrev = useCallback(() => {
     if (emblaApi) emblaApi.scrollPrev();
@@ -171,38 +119,80 @@ const RecommendedCourses = () => {
     onSelect();
     emblaApi.on("select", onSelect);
     emblaApi.on("reInit", onSelect);
+    return () => {
+      emblaApi.off("select", onSelect);
+      emblaApi.off("reInit", onSelect);
+    };
   }, [emblaApi, onSelect]);
 
   useEffect(() => {
     if (emblaApi && courses.length > 0) {
       emblaApi.reInit();
-      onSelect();
     }
-  }, [emblaApi, courses.length, onSelect]);
+  }, [emblaApi, courses.length]);
 
-  if (!user || (!isLoading && courses.length === 0)) return null;
+  if (!user) return null;
+  if (embedded) {
+    return (
+      <section aria-label="Khóa học gợi ý" className="min-w-0">
+        <h3 className="mb-2 text-sm font-semibold">Khóa học</h3>
+        {error ? (
+          <div role="alert" className="space-y-2 rounded-lg border border-destructive-border bg-destructive-bg p-3 text-destructive-foreground">
+            <p className="text-sm">Chưa tải được khóa gợi ý. Tải lại để xem khóa hợp sở thích.</p>
+            <Button variant="outline" size="sm" isLoading={isValidating} loadingText="Đang thử lại…" onClick={() => void mutate().catch(() => undefined)}>Thử lại</Button>
+          </div>
+        ) : !data ? (
+          <div role="status" aria-label="Đang tải khóa học gợi ý" className="flex gap-2.5 rounded-lg border border-border bg-background p-2.5 motion-reduce:[&_div]:animate-none">
+            <Skeleton className="h-16 w-22 shrink-0" />
+            <div className="w-full space-y-2"><Skeleton className="h-4 w-4/5" /><Skeleton className="h-4 w-2/3" /><Skeleton className="h-9 w-28" /></div>
+          </div>
+        ) : courses.length ? (
+          <ul className="relative flex snap-x gap-2 overflow-x-auto p-1">
+            {courses.map((course) => <li key={course.id} className="min-w-0 flex-[0_0_min(92%,24rem)] snap-start"><RecommendedCourseCard course={course} compact /></li>)}
+          </ul>
+        ) : (
+          <div className="flex items-center gap-2.5 rounded-lg bg-background p-3">
+            <StudyImage fallback={mayPortrait} sizes="52px" className="size-13 shrink-0 rounded-lg" />
+            <p className="text-xs leading-relaxed">Chọn một môn trong danh mục để tìm khóa hợp sở thích.</p>
+          </div>
+        )}
+      </section>
+    );
+  }
 
   return (
-    <section className="py-16 bg-background relative overflow-hidden border-b border-border/60">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <section aria-label="Khóa học gợi ý" className="relative overflow-hidden border-b border-border bg-background py-16">
+      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground tracking-tight mb-2">
+          <h3 className="mb-2 font-display text-2xl font-bold tracking-tight sm:text-3xl">
             Khóa học gợi ý cho bạn
-          </h2>
-          <p className="text-muted-foreground text-sm font-medium flex items-center gap-2">
-            <span className="inline-block w-2 h-2 bg-primary rounded-full" />
-            Dựa trên sở thích và hành vi học tập của bạn
-          </p>
+          </h3>
         </div>
 
-        {isLoading ? (
-          <Card density="none" className="w-full rounded-[24px] overflow-hidden flex">
-            <Skeleton className="w-64 md:w-80 flex-shrink-0 h-48 rounded-none" />
-            <div className="flex-1 p-6 space-y-3">
-              <Skeleton variant="text" className="h-6 w-3/4" />
-              <Skeleton variant="text" className="w-1/2" />
-            </div>
-          </Card>
+        {error ? (
+          <div role="alert" className="space-y-3 rounded-2xl border border-destructive-border bg-destructive-bg p-5 text-destructive-foreground">
+            <p>Mây chưa tải được khóa học gợi ý.</p>
+            <Button variant="outline" isLoading={isValidating} loadingText="Đang thử lại…" onClick={() => void mutate().catch(() => undefined)}>
+              Thử lại
+            </Button>
+          </div>
+        ) : !data ? (
+          <div role="status" aria-label="Đang tải khóa học gợi ý">
+            <GlassCard tilt={false} className="grid gap-4 p-3 sm:grid-cols-[2fr_3fr]">
+              <Skeleton className="h-40 rounded-2xl motion-reduce:animate-none sm:h-48" />
+              <div className="space-y-3 p-4">
+                <Skeleton className="h-6 w-3/4 motion-reduce:animate-none" />
+                <Skeleton className="h-4 w-1/2 motion-reduce:animate-none" />
+                <Skeleton className="h-11 w-40 rounded-full motion-reduce:animate-none" />
+              </div>
+            </GlassCard>
+          </div>
+        ) : courses.length === 0 ? (
+          <EmptyState
+            compact
+            title="Mây chưa tìm được khóa học gợi ý cho bạn"
+            action={<Link href="/courses" className="font-semibold text-primary underline">Xem tất cả khóa học</Link>}
+          />
         ) : (
           <div className="relative">
             {courses.length > 1 && (
@@ -213,7 +203,7 @@ const RecommendedCourses = () => {
                   onClick={scrollPrev}
                   disabled={prevBtnDisabled}
                   className="absolute top-1/2 -translate-y-1/2 z-30 -left-3 sm:-left-5 w-10 h-10 md:w-11 md:h-11 rounded-full hover:bg-primary hover:text-primary-foreground hover:border-primary shadow-sm"
-                  aria-label="Slide trước"
+                  aria-label="Khóa học trước"
                 >
                   <HiChevronLeft className="h-5 w-5" />
                 </Button>
@@ -223,7 +213,7 @@ const RecommendedCourses = () => {
                   onClick={scrollNext}
                   disabled={nextBtnDisabled}
                   className="absolute top-1/2 -translate-y-1/2 z-30 -right-3 sm:-right-5 w-10 h-10 md:w-11 md:h-11 rounded-full hover:bg-primary hover:text-primary-foreground hover:border-primary shadow-sm"
-                  aria-label="Slide tiếp theo"
+                  aria-label="Khóa học tiếp theo"
                 >
                   <HiChevronRight className="h-5 w-5" />
                 </Button>

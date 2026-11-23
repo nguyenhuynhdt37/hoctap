@@ -8,7 +8,6 @@ import {
   ArrowLeft,
   ExternalLink,
   ImagePlus,
-  Sparkles,
   TrendingDown,
 } from "lucide-react";
 import CouponManager from "@/components/admin/learning-paths/coupon-manager";
@@ -444,8 +443,7 @@ export default function ComboEditor({ versionId }: { versionId?: string }) {
             {totalOriginalPrice > 0 && (
               <div className="rounded-xl border border-border bg-surface-muted p-3.5 space-y-2">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                    <Sparkles className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-xs font-medium text-muted-foreground">
                     Gợi ý thiết lập giá ưu đãi theo tỷ lệ:
                   </span>
                   <div className="flex flex-wrap items-center gap-1.5">

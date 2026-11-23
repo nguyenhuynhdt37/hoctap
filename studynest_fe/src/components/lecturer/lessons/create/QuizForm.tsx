@@ -9,9 +9,9 @@ import {
 } from "@/types/lecturer/lesson";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  Bot,
   HelpCircle,
   Plus,
-  Sparkles,
   Timer,
   X,
   Clock,
@@ -351,8 +351,8 @@ const QuizForm = memo(
         <Card variant="pastel-blue" className="p-6 mb-6 border border-border">
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary text-white rounded-xl flex items-center justify-center shadow-xs">
-                <Sparkles className="h-5 w-5" />
+              <div className="w-10 h-10 bg-primary text-primary-foreground rounded-xl flex items-center justify-center shadow-xs">
+                <Bot className="h-5 w-5" aria-hidden="true" />
               </div>
               <div>
                 <h3 className="text-lg font-bold text-foreground">
@@ -445,7 +445,6 @@ const QuizForm = memo(
               disabled={!canGenerate}
               isLoading={isGeneratingQuiz}
               loadingText="Đang tạo..."
-              leftIcon={<Sparkles className="h-4 w-4" />}
               className="flex-1"
             >
               Tạo mới
@@ -458,7 +457,6 @@ const QuizForm = memo(
               disabled={!canGenerate}
               isLoading={isGeneratingQuiz}
               loadingText="Đang tạo..."
-              leftIcon={<Sparkles className="h-4 w-4" />}
               className="flex-1 border-primary text-primary hover:bg-primary-light/50"
             >
               Tạo tiếp

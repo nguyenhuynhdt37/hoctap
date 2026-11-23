@@ -1,171 +1,76 @@
 "use client";
 
-import { isSessionExpired, refreshSession } from "@/lib/utils/fetcher/client/refresh-session";
+import { useAuthReady } from "@/hooks/auth/useAuthedSWR";
 import { connectWebSocket } from "@/hooks/websocket/connectWebSocket";
+import { isDpopMode } from "@/lib/auth/mode";
 import { useRealtimeNotiStore } from "@/stores/notifications";
 import { useUserStore } from "@/stores/user";
-import { Notification } from "@/types/user/notification";
-import { useEffect, useLayoutEffect, useRef } from "react";
-
-interface NotificationWSProps {
-  accessToken: string | null;
-  role_name: string;
-}
+import type { Notification } from "@/types/user/notification";
+import { useEffect } from "react";
 
 interface NotificationWSData {
   type: string;
   data: Notification;
 }
 
-export function NotificationWS({
-  accessToken,
-  role_name,
-}: NotificationWSProps) {
-  const userId = useUserStore((s) => s.user?.id ?? null);
-  const clearUser = useUserStore((s) => s.clearUser);
-  const add = useRealtimeNotiStore((s) => s.add);
-
-  const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const attempts = useRef(0);
-  const lastAuthRecovery = useRef(0);
-  const isClosing = useRef(false);
-  const mountedRef = useRef(true);
-
-  // Cleanup on unmount - useLayoutEffect để cleanup đồng bộ trước khi React cleanup
-  useLayoutEffect(() => {
-    mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-      isClosing.current = true;
-
-      if (reconnectTimer.current) {
-        clearTimeout(reconnectTimer.current);
-        reconnectTimer.current = null;
-      }
-
-      if (wsRef.current) {
-        try {
-          wsRef.current.close(1000, "Component unmounting");
-        } catch {}
-        wsRef.current = null;
-      }
-    };
-  }, []);
+export function NotificationWS({ role_name }: { role_name: string }) {
+  const ready = useAuthReady();
+  const userId = useUserStore((state) => {
+    const user = state.user;
+    return user && !user.is_banned && user.roles?.includes(role_name) ? user.id : null;
+  });
+  const add = useRealtimeNotiStore((state) => state.add);
 
   useEffect(() => {
-    // ❌ Không có user hoặc token → đóng WS
-    if (!userId || !accessToken) {
-      isClosing.current = true;
+    if (!isDpopMode || !ready || !userId) return;
 
-      if (reconnectTimer.current) {
-        clearTimeout(reconnectTimer.current);
-        reconnectTimer.current = null;
-      }
+    let active = true;
+    let socket: WebSocket | undefined;
+    let retry: ReturnType<typeof setTimeout> | undefined;
+    let attempts = 0;
 
-      if (wsRef.current) {
-        try {
-          wsRef.current.close(1000);
-        } catch {}
-        wsRef.current = null;
-      }
-
-      return;
+    function reconnect() {
+      if (!active) return;
+      retry = setTimeout(connect, Math.min(1000 * 2 ** attempts++, 12_000));
     }
 
-    isClosing.current = false;
-    attempts.current = 0;
-
-    const endpoint = `/api/v1/notifications/ws/notifications`;
-
-    const connect = async () => {
-      if (wsRef.current || !mountedRef.current || isClosing.current) return; // tránh double connect
-
+    async function connect() {
+      if (!active) return;
       try {
-        const ws = await connectWebSocket(
-          endpoint,
-          accessToken,
+        const next = await connectWebSocket(
+          "/api/v1/notifications/ws/notifications",
           role_name,
-          (data: NotificationWSData) => {
-            if (!mountedRef.current || isClosing.current) return;
-            console.log("data notification-ws", data);
-            if (!data) return;
-            if (data.type === "notification.created") {
-              add(role_name, data.data);
+          (event: NotificationWSData) => {
+            if (active && useUserStore.getState().user?.id === userId &&
+                event?.type === "notification.created" && event.data) {
+              add(role_name, event.data);
             }
-          }
+          },
         );
-
-        if (!mountedRef.current || isClosing.current) {
-          try {
-            ws.close(1000, "Component unmounting");
-          } catch {}
+        if (!active) {
+          next.close(1000);
           return;
         }
-
-        ws.onclose = (event) => {
-          wsRef.current = null;
-          if (isClosing.current || !mountedRef.current) return;
+        socket = next;
+        const connectedAt = Date.now();
+        socket.onclose = (event) => {
+          socket = undefined;
           if (event.code === 1000) return;
-
-          if (event.code === 1008) {
-            if (Date.now() - lastAuthRecovery.current < 5000) return;
-            lastAuthRecovery.current = Date.now();
-            refreshSession(true).then(() => {
-              if (mountedRef.current && !isClosing.current) connect();
-            }).catch(error => {
-              if (isSessionExpired(error)) clearUser();
-              else reconnectTimer.current = setTimeout(() => {
-                if (mountedRef.current && !isClosing.current) connect();
-              }, 5000);
-            });
-            return;
-          }
-
-          const timeout = Math.min(1000 * 2 ** attempts.current, 12000);
-          attempts.current++;
-
-          reconnectTimer.current = setTimeout(() => {
-            if (mountedRef.current && !isClosing.current) {
-              connect();
-            }
-          }, timeout);
+          if (Date.now() - connectedAt >= 12_000) attempts = 0;
+          reconnect();
         };
-
-        wsRef.current = ws;
-        attempts.current = 0;
-      } catch (err) {
-        if (isClosing.current || !mountedRef.current) return;
-
-        const timeout = Math.min(1000 * 2 ** attempts.current, 12000);
-        attempts.current++;
-
-        reconnectTimer.current = setTimeout(() => {
-          if (mountedRef.current && !isClosing.current) {
-            connect();
-          }
-        }, timeout);
+      } catch {
+        reconnect();
       }
-    };
+    }
 
-    connect();
-
+    void connect();
     return () => {
-      isClosing.current = true;
-
-      if (reconnectTimer.current) {
-        clearTimeout(reconnectTimer.current);
-        reconnectTimer.current = null;
-      }
-
-      if (wsRef.current) {
-        try {
-          wsRef.current.close(1000, "Effect cleanup");
-        } catch {}
-        wsRef.current = null;
-      }
+      active = false;
+      clearTimeout(retry);
+      socket?.close(1000);
     };
-  }, [userId, accessToken, role_name, add]);
+  }, [ready, userId, role_name, add]);
 
   return null;
 }

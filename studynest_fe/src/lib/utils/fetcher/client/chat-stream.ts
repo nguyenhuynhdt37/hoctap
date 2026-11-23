@@ -1,4 +1,4 @@
-import { refreshSession } from "./refresh-session";
+import { authedFetch } from "./axios";
 import { consumeChatEvents } from "./chat-events";
 
 export async function postChatStream<T>(
@@ -9,18 +9,13 @@ export async function postChatStream<T>(
   if (signal?.aborted) controller.abort();
   signal?.addEventListener("abort", abort, { once: true });
   const timer = setTimeout(abort, 180000);
-  const send = () => fetch(`/api${path}`, {
-    method: "POST", credentials: "include", signal: controller.signal,
+  const send = () => authedFetch(`/api${path}`, {
+    method: "POST", signal: controller.signal,
     headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
     body: JSON.stringify({ ...(body as object), stream: true }),
   });
   try {
-    let response = await send();
-    if (response.status === 401) {
-      await response.body?.cancel();
-      await refreshSession();
-      response = await send();
-    }
+    const response = await send();
     if (!response.ok) {
       throw Object.assign(new Error("Không gửi được tin nhắn."), { response: { status: response.status } });
     }

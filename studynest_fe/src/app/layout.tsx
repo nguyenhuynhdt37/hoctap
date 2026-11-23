@@ -1,9 +1,11 @@
+import AuthBootstrap from "@/components/auth/AuthBootstrap";
 import AssistantRoot from "@/components/user/assistant/assistant-root";
 import HydrationFix from "@/components/shared/hydration-fix";
 import RouteProgressBar from "@/components/shared/route-progress-bar";
 import { NotificationToastListener } from "@/components/shared/toast/notification-toast-listener";
 import { ToastProvider } from "@/components/shared/toast/toast-provider";
 import UserLoader from "@/components/shared/user-loader";
+import { isDpopMode } from "@/lib/auth/mode";
 import { QueryProvider } from "@/provider/QueryProvider";
 import Script from "next/script";
 import { Suspense } from "react";
@@ -83,6 +85,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const content = <AssistantRoot>{children}</AssistantRoot>;
   return (
     <html
       lang="vi"
@@ -106,7 +109,8 @@ export default function RootLayout({
         <QueryProvider>
           <ToastProvider />
           <NotificationToastListener />
-          <UserLoader><AssistantRoot>{children}</AssistantRoot></UserLoader>
+          <Suspense fallback={null}><AuthBootstrap /></Suspense>
+          {isDpopMode ? content : <UserLoader>{content}</UserLoader>}
         </QueryProvider>
       </body>
     </html>

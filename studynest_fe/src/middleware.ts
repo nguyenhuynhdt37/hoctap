@@ -13,6 +13,12 @@ async function backend(path: string, cookie: string, method = "GET") {
 }
 
 export async function middleware(req: NextRequest) {
+  if (process.env.NEXT_PUBLIC_AUTH_MODE === "dpop") {
+    const response = NextResponse.next();
+    response.headers.set("Referrer-Policy", "no-referrer");
+    return response;
+  }
+
   const path = req.nextUrl.pathname;
   const isAdmin = path === "/admin" || path.startsWith("/admin/");
   const isLecturer = path === "/lecturer" || path.startsWith("/lecturer/");

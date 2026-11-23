@@ -1,5 +1,6 @@
 "use client";
 
+import { safeUUID } from "@/lib/utils/uuid";
 import api from "@/lib/utils/fetcher/client/axios";
 import { triggerCelebration } from "@/lib/utils/helpers/effects";
 import { ActiveLessonResponse } from "@/types/user/activeLesson";
@@ -47,7 +48,6 @@ export default function CodeLesson({
   lesson,
   onMarkCompleted,
   completedLessons,
-  accessToken,
   lessonAuthorId,
 }: CodeLessonProps) {
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
@@ -517,7 +517,7 @@ export default function CodeLesson({
   useAgentAction("editor.propose_patch", { execute: async args => { checkPatch(args); return { ...args, preview: (args.patches as Array<Record<string, unknown>>).map(patch => ({ ...patch, filename: currentUserFiles.find(file => file.id === patch.file_id)?.filename || patch.file_id })), verified: true }; }, verify: result => Boolean((result as { verified?: boolean }).verified) });
   useAgentAction("editor.apply_patch", { mutation: true, execute: async (args, signal) => {
     const { before, after } = checkPatch(args);
-    const patchId = crypto.randomUUID();
+    const patchId = safeUUID();
     if (signal.aborted) throw new DOMException("Đã hủy", "AbortError");
     bufferRef.current = { ...bufferRef.current, [currentExercise.id]: after }; setUserFiles(bufferRef.current);
     editorRevision.current += 1; undoRef.current = { exerciseId: currentExercise.id, before, after, patchId, revision: editorRevision.current };
@@ -564,7 +564,6 @@ export default function CodeLesson({
               setInfoTab={setInfoTab}
               currentExercise={currentExercise}
               testResult={testResult}
-              accessToken={accessToken}
               lessonAuthorId={lessonAuthorId}
             />
           </div>

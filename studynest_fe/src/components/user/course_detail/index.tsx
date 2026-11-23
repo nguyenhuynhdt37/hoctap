@@ -17,6 +17,7 @@ import EnrollmentModal from "./enrollment-modal";
 import InstructorSection from "./instructor-section";
 import OutcomesSection from "./outcomes-section";
 import PreviewModal from "./preview-modal";
+import { toYoutubeEmbedUrl } from "./youtube-embed";
 import RelatedTopicsSection from "./related-topics-section";
 import RequirementsSection from "./requirements-section";
 import ReviewsSection from "./reviews-section";
@@ -193,38 +194,6 @@ const CourseDetail = () => {
     }
   };
 
-  const toYoutubeEmbedUrl = (url: string): string => {
-    try {
-      if (!url) return "";
-      if (url.includes("youtube.com/embed/")) return url;
-
-      let videoId = "";
-      const watchMatch = url.match(/[?&]v=([^&]+)/);
-      if (watchMatch) {
-        videoId = watchMatch[1];
-      } else if (url.includes("youtu.be/")) {
-        const beMatch = url.match(/youtu\.be\/([^?&]+)/);
-        if (beMatch) {
-          videoId = beMatch[1];
-        }
-      } else if (url.includes("youtube.com/embed/")) {
-        const embedMatch = url.match(/embed\/([^?&]+)/);
-        if (embedMatch) {
-          videoId = embedMatch[1];
-        }
-      } else if (!url.includes("http")) {
-        videoId = url;
-      }
-
-      if (videoId) {
-        return `https://www.youtube.com/embed/${videoId}`;
-      }
-      return url;
-    } catch {
-      return url;
-    }
-  };
-
   const openPreview = async (courseId: string, lessonId?: string) => {
     try {
       setIsPreviewLoading(true);
@@ -311,8 +280,10 @@ const CourseDetail = () => {
                 router.push(`/learning/${courseSlug}`);
               }, 1500);
             } else if (transaction_id) {
-              const redirectUrl = `/transaction?status=success&order_id=${transaction_id}&redirect=/learning/${courseSlug}`;
-              router.push(redirectUrl);
+              const params = new URLSearchParams({
+                status: "success", order_id: transaction_id, redirect: `/learning/${courseSlug}`,
+              });
+              router.push(`/transaction?${params}`);
             } else {
               setTimeout(() => {
                 router.push(`/learning/${courseSlug}`);

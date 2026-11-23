@@ -1,13 +1,14 @@
 "use client";
 
+import { useAuthedSWR } from "@/hooks/auth/useAuthedSWR";
 import { connectWebSocket } from "@/hooks/websocket/connectWebSocket";
+import { isDpopMode } from "@/lib/auth/mode";
 import api from "@/lib/utils/fetcher/client/axios";
 import { showToast } from "@/lib/utils/helpers/toast";
 import { useUserStore } from "@/stores/user";
 import { CommentItem, CommentResponse } from "@/types/user/comment";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { HiChat, HiX } from "react-icons/hi";
-import useSWR from "swr";
 import CommentWithReplies from "./comment-with-replies";
 import NewCommentForm from "./new-comment-form";
 import {
@@ -49,7 +50,6 @@ const usePreventBodyScroll = (isOpen: boolean) => {
 
 export default function QASection({
   lessonId,
-  accessToken,
   lessonAuthorId = null,
   isModal = false,
   onClose,
@@ -82,7 +82,7 @@ export default function QASection({
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
   const [wsStatus, setWsStatus] = useState<
     "connecting" | "connected" | "disconnected" | "reconnecting"
-  >("connecting");
+  >(isDpopMode ? "connecting" : "disconnected");
 
   // Refs
   const wsRef = useRef<WebSocket | null>(null);
@@ -98,7 +98,6 @@ export default function QASection({
   // Refs cho reconnect logic
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttemptsRef = useRef<number>(0);
-  const isMountedRef = useRef<boolean>(true);
 
   // SWR - Fetch root comments
   const {
@@ -106,16 +105,9 @@ export default function QASection({
     error: rootError,
     isLoading: isLoadingRoot,
     mutate: mutateRoot,
-  } = useSWR<CommentResponse>(
-    lessonId ? `comments-root-${lessonId}` : null,
-    async () => {
-      const params = new URLSearchParams({ depth_target: "0", limit: "20" });
-      const response = await api.get<CommentResponse>(
-        `/learning/${lessonId}/comments?${params.toString()}`
-      );
-      return response.data;
-    },
-    { revalidateOnFocus: false, dedupingInterval: 30000 }
+  } = useAuthedSWR<CommentResponse>(
+    lessonId && currentUserId ? `/learning/${lessonId}/comments?depth_target=0&limit=20` : null,
+    { revalidateOnFocus: !isDpopMode, refreshInterval: isDpopMode ? 0 : 15_000, dedupingInterval: 2000 }
   );
 
   // Fetch replies function
@@ -194,11 +186,11 @@ export default function QASection({
 
   // WebSocket connection với auto-reconnect
   useEffect(() => {
-    if (!lessonId || !accessToken) return;
-    isMountedRef.current = true;
+    if (!isDpopMode || !lessonId || !currentUserId) return;
+    let active = true;
 
     const connect = async (isReconnect = false) => {
-      if (!isMountedRef.current) return;
+      if (!active) return;
 
       if (isReconnect) {
         setWsStatus("reconnecting");
@@ -209,12 +201,11 @@ export default function QASection({
       try {
         const ws = await connectWebSocket(
           `/api/v1/learning/ws/comments/${lessonId}`,
-          accessToken,
           "USER",
           (data) => {
+            if (!active || useUserStore.getState().user?.id !== currentUserId) return;
             // Handle errors
             if (data.error) {
-              console.error("WebSocket error:", data.error);
               showToast.error(`Lỗi: ${data.error}`);
               setIsSubmitting(false);
               setIsCreatingComment(false);
@@ -276,7 +267,7 @@ export default function QASection({
                   if (updatedComment.depth === 1) {
                     const updateCallback =
                       updateRepliesCallbacksRef.current.get(rootId);
-                    if (updateCallback && expandedReplies.has(rootId)) {
+                    if (updateCallback && expandedRepliesRef.current.has(rootId)) {
                       updateCallback();
                     }
                   } else if (
@@ -546,16 +537,20 @@ export default function QASection({
             }
           }
         );
+        if (!active) {
+          ws.close(1000);
+          return;
+        }
         wsRef.current = ws;
         setWsStatus("connected");
         reconnectAttemptsRef.current = 0;
 
         ws.onclose = (closeEvent) => {
+          if (!active) return;
           wsRef.current = null;
           setIsSubmitting(false);
           setIsCreatingComment(false);
 
-          if (!isMountedRef.current) return;
           if (closeEvent.code === 1000) return;
 
           const delay = Math.min(
@@ -565,24 +560,22 @@ export default function QASection({
           reconnectAttemptsRef.current += 1;
 
           reconnectTimeoutRef.current = setTimeout(() => {
-            if (isMountedRef.current) {
+            if (active) {
               connect(true);
             }
           }, delay);
         };
 
         ws.onerror = () => {
-          if (isMountedRef.current) {
+          if (active) {
             setWsStatus("disconnected");
           }
         };
-      } catch (err) {
-        console.error("WebSocket connection failed:", err);
+      } catch {
+        if (!active) return;
         wsRef.current = null;
         setIsSubmitting(false);
         setIsCreatingComment(false);
-
-        if (!isMountedRef.current) return;
 
         const delay = Math.min(
           1000 * Math.pow(2, reconnectAttemptsRef.current),
@@ -591,7 +584,7 @@ export default function QASection({
         reconnectAttemptsRef.current += 1;
 
         reconnectTimeoutRef.current = setTimeout(() => {
-          if (isMountedRef.current) {
+          if (active) {
             connect(true);
           }
         }, delay);
@@ -600,7 +593,7 @@ export default function QASection({
 
     connect();
     return () => {
-      isMountedRef.current = false;
+      active = false;
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
         reconnectTimeoutRef.current = null;
@@ -623,9 +616,7 @@ export default function QASection({
     };
   }, [
     lessonId,
-    accessToken,
     mutateRoot,
-    expandedReplies,
     currentUserId,
     updateRepliesCallbacksRef,
     updateDepth2RepliesCallbacksRef,
@@ -698,8 +689,7 @@ export default function QASection({
     try {
       wsRef.current.send(JSON.stringify(message));
       return true;
-    } catch (error) {
-      console.error("❌ Error sending WebSocket message:", error);
+    } catch {
       return false;
     }
   }, []);
@@ -712,24 +702,37 @@ export default function QASection({
     sendWebSocketMessage({ type: "typing" });
   }, [sendWebSocketMessage]);
 
+  const createCommentOverHttp = useCallback(async (content: string, parentId?: string) => {
+    const { data } = await api.post<{ type?: string }>(
+      `/learning/${lessonId}/lesson_comments`,
+      { content, parent_id: parentId },
+    );
+    if (data?.type !== "comment_created") throw new Error("Không thể tạo bình luận.");
+    void mutateRoot().catch(() => undefined);
+    if (parentId) reloadAllExpandedReplies();
+  }, [lessonId, mutateRoot, reloadAllExpandedReplies]);
+
   // Handlers
   const handleCreateComment = useCallback(
     async (content: string) => {
       if (!content.trim() || isCreatingComment) return;
       setIsCreatingComment(true);
       try {
-        sendWebSocketMessage({
+        if (!isDpopMode) {
+          await createCommentOverHttp(content.trim());
+        } else if (!sendWebSocketMessage({
           type: "create",
           create: { content: content.trim() },
-        });
-      } catch (err) {
-        console.error("Failed to create comment:", err);
+        })) {
+          throw new Error("WebSocket chưa kết nối.");
+        }
+      } catch {
         showToast.error("Không thể tạo bình luận. Vui lòng thử lại.");
       } finally {
         setIsCreatingComment(false);
       }
     },
-    [isCreatingComment, sendWebSocketMessage]
+    [isCreatingComment, sendWebSocketMessage, createCommentOverHttp]
   );
 
   const handleCreateReply = useCallback(
@@ -759,7 +762,10 @@ export default function QASection({
 
       setIsSubmitting(true);
       try {
-        if (
+        if (!isDpopMode) {
+          await createCommentOverHttp(content.trim(), parentId);
+          setReplyingTo(null);
+        } else if (
           sendWebSocketMessage({
             type: "create",
             create: { content: content.trim(), parent_id: parentId },
@@ -767,28 +773,35 @@ export default function QASection({
         ) {
           setReplyingTo(null);
         }
-      } catch (err) {
-        console.error("Failed to create reply:", err);
+      } catch {
         showToast.error("Không thể tạo phản hồi. Vui lòng thử lại.");
       } finally {
         setIsSubmitting(false);
       }
     },
-    [isSubmitting, sendWebSocketMessage, rootCommentsData, depth2RepliesData]
+    [isSubmitting, sendWebSocketMessage, rootCommentsData, depth2RepliesData, createCommentOverHttp]
   );
 
   const handleReaction = useCallback(async (commentId: string) => {
     try {
       await api.post(`/learning/comments/${commentId}/reacts`);
+      if (!isDpopMode) {
+        void mutateRoot().catch(() => undefined);
+        reloadAllExpandedReplies();
+      }
     } catch (err) {
       console.error("Failed to toggle reaction:", err);
       showToast.error("Không thể cập nhật reaction. Vui lòng thử lại.");
     }
-  }, []);
+  }, [mutateRoot, reloadAllExpandedReplies]);
 
   const handleEditComment = useCallback(
     async (commentId: string, content: string) => {
       if (!content.trim() || isSubmitting) return;
+      if (!isDpopMode) {
+        showToast.error("Chưa thể chỉnh sửa bình luận với phiên đăng nhập hiện tại.");
+        return;
+      }
       setIsSubmitting(true);
       try {
         if (
@@ -815,6 +828,10 @@ export default function QASection({
 
   const handleDeleteComment = useCallback(
     async (commentId: string) => {
+      if (!isDpopMode) {
+        showToast.error("Chưa thể xóa bình luận với phiên đăng nhập hiện tại.");
+        return;
+      }
       if (!confirm("Bạn có chắc chắn muốn xóa bình luận này?")) return;
       if (isDeletingComment) return;
       setIsDeletingComment(commentId);

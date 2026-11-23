@@ -1,6 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { isDpopMode } from "@/lib/auth/mode";
+import { openAuthedWebSocket, takeInitialWebSocketMessage } from "@/lib/auth/ws";
+import { getDpopSocketBase } from "@/lib/auth/http";
 import api from "@/lib/utils/fetcher/client/axios";
 import type { MessageSource } from "@/types/user/tutor-chat";
 import type { AgentEvent } from "../../agent/contracts";
@@ -9,6 +12,7 @@ export type VoiceState = "idle" | "connecting" | "listening" | "thinking" | "spe
 export interface VoiceTurn { role: "user" | "assistant"; content: string; sources?: MessageSource[] }
 interface Resources {
   ws?: WebSocket;
+  setupTimer?: ReturnType<typeof setTimeout>;
   context?: AudioContext;
   stream?: MediaStream;
   recorder?: AudioWorkletNode;
@@ -22,7 +26,7 @@ interface Resources {
 }
 const empty = (): Resources => ({ playback: new Set(), nextPlay: 0, ready: false, muted: false, stopped: false });
 
-export function useLessonVoice(lessonId: string | undefined, accessToken?: string, agentSessionId?: string, onAgentEvent?: (event: AgentEvent) => Promise<void>) {
+export function useLessonVoice(lessonId: string | undefined, _accessToken?: string, agentSessionId?: string, onAgentEvent?: (event: AgentEvent) => Promise<void>) {
   const [voiceName, setVoiceName] = useState("eve");
   const [speed, setSpeed] = useState(1);
   const [micThreshold, setMicThreshold] = useState(0.012);
@@ -73,6 +77,7 @@ export function useLessonVoice(lessonId: string | undefined, accessToken?: strin
 
   const cleanup = useCallback((r: Resources) => {
     r.stopped = true; r.ready = false;
+    clearTimeout(r.setupTimer);
     if (r.raf !== undefined) cancelAnimationFrame(r.raf);
     r.stream?.getTracks().forEach(t => t.stop());
     r.recorder?.disconnect();
@@ -134,22 +139,32 @@ export function useLessonVoice(lessonId: string | undefined, accessToken?: strin
       mic.connect(recorder);
       const silence = context.createGain(); silence.gain.value = 0;
       recorder.connect(silence).connect(context.destination);
-      const base = process.env.NEXT_PUBLIC_URL_BACKEND_WS || "ws://127.0.0.1:8000";
+      const base = isDpopMode ? getDpopSocketBase() : (
+        process.env.NEXT_PUBLIC_URL_BACKEND_WS || process.env.NEXT_PUBLIC_URL_BACKEND || "ws://127.0.0.1:8000"
+      );
       const url = new URL(`${base.replace(/\/$/, "")}/api/v1/tutor-chat/${lessonId ? `lessons/${lessonId}/voice` : "voice"}`);
       url.searchParams.set("voice", voiceName);
       url.searchParams.set("speed", String(speed));
       if (agentSessionId) url.searchParams.set("agent_session_id", agentSessionId);
-      const { data: credentials } = await api.post<{ ticket: string }>("/tutor-chat/voice-ticket", {});
+      const protocols = ["studynest-voice"];
+      if (isDpopMode) {
+        await api.get("/auth/me");
+      } else {
+        const { data } = await api.post<{ ticket: string }>("/tutor-chat/voice-ticket", {});
+        protocols.push(`ticket.${data.ticket}`);
+      }
       if (r.stopped) return;
-      const ws = new WebSocket(url, ["studynest-voice", `ticket.${credentials.ticket}`]); r.ws = ws;
-      let setupTimer: ReturnType<typeof setTimeout> | undefined = setTimeout(() => fail("Kết nối voice quá lâu. Vui lòng thử lại."), 20000);
+      r.setupTimer = setTimeout(() => fail("Kết nối voice quá lâu. Vui lòng thử lại."), 20000);
+      const ws = await openAuthedWebSocket(url.href, { protocols });
+      if (r.stopped) { ws.close(); return; }
+      r.ws = ws;
       recorder.port.onmessage = (event: MessageEvent<ArrayBuffer>) => {
         if (!r.stopped && r.ready && !r.muted && ws.readyState === WebSocket.OPEN) {
           if (ws.bufferedAmount > 64000) { fail("Kết nối mạng không theo kịp âm thanh. Vui lòng kết nối lại."); return; }
           ws.send(event.data);
         }
       };
-      ws.onmessage = (event) => {
+      const onMessage = (event: MessageEvent) => {
         if (r.stopped) return;
         try {
           const message = JSON.parse(event.data);
@@ -158,7 +173,7 @@ export function useLessonVoice(lessonId: string | undefined, accessToken?: strin
           } else if (message.type === "memory_saved") {
             window.dispatchEvent(new CustomEvent("maymay:memory-proposed"));
           } else if (message.type === "ready") {
-            clearTimeout(setupTimer); setupTimer = undefined;
+            clearTimeout(r.setupTimer); r.setupTimer = undefined;
             r.ready = true; setImageCount(message.image_count || 0); setCanRead(message.can_read_lesson); setThreadId(message.thread_id);
             setStatus("listening");
           } else if (message.type === "audio") {
@@ -204,15 +219,17 @@ export function useLessonVoice(lessonId: string | undefined, accessToken?: strin
           } else if (message.type === "error" || message.error) {
             fail(message.message || message.error || "Không thể mở voice.");
           } else if (message.type === "ended") {
-            clearTimeout(setupTimer); cleanup(r); setStatus("ended"); setError(message.message || "");
+            cleanup(r); setStatus("ended"); setError(message.message || "");
           }
         } catch { fail("Không đọc được phản hồi voice. Vui lòng thử lại."); }
       };
       ws.onerror = () => fail("Không kết nối được voice. Kiểm tra mạng và thử lại.");
       ws.onclose = () => {
-        clearTimeout(setupTimer);
         if (!r.stopped) fail("Phiên voice đã ngắt kết nối. Bạn có thể bắt đầu lại.");
       };
+      ws.onmessage = onMessage;
+      const firstMessage = takeInitialWebSocketMessage(ws);
+      if (firstMessage) onMessage(firstMessage);
       const values = new Float32Array(analyser.fftSize);
       let lastPaint = 0;
       const animate = (timestamp = 0) => {
@@ -231,7 +248,7 @@ export function useLessonVoice(lessonId: string | undefined, accessToken?: strin
         : e.name === "NotFoundError" ? "Không tìm thấy micro. Hãy kết nối micro rồi thử lại."
         : e.message || "Không thể mở voice.");
     }
-  }, [voiceName, speed, micThreshold, accessToken, lessonId, agentSessionId, onAgentEvent, cleanup, clearPlayback, setStatus]);
+  }, [voiceName, speed, micThreshold, lessonId, agentSessionId, onAgentEvent, cleanup, clearPlayback, setStatus]);
 
   const toggleMute = useCallback(() => {
     const r = resources.current;

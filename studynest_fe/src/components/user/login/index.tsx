@@ -1,10 +1,16 @@
 "use client";
 
-import AuthScenicLayout from "@/components/user/auth/auth-scenic-layout";
-import GitHubSignInButton from "@/components/shared/github-sign-in-button";
-import GoogleSignInButton from "@/components/shared/google-sign-in-button";
-import { Alert, Button, Card, Divider, Input, Modal } from "@/components/ui";
-import api from "@/lib/utils/fetcher/client/axios";
+import AuthShell, {
+  AuthInput,
+  AuthProviders,
+  PasswordToggle,
+  authLinkClass,
+  authSubmitClass,
+  type AuthRequestError,
+} from "@/components/user/auth/AuthShell";
+import { Alert, Button, Modal } from "@/components/ui";
+import { postAuthSession } from "@/lib/auth/login";
+import { isDpopMode } from "@/lib/auth/mode";
 import {
   calculateRemainingMs,
   formatBanDate,
@@ -15,7 +21,8 @@ import {
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { HiEye, HiEyeOff } from "react-icons/hi";
+import { ArrowRight, LockKeyhole, Mail } from "lucide-react";
+import { sanitizeRedirect } from "@/lib/auth/safe-redirect";
 
 // ============================================
 // VALIDATION FUNCTIONS
@@ -98,9 +105,10 @@ const ErrorDialog = ({
       onClose={onClose}
       title={title}
       size="md"
+      className="rounded-[2rem] [&_button]:min-h-11 [&_button]:min-w-11"
       footer={
         <>
-          <Button variant="secondary" onClick={onClose} className="flex-1">
+          <Button variant="secondary" onClick={onClose} className="flex-1 rounded-full">
             Đóng
           </Button>
           {actions?.map((action, index) => (
@@ -108,7 +116,7 @@ const ErrorDialog = ({
               key={index}
               variant={variant === "error" ? "destructive" : "primary"}
               onClick={action.onClick}
-              className="flex-1"
+              className="flex-1 rounded-full"
             >
               {action.label}
             </Button>
@@ -128,7 +136,7 @@ const ErrorDialog = ({
 const Login = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectUrl = searchParams.get("redirect") || "/";
+  const redirectUrl = sanitizeRedirect(searchParams.get("redirect"));
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -165,16 +173,16 @@ const Login = () => {
   // ============================================
 
   const handleGoogleCredentialResponse = useCallback(
-    async (response: any) => {
+    async (response: { credential: string }) => {
       if (!response.credential) return;
       setIsGoogleLoading(true);
       setErrors((prev) => ({ ...prev, general: "" }));
       try {
-        await api.post("/auth/google", { credential: response.credential });
+        await postAuthSession("/auth/google", { credential: response.credential });
         router.push(redirectUrl);
         router.refresh();
-      } catch (error: any) {
-        handleLoginError(error);
+      } catch (error) {
+        handleLoginError(error, "google");
       } finally {
         setIsGoogleLoading(false);
       }
@@ -242,15 +250,21 @@ const Login = () => {
   // ERROR HANDLING
   // ============================================
 
-  const handleLoginError = (error: any) => {
+  const handleLoginError = (cause: unknown, method: "password" | "google" = "password") => {
+    const error = cause as (AuthRequestError & { response?: { data?: { code?: string } } }) | undefined;
     const detail = error?.response?.data?.detail;
+
+    if (isDpopMode && method === "password" && error?.response?.data?.code === "invalid_token") {
+      setErrors((prev) => ({ ...prev, general: "Email hoặc mật khẩu không đúng" }));
+      return;
+    }
 
     if (isLoginErrorDetail(detail)) {
       handleErrorByCode(detail);
       return;
     }
 
-    if (error?.status === 401 || error?.response?.status === 401) {
+    if (!isDpopMode && (error?.status === 401 || error?.response?.status === 401)) {
       const redirectParam =
         redirectUrl !== "/"
           ? `&redirect=${encodeURIComponent(redirectUrl)}`
@@ -319,7 +333,7 @@ const Login = () => {
                   <span className="font-medium">📋 Lý do:</span> {detail.reason}
                 </p>
               )}
-              <p className="text-muted-foreground text-xs mt-2">
+              <p className="text-foreground/85 text-xs mt-2">
                 Nếu bạn cho rằng đây là nhầm lẫn, vui lòng liên hệ bộ phận hỗ
                 trợ.
               </p>
@@ -354,7 +368,7 @@ const Login = () => {
                   <Countdown bannedUntil={detail.banned_until} />
                 </p>
               )}
-              <p className="text-muted-foreground text-xs mt-2">
+              <p className="text-foreground/85 text-xs mt-2">
                 Vui lòng đợi đến khi tài khoản được mở khóa hoặc liên hệ support
                 nếu cần hỗ trợ.
               </p>
@@ -382,7 +396,7 @@ const Login = () => {
                   <span className="font-medium">📋 Lý do:</span> {detail.reason}
                 </p>
               )}
-              <p className="text-muted-foreground text-xs mt-2">
+              <p className="text-foreground/85 text-xs mt-2">
                 Nếu bạn cho rằng đây là nhầm lẫn, vui lòng liên hệ bộ phận hỗ
                 trợ.
               </p>
@@ -417,10 +431,10 @@ const Login = () => {
 
     setIsLoading(true);
     try {
-      await api.post("/auth/login", { email, password });
+      await postAuthSession("/auth/login", { email, password });
       router.push(redirectUrl);
       router.refresh();
-    } catch (error: any) {
+    } catch (error) {
       handleLoginError(error);
     } finally {
       setIsLoading(false);
@@ -437,121 +451,91 @@ const Login = () => {
 
   return (
     <>
-      <AuthScenicLayout>
-          <Card className="rounded-[24px] p-6 sm:p-8 space-y-5">
-            {/* Header */}
-            <div className="text-center space-y-2">
-              <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground">
-                Đăng nhập
-              </h1>
-              <p className="text-muted-foreground text-sm">
-                Chào mừng trở lại! Vui lòng đăng nhập vào tài khoản của bạn
-              </p>
-            </div>
+      <AuthShell
+        screen="login"
+        title="Đăng nhập"
+        description="Đăng nhập để tiếp tục học cùng Mây Mây."
+      >
+        <AuthProviders
+          onCredential={handleGoogleCredentialResponse}
+          busy={isGoogleLoading}
+          githubRedirect={redirectUrl}
+          githubError={searchParams.get("github_error")}
+        />
 
-            {/* Google Login */}
-            <GoogleSignInButton
-              onCredential={handleGoogleCredentialResponse}
-              busy={isGoogleLoading}
-            />
+        {errors.general && (
+          <Alert variant="destructive" className="mt-3">{errors.general}</Alert>
+        )}
 
-            <GitHubSignInButton redirectTo={redirectUrl} callbackError={searchParams.get("github_error")} />
+        <form className="mt-3 space-y-3" onSubmit={handleSubmit}>
+          <AuthInput
+            id="email"
+            name="email"
+            type="email"
+            label="Email"
+            autoComplete="email"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            inputMode="email"
+            enterKeyHint="next"
+            required
+            value={email}
+            onChange={(e) => handleEmailChange(e.target.value)}
+            onBlur={() => handleBlur("email")}
+            error={touched.email ? errors.email : undefined}
+            placeholder="you@example.com"
+            leftIcon={<Mail aria-hidden="true" className="size-4" />}
+          />
 
-            {/* Divider */}
-            <Divider label="HOẶC" />
-
-            {/* Error Message */}
-            {errors.general && (
-              <Alert variant="destructive">{errors.general}</Alert>
-            )}
-
-            {/* Login Form */}
-            <form className="space-y-5" onSubmit={handleSubmit}>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                label="Email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => handleEmailChange(e.target.value)}
-                onBlur={() => handleBlur("email")}
-                error={touched.email ? errors.email : undefined}
-                placeholder="you@example.com"
-              />
-
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label
-                    htmlFor="password"
-                    className="block text-sm font-medium text-foreground"
-                  >
-                    Mật khẩu
-                  </label>
-                  <Link
-                    href="/forgot-password"
-                    className="text-xs text-primary hover:text-primary-hover font-medium"
-                  >
-                    Quên mật khẩu?
-                  </Link>
-                </div>
-                <Input
-                  id="password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(e) => handlePasswordChange(e.target.value)}
-                  onBlur={() => handleBlur("password")}
-                  error={touched.password ? errors.password : undefined}
-                  rightIcon={
-                    <button
-                      type="button"
-                      className="text-subtle-foreground hover:text-foreground transition-colors cursor-pointer"
-                      onClick={() => setShowPassword(!showPassword)}
-                      tabIndex={-1}
-                      aria-label={
-                        showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"
-                      }
-                    >
-                      {showPassword ? (
-                        <HiEyeOff className="h-5 w-5" />
-                      ) : (
-                        <HiEye className="h-5 w-5" />
-                      )}
-                    </button>
-                  }
-                  placeholder="••••••••"
-                />
-              </div>
-
-              <Button
-                type="submit"
-                variant="primary"
-                size="lg"
-                fullWidth
-                disabled={isGoogleLoading || !email || !password}
-                isLoading={isLoading}
-                loadingText="Đang đăng nhập..."
-              >
-                Đăng nhập
-              </Button>
-            </form>
-
-            {/* Footer Link */}
-            <div className="text-center text-sm text-muted-foreground">
-              Chưa có tài khoản?{" "}
-              <Link
-                href="/register"
-                className="text-primary hover:text-primary-hover font-semibold"
-              >
-                Đăng ký ngay
+          <div>
+            <div className="flex flex-wrap items-center justify-between gap-x-2">
+              <label htmlFor="password" className="text-sm font-medium text-foreground">
+                Mật khẩu
+              </label>
+              <Link href="/forgot-password" className={`${authLinkClass} text-xs`}>
+                Quên mật khẩu?
               </Link>
             </div>
-          </Card>
-      </AuthScenicLayout>
+            <AuthInput
+              id="password"
+              name="password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
+              enterKeyHint="go"
+              required
+              value={password}
+              onChange={(e) => handlePasswordChange(e.target.value)}
+              onBlur={() => handleBlur("password")}
+              error={touched.password ? errors.password : undefined}
+              leftIcon={<LockKeyhole aria-hidden="true" className="size-4" />}
+              rightIcon={
+                <PasswordToggle visible={showPassword} onClick={() => setShowPassword(!showPassword)} />
+              }
+              placeholder="••••••••"
+            />
+          </div>
+
+          <Button
+            type="submit"
+            variant="primary"
+            size="lg"
+            fullWidth
+            disabled={isGoogleLoading || !email || !password}
+            isLoading={isLoading}
+            loadingText="Đang đăng nhập..."
+            className={`mt-2 ${authSubmitClass}`}
+            rightIcon={<ArrowRight aria-hidden="true" className="size-4" />}
+          >
+            Đăng nhập
+          </Button>
+        </form>
+
+        <div className="mt-3 flex flex-wrap items-center justify-center gap-x-1.5 border-t border-border pt-1 text-sm text-foreground/85">
+          <span>Chưa có tài khoản?</span>
+          <Link href="/register" className={authLinkClass}>Đăng ký ngay</Link>
+        </div>
+      </AuthShell>
 
       {/* Error Dialog */}
       <ErrorDialog

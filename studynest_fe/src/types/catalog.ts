@@ -19,6 +19,18 @@ export interface CatalogOptions {
   grade_subjects: { grade_id: string; subject_id: string }[];
   delivery_types: { code: string; name: string }[];
 }
+export interface CatalogSubjectCourseCounts {
+  total: number;
+  by_level: Partial<Record<string, number>>;
+  by_grade: Partial<Record<string, number>>;
+}
+export interface CatalogOptionsWithCourseCounts extends CatalogOptions {
+  course_counts: {
+    total: number;
+    by_level: Partial<Record<string, number>>;
+    by_subject: Partial<Record<string, CatalogSubjectCourseCounts>>;
+  };
+}
 export interface CourseEducation {
   subject: TaxonomyItem | null;
   grades: TaxonomyItem[];
@@ -96,4 +108,27 @@ export interface CatalogResult {
   next_cursor: string | null;
   has_more: boolean;
   total: number | null;
+}
+
+export interface CatalogCourseCard extends Omit<CatalogCourse, "currency" | "subject"> {
+  currency: string | null;
+  subject: { id: string; name: string | null } | null;
+  total_hours: number;
+  created_at: string | null;
+  level: string | null;
+  language: string | null;
+  provider: { id: string; name: string; slug: string } | null;
+  students_count: number;
+  lessons_count: number;
+  duration_seconds: number;
+  original_price: number | null;
+  discount_price: number | null;
+  is_free: boolean;
+  is_new: boolean;
+  is_bestseller: boolean;
+  lecturer: { name: string; avatar: string | null };
+}
+
+export interface CatalogCourseCardResult extends Omit<CatalogResult, "items"> {
+  items: CatalogCourseCard[];
 }

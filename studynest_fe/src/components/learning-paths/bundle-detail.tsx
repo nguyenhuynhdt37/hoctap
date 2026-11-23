@@ -1,9 +1,11 @@
 "use client";
+import { safeUUID } from "@/lib/utils/uuid";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import useSWR from "swr";
 import { ArrowLeft, BookOpen, Check, ChevronRight } from "lucide-react";
+import { sanitizeRedirect } from "@/lib/auth/safe-redirect";
 import api from "@/lib/utils/fetcher/client/axios";
 import { Button, Badge, Card, Input, Modal } from "@/components/ui";
 import MarkdownRenderer from "@/components/shared/markdown-renderer";
@@ -46,7 +48,8 @@ export default function BundleDetail({ slug }: { slug: string }) {
 
   function open() {
     if (!user) {
-      router.push(`/login?redirect=${encodeURIComponent(location.pathname)}`);
+      const destination = sanitizeRedirect(location.pathname, "/combo");
+      router.push(`/login?redirect=${encodeURIComponent(destination)}`);
       return;
     }
     setFailure("");
@@ -65,7 +68,7 @@ export default function BundleDetail({ slug }: { slug: string }) {
         } catch {}
         identity.current = {
           hash: quote.quote_hash,
-          key: stored ?? crypto.randomUUID(),
+          key: stored ?? safeUUID(),
         };
         try {
           sessionStorage.setItem(storageKey, identity.current.key);

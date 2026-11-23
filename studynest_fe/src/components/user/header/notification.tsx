@@ -1,18 +1,24 @@
 "use client";
 
+import { IconBubble, Pill } from "@/components/user/home/landing-ui";
+import { Button } from "@/components/ui";
+import { cn } from "@/lib/utils";
 import api from "@/lib/utils/fetcher/client/axios";
 import { useRealtimeNotiStore } from "@/stores/notifications";
-import { Notification } from "@/types/user/notification";
+import type { Notification } from "@/types/user/notification";
+import { Bell, Clock3 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
-import { HiBell, HiClock } from "react-icons/hi";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useId, useRef, useState } from "react";
 
 export function NotificationButton({ role }: { role: string }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const popupRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const popupId = useId();
+  const titleId = useId();
   const markAsRead = useRealtimeNotiStore((s) => s.markAsRead);
 
   const bucket = useRealtimeNotiStore((s) => s.buckets[role]);
@@ -20,7 +26,13 @@ export function NotificationButton({ role }: { role: string }) {
   const unread = bucket?.unread ?? 0;
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    setIsOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleClickOutside = (event: PointerEvent) => {
       if (
         popupRef.current &&
         !popupRef.current.contains(event.target as Node) &&
@@ -31,10 +43,18 @@ export function NotificationButton({ role }: { role: string }) {
       }
     };
 
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      setIsOpen(false);
+      if (popupRef.current?.contains(document.activeElement)) buttonRef.current?.focus();
+    };
+
+    document.addEventListener("pointerdown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("pointerdown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
   }, [isOpen]);
 
   const formatDate = (dateString: string) => {
@@ -88,109 +108,108 @@ export function NotificationButton({ role }: { role: string }) {
   };
 
   return (
-    <div className="relative">
-      <button
+    <div
+      className="relative shrink-0"
+      onBlur={(event) => {
+        if (event.relatedTarget && !event.currentTarget.contains(event.relatedTarget)) {
+          setIsOpen(false);
+        }
+      }}
+    >
+      <Button
         ref={buttonRef}
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-gray-700 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors duration-200"
-        aria-label="Thông báo"
+        variant="pastel"
+        size="icon"
+        onClick={() => setIsOpen((open) => !open)}
+        className="relative rounded-full border-0 active:translate-y-0 aria-expanded:bg-primary-pastel/65 motion-reduce:transition-none"
+        aria-label={unread > 0 ? `Thông báo, ${unread} chưa đọc` : "Thông báo"}
+        aria-expanded={isOpen}
+        aria-controls={isOpen ? popupId : undefined}
       >
-        <HiBell className="h-6 w-6" />
+        <Bell aria-hidden="true" className="size-5" />
         {unread > 0 && (
-          <span className="absolute top-0.5 right-0.5 min-w-[14px] h-[14px] px-1 bg-green-500 text-white text-[10px] font-semibold rounded-full flex items-center justify-center">
+          <span aria-hidden="true" className="absolute top-0 right-0 min-w-4 rounded-full border border-surface bg-primary px-1 py-0.5 text-[10px] leading-none font-semibold tabular-nums text-primary-foreground">
             {unread > 99 ? "99+" : unread}
           </span>
         )}
-      </button>
+      </Button>
 
       {isOpen && (
         <div
           ref={popupRef}
-          className="absolute right-0 top-full mt-2 w-[380px] bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-[500px] flex flex-col overflow-hidden"
+          id={popupId}
+          role="region"
+          aria-labelledby={titleId}
+          className="absolute top-full right-0 z-10 mt-2.5 flex max-h-[min(28rem,calc(100dvh-6.5rem))] w-[23rem] flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-lg"
         >
-          <div className="px-4 py-3 border-b border-gray-100 bg-white">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-semibold text-gray-900">
-                Thông báo
-              </h3>
-              {unread > 0 && (
-                <span className="bg-green-500 text-white text-xs font-medium rounded-full px-2 py-0.5">
-                  {unread} mới
-                </span>
-              )}
-            </div>
+          <div className="flex shrink-0 items-center gap-2.5 border-b border-border bg-linear-to-r from-primary-light/80 to-surface/80 px-3.5 py-3">
+            <IconBubble shape="circle" className="h-9! w-9!">
+              <Bell aria-hidden="true" className="size-4" />
+            </IconBubble>
+            <h2 id={titleId} className="min-w-0 flex-1 text-sm font-semibold text-foreground">Thông báo</h2>
+            {unread > 0 && (
+              <Pill className="shrink-0 rotate-2">{unread} mới</Pill>
+            )}
           </div>
 
-          <div className="flex-1 overflow-y-auto">
+          <div className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain">
             {top10.length === 0 ? (
-              <div className="px-6 py-16 text-center">
-                <HiBell className="h-10 w-10 text-gray-300 mx-auto mb-2" />
-                <p className="text-sm text-gray-500">Chưa có thông báo nào</p>
+              <div className="flex flex-col items-center gap-2.5 px-5 py-9 text-center">
+                <IconBubble shape="circle" className="ring-4 ring-primary-light/60">
+                  <Bell aria-hidden="true" className="size-6" />
+                </IconBubble>
+                <p className="text-sm text-foreground">Chưa có thông báo nào</p>
               </div>
             ) : (
-              <div className="divide-y divide-gray-100">
+              <ul className="space-y-1 p-2">
                 {top10.map((notification) => (
-                  <button
-                    key={notification.id}
-                    type="button"
-                    onClick={() => handleNotificationClick(notification)}
-                    className={`w-full text-left px-4 py-3 hover:bg-green-50 transition-colors ${
-                      !notification.is_read
-                        ? "bg-green-50/30 border-l-2 border-l-green-500"
-                        : "bg-white"
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="mt-1 flex-shrink-0">
-                        {!notification.is_read && (
-                          <div className="h-2 w-2 rounded-full bg-green-500" />
-                        )}
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <h4
-                          className={`text-sm font-medium mb-1.5 leading-snug ${
-                            notification.is_read
-                              ? "text-gray-600"
-                              : "text-gray-900"
-                          }`}
-                        >
+                  <li key={notification.id}>
+                    <button
+                      type="button"
+                      onClick={() => handleNotificationClick(notification)}
+                      className={cn(
+                        "flex min-h-11 w-full cursor-pointer items-start gap-2.5 rounded-2xl px-3 py-2.5 text-left transition-colors hover:bg-primary-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset motion-reduce:transition-none",
+                        !notification.is_read && "bg-primary-light/60",
+                      )}
+                    >
+                      <span
+                        className={cn("mt-1.5 size-2 shrink-0 rounded-full", !notification.is_read && "bg-primary")}
+                        aria-hidden="true"
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className={cn(
+                          "block text-sm leading-snug wrap-break-word text-foreground",
+                          notification.is_read ? "font-medium" : "font-semibold",
+                        )}>
+                          {!notification.is_read && <span className="sr-only">Chưa đọc. </span>}
                           {notification.title}
-                        </h4>
-                        <p
-                          className={`text-xs mb-2 line-clamp-2 leading-relaxed ${
-                            notification.is_read
-                              ? "text-gray-500"
-                              : "text-gray-700"
-                          }`}
-                        >
+                        </span>
+                        <span className="mt-1 line-clamp-2 text-xs leading-relaxed wrap-break-word text-foreground">
                           {notification.content}
-                        </p>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="inline-flex items-center gap-1 text-xs text-gray-400">
-                            <HiClock className="h-3 w-3" />
+                        </span>
+                        <span className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs">
+                          <span className="inline-flex items-center gap-1 text-foreground">
+                            <Clock3 aria-hidden="true" className="size-3" />
                             {formatDate(notification.created_at)}
                           </span>
-                          <span className="text-xs text-gray-400">•</span>
-                          <span className="text-xs text-green-600 font-medium">
+                          <span className="rounded-full bg-surface px-2 py-0.5 font-medium text-primary-hover">
                             {getTypeLabel(notification.type)}
                           </span>
-                        </div>
-                      </div>
-                    </div>
-                  </button>
+                        </span>
+                      </span>
+                    </button>
+                  </li>
                 ))}
-              </div>
+              </ul>
             )}
           </div>
 
           {top10.length > 0 && (
-            <div className="border-t border-gray-100 px-4 py-3 bg-gray-50">
+            <div className="shrink-0 border-t border-border bg-background/80 p-2">
               <Link
                 href="/notifications"
                 onClick={() => setIsOpen(false)}
-                className="block w-full text-center text-sm font-medium text-green-600 hover:text-green-700 transition-colors"
+                className="flex min-h-11 items-center justify-center rounded-full px-3 text-sm font-semibold text-primary-hover transition-colors hover:bg-primary-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset motion-reduce:transition-none"
               >
                 Xem tất cả thông báo
               </Link>

@@ -10,7 +10,6 @@ import {
   RotateCcw,
   Search,
   SlidersHorizontal,
-  Sparkles,
   Users,
   X,
 } from "lucide-react";
@@ -464,7 +463,6 @@ export function InstructorDirectory() {
           <div className="max-w-2xl space-y-3">
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="primary" className="text-xs px-3 py-1 font-medium">
-                <Sparkles className="w-3.5 h-3.5 mr-1 text-primary" />
                 Đội ngũ giáo viên Mây Mây
               </Badge>
 

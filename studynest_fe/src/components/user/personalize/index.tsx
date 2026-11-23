@@ -6,7 +6,7 @@ import { formatApiError } from "@/lib/utils/helpers/error";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { HiCheck, HiSearch, HiSparkles, HiX } from "react-icons/hi";
+import { HiCheck, HiCloud, HiSearch, HiX } from "react-icons/hi";
 
 interface Topic {
   id: string;
@@ -192,8 +192,8 @@ const Personalize = ({ learningFields }: PersonalizeProps) => {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-5">
           <div className="flex items-center justify-between">
             <Link href="/" className="inline-flex items-center gap-2.5">
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary-soft text-primary border border-border">
-                <HiSparkles className="h-5 w-5" />
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary-light text-primary border border-border">
+                <HiCloud className="h-5 w-5" aria-hidden="true" />
               </span>
               <span className="font-display text-xl font-bold text-foreground">
                 Mây Mây

@@ -48,7 +48,6 @@ function TutorChatPanel({
   onSeekToTime,
   onNavigateToLesson,
   onClose,
-  accessToken,
 }: TutorChatPanelProps) {
   const agent = useLearningAgent();
   const sharedVoice = useAssistantVoice();
@@ -57,7 +56,7 @@ function TutorChatPanel({
     if (agent?.busy) return;
     setVoiceError("");
     try {
-      if (sharedVoice) await sharedVoice.open({ lessonId, lessonTitle, accessToken,
+      if (sharedVoice) await sharedVoice.open({ lessonId, lessonTitle,
         onSourceClick: handleSourceClick, onClose: id => { if (id) { setThreadId(id); void fetchMessages(id); } } });
       else { await agent?.prepareSession(); setVoiceOpen(true); }
     } catch (error) { if (error instanceof AgentUnavailableError) setVoiceOpen(true); else setVoiceError("Chưa kết nối được phiên học. Hãy thử lại."); }
@@ -268,7 +267,7 @@ function TutorChatPanel({
         </div>
       )}
 
-      {voiceOpen && <VoiceDialog lessonId={lessonId} lessonTitle={lessonTitle} accessToken={accessToken} agentSessionId={agent?.sessionId} onAgentEvent={agent?.handleEvent}
+      {voiceOpen && <VoiceDialog lessonId={lessonId} lessonTitle={lessonTitle} agentSessionId={agent?.sessionId} onAgentEvent={agent?.handleEvent}
         onSourceClick={handleSourceClick}
         onClose={(id) => { setVoiceOpen(false); if (id) { setThreadId(id); void fetchMessages(id); } }} />}
 

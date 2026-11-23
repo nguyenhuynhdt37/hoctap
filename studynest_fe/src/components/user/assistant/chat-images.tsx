@@ -1,4 +1,5 @@
 'use client';
+import { safeUUID } from "@/lib/utils/uuid";
 import { useEffect, useRef, useState } from 'react';
 import { HiPhotograph, HiX } from 'react-icons/hi';
 import { Button } from '@/components/ui/button';
@@ -22,7 +23,7 @@ export function useChatImages() {
     const room=Math.max(0,3-urls.current.size);
     if(selected.length>room)setError('Mỗi tin nhắn tối đa 3 ảnh.');
     const pending=selected.slice(0,room).filter(file=>{if(file.size>30*1024*1024){setError('Ảnh quá lớn để xử lý (tối đa 30 MB trước khi nén).');return false;}return true;}).map(file=>{
-      const id=crypto.randomUUID();const preview=URL.createObjectURL(file);urls.current.set(id,preview);return {id,preview,file};
+      const id=safeUUID();const preview=URL.createObjectURL(file);urls.current.set(id,preview);return {id,preview,file};
     });
     setItems(current=>[...current,...pending]);
     await Promise.all(pending.map(async item=>{

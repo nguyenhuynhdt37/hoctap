@@ -18,11 +18,21 @@ export async function consumeChatEvents<T>(
       while ((newline = buffer.indexOf("\n")) >= 0) {
         const line = buffer.slice(0, newline).replace(/\r$/, "");
         buffer = buffer.slice(newline + 1);
-        if (line.startsWith("data:")) {
-          data.push(line.slice(5).trimStart());
+        if (line === "data" || line.startsWith("data:")) {
+          data.push(line.slice(5).replace(/^ /, ""));
         } else if (line === "" && data.length) {
-          const event = JSON.parse(data.join("\n"));
+          const frame = data.join("\n");
           data = [];
+          if (!frame) continue;
+          let event;
+          try {
+            event = JSON.parse(frame);
+          } catch {
+            throw new Error("Dữ liệu trong luồng chat không hợp lệ.");
+          }
+          if (!event || typeof event !== "object") {
+            throw new Error("Dữ liệu trong luồng chat không hợp lệ.");
+          }
           if (event.type === "delta" && typeof event.delta === "string") onDelta(event.delta);
           else if (event.type === "done") return event.data as T;
           else if (event.type === "error") throw new Error(event.message || "Luồng chat bị gián đoạn.");

@@ -47,13 +47,13 @@ const formatCurrency = (value?: number | null) => {
   }).format(value);
 };
 
-const LecturerHome = () => {
+const LecturerHome = ({ isLecturer }: { isLecturer?: boolean }) => {
   const router = useRouter();
 
   // Kiểm tra quyền giảng viên
   const { data: lecturerData, isLoading: isCheckingLecturer } =
     useSWR<IsLecturerResponse | null>(
-      "/lecturer/courses/is_lecturer",
+      isLecturer === undefined ? "/lecturer/courses/is_lecturer" : null,
       async (url) => {
         try {
           const response = await api.get(url);
@@ -72,7 +72,7 @@ const LecturerHome = () => {
       }
     );
 
-  const isLecturer = lecturerData?.is_lecturer === true;
+  const canAccessDashboard = isLecturer ?? lecturerData?.is_lecturer === true;
 
   if (isCheckingLecturer) {
     return (
@@ -101,7 +101,7 @@ const LecturerHome = () => {
     );
   }
 
-  if (isLecturer) {
+  if (canAccessDashboard) {
     return <LecturerDashboard router={router} />;
   }
 

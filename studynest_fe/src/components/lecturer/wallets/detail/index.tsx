@@ -11,6 +11,7 @@ import useSWR from "swr";
 
 interface Props {
   transactionId: string;
+  data?: LecturerTransactionDetail;
 }
 
 const formatCurrency = (val: number) =>
@@ -90,11 +91,14 @@ function DetailRow({
   );
 }
 
-export default function LecturerTransactionDetail({ transactionId }: Props) {
+export default function LecturerTransactionDetail({
+  transactionId,
+  data: loadedData,
+}: Props) {
   const router = useRouter();
 
-  const { data, error, isLoading } = useSWR<LecturerTransactionDetail>(
-    `/lecturer/transactions/${transactionId}`,
+  const { data: fetchedData, error, isLoading } = useSWR<LecturerTransactionDetail>(
+    loadedData === undefined ? `/lecturer/transactions/${transactionId}` : null,
     async (url) => {
       const res = await api.get(url);
       return res.data;
@@ -103,6 +107,8 @@ export default function LecturerTransactionDetail({ transactionId }: Props) {
       revalidateOnFocus: false,
     }
   );
+
+  const data = loadedData ?? fetchedData;
 
   if (isLoading) {
     return (

@@ -6,7 +6,6 @@ import {
   CheckCircle2,
   Clock,
   GraduationCap,
-  Sparkles,
   TrendingUp,
 } from "lucide-react";
 import { Badge, Card } from "@/components/ui";
@@ -45,7 +44,6 @@ export default function CoursesMeSection() {
               variant="info"
               className="px-3 py-1 text-xs font-medium tracking-wide shadow-2xs"
             >
-              <Sparkles className="w-3.5 h-3.5 mr-1.5 text-primary" />
               Góc học tập cá nhân • Mây Mây
             </Badge>
           </div>

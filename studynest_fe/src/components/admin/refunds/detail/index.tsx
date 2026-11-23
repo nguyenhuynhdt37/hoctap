@@ -23,6 +23,7 @@ import { TimelineItem } from "./timeline-item";
 
 interface AdminRefundDetailProps {
   data: AdminRefundDetailData;
+  onUpdated?: () => Promise<unknown>;
 }
 
 type RefundStatus = AdminRefundDetailData["refund"]["status"];
@@ -88,7 +89,10 @@ const statusMeta: Record<
   },
 };
 
-export default function AdminRefundDetail({ data }: AdminRefundDetailProps) {
+export default function AdminRefundDetail({
+  data,
+  onUpdated,
+}: AdminRefundDetailProps) {
   const router = useRouter();
   const [comment, setComment] = useState(data.refund.admin_comment ?? "");
   const [submitting, setSubmitting] = useState<"approve" | "reject" | null>(
@@ -162,7 +166,8 @@ export default function AdminRefundDetail({ data }: AdminRefundDetailProps) {
           ? "Bạn đã chấp nhận hoàn tiền."
           : "Bạn đã từ chối yêu cầu."
       );
-      router.refresh();
+      if (onUpdated) await onUpdated();
+      else router.refresh();
     } catch (error: any) {
       const message =
         error?.response?.data?.message ||

@@ -34,7 +34,6 @@ export default function LearningTabs(props: LearningTabsProps) {
     course,
     lessonOverview,
     onSeekToTime,
-    accessToken,
   } = props;
 
   const [isQAModalOpen, setIsQAModalOpen] = useState(false);
@@ -71,7 +70,6 @@ export default function LearningTabs(props: LearningTabsProps) {
         {isQAModalOpen && lessonOverview?.id && (
           <QASection
             lessonId={lessonOverview.id}
-            accessToken={accessToken}
             lessonAuthorId={instructor?.id ?? null}
             isModal={true}
             onClose={() => setIsQAModalOpen(false)}

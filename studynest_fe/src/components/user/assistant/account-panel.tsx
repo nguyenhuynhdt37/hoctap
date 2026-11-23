@@ -1,5 +1,6 @@
 "use client";
 
+import { safeUUID } from "@/lib/utils/uuid";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { HiMicrophone, HiPaperAirplane } from "react-icons/hi";
@@ -60,9 +61,9 @@ export default function AccountAssistantPanel() {
     const message = input.trim() || (attachments.images.length ? "Bạn hãy xem và giải thích ảnh này." : "");
     if (!agent || !message || sending || agent.busy || !attachments.ready || dictating) return;
     setError(""); setSending(true); setInput("");
-    const id = crypto.randomUUID();
+    const id = safeUUID();
     const images = attachments.images;
-    setMessages(previous => [...previous, { id: crypto.randomUUID(), role: "user", content: message, images, timestamp: new Date() }, { id, role: "assistant", content: "", timestamp: new Date(), isStreaming: true, activity: [] }]);
+    setMessages(previous => [...previous, { id: safeUUID(), role: "user", content: message, images, timestamp: new Date() }, { id, role: "assistant", content: "", timestamp: new Date(), isStreaming: true, activity: [] }]);
     try {
       const response = await agent.send(message, threadId, delta => {
         if (mounted.current) setMessages(previous => previous.map(item => item.id === id ? { ...item, content: item.content + delta } : item));

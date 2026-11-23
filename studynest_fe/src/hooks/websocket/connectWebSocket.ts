@@ -1,57 +1,46 @@
-import { getLatestAccessToken } from "@/lib/utils/fetcher/client/refresh-session";
+import {
+  openAuthedWebSocket,
+  takeInitialWebSocketMessage,
+  WebSocketConnectionError,
+} from "@/lib/auth/ws";
+import { getDpopSocketBase } from "@/lib/auth/http";
+import { isDpopMode } from "@/lib/auth/mode";
+import api from "@/lib/utils/fetcher/client/axios";
 
 export async function connectWebSocket(
-  endpoint: string, // ví dụ: "/api/v1/learning/ws/comments/abc123"
-  token?: string, // JWT hoặc null nếu public
+  endpoint: string,
   role_name?: string | null,
   onMessage?: (data: any, ws: WebSocket) => void,
-  onClose?: (event: CloseEvent) => void
+  onClose?: (event: CloseEvent) => void,
 ): Promise<WebSocket> {
-  const base = process.env.NEXT_PUBLIC_URL_BACKEND_WS || "ws://127.0.0.1:8000";
+  const base = isDpopMode ? getDpopSocketBase() : (
+    process.env.NEXT_PUBLIC_URL_BACKEND_WS || process.env.NEXT_PUBLIC_URL_BACKEND || "ws://127.0.0.1:8000"
+  );
+  const url = new URL(`${base.replace(/\/$/, "")}${endpoint}`);
+  if (role_name) url.searchParams.set("role_name", role_name);
 
-  if (token) token = getLatestAccessToken(token) || token;
+  let socket: WebSocket;
+  try {
+    socket = await openAuthedWebSocket(url.href);
+  } catch (error) {
+    if (isDpopMode && error instanceof WebSocketConnectionError && error.code === 4401) {
+      // The close code is generic. Let Axios refresh only if HTTP reports expiry.
+      await api.get("/auth/me").catch(() => undefined);
+    }
+    throw error;
+  }
 
-  // ✅ Ghép URL chính xác
-  const wsUrl =
-    token && role_name
-      ? `${base}${endpoint}?access_token=${encodeURIComponent(
-          token
-        )}&role_name=${encodeURIComponent(role_name)}`
-      : token
-      ? `${base}${endpoint}?access_token=${encodeURIComponent(token)}`
-      : `${base}${endpoint}`;
-
-  console.log("🔌 Connecting WebSocket:", endpoint);
-
-  return new Promise((resolve, reject) => {
-    const ws = new WebSocket(wsUrl);
-
-    ws.onopen = () => {
-      console.log("✅ WebSocket connected:", endpoint);
-      resolve(ws);
-    };
-
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        onMessage?.(data, ws);
-      } catch (err) {
-        console.error("⚠️ Parse error:", err);
-      }
-    };
-
-    ws.onerror = (err) => {
-      console.error("⚡ WebSocket error:", err);
-      reject(err);
-    };
-
-    ws.onclose = (event) => {
-      console.warn(
-        `🔴 WS closed (${endpoint}):`,
-        event.code,
-        event.reason || "no reason"
-      );
-      onClose?.(event);
-    };
-  });
+  const handleMessage = (event: MessageEvent) => {
+    try {
+      const data = JSON.parse(event.data);
+      onMessage?.(data, socket);
+    } catch {
+      // Ignore malformed application frames.
+    }
+  };
+  socket.addEventListener("message", handleMessage);
+  if (onClose) socket.addEventListener("close", onClose);
+  const firstMessage = takeInitialWebSocketMessage(socket);
+  if (firstMessage) handleMessage(firstMessage);
+  return socket;
 }

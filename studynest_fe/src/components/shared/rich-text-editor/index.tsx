@@ -1,6 +1,7 @@
 "use client";
 
 import { uploadFile } from "@/lib/uploadFile";
+import { sanitizeEditableLearningHtml } from "@/components/shared/markdown-renderer/safe-html";
 import { useEffect, useRef, useState } from "react";
 import {
   FaAlignCenter,
@@ -47,8 +48,10 @@ export const RichTextEditor = ({
       // Use requestAnimationFrame to ensure DOM is ready
       requestAnimationFrame(() => {
         if (editorRef.current) {
+          const safeValue = sanitizeEditableLearningHtml(value);
           // Temporarily disable layout calculations
           const editor = editorRef.current;
+          if (editor.innerHTML === safeValue) return;
           const originalOverflow = editor.style.overflow;
           const originalHeight = editor.style.height;
 
@@ -57,7 +60,7 @@ export const RichTextEditor = ({
           editor.style.height = "auto";
 
           // Update content
-          editor.innerHTML = value;
+          editor.innerHTML = safeValue;
 
           // Force a reflow to ensure layout is calculated
           editor.offsetHeight;
@@ -67,7 +70,7 @@ export const RichTextEditor = ({
           editor.style.height = originalHeight;
 
           // Trigger onChange to ensure parent component is updated
-          onChange(value);
+          onChange(safeValue);
         }
       });
     }
@@ -229,13 +232,14 @@ export const RichTextEditor = ({
       const scrollTop = editorRef.current.scrollTop;
 
       // Update content
-      editorRef.current.innerHTML = newContent;
+      const safeContent = sanitizeEditableLearningHtml(newContent);
+      editorRef.current.innerHTML = safeContent;
 
       // Restore scroll position
       editorRef.current.scrollTop = scrollTop;
 
       // Trigger onChange
-      onChange(newContent);
+      onChange(safeContent);
     }
   };
 
@@ -293,7 +297,6 @@ export const RichTextEditor = ({
     try {
       console.log("Uploading image:", file.name, file.type, file.size);
       const url = await uploadFile(file, uploadFolder, uploadBucket);
-      console.log("Upload successful:", url);
 
       // Create image element with better styling
       const img = document.createElement("img");
@@ -333,7 +336,6 @@ export const RichTextEditor = ({
 
       handleInput();
     } catch (error) {
-      console.log("Error uploading image:", error);
       alert(
         "Lỗi khi upload hình ảnh: " +
           (error instanceof Error ? error.message : "Unknown error")
@@ -384,8 +386,14 @@ export const RichTextEditor = ({
 
   const insertLink = () => {
     const url = prompt("Nhập URL liên kết:");
-    if (url) {
-      execCommand("createLink", url);
+    if (!url) return;
+    try {
+      const destination = new URL(url, window.location.href);
+      if (["https:", "http:", "mailto:"].includes(destination.protocol)) {
+        execCommand("createLink", destination.href);
+      }
+    } catch {
+      // Ignore invalid links.
     }
   };
 
@@ -402,9 +410,10 @@ export const RichTextEditor = ({
 
     if (code) {
       const codeBlock = document.createElement("pre");
-      codeBlock.innerHTML = `<code class="language-${
-        language || "text"
-      }">${code}</code>`;
+      const codeElement = document.createElement("code");
+      codeElement.className = `language-${language && /^[a-z0-9_+-]+$/i.test(language) ? language : "text"}`;
+      codeElement.textContent = code;
+      codeBlock.appendChild(codeElement);
 
       // Insert at cursor position
       const selection = window.getSelection();

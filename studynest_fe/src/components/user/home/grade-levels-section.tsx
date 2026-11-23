@@ -1,14 +1,28 @@
 "use client";
 
-import { Badge, BadgeVariant, Button, Card } from "@/components/ui";
-import React from "react";
+import { Button } from "@/components/ui";
+import { cn } from "@/lib/utils";
 import {
-  HiAcademicCap,
-  HiArrowRight,
-  HiCheckCircle,
-  HiLightBulb,
-  HiCloud,
-} from "react-icons/hi";
+  ArrowDown,
+  ArrowRight,
+  Check,
+  Cloud,
+  GraduationCap,
+  Lightbulb,
+  type LucideIcon,
+} from "lucide-react";
+import type { FC } from "react";
+import {
+  CloudBlob,
+  GlassCard,
+  IconBubble,
+  Pill,
+  Reveal,
+  SectionHeader,
+  SectionShell,
+  TONE,
+  type Tone,
+} from "./landing-ui";
 
 export type SchoolLevelId = "all" | "primary" | "secondary" | "highschool";
 
@@ -22,11 +36,10 @@ interface GradeLevelItem {
   highlights: string[];
   image: string;
   imageAlt: string;
-  badgeVariant: BadgeVariant;
-  cardSurfaceClass: string;
-  accentBorderClass: string;
-  iconBgClass: string;
-  icon: React.ComponentType<{ className?: string }>;
+  tone: Tone;
+  sceneClassName: string;
+  offsetClassName: string;
+  icon: LucideIcon;
 }
 
 const GRADE_LEVELS: GradeLevelItem[] = [
@@ -45,11 +58,10 @@ const GRADE_LEVELS: GradeLevelItem[] = [
     ],
     image: "/videos/studynest/scene-mascot.jpg",
     imageAlt: "Bạn nhỏ Mây đồng hành cùng học sinh Tiểu học Lớp 1 đến Lớp 5",
-    badgeVariant: "vanilla",
-    cardSurfaceClass: "bg-surface-muted/80 hover:bg-surface",
-    accentBorderClass: "border-accent-vanilla-border hover:border-warning",
-    iconBgClass: "bg-accent-vanilla text-accent-vanilla-foreground",
-    icon: HiCloud,
+    tone: "vanilla",
+    sceneClassName: "from-surface-muted via-surface-muted to-primary-light/70",
+    offsetClassName: "md:mt-6 lg:mt-16",
+    icon: Cloud,
   },
   {
     id: "secondary",
@@ -66,11 +78,10 @@ const GRADE_LEVELS: GradeLevelItem[] = [
     ],
     image: "/videos/studynest/scene-guiding.jpg",
     imageAlt: "Bạn nhỏ Mây dẫn lối khám phá tri thức cho học sinh THCS Lớp 6 đến Lớp 9",
-    badgeVariant: "secondary",
-    cardSurfaceClass: "bg-surface hover:bg-secondary-light/25",
-    accentBorderClass: "border-secondary-pastel hover:border-secondary-foreground/40",
-    iconBgClass: "bg-secondary-light text-secondary-foreground",
-    icon: HiLightBulb,
+    tone: "lavender",
+    sceneClassName: "from-accent/55 via-accent/25 to-primary-light/70",
+    offsetClassName: "md:mt-0",
+    icon: Lightbulb,
   },
   {
     id: "highschool",
@@ -87,11 +98,10 @@ const GRADE_LEVELS: GradeLevelItem[] = [
     ],
     image: "/videos/studynest/scene-academy.jpg",
     imageAlt: "Học viện Mây Mây dành cho học sinh THPT Lớp 10 đến Lớp 12",
-    badgeVariant: "default",
-    cardSurfaceClass: "bg-surface hover:bg-primary-light/30",
-    accentBorderClass: "border-primary-pastel hover:border-primary",
-    iconBgClass: "bg-primary-light text-primary",
-    icon: HiAcademicCap,
+    tone: "blue",
+    sceneClassName: "from-primary-pastel/55 via-primary-light to-background",
+    offsetClassName: "md:max-lg:col-span-2 lg:mt-8",
+    icon: GraduationCap,
   },
 ];
 
@@ -101,163 +111,147 @@ interface GradeLevelsSectionProps {
   onExploreCourses: () => void;
 }
 
-const GradeLevelsSection: React.FC<GradeLevelsSectionProps> = ({
+const GradeLevelsSection: FC<GradeLevelsSectionProps> = ({
   selectedLevel,
   onSelectLevel,
   onExploreCourses,
 }) => {
   return (
-    <section
-      id="grade-levels"
-      data-tour="levels"
-      className="py-20 bg-surface border-b border-border/70 relative overflow-hidden"
-    >
-      {/* Subtle Pastel Background Accents */}
-      <div
-        className="pointer-events-none absolute -top-24 right-1/4 w-96 h-96 rounded-full bg-primary-light/50 blur-3xl"
-        aria-hidden="true"
-      />
-      <div
-        className="pointer-events-none absolute -bottom-24 left-1/4 w-80 h-80 rounded-full bg-secondary-light/40 blur-3xl"
-        aria-hidden="true"
-      />
+    <div data-tour="levels">
+      <SectionShell id="grade-levels" tone="sky" label="Chọn cấp học">
+        <SectionHeader
+          eyebrow="Lộ trình xuyên suốt 12 năm phổ thông"
+          title="Chọn cấp học đồng hành cùng bạn"
+          description="Mỗi cấp học là một tầng mây mới, từ sự gần gũi và khích lệ ở Tiểu học đến sự chuyên sâu và tự chủ ở THPT."
+          className="[&_h2]:text-balance [&_p]:text-foreground/85"
+        />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        {/* Section Header */}
-        <div className="max-w-3xl mx-auto text-center mb-14">
-          <Badge
-            variant="default"
-            size="md"
-            dot
-            className="mb-4 bg-primary-light/80 border-primary-pastel"
-          >
-            Lộ trình xuyên suốt 12 năm phổ thông
-          </Badge>
-          <h2 className="font-display text-3xl sm:text-4xl font-bold text-foreground tracking-tight mb-4">
-            Chọn cấp học đồng hành cùng bạn
-          </h2>
-          <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
-            Mỗi cấp học là một tầng mây mới với phương pháp tiếp cận phù hợp độ
-            tuổi — từ sự gần gũi, khích lệ ở Tiểu học đến sự chuyên sâu, tự chủ
-            ở bậc THPT.
-          </p>
-        </div>
+        <div className="relative">
+          <CloudBlob className="left-1/4 top-1/3 h-40 w-1/2 bg-primary-pastel/45" />
+          <ul role="list" className="relative grid items-start gap-x-6 gap-y-8 md:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.12fr)_minmax(0,1fr)]">
+            {GRADE_LEVELS.map((level, index) => {
+              const Icon = level.icon;
+              const isSelected = selectedLevel === level.id;
+              const tone = TONE[level.tone];
 
-        {/* 3 Grade Level Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-7">
-          {GRADE_LEVELS.map((level) => {
-            const Icon = level.icon;
-            const isSelected = selectedLevel === level.id;
-
-            return (
-              <Card
-                key={level.id}
-                density="none"
-                className={`group flex flex-col justify-between overflow-hidden rounded-[24px] transition-all duration-300 hover:-translate-y-1 hover:shadow-lg ${
-                  level.cardSurfaceClass
-                } ${level.accentBorderClass} ${
-                  isSelected ? "ring-2 ring-primary shadow-md" : ""
-                }`}
-              >
-                <div>
-                  {/* Visual Header from Real Video Scene */}
-                  <div className="relative h-48 overflow-hidden bg-primary-light">
-                    <img
-                      src={level.image}
-                      alt={level.imageAlt}
-                      loading="lazy"
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-foreground/45 via-transparent to-transparent" />
-                    <div className="absolute top-3.5 left-3.5">
-                      <Badge
-                        variant={level.badgeVariant}
-                        size="md"
-                        className="shadow-xs backdrop-blur-sm"
-                      >
-                        {level.gradeRange}
-                      </Badge>
-                    </div>
-                    <div className="absolute bottom-3 left-3.5 right-3.5 flex flex-wrap gap-1.5">
-                      {level.grades.map((g) => (
-                        <span
-                          key={g}
-                          className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-surface/90 text-foreground backdrop-blur-sm shadow-2xs"
-                        >
-                          {g}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Card Body */}
-                  <div className="p-6 sm:p-7">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div
-                        className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${level.iconBgClass}`}
-                      >
-                        <Icon className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-bold text-foreground">
-                          {level.name}
-                        </h3>
-                        <p className="text-xs font-semibold text-primary">
-                          {level.tagline}
-                        </p>
-                      </div>
-                    </div>
-
-                    <p className="text-sm text-muted-foreground leading-relaxed mb-5">
-                      {level.description}
-                    </p>
-
-                    <ul className="space-y-2.5 mb-6">
-                      {level.highlights.map((item) => (
-                        <li
-                          key={item}
-                          className="flex items-start gap-2.5 text-xs sm:text-sm text-foreground leading-snug"
-                        >
-                          <HiCheckCircle className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-
-                {/* Card Footer CTA */}
-                <div className="px-6 pb-6 sm:px-7 sm:pb-7 pt-2 flex items-center gap-3">
-                  <Button
-                    variant={isSelected ? "primary" : "pastel"}
-                    fullWidth
-                    onClick={() => onSelectLevel(level.id)}
-                    className="group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary"
+              return (
+                <Reveal key={level.id} as="li" delay={index * 0.08} className={level.offsetClassName}>
+                  <GlassCard
+                    as="article"
+                    className={cn(
+                      "relative p-3.5 motion-reduce:hover:translate-y-0",
+                      level.id === "highschool" &&
+                        "md:max-lg:grid md:max-lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1fr)]",
+                      isSelected && "border-primary-pastel! ring-2 ring-ring/30",
+                    )}
                   >
-                    <span>Xem môn học {level.name.split(" ")[0]}</span>
-                    <HiArrowRight className="w-4 h-4" />
-                  </Button>
-                </div>
-              </Card>
-            );
-          })}
+                    {isSelected && (
+                      <Pill className="absolute -top-3.5 right-5 z-10 rotate-2 shadow-sm">
+                        <Check aria-hidden="true" className="size-3.5" />
+                        Đang chọn
+                      </Pill>
+                    )}
+
+                    <div
+                      className={cn(
+                        "relative isolate flex min-h-36 flex-col items-start justify-between gap-5 overflow-hidden rounded-2xl bg-linear-to-br p-4 lg:min-h-40",
+                        level.sceneClassName,
+                        level.id === "highschool" && "md:max-lg:min-h-64",
+                      )}
+                    >
+                      <CloudBlob className="-bottom-14 -left-6 h-36 w-48" />
+                      <div
+                        aria-hidden="true"
+                        className={cn(
+                          "pointer-events-none absolute -top-16 right-7 size-52 rounded-full border",
+                          tone.border,
+                        )}
+                      />
+                      <div className="absolute inset-y-3 right-3 w-[58%] rotate-2 overflow-hidden rounded-2xl border-2 border-surface/85 shadow-lg">
+                        <img
+                          src={level.image}
+                          alt={level.imageAlt}
+                          loading="lazy"
+                          className="size-full object-cover"
+                        />
+                      </div>
+                      <IconBubble
+                        tone={level.tone}
+                        className="relative -rotate-6 shadow-md sm:h-16 sm:w-16"
+                      >
+                        <Icon aria-hidden="true" className="size-7" strokeWidth={1.75} />
+                      </IconBubble>
+                      <Pill tone={level.tone} className="relative -rotate-2 shadow-sm">
+                        {level.gradeRange}
+                      </Pill>
+                    </div>
+
+                    <div className="px-2.5 pb-2.5 pt-5 sm:px-3.5">
+                      <h3 className="text-xl font-bold leading-snug tracking-tight text-foreground">
+                        {level.name}
+                      </h3>
+                      <p className={cn("mt-1.5 text-xs font-semibold leading-relaxed", tone.fg)}>
+                        {level.tagline}
+                      </p>
+
+                      <ul role="list" aria-label="Các lớp" className="mt-4 flex flex-wrap gap-1">
+                        {level.grades.map((grade) => (
+                          <li key={grade}>
+                            <Pill tone={level.tone} className="px-2!">
+                              {grade}
+                            </Pill>
+                          </li>
+                        ))}
+                      </ul>
+
+                      <p className="mt-4 text-sm leading-relaxed text-foreground/85">
+                        {level.description}
+                      </p>
+                      <ul role="list" className="mt-4 space-y-2 border-t border-border pt-4">
+                        {level.highlights.map((item) => (
+                          <li key={item} className="flex items-start gap-2 text-xs leading-relaxed text-foreground/90">
+                            <Check aria-hidden="true" className={cn("mt-0.5 size-4 shrink-0", tone.fg)} />
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+
+                      <Button
+                        variant={isSelected ? "primary" : "pastel"}
+                        fullWidth
+                        onClick={() => onSelectLevel(level.id)}
+                        aria-label={"Xem môn học " + level.name}
+                        rightIcon={<ArrowDown aria-hidden="true" className="size-4" />}
+                        className={cn(
+                          "mt-6 h-11 rounded-full motion-reduce:transition-none motion-reduce:active:translate-y-0",
+                          !isSelected && "text-info-foreground",
+                        )}
+                      >
+                        Xem môn học
+                      </Button>
+                    </div>
+                  </GlassCard>
+                </Reveal>
+              );
+            })}
+          </ul>
         </div>
 
-        {/* Bottom Helper Bar */}
-        <div className="mt-10 text-center">
-          <p className="text-xs sm:text-sm text-muted-foreground">
-            Bạn muốn xem toàn bộ kho bài giảng và khóa học đang mở trên hệ thống?{" "}
-            <button
-              type="button"
-              onClick={onExploreCourses}
-              className="font-semibold text-primary hover:text-primary-hover underline underline-offset-4 cursor-pointer"
-            >
-              Đi thẳng tới danh sách khóa học →
-            </button>
+        <Reveal className="mt-12 flex flex-col items-center gap-3 text-center md:mt-14">
+          <p className="text-sm leading-relaxed text-foreground/85">
+            Bạn muốn xem toàn bộ kho bài giảng và khóa học đang mở trên hệ thống?
           </p>
-        </div>
-      </div>
-    </section>
+          <Button
+            variant="outline"
+            onClick={onExploreCourses}
+            rightIcon={<ArrowRight aria-hidden="true" className="size-4" />}
+            className="h-11 max-w-full rounded-full text-primary motion-reduce:transition-none motion-reduce:active:translate-y-0"
+          >
+            Đi thẳng tới danh sách khóa học
+          </Button>
+        </Reveal>
+      </SectionShell>
+    </div>
   );
 };
 

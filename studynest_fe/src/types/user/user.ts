@@ -1,8 +1,11 @@
+import type { Equipment } from "@/lib/learning-hub/shop-types";
+
 export interface User {
   id: string;
   fullname: string;
   email: string;
   avatar: string | null;
+  equipment?: Equipment;
   bio: string | null;
   facebook_url: string | null;
   birthday: string | null;

@@ -1,4 +1,6 @@
 "use client";
+
+import { hubEndpoints } from "@/lib/learning-hub/endpoints";
 import Link from "next/link";
 import useSWR from "swr";
 import { fetchLearning, LoadError, Loading, price } from "./shared";
@@ -6,7 +8,7 @@ import type { BundleReceipt } from "@/types/learning-paths";
 export function MyLearningPaths() {
   const { data, error, mutate } = useSWR<{
     items: { version_id: string; title: string; slug: string }[];
-  }>("/learning-paths/my", fetchLearning);
+  }>(hubEndpoints.followingPaths, fetchLearning);
   return (
     <main className="mx-auto max-w-5xl space-y-6 px-4 py-10">
       <h1 className="text-3xl font-semibold">Lộ trình của tôi</h1>
@@ -16,13 +18,17 @@ export function MyLearningPaths() {
         <Loading />
       ) : data.items.length ? (
         data.items.map((item) => (
-          <Link
-            key={item.version_id}
-            href={`/lo-trinh/${item.slug}?version=${item.version_id}`}
-            className="block rounded-2xl border border-border bg-surface p-6 font-medium text-primary"
-          >
-            {item.title} →
-          </Link>
+          <div key={item.version_id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-surface p-6">
+            <Link href={`/lo-trinh/${item.slug}?version=${item.version_id}`} className="font-medium text-primary hover:underline">
+              {item.title} →
+            </Link>
+            <Link
+              href="/goals"
+              className="inline-flex min-h-11 items-center rounded-full border border-primary-pastel bg-primary-light px-4 text-sm font-semibold text-info-foreground hover:bg-primary-pastel focus-visible:outline-2 focus-visible:outline-ring"
+            >
+              Đặt mục tiêu
+            </Link>
+          </div>
         ))
       ) : (
         <p className="rounded-2xl border border-border bg-surface p-8">
@@ -37,7 +43,7 @@ export function MyLearningPaths() {
 }
 export function MyBundleOrders() {
   const { data, error, mutate } = useSWR<{ items: BundleReceipt[] }>(
-    "/bundles/orders/my",
+    hubEndpoints.bundleOrders,
     fetchLearning,
   );
   return (
@@ -68,7 +74,7 @@ export function MyBundleOrders() {
 }
 export function BundleReceiptView({ id }: { id: string }) {
   const { data, error, mutate } = useSWR<BundleReceipt>(
-    `/bundles/orders/${id}`,
+    hubEndpoints.bundleOrder(id),
     fetchLearning,
   );
   return (
@@ -87,6 +93,12 @@ export function BundleReceiptView({ id }: { id: string }) {
             <p>
               Tổng tiền đã thanh toán: <strong>{price(data.total_paid)}</strong>
             </p>
+            <Link
+              href={`/goals?path_id=${encodeURIComponent(data.id)}`}
+              className="inline-flex min-h-11 items-center rounded-full border border-primary-pastel bg-primary-light px-4 text-sm font-semibold text-info-foreground hover:bg-primary-pastel focus-visible:outline-2 focus-visible:outline-ring"
+            >
+              Đặt mục tiêu học
+            </Link>
             {data.coupon_code && (
               <p className="text-sm text-success-foreground">
                 Mã {data.coupon_code} · Đã giảm {price(data.discount_amount)}

@@ -17,6 +17,7 @@ import {
 
 interface Props {
   data: AdminWithdrawDetail;
+  onUpdated?: () => Promise<unknown>;
 }
 
 const formatCurrency = (val: number) =>
@@ -87,7 +88,7 @@ const getStatusMeta = (status: string) => {
   );
 };
 
-export default function AdminWithdrawDetail({ data }: Props) {
+export default function AdminWithdrawDetail({ data, onUpdated }: Props) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState<"approve" | "reject" | null>(
     null
@@ -113,7 +114,8 @@ export default function AdminWithdrawDetail({ data }: Props) {
       showToast.success(
         action === "approve" ? "Đã duyệt yêu cầu" : "Đã từ chối yêu cầu"
       );
-      router.refresh();
+      if (onUpdated) await onUpdated();
+      else router.refresh();
     } catch (error: any) {
       showToast.error(
         error?.response?.data?.message ||

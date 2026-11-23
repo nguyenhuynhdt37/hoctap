@@ -1,13 +1,9 @@
-<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <g fill="#FFFFFF">
-    <circle cx="22" cy="38" r="13" />
-    <circle cx="36" cy="32" r="16" />
-    <circle cx="48" cy="40" r="10" />
-    <rect x="16" y="36" width="36" height="16" rx="8" />
-  </g>
-  <path
-    d="M54 11.2L55.15 14.55L58.5 15.7L55.15 16.85L54 20.2L52.85 16.85L49.5 15.7L52.85 14.55L54 11.2Z"
-    fill="#F7C9D9"
-  />
-  <circle cx="46.2" cy="13.4" r="1.25" fill="#FFFFFF" opacity="0.85" />
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
+
+<g fill="#fff" fill-opacity=".55"><circle cx="60" cy="33" r="10"/><circle cx="73" cy="38" r="8"/><rect x="50" y="36" width="31" height="11" rx="5.5"/></g>
+<g fill="#fff"><circle cx="34" cy="56" r="15"/><circle cx="56" cy="56" r="15"/><rect x="15" y="55" width="62" height="24" rx="12"/></g>
+
+<circle cx="36" cy="67.5" r="2.4" fill="#356FA7"/><circle cx="56" cy="67.5" r="2.4" fill="#356FA7"/>
+<path d="M42 70 Q46 73.8 50 70" stroke="#356FA7" stroke-width="2.3" stroke-linecap="round" fill="none"/>
+<polygon points="27.00,14.50 29.59,20.44 36.04,21.06 31.18,25.36 32.58,31.69 27.00,28.40 21.42,31.69 22.82,25.36 17.96,21.06 24.41,20.44" fill="#fff" stroke="#fff" stroke-width="2.4" stroke-linejoin="round"/>
 </svg>

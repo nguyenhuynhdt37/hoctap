@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import useSWR from "swr";
+import { sanitizeRedirect } from "@/lib/auth/safe-redirect";
 import api from "@/lib/utils/fetcher/client/axios";
 import { Button, Badge } from "@/components/ui";
 import MarkdownRenderer from "@/components/shared/markdown-renderer";
@@ -28,9 +29,8 @@ export default function PathDetail({ slug }: { slug: string }) {
   );
   async function follow() {
     if (!user) {
-      router.push(
-        `/login?redirect=${encodeURIComponent(location.pathname + location.search)}`,
-      );
+      const destination = sanitizeRedirect(location.pathname + location.search, "/lo-trinh");
+      router.push(`/login?redirect=${encodeURIComponent(destination)}`);
       return;
     }
     setBusy(true);

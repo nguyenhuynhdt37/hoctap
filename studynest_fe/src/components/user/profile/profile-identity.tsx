@@ -1,22 +1,17 @@
 "use client";
 
+import { EquippedMarks, FramedAvatar } from "@/components/learning-hub/shop/item-art";
+import { useLearnerEquipment } from "@/lib/learning-hub/shop-hooks";
 import { prepareImageUpload } from "@/lib/prepare-image-upload";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import api from "@/lib/utils/fetcher/client/axios";
-import { getImageUrl } from "@/lib/utils/helpers/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { District, Province } from "./hooks/use-admin-divisions";
 import { ProfileEditor } from "./hooks/use-profile-form";
 
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
-
-function initials(name: string) {
-  const parts = name.trim().split(/\s+/).filter(Boolean).slice(-2);
-  const letters = parts.map((part) => part[0]).join("");
-  return letters.toUpperCase() || "M";
-}
 
 function joinedLabel(value: string) {
   const date = new Date(value);
@@ -51,6 +46,7 @@ export default function ProfileIdentity({
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const { profile, values, editing, startEditing } = editor;
+  const equipment = useLearnerEquipment(profile.id) ?? profile.equipment;
   const [preview, setPreview] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [avatarError, setAvatarError] = useState("");
@@ -70,8 +66,7 @@ export default function ProfileIdentity({
   )?.district_name;
   const place = [districtName, provinceName].filter(Boolean).join(", ");
   const joined = joinedLabel(profile.created_at);
-  const imageSrc =
-    preview || (profile.avatar ? getImageUrl(profile.avatar) : "");
+  const imageSrc = preview || profile.avatar;
 
   const chooseFile = (event: React.ChangeEvent<HTMLInputElement>) => {
     const next = event.target.files?.[0];
@@ -122,23 +117,12 @@ export default function ProfileIdentity({
   return (
     <Card density="none" className="lg:sticky lg:top-6 lg:self-start">
       <CardContent className="flex flex-col items-center px-6 py-6 text-center">
-        <div className="relative">
-          {imageSrc ? (
-            <img
-              src={imageSrc}
-              alt={values.fullname || "Ảnh đại diện"}
-              className="h-28 w-28 rounded-full border border-primary-pastel object-cover"
-            />
-          ) : (
-            <div className="flex h-28 w-28 items-center justify-center rounded-full border border-primary-pastel bg-primary-light text-2xl font-semibold text-primary">
-              {initials(values.fullname)}
-            </div>
-          )}
-        </div>
+        <FramedAvatar src={imageSrc} name={values.fullname} equipment={equipment} className="size-28 text-2xl" />
 
         <h1 className="mt-4 text-xl font-semibold text-foreground">
           {values.fullname || "Hồ sơ của bạn"}
         </h1>
+        <EquippedMarks equipment={equipment} className="mt-2 justify-center" />
         <p className="mt-1 text-sm text-muted-foreground">{profile.email}</p>
         {place && <p className="mt-2 text-sm text-foreground">{place}</p>}
         {joined && (

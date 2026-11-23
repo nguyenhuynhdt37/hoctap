@@ -1,6 +1,7 @@
 "use client";
 
 import TiptapEditor from "@/components/shared/tiptap_editor";
+import { renderLearningContent } from "@/components/shared/markdown-renderer/safe-html";
 import api from "@/lib/utils/fetcher/client/axios";
 import { LessonDetail, QuizFormData } from "@/types/lecturer/lesson-api";
 import {
@@ -12,10 +13,10 @@ import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
+  Bot,
   ChevronLeft,
   ChevronRight,
   Plus,
-  Sparkles,
   Trash2,
   Video,
   XCircle,
@@ -918,7 +919,6 @@ const EditQuizLesson = () => {
                       disabled={isGeneratingTitle || !formData.title.trim()}
                       isLoading={isGeneratingTitle}
                       loadingText="Đang tạo..."
-                      leftIcon={<Sparkles className="h-4 w-4" />}
                       className="border-primary text-primary hover:bg-primary-light/50"
                     >
                       Tạo tiêu đề tự động
@@ -969,7 +969,6 @@ const EditQuizLesson = () => {
                       }
                       isLoading={isGeneratingDescription}
                       loadingText="Đang tạo..."
-                      leftIcon={<Sparkles className="h-4 w-4" />}
                       className="border-primary text-primary hover:bg-primary-light/50"
                     >
                       Tạo mô tả tự động
@@ -1027,8 +1026,8 @@ const EditQuizLesson = () => {
                   <div className="flex items-start gap-3 mb-4">
                     <div className="flex-1">
                       <div className="flex items-center mb-4 gap-3">
-                        <div className="w-10 h-10 bg-primary text-white rounded-xl flex items-center justify-center flex-shrink-0 shadow-xs">
-                          <Sparkles className="h-5 w-5" />
+                        <div className="w-10 h-10 bg-primary text-primary-foreground rounded-xl flex items-center justify-center flex-shrink-0 shadow-xs">
+                          <Bot className="h-5 w-5" aria-hidden="true" />
                         </div>
                         <div>
                           <h3 className="text-lg font-bold text-foreground mb-0.5">
@@ -1078,7 +1077,6 @@ const EditQuizLesson = () => {
                         }
                         isLoading={isGeneratingQuizzes}
                         loadingText="Đang tạo quiz từ AI..."
-                        leftIcon={<Sparkles className="h-4 w-4" />}
                         className="w-full"
                       >
                         Tạo quiz tự động từ {selectedLessonIds.length} bài học
@@ -1449,10 +1447,7 @@ const EditQuizLesson = () => {
                       <div className="text-sm text-foreground mt-1 prose max-w-none">
                         <div
                           dangerouslySetInnerHTML={{
-                            __html: formData.description
-                              .replace(/\n/g, "<br />")
-                              .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-                              .replace(/\*(.*?)\*/g, "<em>$1</em>"),
+                            __html: renderLearningContent(formData.description),
                           }}
                         />
                       </div>

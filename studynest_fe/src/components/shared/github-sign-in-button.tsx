@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { FaGithub } from "react-icons/fa";
 import { Alert, Button } from "@/components/ui";
-import api from "@/lib/utils/fetcher/client/axios";
+import { startGitHubLogin } from "@/lib/auth/github";
 
 export default function GitHubSignInButton({ redirectTo = "/", callbackError }: {
   redirectTo?: string;
@@ -16,11 +16,7 @@ export default function GitHubSignInButton({ redirectTo = "/", callbackError }: 
     setBusy(true);
     setError("");
     try {
-      const { data } = await api.post("/auth/github/start", { redirect_to: redirectTo });
-      const url = new URL(data.authorize_url);
-      if (url.origin !== "https://github.com" || url.pathname !== "/login/oauth/authorize") {
-        throw new Error("Invalid authorization URL");
-      }
+      const url = await startGitHubLogin(redirectTo);
       window.location.assign(url.href);
     } catch (cause: unknown) {
       const detail = (cause as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail;

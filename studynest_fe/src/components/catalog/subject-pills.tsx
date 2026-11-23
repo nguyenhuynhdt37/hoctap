@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { BrowseSubjectOption } from "@/types/catalog";
 
 interface SubjectPillsProps {
@@ -55,7 +55,6 @@ export function SubjectPills({
               : "bg-surface border border-border text-foreground hover:bg-primary-light/70 hover:border-primary-pastel hover:text-primary"
           }`}
         >
-          <Sparkles className="w-3.5 h-3.5" />
           <span>Tất cả môn</span>
         </button>
 

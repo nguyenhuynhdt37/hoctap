@@ -1,3 +1,4 @@
+import { safeUUID } from "@/lib/utils/uuid";
 import type { ActionRegistry } from './action-registry';
 
 const privateArea = '[data-agent-private], [data-agent-exclude], [aria-hidden="true"], script, style, [hidden], [role="dialog"]';
@@ -26,7 +27,7 @@ export class BrowserWorkspace {
   private targets = new Map<string, { element: HTMLElement; name: string; value?: string }>();
   snapshot() {
     if (/^\/(?:admin|login|register|auth)(?:\/|$)/.test(location.pathname)) throw new Error('Trang xác thực hoặc quản trị không nằm trong phạm vi đọc màn hình của trợ lý.');
-    this.snapshotId = crypto.randomUUID(); this.path = location.pathname; this.targets.clear();
+    this.snapshotId = safeUUID(); this.path = location.pathname; this.targets.clear();
     const controls: Array<{ target_id: string; role: string; name: string; can_click: boolean; can_fill: boolean }> = [];
     const text: string[] = []; let chars = 0;
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT);

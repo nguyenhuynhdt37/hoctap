@@ -1,6 +1,7 @@
 "use client";
 
 import { uploadFile } from "@/lib/uploadFile";
+import { sanitizeEditableLearningHtml } from "@/components/shared/markdown-renderer/safe-html";
 import { getImageUrl } from "@/lib/utils/helpers/image";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
 import HorizontalRule from "@tiptap/extension-horizontal-rule";
@@ -116,7 +117,7 @@ const parseMarkdownToHTML = (markdown: string): string => {
   if (!markdown || !markdown.trim()) return "";
 
   // Nếu đã là HTML, return luôn
-  if (markdown.trim().startsWith("<")) return markdown;
+  if (markdown.trim().startsWith("<")) return sanitizeEditableLearningHtml(markdown);
 
   // Xử lý nếu là JSON string được escape (từ AI API)
   // Ví dụ: "{\n  \"topic_description\": \"## Title\\nContent\"\n}"
@@ -127,7 +128,7 @@ const parseMarkdownToHTML = (markdown: string): string => {
   ) {
     try {
       const parsed = JSON.parse(processedMarkdown);
-      if (parsed && typeof parsed === "object" && parsed.topic_description) {
+      if (parsed && typeof parsed === "object" && typeof parsed.topic_description === "string") {
         processedMarkdown = parsed.topic_description;
       } else if (typeof parsed === "string") {
         processedMarkdown = parsed;
@@ -166,9 +167,9 @@ const parseMarkdownToHTML = (markdown: string): string => {
     // giữa câu hoặc bao quanh bởi khoảng trắng/ký tự đầu-cuối
     .replace(
       /(^|[\s([>])__(?!\*)([^_\n][^_]*?[^_\n])__(?=$|[\s\])<.,!?:;])/g,
-      (_, before, content) => {
+      (_, before: string, content: string) => {
         const ph = `${U_PLACE}_${idx++}`;
-        map.set(ph, `<u>${content}</u>`);
+        map.set(ph, `<u>${md.utils.escapeHtml(content)}</u>`);
         return `${before}${ph}`;
       }
     );
@@ -182,24 +183,7 @@ const parseMarkdownToHTML = (markdown: string): string => {
     html = html.split(ph).join(val);
   }
 
-  // 5) Thêm justify cho tất cả paragraph (khi AI đưa vào)
-  // Wrap HTML trong một div tạm để parse
-  const tempDiv =
-    typeof document !== "undefined" ? document.createElement("div") : null;
-  if (tempDiv) {
-    tempDiv.innerHTML = html;
-    // Tìm tất cả paragraph và thêm text-align: justify
-    const paragraphs = tempDiv.querySelectorAll("p");
-    paragraphs.forEach((p) => {
-      (p as HTMLElement).style.textAlign = "justify";
-    });
-    html = tempDiv.innerHTML;
-  } else {
-    // Fallback cho SSR: dùng regex để thêm style vào <p>
-    html = html.replace(/<p>/g, '<p style="text-align: justify;">');
-  }
-
-  return html;
+  return sanitizeEditableLearningHtml(html).replace(/<p>/g, '<p style="text-align: justify;">');
 };
 
 interface TiptapEditorProps {
@@ -348,6 +332,7 @@ export default function TiptapEditor({
       onChange(markdown);
     },
     editorProps: {
+      transformPastedHTML: sanitizeEditableLearningHtml,
       attributes: {
         class:
           "prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none",

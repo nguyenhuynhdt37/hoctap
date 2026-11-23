@@ -1,5 +1,6 @@
 "use client";
 
+import { safeUUID } from "@/lib/utils/uuid";
 import { triggerCelebration } from "@/lib/utils/helpers/effects";
 import { ActiveLessonResponse } from "@/types/user/activeLesson";
 import { QuizQuestion } from "@/types/user/learning";
@@ -35,7 +36,6 @@ export default function QuizLesson({
   onMarkCompleted,
   completedLessons,
   quizzes = [],
-  accessToken,
   lessonAuthorId,
 }: QuizLessonProps) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -207,7 +207,7 @@ export default function QuizLesson({
     if (isLastQuestion) {
       if (submitting) return;
       setSubmitting(true); setAttemptError("");
-      if (!attemptKey.current) attemptKey.current = crypto.randomUUID();
+      if (!attemptKey.current) attemptKey.current = safeUUID();
       const sourceQuizzes = stableLessonQuizzes || lesson.quizzes;
       const answers = quizQuestions.map(question => {
         const original = sourceQuizzes?.find(item => item.id === question.id);
@@ -268,7 +268,6 @@ export default function QuizLesson({
               quizQuestionsCount={quizQuestions.length}
               selectedAnswersCount={Object.keys(selectedAnswers).length}
               correctCount={correctCount}
-              accessToken={accessToken}
               lessonAuthorId={lessonAuthorId}
             />
           </div>

@@ -34,8 +34,8 @@ const labels = {
   error: "Chưa thể tiếp tục cuộc trò chuyện",
 };
 
-export default function VoiceDialog({ lessonId, lessonTitle, accessToken, onClose, onSourceClick, agentSessionId, onAgentEvent, minimized, onMinimize, onExpand, onStateChange }: VoiceDialogProps) {
-  const voice = useLessonVoice(lessonId, accessToken, agentSessionId, onAgentEvent);
+export default function VoiceDialog({ lessonId, lessonTitle, onClose, onSourceClick, agentSessionId, onAgentEvent, minimized, onMinimize, onExpand, onStateChange }: VoiceDialogProps) {
+  const voice = useLessonVoice(lessonId, undefined, agentSessionId, onAgentEvent);
   useEffect(() => { onStateChange?.(voice.state); }, [voice.state, onStateChange]);
   const connected = ["listening", "thinking", "speaking"].includes(voice.state);
   const endRef = useRef<HTMLDivElement>(null);

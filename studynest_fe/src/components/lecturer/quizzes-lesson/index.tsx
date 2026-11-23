@@ -15,11 +15,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useRef, useState } from "react";
 import {
   ArrowLeft,
+  Bot,
   Check,
   GraduationCap,
   Pencil,
   Plus,
-  Sparkles,
   Trash2,
   X,
   Zap,
@@ -512,7 +512,6 @@ const QuizzesLesson = () => {
                       disabled={isGeneratingAI || !lessonId}
                       isLoading={isGeneratingAI}
                       loadingText="Đang tạo..."
-                      leftIcon={<Sparkles className="h-4 w-4" />}
                       title="Tạo quiz bằng AI"
                     >
                       Tạo bằng AI
@@ -808,7 +807,7 @@ const QuizzesLesson = () => {
             <Card className="bg-surface border border-border rounded-2xl p-6 max-w-md w-full shadow-xl">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 bg-secondary-light text-secondary-foreground rounded-xl flex items-center justify-center">
-                  <Sparkles className="h-5 w-5" />
+                  <Bot className="h-5 w-5" aria-hidden="true" />
                 </div>
                 <h3 className="text-lg font-bold font-display text-foreground">
                   Tạo quiz bằng AI

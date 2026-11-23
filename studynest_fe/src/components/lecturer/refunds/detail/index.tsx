@@ -25,6 +25,7 @@ import { TimelineItem } from "./timeline-item";
 
 interface LecturerRefundDetailProps {
   data: LecturerRefundDetailData;
+  onUpdated?: () => Promise<unknown>;
 }
 
 type RefundStatus = LecturerRefundDetailData["refund"]["status"];
@@ -92,6 +93,7 @@ const statusMeta: Record<
 
 export default function LecturerRefundDetail({
   data,
+  onUpdated,
 }: LecturerRefundDetailProps) {
   const router = useRouter();
   const [comment, setComment] = useState(data.refund.instructor_comment ?? "");
@@ -162,7 +164,8 @@ export default function LecturerRefundDetail({
           ? "Bạn đã chấp nhận hoàn tiền."
           : "Bạn đã từ chối yêu cầu."
       );
-      router.refresh();
+      if (onUpdated) await onUpdated();
+      else router.refresh();
     } catch (error: any) {
       const message =
         error?.response?.data?.message ||

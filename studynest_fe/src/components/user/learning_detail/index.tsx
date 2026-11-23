@@ -1,5 +1,6 @@
 "use client";
 
+import { Alert } from "@/components/ui";
 import api from "@/lib/utils/fetcher/client/axios";
 import { ActiveLessonResponse } from "@/types/user/activeLesson";
 import { CurriculumResponse } from "@/types/user/curriculum";
@@ -8,7 +9,6 @@ import { LearningDetailProps } from "@/types/user/learning";
 import React, {
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
   Suspense,
@@ -26,14 +26,13 @@ import { LearningAgentProvider, useLearningAgent, useAgentAction, useAgentSnapsh
 import { stringArg, waitForState } from "./agent/action-registry";
 
 function LearningDetail(props: LearningDetailProps) {
-  const { courseData, error, accessToken } = props;
+  const { courseData, openTutor = false, lessonId, sectionId, preferQuiz } = props;
 
   // SWR với axios trực tiếp
   const {
     data: curriculumData,
     error: curriculumError,
     isLoading,
-    isValidating: isValidatingCurriculum,
     mutate: mutateCurriculum,
   } = useSWR(
     courseData?.id ? `curriculum-${courseData.id}` : null,
@@ -86,21 +85,14 @@ function LearningDetail(props: LearningDetailProps) {
     }
   );
 
-  const getInstructorName = useCallback((html?: string | null) => {
-    if (!html) return "Giảng viên";
-    try {
-      const match = html.match(/<h2[^>]*>([\s\S]*?)<\/h2>/i);
-      if (match && match[1]) {
-        const text = match[1].replace(/<[^>]*>/g, "").trim();
-        const parts = text.split("-");
-        return (parts[0] || text).trim();
-      }
-    } catch {}
-    return "Giảng viên";
-  }, []);
+  function seekCurrentVideo(timeSeconds: number) {
+    if (!initialActiveLesson?.id) return;
+    const seek: unknown = Reflect.get(window, `seekVideo_${initialActiveLesson.id}`);
+    if (typeof seek === "function") seek(timeSeconds);
+  }
 
   // UI states
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(!openTutor);
   const [activeLesson, setActiveLesson] = useState("");
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set()
@@ -108,7 +100,9 @@ function LearningDetail(props: LearningDetailProps) {
   const [notes, setNotes] = useState("");
   const [activeTab, setActiveTab] = useState("lesson");
   const [openProgress, setOpenProgress] = useState(false);
-  const [chatOpen, setChatOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(openTutor);
+  const [lessonLinkFailed, setLessonLinkFailed] = useState(false);
+  const attemptedLessonLink = useRef(false);
 
   // Refs
   const lessonRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
@@ -313,7 +307,7 @@ function LearningDetail(props: LearningDetailProps) {
             const lessonElement = lessonRefs.current[lessonId];
             if (lessonElement) {
               lessonElement.scrollIntoView({
-                behavior: "smooth",
+                behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
                 block: "center",
                 inline: "nearest",
               });
@@ -327,6 +321,24 @@ function LearningDetail(props: LearningDetailProps) {
     },
     [courseData?.id, curriculumData, mutateActiveLesson]
   );
+
+  useEffect(() => {
+    if ((!lessonId && !sectionId) || !curriculumData || attemptedLessonLink.current) return;
+    attemptedLessonLink.current = true;
+
+    async function openLinkedLesson() {
+      const sections = curriculumData?.sections ?? [];
+      const section = sectionId ? sections.find(({ id }) => id === sectionId) : undefined;
+      const lessons = sectionId ? section?.lessons ?? [] : sections.flatMap((item) => item.lessons);
+      const available = lessons.filter((lesson) => !lesson.is_locked && (!preferQuiz || lesson.lesson_type === "quiz"));
+      const target = lessonId ? available.find(({ id }) => id === lessonId)
+        : available.find((lesson) => !lesson.is_completed) ?? available[0];
+      if (!target) throw new Error("Bài học không khả dụng.");
+      if (target.id !== initialActiveLesson?.id) await setActiveLessonAndRefresh(target.id);
+    }
+
+    void openLinkedLesson().catch(() => setLessonLinkFailed(true));
+  }, [curriculumData, initialActiveLesson?.id, lessonId, sectionId, preferQuiz, setActiveLessonAndRefresh]);
 
   const selectLesson = useCallback(
     (lessonId: string) => {
@@ -360,7 +372,8 @@ function LearningDetail(props: LearningDetailProps) {
     course_id: courseData?.id, lesson_id: initialActiveLesson?.id, active_tab: activeTab,
     active_panel: chatOpen ? "chat" : sidebarOpen ? "sidebar" : "content",
   }));
-  useEffect(() => { agent?.changed(); }, [initialActiveLesson?.id, activeTab, sidebarOpen, chatOpen, agent?.changed]);
+  const notifyAgent = agent?.changed;
+  useEffect(() => { notifyAgent?.(); }, [initialActiveLesson?.id, activeTab, sidebarOpen, chatOpen, notifyAgent]);
   const navigateAgent = async (lessonId: string, signal: AbortSignal) => {
     const target = curriculumData?.sections.flatMap(section => section.lessons).find(item => item.id === lessonId);
     if (!target || target.is_locked) throw new Error("Bài học chưa được cấp quyền hoặc đang bị khóa.");
@@ -409,11 +422,6 @@ function LearningDetail(props: LearningDetailProps) {
     return { active_tab: tab, verified: true };
   }, verify: result => Boolean((result as { verified?: boolean })?.verified) });
   useAgentAction("ui.get_state", { execute: async () => agent?.snapshot(), verify: result => Boolean(result) });
-
-  // Memoized computed values
-  const instructorName = useMemo(() => {
-    return getInstructorName(instructorData?.instructor_description);
-  }, [instructorData?.instructor_description, getInstructorName]);
 
   // Loading state
   if (isLoading) {
@@ -523,6 +531,9 @@ function LearningDetail(props: LearningDetailProps) {
       <div className="flex min-h-0 min-w-0 w-full flex-1">
         {/* Main Content Area */}
         <div data-learning-lesson className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
+          {lessonLinkFailed && (
+            <Alert variant="warning" className="m-4">Chưa mở được bài học từ liên kết. Bạn có thể chọn bài trong danh sách của khóa học.</Alert>
+          )}
           <LessonRenderer
             activeLessonData={initialActiveLesson}
             onMarkCompleted={markLessonCompleted}
@@ -535,17 +546,7 @@ function LearningDetail(props: LearningDetailProps) {
             }
             hasNext={navigationData?.can_next ?? false}
             hasPrev={navigationData?.can_prev ?? false}
-            onSeekToTime={(timeSeconds: number) => {
-              if (initialActiveLesson?.id) {
-                const seekFn = (window as any)[
-                  `seekVideo_${initialActiveLesson.id}`
-                ];
-                if (seekFn) {
-                  seekFn(timeSeconds);
-                }
-              }
-            }}
-            accessToken={accessToken}
+            onSeekToTime={seekCurrentVideo}
             lessonAuthorId={instructorData?.id ?? null}
           />
 
@@ -583,17 +584,7 @@ function LearningDetail(props: LearningDetailProps) {
                       }
                     : undefined
                 }
-                onSeekToTime={(timeSeconds: number) => {
-                  if (initialActiveLesson?.id) {
-                    const seekFn = (window as any)[
-                      `seekVideo_${initialActiveLesson.id}`
-                    ];
-                    if (seekFn) {
-                      seekFn(timeSeconds);
-                    }
-                  }
-                }}
-                accessToken={accessToken}
+                onSeekToTime={seekCurrentVideo}
               />
             )}
         </div>
@@ -617,7 +608,6 @@ function LearningDetail(props: LearningDetailProps) {
               >
                 <TutorChatPanel
                   key={initialActiveLesson.id}
-                  accessToken={accessToken}
                   lessonId={initialActiveLesson.id}
                   lessonTitle={initialActiveLesson.title || "Bài học"}
                   courseId={courseData.id}
@@ -628,14 +618,7 @@ function LearningDetail(props: LearningDetailProps) {
                     )?.id
                   }
                   onNavigateToLesson={selectLesson}
-                  onSeekToTime={(timeSeconds: number) => {
-                    const seekFn = (window as any)[
-                      `seekVideo_${initialActiveLesson.id}`
-                    ];
-                    if (seekFn) {
-                      seekFn(timeSeconds);
-                    }
-                  }}
+                  onSeekToTime={seekCurrentVideo}
                   onClose={closeTutorChat}
                 />
               </Suspense>

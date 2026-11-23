@@ -29,7 +29,6 @@ export default function LessonRenderer({
   hasNext,
   hasPrev,
   onSeekToTime,
-  accessToken,
   lessonAuthorId,
 }: LessonRendererProps) {
   const renderLesson = () => {
@@ -84,7 +83,6 @@ export default function LessonRenderer({
             hasPrev={hasPrev || false}
             onMarkCompleted={onMarkCompleted}
             completedLessons={completedLessons}
-            accessToken={accessToken}
             lessonAuthorId={lessonAuthorId}
             quizzes={
               activeLessonData.quizzes?.map((q) => {
@@ -112,7 +110,6 @@ export default function LessonRenderer({
             lesson={activeLessonData}
             onMarkCompleted={onMarkCompleted}
             completedLessons={completedLessons}
-            accessToken={accessToken}
             lessonAuthorId={lessonAuthorId}
           />
         );

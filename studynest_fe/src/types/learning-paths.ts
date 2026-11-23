@@ -35,6 +35,7 @@ export interface LearningPath {
   title: string;
   description: string;
   status: "draft" | "published" | "archived";
+  thumbnail_url?: string | null;
   is_active?: boolean;
   stages?: PathStage[];
   following?: boolean;

@@ -1,15 +1,13 @@
-import { refreshSession } from '@/lib/utils/fetcher/client/refresh-session';
+import { authedFetch } from '@/lib/utils/fetcher/client/axios';
 import type { AgentEvent } from './contracts';
 
 /** Reconnect only the read-only event stream; never resubmit a mutation to recover it. */
 export async function consumeAgentEvents(runId: string, onEvent: (event: AgentEvent) => Promise<void>, signal: AbortSignal) {
   let sequence = 0;
   for (let attempt = 0; attempt < 3; attempt++) {
-    const open = () => fetch(`/api/agent/runs/${encodeURIComponent(runId)}/events?after=${sequence}`, {
-      credentials: 'include', signal, headers: { Accept: 'text/event-stream' },
+    const response = await authedFetch(`/api/agent/runs/${encodeURIComponent(runId)}/events?after=${sequence}`, {
+      signal, headers: { Accept: 'text/event-stream' },
     });
-    let response = await open();
-    if (response.status === 401) { await response.body?.cancel(); await refreshSession(); response = await open(); }
     if (!response.ok || !response.body) throw new Error('Không kết nối được tiến trình Mây Mây.');
     const reader = response.body.getReader();
     const decoder = new TextDecoder();

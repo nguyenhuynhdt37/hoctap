@@ -9,6 +9,15 @@ import sanitizeHtml from 'sanitize-html';
  * No SVG/MathML/iframes, inline CSS, event handlers, arbitrary IDs, or active forms.
  */
 export function sanitizeLearningHtml(html: string): string {
+  return sanitizeContentHtml(html, false);
+}
+
+export function sanitizeEditableLearningHtml(html: string): string {
+  return sanitizeContentHtml(html, true);
+}
+
+function sanitizeContentHtml(html: string, editable: boolean): string {
+  const alignment = { 'text-align': [/^(?:left|center|right|justify)$/] };
   return sanitizeHtml(html, {
     allowedTags: ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'ul', 'ol', 'li', 'blockquote', 'pre', 'code',
       'strong', 'em', 'b', 'i', 'u', 's', 'del', 'br', 'hr', 'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td',
@@ -18,14 +27,23 @@ export function sanitizeLearningHtml(html: string): string {
       a: ['href', 'title', 'target', 'rel'], img: ['src', 'alt', 'title', 'width', 'height', 'loading'],
       th: ['colspan', 'rowspan', 'scope'], td: ['colspan', 'rowspan'], col: ['span'], ol: ['start'],
       input: ['type', 'checked', 'disabled'], abbr: ['title'],
+      ...(editable ? {
+        '*': ['style'],
+        ul: [{ name: 'data-type', values: ['taskList'] }],
+        li: [{ name: 'data-type', values: ['taskItem'] }, { name: 'data-checked', values: ['true', 'false'] }],
+      } : {}),
     },
+    allowedStyles: editable ? {
+      p: alignment, div: alignment, h1: alignment, h2: alignment, h3: alignment,
+      h4: alignment, h5: alignment, h6: alignment,
+    } : {},
     allowedClasses: {
       code: [/^language-[a-z0-9_+-]+$/i, 'hljs'], span: [/^hljs-[a-z0-9_-]+$/i],
       ul: ['contains-task-list'], li: ['task-list-item'],
       img: ['rounded-lg', 'max-w-full', 'h-auto', 'my-2', 'shadow-sm'],
     },
     allowedSchemes: ['https', 'http', 'mailto'],
-    allowedSchemesByTag: { img: ['https', 'http'] },
+    allowedSchemesByTag: { img: editable ? ['https', 'http', 'data'] : ['https', 'http'] },
     allowedSchemesAppliedToAttributes: ['href', 'src'],
     allowProtocolRelative: false,
     disallowedTagsMode: 'discard',
@@ -37,7 +55,11 @@ export function sanitizeLearningHtml(html: string): string {
         ...(attributes.target === '_blank' ? { target: '_blank', rel: 'noopener noreferrer' } : {}),
       } }),
       img: (_tagName, attributes) => ({ tagName: 'img', attribs: {
-        ...(attributes.src ? { src: attributes.src } : {}), alt: attributes.alt || '',
+        ...(attributes.src && (
+          !editable ||
+          !/^\s*data:/i.test(attributes.src.replace(/[\u0000-\u0020]/g, '')) ||
+          /^data:image\/(?:png|jpeg|gif|webp|avif);base64,[a-z\d+/]+=*$/i.test(attributes.src)
+        ) ? { src: attributes.src } : {}), alt: attributes.alt || '',
         ...(attributes.title ? { title: attributes.title } : {}), loading: 'lazy',
         ...(attributes.width && /^\d{1,4}$/.test(attributes.width) ? { width: attributes.width } : {}),
         ...(attributes.height && /^\d{1,4}$/.test(attributes.height) ? { height: attributes.height } : {}),

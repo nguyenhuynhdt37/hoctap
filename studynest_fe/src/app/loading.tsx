@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { Sparkles } from "lucide-react";
 
 /**
  * Root Loading chuẩn Cloudy Blue Design System V2 (Korean Pastel Minimalism)
@@ -61,12 +60,9 @@ export default function Loading() {
 
         {/* Tiêu đề & Thông điệp biên tập */}
         <div className="space-y-1.5 mb-6">
-          <div className="inline-flex items-center gap-1.5">
-            <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
-              Study<span className="text-primary">Nest</span>
-            </h1>
-            <Sparkles className="w-3.5 h-3.5 text-primary animate-pulse" />
-          </div>
+          <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
+            Study<span className="text-primary">Nest</span>
+          </h1>
           <p className="text-xs font-medium text-muted-foreground">
             Học viện trên mây • Đang chuẩn bị nội dung...
           </p>

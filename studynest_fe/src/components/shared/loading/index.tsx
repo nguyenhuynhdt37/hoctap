@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { Cloud, Sparkles } from "lucide-react";
+import { Cloud } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const quotes = [
@@ -96,7 +96,6 @@ export default function CloudyLoading({
           <span className="font-display text-xl font-bold tracking-tight text-foreground">
             Study<span className="text-primary">Nest</span>
           </span>
-          <Sparkles className="h-3 w-3 text-secondary-foreground animate-pulse" />
         </div>
         <p className="text-xs font-medium text-muted-foreground">{message}</p>
       </div>

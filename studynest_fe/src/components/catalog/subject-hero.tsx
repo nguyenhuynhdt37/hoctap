@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, BookOpen, Compass, Globe2, Sparkles } from "lucide-react";
+import { ArrowRight, BookOpen, Compass, Globe2 } from "lucide-react";
 import { Badge } from "@/components/ui";
 import type { BrowseSubjectOption } from "@/types/catalog";
 
@@ -50,7 +50,6 @@ export function SubjectHero({ currentSubject, totalCourses }: SubjectHeroProps) 
         <div className="max-w-2xl space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="primary" className="text-xs px-3 py-1 font-medium">
-              <Sparkles className="w-3.5 h-3.5 mr-1 text-primary" />
               {currentSubject ? `Danh mục ${currentSubject.name}` : "Tất cả khóa học"}
             </Badge>
 

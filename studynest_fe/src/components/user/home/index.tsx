@@ -2,7 +2,10 @@
 
 import { useCallback, useRef, useState } from "react";
 import BenefitsSection from "./benefits-section";
-import { LandingDynamicIsland, ScrollCinematicHero } from "./cinematic";
+import CloudArcNav from "./cloud-nav/CloudArcNav";
+import CombosSection from "./combos-section";
+import ScrollThreeHero from "./three-hero/ScrollThreeHero";
+import PageSky from "./may-world/PageSky";
 import CoursesSection from "./courses-section";
 import CTASection from "./cta-section";
 import GradeLevelsSection, { SchoolLevelId } from "./grade-levels-section";
@@ -32,13 +35,22 @@ const Home = () => {
   );
 
   return (
-    <main className="min-h-screen bg-background">
-      <LandingDynamicIsland onSkipVideo={scrollToContent} />
+    <main className="relative isolate min-h-screen">
+      <PageSky />
+      <CloudArcNav onSkipHero={scrollToContent} />
 
       {/* Section B: Scroll-Driven 3D Cinematic Hero */}
-      <ScrollCinematicHero
+      <ScrollThreeHero
         onExploreCourses={scrollToCourses}
-        onSelectGradeLevel={handleSelectGradeLevel}
+        onSelectGradeLevel={(level) =>
+          handleSelectGradeLevel(
+            level === "middle"
+              ? "secondary"
+              : level === "high"
+                ? "highschool"
+                : "primary"
+          )
+        }
       />
 
       {/* Điểm neo nội dung chính sau khi bỏ qua phần lướt video */}
@@ -69,6 +81,7 @@ const Home = () => {
       <div ref={coursesSectionRef}>
         <CoursesSection />
       </div>
+      <CombosSection />
 
       {/* Section F: Why Mây Mây? */}
       <BenefitsSection />

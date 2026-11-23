@@ -1,26 +1,13 @@
 import Login from "@/components/user/login";
-import { fetcher } from "@/lib/utils/fetcher/server/fetcher";
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import GuestOnly, { GuestFormSkeleton } from "./guest-only";
 
-const LoginPage = async () => {
-  const stores = await cookies();
-  const result = await fetcher("/auth/check_is_login", stores);
-  if (result.ok) {
-    redirect("/");
-  }
-  return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen flex items-center justify-center">
-          Đang tải...
-        </div>
-      }
-    >
+const LoginPage = () => (
+  <GuestOnly>
+    <Suspense fallback={<GuestFormSkeleton />}>
       <Login />
     </Suspense>
-  );
-};
+  </GuestOnly>
+);
 
 export default LoginPage;

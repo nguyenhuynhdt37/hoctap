@@ -1,3 +1,4 @@
+import { RootGate } from "@/components/learning-hub";
 import Home from "@/components/user/home";
 import type { Metadata } from "next";
 
@@ -16,7 +17,7 @@ export const metadata: Metadata = {
 };
 
 const HomePage = () => {
-  return <Home />;
+  return <RootGate landing={<Home />} />;
 };
 
 export default HomePage;

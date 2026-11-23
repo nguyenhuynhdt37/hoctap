@@ -28,6 +28,10 @@ export interface LearningDetailProps {
   courseData: LearningCourseData | null;
   error?: LearningError;
   accessToken?: string;
+  openTutor?: boolean;
+  lessonId?: string;
+  sectionId?: string;
+  preferQuiz?: boolean;
 }
 
 // ========== Code Lesson Interfaces ==========

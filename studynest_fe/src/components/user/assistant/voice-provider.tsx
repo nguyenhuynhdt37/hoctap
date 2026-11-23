@@ -8,26 +8,27 @@ import toast from "react-hot-toast";
 import { useLearningAgent } from "../learning_detail/agent/agent-context";
 
 type Request = Pick<VoiceDialogProps, "lessonId" | "lessonTitle" | "onSourceClick" | "onClose"> & { accessToken?: string };
+type VoiceRequest = Omit<Request, "accessToken">;
 const Context = createContext<{ open: (request: Request) => Promise<void>; active: boolean } | null>(null);
 export const useAssistantVoice = () => useContext(Context);
 
-export function AssistantVoiceProvider({ children, accessToken }: { children: React.ReactNode; accessToken?: string }) {
+export function AssistantVoiceProvider({ children }: { children: React.ReactNode; accessToken?: string }) {
   const agent = useLearningAgent();
   const router = useRouter();
-  const [request, setRequest] = useState<Request | null>(null);
+  const [request, setRequest] = useState<VoiceRequest | null>(null);
   const [minimized, setMinimized] = useState(false);
   const [active, setActive] = useState(false);
   const updateState = useCallback((state: string) => setActive(["connecting", "listening", "thinking", "speaking"].includes(state)), []);
-  const open = useCallback(async (next: Request) => {
+  const open = useCallback(async ({ lessonId, lessonTitle, onSourceClick, onClose }: Request) => {
     if (!request || !active) {
       await agent?.prepareSession();
-      setRequest(next);
+      setRequest({ lessonId, lessonTitle, onSourceClick, onClose });
     }
     setMinimized(false);
   }, [agent?.prepareSession, request, active]);
   return <Context.Provider value={{ open, active }}>
     {children}
-    {request && <VoiceDialog {...request} accessToken={request.accessToken || accessToken} agentSessionId={agent?.sessionId} onAgentEvent={agent?.handleEvent}
+    {request && <VoiceDialog {...request} agentSessionId={agent?.sessionId} onAgentEvent={agent?.handleEvent}
       onSourceClick={source => {
         if (source.lesson_id && request.lessonId && agent?.snapshot().lesson_id !== request.lessonId) {
           void api.get(`/agent/lessons/${source.lesson_id}/destination`).then(async ({ data }) => {

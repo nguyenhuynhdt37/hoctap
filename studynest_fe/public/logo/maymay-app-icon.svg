@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 96 96" fill="none">
+<defs>
+<linearGradient id="mm-front" x1="18" y1="36" x2="70" y2="84" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#6FA3D1"/><stop offset="1" stop-color="#2B5F96"/></linearGradient>
+<linearGradient id="mm-back" x1="50" y1="14" x2="86" y2="48" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FBDCE7"/><stop offset="1" stop-color="#F2B3C9"/></linearGradient>
+</defs>
+<rect width="96" height="96" rx="22" fill="#F6FAFF"/><g transform="translate(48 50) scale(.86) translate(-48 -50)"><g fill="url(#mm-back)"><circle cx="60" cy="33" r="10"/><circle cx="73" cy="38" r="8"/><rect x="50" y="36" width="31" height="11" rx="5.5"/></g>
+<g fill="url(#mm-front)"><circle cx="34" cy="56" r="15"/><circle cx="56" cy="56" r="15"/><rect x="15" y="55" width="62" height="24" rx="12"/></g>
+<path d="M24.5 53 A10.5 10.5 0 0 1 32 45.2" stroke="#fff" stroke-opacity=".6" stroke-width="3" stroke-linecap="round" fill="none"/>
+<circle cx="36" cy="67.5" r="2.4" fill="#fff"/><circle cx="56" cy="67.5" r="2.4" fill="#fff"/>
+<path d="M42 70 Q46 73.8 50 70" stroke="#fff" stroke-width="2.3" stroke-linecap="round" fill="none"/>
+<polygon points="27.00,14.50 29.59,20.44 36.04,21.06 31.18,25.36 32.58,31.69 27.00,28.40 21.42,31.69 22.82,25.36 17.96,21.06 24.41,20.44" fill="#F2B3C9" stroke="#F2B3C9" stroke-width="2.4" stroke-linejoin="round"/></g>
+</svg>

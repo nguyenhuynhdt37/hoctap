@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import useSWR, { useSWRConfig } from "swr";
+import { sanitizeRedirect } from "@/lib/auth/safe-redirect";
 import api from "@/lib/utils/fetcher/client/axios";
 import { showToast } from "@/lib/utils/helpers/toast";
 import { useUserStore } from "@/stores/user";
@@ -62,8 +63,8 @@ export function useSavedInstructors(instructorIds: string[] = []) {
     {
       revalidateOnFocus: false,
       dedupingInterval: 5000,
-      onError: (err) => {
-        console.error("Lỗi khi tải trạng thái lưu giáo viên:", err);
+      onError: () => {
+        console.error("Lỗi khi tải trạng thái lưu giáo viên.");
       },
     }
   );
@@ -100,7 +101,8 @@ export function useSavedInstructors(instructorIds: string[] = []) {
             ? window.location.pathname + window.location.search
             : "/instructors";
         showToast.info("Vui lòng đăng nhập để lưu giáo viên vào danh sách theo dõi.");
-        router.push(`/login?redirect=${encodeURIComponent(currentUrl)}`);
+        const destination = sanitizeRedirect(currentUrl, "/instructors");
+        router.push(`/login?redirect=${encodeURIComponent(destination)}`);
         return null;
       }
 
@@ -156,7 +158,7 @@ export function useSavedInstructors(instructorIds: string[] = []) {
         return !currentlySaved;
       } catch (err) {
         if (useUserStore.getState().user?.id !== ownerId) return null;
-        console.error("Lỗi khi thay đổi trạng thái lưu giáo viên:", err);
+        console.error("Lỗi khi thay đổi trạng thái lưu giáo viên.");
         showToast.error("Không thể thay đổi trạng thái lưu. Vui lòng thử lại sau.");
         throw err;
       } finally {

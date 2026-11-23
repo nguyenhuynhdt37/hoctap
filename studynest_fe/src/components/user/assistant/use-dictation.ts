@@ -1,5 +1,8 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { isDpopMode } from '@/lib/auth/mode';
+import { getDpopSocketBase } from '@/lib/auth/http';
+import { openAuthedWebSocket, takeInitialWebSocketMessage } from '@/lib/auth/ws';
 import api from '@/lib/utils/fetcher/client/axios';
 import { dictationDraft, transcriptEvent, dictationSocketUrl } from './dictation-text';
 
@@ -83,14 +86,25 @@ export function useDictation(getValue: () => string, onValueChange: (text: strin
       capture.setup = setTimeout(() => finish(capture, 'Kết nối nhận dạng quá lâu. Bạn có thể bật mic lại.'), 20000);
       await context.audioWorklet.addModule('/audio/tutor-recorder.js?v=3');
       if (!isCurrent(capture)) return;
-      const { data } = await api.post<{ ticket: string }>('/agent/dictation-ticket', {}, { signal: capture.controller.signal });
+      const protocols = ['studynest-dictation'];
+      const request = { signal: capture.controller.signal };
+      if (isDpopMode) {
+        await api.get('/auth/me', request);
+      } else {
+        const { data } = await api.post<{ ticket: string }>('/agent/dictation-ticket', {}, request);
+        protocols.push(`ticket.${data.ticket}`);
+      }
       if (!isCurrent(capture)) return;
-      const url = dictationSocketUrl(process.env.NEXT_PUBLIC_URL_BACKEND_WS || process.env.NEXT_PUBLIC_URL_BACKEND, window.location.origin);
-      const socket = new WebSocket(url, ['studynest-dictation', `ticket.${data.ticket}`]);
+      const base = isDpopMode ? getDpopSocketBase() : (
+        process.env.NEXT_PUBLIC_URL_BACKEND_WS || process.env.NEXT_PUBLIC_URL_BACKEND
+      );
+      const url = dictationSocketUrl(base, window.location.origin);
+      const socket = await openAuthedWebSocket(url, { protocols });
+      if (!isCurrent(capture)) { socket.close(); return; }
       capture.ws = socket;
       socket.onerror = () => { if (isCurrent(capture)) finish(capture, 'Không kết nối được nhận dạng giọng nói. Phần chữ đã nhận vẫn được giữ.'); };
       socket.onclose = () => { if (isCurrent(capture)) finish(capture, 'Kết nối nhận dạng đã đóng. Phần chữ đã nhận vẫn được giữ; bạn có thể bật mic lại.'); };
-      socket.onmessage = event => {
+      const onMessage = (event: MessageEvent) => {
         if (!isCurrent(capture)) return;
         try {
           if (typeof event.data !== 'string' || event.data.length > 64000) throw new Error('Phản hồi nhận dạng không hợp lệ.');
@@ -128,6 +142,9 @@ export function useDictation(getValue: () => string, onValueChange: (text: strin
           }
         } catch (cause) { finish(capture, cause instanceof Error ? cause.message : 'Phản hồi nhận dạng không hợp lệ.'); }
       };
+      socket.onmessage = onMessage;
+      const firstMessage = takeInitialWebSocketMessage(socket);
+      if (firstMessage) onMessage(firstMessage);
     } catch (cause) {
       if (!isCurrent(capture)) return;
       finish(capture, (cause as DOMException)?.name === 'NotAllowedError' ? 'Bạn cần cho phép dùng micro.' : cause instanceof Error ? cause.message : 'Chưa mở được micro.');

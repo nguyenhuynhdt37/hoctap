@@ -20,7 +20,6 @@ import {
   Lightbulb,
   Lock,
   Plus,
-  Sparkles,
   Trash2,
   Users,
   X,
@@ -746,11 +745,6 @@ const CreateCourse = () => {
                       disabled={isGeneratingSubtitle || !formData.title.trim()}
                       isLoading={isGeneratingSubtitle}
                       loadingText="Đang tạo..."
-                      leftIcon={
-                        !isGeneratingSubtitle ? (
-                          <Sparkles className="h-4 w-4" />
-                        ) : undefined
-                      }
                       title="Tự động tạo mô tả ngắn từ AI"
                     >
                       Tạo mô tả tự động
@@ -953,11 +947,6 @@ const CreateCourse = () => {
                     }
                     isLoading={isGeneratingDescription}
                     loadingText="Đang tạo..."
-                    leftIcon={
-                      !isGeneratingDescription ? (
-                        <Sparkles className="h-4 w-4" />
-                      ) : undefined
-                    }
                     title="Tự động tạo mô tả chi tiết từ AI"
                   >
                     Tạo mô tả tự động
@@ -1021,11 +1010,6 @@ const CreateCourse = () => {
                     }
                     isLoading={isGeneratingOutcomes}
                     loadingText="Đang tạo..."
-                    leftIcon={
-                      !isGeneratingOutcomes ? (
-                        <Sparkles className="h-4 w-4" />
-                      ) : undefined
-                    }
                     title="Tự động tạo mục tiêu học tập từ AI"
                   >
                     Tạo mục tiêu tự động
@@ -1098,11 +1082,6 @@ const CreateCourse = () => {
                     }
                     isLoading={isGeneratingRequirements}
                     loadingText="Đang tạo..."
-                    leftIcon={
-                      !isGeneratingRequirements ? (
-                        <Sparkles className="h-4 w-4" />
-                      ) : undefined
-                    }
                     title="Tự động tạo yêu cầu từ AI"
                   >
                     Tạo yêu cầu tự động
@@ -1175,11 +1154,6 @@ const CreateCourse = () => {
                     }
                     isLoading={isGeneratingTargetAudience}
                     loadingText="Đang tạo..."
-                    leftIcon={
-                      !isGeneratingTargetAudience ? (
-                        <Sparkles className="h-4 w-4" />
-                      ) : undefined
-                    }
                     title="Tự động tạo đối tượng học viên từ AI"
                   >
                     Tạo đối tượng tự động

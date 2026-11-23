@@ -1,21 +1,32 @@
 import axios from "axios";
+import { isTerminalAuthCode, readAuthCode } from "@/lib/auth/http";
+import { isDpopMode } from "@/lib/auth/mode";
+import { refreshSession as refreshDpopSession } from "@/lib/auth/session";
 
 let refreshing: Promise<void> | null = null;
 let latestAccessToken: string | null = null;
 
 export const getLatestAccessToken = (original: string) => {
-  if (!latestAccessToken) return null;
+  if (isDpopMode || !latestAccessToken) return null;
+  const latest = latestAccessToken;
   try {
     const payload = (token: string) => JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
-    const current = payload(latestAccessToken), previous = payload(original);
-    return current.sub === previous.sub && current.sid === previous.sid ? latestAccessToken : null;
+    const current = payload(latest), previous = payload(original);
+    return current.sub === previous.sub && current.sid === previous.sid ? latest : null;
   } catch { return null; }
 };
 export const isSessionExpired = (error: unknown) =>
-  axios.isAxiosError(error) && [401, 403].includes(error.response?.status ?? 0);
+  axios.isAxiosError(error) && (isDpopMode
+    ? error.response?.status === 401 && isTerminalAuthCode(readAuthCode(error.response.data))
+    : [401, 403].includes(error.response?.status ?? 0));
 
 /** One rotation for Axios, streamed chat, and WebSocket recovery. */
 export function refreshSession(force = false): Promise<void> {
+  if (isDpopMode) {
+    return refreshDpopSession().then(ok => {
+      if (!ok) throw new Error("Chưa thể làm mới phiên. Vui lòng thử lại.");
+    });
+  }
   if (refreshing) return refreshing;
   const refresh = async () => {
     // Another tab or middleware may already have updated the HttpOnly cookies.

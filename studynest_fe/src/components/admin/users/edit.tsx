@@ -38,9 +38,7 @@ const EditUser = ({ userId }: EditUserProps) => {
   const { data, error, isLoading, mutate } = useSWR<UserDetailResponse>(
     `/admin/users/${userId}`,
     async (url) => {
-      console.log("🔍 SWR Fetching user detail:", url);
       const response = await api.get(url);
-      console.log("📊 SWR Response:", response.data);
       return response.data;
     },
     {
@@ -108,16 +106,7 @@ const EditUser = ({ userId }: EditUserProps) => {
         fullname: trimmedFullname || null, // Gửi null nếu rỗng (match API spec)
       };
 
-      console.log("📤 Sending update request:");
-      console.log("  - URL:", `/admin/users/${userId}`);
-      console.log("  - Payload:", JSON.stringify(payload, null, 2));
-      console.log("  - Email type:", typeof payload.email);
-      console.log("  - Fullname type:", typeof payload.fullname);
-      console.log("  - Fullname value:", payload.fullname);
-
-      const response = await api.put(`/admin/users/${userId}`, payload);
-
-      console.log("📥 Update response:", response.data);
+      await api.put(`/admin/users/${userId}`, payload);
 
       showToast.success("Cập nhật thông tin người dùng thành công!");
 
@@ -125,13 +114,8 @@ const EditUser = ({ userId }: EditUserProps) => {
       await mutate();
       setHasChanges(false);
     } catch (error: any) {
-      console.error("❌ Error updating user:", error);
-      console.error("❌ Error response data:", error.response?.data);
-      console.error("❌ Error status:", error.response?.status);
-      console.error(
-        "❌ Full error response:",
-        JSON.stringify(error.response, null, 2)
-      );
+      const status = error.response?.status;
+      console.error("Không cập nhật được tài khoản.", typeof status === "number" ? status : "");
 
       let errorMessage = "Có lỗi xảy ra khi cập nhật thông tin!";
 

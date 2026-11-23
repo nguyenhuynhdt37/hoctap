@@ -17,6 +17,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
+  Bot,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -26,7 +27,6 @@ import {
   Pencil,
   Play,
   Plus,
-  Sparkles,
   Terminal,
   Trash2,
   Video,
@@ -2453,7 +2453,6 @@ const EditCodeLesson = () => {
                       disabled={isGeneratingTitle || !lessonTitle.trim()}
                       isLoading={isGeneratingTitle}
                       loadingText="Đang tạo..."
-                      leftIcon={<Sparkles className="h-4 w-4" />}
                       title="Tự động tạo tiêu đề từ AI"
                     >
                       Tạo tiêu đề tự động
@@ -2569,7 +2568,7 @@ const EditCodeLesson = () => {
                     <div className="flex-1">
                       <div className="flex items-center mb-4 gap-3">
                         <div className="w-10 h-10 bg-primary text-primary-foreground rounded-xl flex items-center justify-center flex-shrink-0 shadow-xs">
-                          <Sparkles className="h-5 w-5" />
+                          <Bot className="h-5 w-5" aria-hidden="true" />
                         </div>
                         <div>
                           <h3 className="text-lg font-bold text-foreground mb-1">
@@ -2686,7 +2685,6 @@ const EditCodeLesson = () => {
                         }
                         isLoading={isGeneratingCode}
                         loadingText="Đang tạo code exercises từ AI..."
-                        leftIcon={<Sparkles className="h-4 w-4" />}
                         className="w-full"
                       >
                         {generateMode === "replace"

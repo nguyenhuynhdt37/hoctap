@@ -1,15 +1,22 @@
 "use client";
 
-import AuthScenicLayout from "@/components/user/auth/auth-scenic-layout";
-import GitHubSignInButton from "@/components/shared/github-sign-in-button";
-import GoogleSignInButton from "@/components/shared/google-sign-in-button";
-import { Alert, Button, Card, Divider, Input } from "@/components/ui";
+import AuthShell, {
+  AuthInput,
+  AuthProviders,
+  PasswordToggle,
+  authDismissibleAlertClass,
+  authLinkClass,
+  authSubmitClass,
+  type AuthRequestError,
+} from "@/components/user/auth/AuthShell";
+import { Alert, Button } from "@/components/ui";
+import { postAuthSession } from "@/lib/auth/login";
 import api from "@/lib/utils/fetcher/client/axios";
 import { formatApiError } from "@/lib/utils/helpers/error";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
-import { HiEye, HiEyeOff } from "react-icons/hi";
+import { ArrowRight, LockKeyhole, Mail, UserRound } from "lucide-react";
 
 const Register = () => {
   const router = useRouter();
@@ -56,29 +63,31 @@ const Register = () => {
     return { isValid: true, message: "" };
   };
 
-  const [emailError, setEmailError] = useState<string>("");
-  const [fullNameError, setFullNameError] = useState<string>("");
-  const [passwordError, setPasswordError] = useState<string>("");
-  const [confirmPasswordError, setConfirmPasswordError] = useState<string>("");
+  const [errors, setErrors] = useState<{
+    fullName?: string;
+    email?: string;
+    password?: string;
+    confirmPassword?: string;
+  }>({});
   const [generalError, setGeneralError] = useState<string>("");
   const [touched, setTouched] = useState({
-    email: false,
     fullName: false,
+    email: false,
     password: false,
     confirmPassword: false,
   });
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const handleGoogleCredentialResponse = useCallback(
-    async (response: any) => {
+    async (response: { credential: string }) => {
       if (!response.credential) return;
       setIsGoogleLoading(true);
       setGeneralError("");
       try {
-        await api.post("/auth/google", { credential: response.credential });
+        await postAuthSession("/auth/google", { credential: response.credential });
         router.push("/");
         router.refresh();
-      } catch (error: any) {
+      } catch (error) {
         setGeneralError(
           formatApiError(error, "Đăng ký với Google thất bại. Vui lòng thử lại.")
         );
@@ -94,7 +103,10 @@ const Register = () => {
     if (generalError) setGeneralError("");
     if (touched.email) {
       const validation = validateEmail(value);
-      setEmailError(validation.isValid ? "" : validation.message);
+      setErrors((prev) => ({
+        ...prev,
+        email: validation.isValid ? "" : validation.message,
+      }));
     }
   };
 
@@ -102,7 +114,10 @@ const Register = () => {
     setFullName(value);
     if (touched.fullName) {
       const validation = validateFullName(value);
-      setFullNameError(validation.isValid ? "" : validation.message);
+      setErrors((prev) => ({
+        ...prev,
+        fullName: validation.isValid ? "" : validation.message,
+      }));
     }
   };
 
@@ -110,16 +125,22 @@ const Register = () => {
     setPassword(value);
     if (touched.password) {
       const validation = validatePassword(value);
-      setPasswordError(validation.isValid ? "" : validation.message);
+      setErrors((prev) => ({
+        ...prev,
+        password: validation.isValid ? "" : validation.message,
+      }));
     }
-    if (confirmPassword && touched.confirmPassword) {
+    if (confirmPassword || touched.confirmPassword) {
       const confirmValidation = validatePasswordConfirmation(
         value,
         confirmPassword
       );
-      setConfirmPasswordError(
-        confirmValidation.isValid ? "" : confirmValidation.message
-      );
+      setErrors((prev) => ({
+        ...prev,
+        confirmPassword: confirmValidation.isValid
+          ? ""
+          : confirmValidation.message,
+      }));
     }
   };
 
@@ -127,26 +148,38 @@ const Register = () => {
     setConfirmPassword(value);
     if (touched.confirmPassword) {
       const validation = validatePasswordConfirmation(password, value);
-      setConfirmPasswordError(validation.isValid ? "" : validation.message);
+      setErrors((prev) => ({
+        ...prev,
+        confirmPassword: validation.isValid ? "" : validation.message,
+      }));
     }
   };
 
   const handleBlur = (field: keyof typeof touched) => {
-    setTouched({ ...touched, [field]: true });
+    setTouched((prev) => ({ ...prev, [field]: true }));
     switch (field) {
-      case "email": {
-        const validation = validateEmail(email);
-        setEmailError(validation.isValid ? "" : validation.message);
-        break;
-      }
       case "fullName": {
         const validation = validateFullName(fullName);
-        setFullNameError(validation.isValid ? "" : validation.message);
+        setErrors((prev) => ({
+          ...prev,
+          fullName: validation.isValid ? "" : validation.message,
+        }));
+        break;
+      }
+      case "email": {
+        const validation = validateEmail(email);
+        setErrors((prev) => ({
+          ...prev,
+          email: validation.isValid ? "" : validation.message,
+        }));
         break;
       }
       case "password": {
         const validation = validatePassword(password);
-        setPasswordError(validation.isValid ? "" : validation.message);
+        setErrors((prev) => ({
+          ...prev,
+          password: validation.isValid ? "" : validation.message,
+        }));
         break;
       }
       case "confirmPassword": {
@@ -154,23 +187,36 @@ const Register = () => {
           password,
           confirmPassword
         );
-        setConfirmPasswordError(validation.isValid ? "" : validation.message);
+        setErrors((prev) => ({
+          ...prev,
+          confirmPassword: validation.isValid ? "" : validation.message,
+        }));
         break;
       }
     }
   };
 
-  const isFormValid = () => {
-    const emailValidation = validateEmail(email);
+  const validateForm = () => {
     const nameValidation = validateFullName(fullName);
+    const emailValidation = validateEmail(email);
     const passwordValidation = validatePassword(password);
     const confirmValidation = validatePasswordConfirmation(
       password,
       confirmPassword
     );
+
+    const newErrors: typeof errors = {};
+    if (!nameValidation.isValid) newErrors.fullName = nameValidation.message;
+    if (!emailValidation.isValid) newErrors.email = emailValidation.message;
+    if (!passwordValidation.isValid) newErrors.password = passwordValidation.message;
+    if (!confirmValidation.isValid)
+      newErrors.confirmPassword = confirmValidation.message;
+
+    setErrors(newErrors);
+
     return (
-      emailValidation.isValid &&
       nameValidation.isValid &&
+      emailValidation.isValid &&
       passwordValidation.isValid &&
       confirmValidation.isValid
     );
@@ -179,33 +225,16 @@ const Register = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setTouched({
-      email: true,
       fullName: true,
+      email: true,
       password: true,
       confirmPassword: true,
     });
+    setGeneralError("");
 
-    const emailValidation = validateEmail(email);
-    const nameValidation = validateFullName(fullName);
-    const passwordValidation = validatePassword(password);
-    const confirmValidation = validatePasswordConfirmation(
-      password,
-      confirmPassword
-    );
-
-    setEmailError(emailValidation.isValid ? "" : emailValidation.message);
-    setFullNameError(nameValidation.isValid ? "" : nameValidation.message);
-    setPasswordError(
-      passwordValidation.isValid ? "" : passwordValidation.message
-    );
-    setConfirmPasswordError(
-      confirmValidation.isValid ? "" : confirmValidation.message
-    );
-
-    if (!isFormValid()) return;
+    if (!validateForm()) return;
 
     setIsLoading(true);
-    setGeneralError("");
     try {
       await api.post("/auth/register", {
         email: email.trim(),
@@ -216,10 +245,14 @@ const Register = () => {
         "/email_authentication?registered=true&email=" +
           encodeURIComponent(email.trim())
       );
-    } catch (e: any) {
+    } catch (cause) {
+      const e = cause as AuthRequestError | undefined;
       const status = e?.response?.status ?? e?.status;
       if (status === 409) {
-        setEmailError("Email đã được sử dụng. Vui lòng thử email khác.");
+        setErrors((prev) => ({
+          ...prev,
+          email: "Email đã được sử dụng. Vui lòng thử email khác.",
+        }));
       } else {
         setGeneralError(
           formatApiError(e, "Không thể tạo tài khoản lúc này. Vui lòng thử lại.")
@@ -230,151 +263,158 @@ const Register = () => {
     }
   };
 
+  const passwordStrength = validatePassword(password).isValid
+    ? 1 +
+      Number(password.length >= 10) +
+      Number(password.length >= 14) +
+      Number(new Set(password).size >= 8)
+    : 0;
+  const strengthLabel = ["Chưa đủ điều kiện", "Yếu", "Vừa", "Tốt", "Mạnh"][passwordStrength];
+
   return (
-    <AuthScenicLayout>
-        <Card className="rounded-[24px] p-6 sm:p-8 space-y-4">
-          {/* Header */}
-          <div className="text-center space-y-2">
-            <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground">
-              Đăng ký
-            </h1>
-            <p className="text-muted-foreground text-sm">
-              Tạo tài khoản mới và bắt đầu hành trình học tập của bạn
-            </p>
-          </div>
+    <AuthShell
+      screen="register"
+      title="Đăng ký"
+      description="Tạo tài khoản để bắt đầu học cùng Mây Mây."
+    >
+      {generalError && (
+        <Alert
+          variant="destructive"
+          className={`mb-3 ${authDismissibleAlertClass}`}
+          onClose={() => setGeneralError("")}
+        >
+          {generalError}
+        </Alert>
+      )}
 
-          {generalError && (
-            <Alert variant="destructive" onClose={() => setGeneralError("")}>
-              {generalError}
-            </Alert>
-          )}
+      <AuthProviders onCredential={handleGoogleCredentialResponse} busy={isGoogleLoading} />
 
-          {/* Google Register */}
-          <GoogleSignInButton
-            onCredential={handleGoogleCredentialResponse}
-            busy={isGoogleLoading}
+      <form noValidate className="mt-3 space-y-3" onSubmit={handleSubmit}>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <AuthInput
+            id="fullName"
+            name="fullName"
+            type="text"
+            label="Họ và tên"
+            autoComplete="name"
+            autoCapitalize="words"
+            enterKeyHint="next"
+            required
+            value={fullName}
+            onChange={(e) => handleFullNameChange(e.target.value)}
+            onBlur={() => handleBlur("fullName")}
+            error={touched.fullName ? errors.fullName : undefined}
+            placeholder="Nguyễn Văn A"
+            leftIcon={<UserRound aria-hidden="true" className="size-4" />}
           />
 
-          <GitHubSignInButton />
+          <AuthInput
+            id="email"
+            name="email"
+            type="email"
+            label="Email"
+            autoComplete="email"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            inputMode="email"
+            enterKeyHint="next"
+            required
+            value={email}
+            onChange={(e) => handleEmailChange(e.target.value)}
+            onBlur={() => handleBlur("email")}
+            error={touched.email ? errors.email : undefined}
+            placeholder="ten@vidu.vn"
+            leftIcon={<Mail aria-hidden="true" className="size-4" />}
+          />
+        </div>
 
-          {/* Divider */}
-          <Divider label="HOẶC" />
+        <div>
+          <AuthInput
+            id="password"
+            name="password"
+            type={showPassword ? "text" : "password"}
+            label="Mật khẩu"
+            autoComplete="new-password"
+            enterKeyHint="next"
+            required
+            value={password}
+            onChange={(e) => handlePasswordChange(e.target.value)}
+            onBlur={() => handleBlur("password")}
+            error={touched.password ? errors.password : undefined}
+            hint="Dùng từ 6 đến 72 ký tự."
+            leftIcon={<LockKeyhole aria-hidden="true" className="size-4" />}
+            rightIcon={
+              <PasswordToggle visible={showPassword} onClick={() => setShowPassword(!showPassword)} />
+            }
+            placeholder="••••••••"
+          />
 
-          {/* Register Form */}
-          <form className="space-y-4" onSubmit={handleSubmit}>
-            <Input
-              id="fullName"
-              name="fullName"
-              type="text"
-              label="Họ và tên"
-              autoComplete="name"
-              required
-              value={fullName}
-              onChange={(e) => handleFullNameChange(e.target.value)}
-              onBlur={() => handleBlur("fullName")}
-              error={fullNameError}
-              placeholder="Nguyễn Văn A"
-            />
-
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              label="Email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(e) => handleEmailChange(e.target.value)}
-              onBlur={() => handleBlur("email")}
-              error={emailError}
-              placeholder="you@example.com"
-            />
-
-            <Input
-              id="password"
-              name="password"
-              type={showPassword ? "text" : "password"}
-              label="Mật khẩu"
-              autoComplete="new-password"
-              required
-              value={password}
-              onChange={(e) => handlePasswordChange(e.target.value)}
-              onBlur={() => handleBlur("password")}
-              error={passwordError}
-              rightIcon={
-                <button
-                  type="button"
-                  className="text-subtle-foreground hover:text-foreground transition-colors cursor-pointer"
-                  onClick={() => setShowPassword(!showPassword)}
-                  tabIndex={-1}
-                  aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
-                >
-                  {showPassword ? (
-                    <HiEyeOff className="h-5 w-5" />
-                  ) : (
-                    <HiEye className="h-5 w-5" />
-                  )}
-                </button>
-              }
-              placeholder="••••••••"
-            />
-
-            <Input
-              id="confirmPassword"
-              name="confirmPassword"
-              type={showConfirmPassword ? "text" : "password"}
-              label="Xác nhận mật khẩu"
-              autoComplete="new-password"
-              required
-              value={confirmPassword}
-              onChange={(e) => handleConfirmPasswordChange(e.target.value)}
-              onBlur={() => handleBlur("confirmPassword")}
-              error={touched.confirmPassword ? confirmPasswordError : undefined}
-              rightIcon={
-                <button
-                  type="button"
-                  className="text-subtle-foreground hover:text-foreground transition-colors cursor-pointer"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  tabIndex={-1}
-                  aria-label={
-                    showConfirmPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"
-                  }
-                >
-                  {showConfirmPassword ? (
-                    <HiEyeOff className="h-5 w-5" />
-                  ) : (
-                    <HiEye className="h-5 w-5" />
-                  )}
-                </button>
-              }
-              placeholder="••••••••"
-            />
-
-            <Button
-              type="submit"
-              variant="primary"
-              size="lg"
-              fullWidth
-              disabled={isGoogleLoading || !isFormValid()}
-              isLoading={isLoading}
-              loadingText="Đang tạo tài khoản..."
+          {password && (
+            <div
+              role="meter"
+              aria-label="Độ mạnh mật khẩu ước tính"
+              aria-valuemin={0}
+              aria-valuemax={4}
+              aria-valuenow={passwordStrength}
+              aria-valuetext={strengthLabel}
+              className="mt-2.5"
             >
-              Tạo tài khoản
-            </Button>
-          </form>
+              <div className="grid grid-cols-4 gap-1.5" aria-hidden="true">
+                {[1, 2, 3, 4].map((segment) => (
+                  <span key={segment} className={`h-1 rounded-full ${segment <= passwordStrength ? "bg-primary" : "bg-primary-light"}`} />
+                ))}
+              </div>
+              <p className="mt-1.5 text-xs text-foreground/85">
+                Độ mạnh ước tính · <span className="font-semibold text-foreground">{strengthLabel}</span>
+              </p>
+            </div>
+          )}
+        </div>
 
-          {/* Footer Link */}
-          <div className="text-center text-sm text-muted-foreground">
-            Đã có tài khoản?{" "}
-            <Link
-              href="/login"
-              className="text-primary hover:text-primary-hover font-semibold"
-            >
-              Đăng nhập ngay
-            </Link>
-          </div>
-        </Card>
-    </AuthScenicLayout>
+        <AuthInput
+          id="confirmPassword"
+          name="confirmPassword"
+          type={showConfirmPassword ? "text" : "password"}
+          label="Xác nhận mật khẩu"
+          autoComplete="new-password"
+          enterKeyHint="go"
+          required
+          value={confirmPassword}
+          onChange={(e) => handleConfirmPasswordChange(e.target.value)}
+          onBlur={() => handleBlur("confirmPassword")}
+          error={touched.confirmPassword ? errors.confirmPassword : undefined}
+          leftIcon={<LockKeyhole aria-hidden="true" className="size-4" />}
+          rightIcon={
+            <PasswordToggle
+              visible={showConfirmPassword}
+              label="Hiện mật khẩu xác nhận"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+            />
+          }
+          placeholder="••••••••"
+        />
+
+        <Button
+          type="submit"
+          variant="primary"
+          size="lg"
+          fullWidth
+          disabled={isLoading || isGoogleLoading}
+          isLoading={isLoading}
+          loadingText="Đang tạo tài khoản..."
+          className={`mt-2 ${authSubmitClass}`}
+          rightIcon={<ArrowRight aria-hidden="true" className="size-4" />}
+        >
+          Tạo tài khoản
+        </Button>
+      </form>
+
+      <div className="mt-3 flex flex-wrap items-center justify-center gap-x-1.5 border-t border-border pt-1 text-sm text-foreground/85">
+        <span>Đã có tài khoản?</span>
+        <Link href="/login" className={authLinkClass}>Đăng nhập ngay</Link>
+      </div>
+    </AuthShell>
   );
 };
 

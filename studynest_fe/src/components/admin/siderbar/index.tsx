@@ -1,6 +1,6 @@
 "use client";
 
-import api from "@/lib/utils/fetcher/client/axios";
+import { logoutEverywhere } from "@/lib/auth/logout";
 import { getImageUrl } from "@/lib/utils/helpers/image";
 import { useRealtimeNotiStore } from "@/stores/notifications";
 import { useUserStore } from "@/stores/user";
@@ -149,7 +149,7 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
 
   const handleLogout = async () => {
     try {
-      await api.post("/auth/logout");
+      await logoutEverywhere();
       clearUser();
       clearNotifications();
       router.push("/login");

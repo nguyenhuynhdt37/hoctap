@@ -1,8 +1,9 @@
 'use client';
 
+import { safeUUID } from "@/lib/utils/uuid";
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import api from '@/lib/utils/fetcher/client/axios';
+import api, { authedFetch } from '@/lib/utils/fetcher/client/axios';
 import { activityEvent } from './activity';
 import type { UploadedImage, MessageResponse } from '@/types/user/tutor-chat';
 import { ActionRegistry, waitForState } from './action-registry';
@@ -58,7 +59,7 @@ export function LearningAgentProvider({ children }: { children: React.ReactNode 
   const syncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSyncedRevision = useRef(-1);
   const snapshot = useCallback((): ScreenContextSnapshot => {
-    if (!pageId.current) pageId.current = crypto.randomUUID();
+    if (!pageId.current) pageId.current = safeUUID();
     return { schema_version: 1, page_instance_id: pageId.current, revision: revision.current,
       captured_at: new Date().toISOString(), route: window.location.pathname,
       ...Object.assign({}, ...[...readers.current.values()].map(read => read())),
@@ -168,7 +169,7 @@ export function LearningAgentProvider({ children }: { children: React.ReactNode 
   useEffect(() => () => {
     registry.cancel(); controller.current?.abort();
     if (syncTimer.current) clearTimeout(syncTimer.current);
-    if (run.current) void fetch(`/api/agent/runs/${run.current}/cancel`, { method: 'POST', credentials: 'include', keepalive: true, headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    if (run.current) void authedFetch(`/api/agent/runs/${run.current}/cancel`, { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' }, body: '{}' }).catch(() => undefined);
   }, [registry]);
   const send = useCallback(async (message: string, threadId: string | undefined, onDelta: (text: string) => void, onActivity?: (event: AgentEvent) => void, images?: UploadedImage[]) => {
     if (run.current) throw new Error('Mây Mây đang xử lý một yêu cầu khác.');
@@ -186,7 +187,7 @@ export function LearningAgentProvider({ children }: { children: React.ReactNode 
         await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
       }
       const id = await prepareSession();
-      const response = await api.post<{ id: string }>('/agent/runs', { session_id: id, thread_id: threadId, message, images: images?.map(({url,file_size,mime_type,ocr_text})=>({url,file_size,mime_type,ocr_text})), idempotency_key: crypto.randomUUID() }, { signal: abort.signal });
+      const response = await api.post<{ id: string }>('/agent/runs', { session_id: id, thread_id: threadId, message, images: images?.map(({url,file_size,mime_type,ocr_text})=>({url,file_size,mime_type,ocr_text})), idempotency_key: safeUUID() }, { signal: abort.signal });
       run.current = response.data.id;
       await consumeAgentEvents(response.data.id, async event => {
         const payload = event.payload;

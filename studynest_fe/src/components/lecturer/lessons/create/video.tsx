@@ -14,7 +14,6 @@ import {
   Video,
   XCircle,
   CheckCircle2,
-  Sparkles,
 } from "lucide-react";
 import useSWR from "swr";
 import { VideoFormData, UploadProgress } from "@/types/lecturer/lesson-api";
@@ -684,7 +683,6 @@ const CreateVideoLesson = () => {
                       disabled={isGeneratingTitle || !formData.title.trim()}
                       isLoading={isGeneratingTitle}
                       loadingText="Đang tạo..."
-                      leftIcon={<Sparkles className="h-4 w-4" />}
                       className="border-primary text-primary hover:bg-primary-light/50"
                     >
                       Tạo tiêu đề tự động
@@ -735,7 +733,6 @@ const CreateVideoLesson = () => {
                       }
                       isLoading={isGeneratingDescription}
                       loadingText="Đang tạo..."
-                      leftIcon={<Sparkles className="h-4 w-4" />}
                       className="border-primary text-primary hover:bg-primary-light/50"
                     >
                       Tạo mô tả tự động

@@ -1,16 +1,33 @@
 "use client";
 
-import { Badge, Button, Card } from "@/components/ui";
+import { Button } from "@/components/ui";
 import { useUserStore } from "@/stores/user";
+import {
+  ArrowRight,
+  BookOpen,
+  Bot,
+  Cloud,
+  GraduationCap,
+  Zap,
+} from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
-import React from "react";
-import { HiAcademicCap, HiBookOpen, HiCloud } from "react-icons/hi";
+import type { FC } from "react";
+import {
+  CloudBlob,
+  GlassCard,
+  IconBubble,
+  Pill,
+  Reveal,
+  SectionHeader,
+  SectionShell,
+} from "./landing-ui";
 
 interface CTASectionProps {
   onExploreCourses?: () => void;
 }
 
-const CTASection: React.FC<CTASectionProps> = ({ onExploreCourses }) => {
+const CTASection: FC<CTASectionProps> = ({ onExploreCourses }) => {
   const user = useUserStore((s) => s.user);
 
   const handleScrollCourses = () => {
@@ -22,104 +39,101 @@ const CTASection: React.FC<CTASectionProps> = ({ onExploreCourses }) => {
     el?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const PrimaryIcon = user ? GraduationCap : Cloud;
+
   return (
-    <section className="py-20 bg-surface relative overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <Card
-          density="none"
-          className="rounded-[32px] bg-gradient-to-br from-primary-light via-background to-secondary-light/55 border-primary-pastel/80 overflow-hidden relative shadow-md"
-        >
-          <div
-            className="pointer-events-none absolute -top-20 -left-20 w-64 h-64 bg-primary-pastel/30 rounded-full blur-3xl"
-            aria-hidden="true"
-          />
-          <div
-            className="pointer-events-none absolute -bottom-20 -right-20 w-72 h-72 bg-secondary-pastel/25 rounded-full blur-3xl"
-            aria-hidden="true"
-          />
+    <SectionShell tone="sky">
+      <div className="relative isolate overflow-hidden rounded-[2rem] bg-primary bg-linear-to-br from-primary-hover via-primary to-primary p-6 text-primary-foreground shadow-xl sm:p-10 lg:p-14">
+        <div className="grid min-w-0 items-center gap-8 md:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:gap-12">
+          <div className="relative z-10 min-w-0">
+            <SectionHeader
+              align="left"
+              eyebrow="Đồng hành cùng học sinh Lớp 1 – 12"
+              title="Hành trình học tập của bạn bắt đầu từ hôm nay."
+              description="Dù bạn đang xây dựng nền tảng đầu đời ở bậc Tiểu học, khám phá khoa học ở bậc THCS hay bứt phá cho kỳ thi THPT, Mây Mây và bạn nhỏ Mây luôn sẵn sàng đồng hành cùng bạn."
+              className="mb-0! [&>h2]:max-w-xl [&>h2]:text-balance [&>h2]:leading-tight [&>h2]:text-primary-foreground [&>p]:max-w-lg [&>p]:text-primary-foreground/90 md:[&>h2]:text-4xl lg:[&>h2]:text-5xl"
+            />
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center p-7 sm:p-12 lg:p-14 relative z-10">
-            {/* Left Copy & Conversion Actions */}
-            <div className="lg:col-span-7 space-y-6 text-left">
-              <Badge
-                variant="default"
-                size="md"
-                dot
-                className="bg-surface/90 border-primary-pastel"
+            <Reveal delay={0.08} className="mt-7 flex flex-wrap gap-3">
+              <Link
+                href={user ? "/my-learning" : "/register"}
+                className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-surface px-4 py-2 text-center text-sm leading-snug font-semibold text-primary transition-colors hover:bg-primary-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface motion-reduce:transition-none sm:w-auto sm:px-5"
               >
-                Đồng hành cùng học sinh Lớp 1 – 12
-              </Badge>
+                <PrimaryIcon aria-hidden="true" className="size-4 shrink-0" />
+                <span>
+                  {user ? "Tiếp tục lộ trình học tập" : "Đăng ký học tập miễn phí"}
+                </span>
+                <ArrowRight aria-hidden="true" className="size-4 shrink-0" />
+              </Link>
 
-              <h2 className="font-display text-3xl sm:text-4xl lg:text-[42px] font-bold text-foreground tracking-tight leading-[1.18]">
-                Hành trình học tập của bạn bắt đầu từ hôm nay.
-              </h2>
-
-              <p className="text-muted-foreground text-base sm:text-lg leading-relaxed max-w-2xl">
-                Dù bạn đang xây dựng nền tảng đầu đời ở bậc Tiểu học, khám phá
-                khoa học ở bậc THCS hay bứt phá cho kỳ thi THPT, Mây Mây và
-                bạn nhỏ Mây luôn sẵn sàng đồng hành cùng bạn.
-              </p>
-
-              <div className="flex flex-col sm:flex-row gap-3.5 pt-2">
-                {user ? (
-                  <Link href="/my-learning">
-                    <Button
-                      variant="primary"
-                      size="lg"
-                      className="px-7 w-full sm:w-auto"
-                    >
-                      <HiAcademicCap className="h-5 w-5" />
-                      Tiếp tục lộ trình học tập
-                    </Button>
-                  </Link>
-                ) : (
-                  <Link href="/register">
-                    <Button
-                      variant="primary"
-                      size="lg"
-                      className="px-7 w-full sm:w-auto"
-                    >
-                      <HiCloud className="h-5 w-5" />
-                      Đăng ký học tập miễn phí
-                    </Button>
-                  </Link>
-                )}
-
-                <Button
-                  variant="secondary"
-                  size="lg"
-                  onClick={handleScrollCourses}
-                  className="px-7 w-full sm:w-auto bg-surface border-primary-pastel text-primary hover:bg-primary-light"
-                >
-                  <HiBookOpen className="h-5 w-5" />
-                  Khám phá khóa học
-                </Button>
-              </div>
-            </div>
-
-            {/* Right Visual Frame with Mascot Mây & Cloud Academy */}
-            <div className="lg:col-span-5">
-              <div className="relative rounded-[24px] overflow-hidden border-2 border-white/90 shadow-lg aspect-video bg-primary-light">
-                <img
-                  src="/videos/studynest/scene-welcome.jpg"
-                  alt="Bạn nhỏ Mây chào đón học sinh trước cổng Học viện Mây Mây"
-                  loading="lazy"
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute bottom-3 left-3 right-3 rounded-xl bg-surface/90 backdrop-blur-md px-3.5 py-2.5 border border-white/80 flex items-center justify-between">
-                  <span className="text-xs font-semibold text-foreground">
-                    Học viện Mây Mây
-                  </span>
-                  <Badge variant="default" size="sm">
-                    Tiểu học • THCS • THPT
-                  </Badge>
-                </div>
-              </div>
-            </div>
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={handleScrollCourses}
+                leftIcon={<BookOpen className="size-4" />}
+                className="h-auto min-h-12 w-full rounded-full border-primary-foreground bg-transparent px-5 py-2 text-sm leading-snug font-semibold text-primary-foreground hover:border-primary-foreground hover:bg-primary-hover focus-visible:ring-offset-surface active:bg-primary-active motion-reduce:transition-none motion-reduce:active:translate-y-0 sm:w-auto"
+              >
+                Khám phá khóa học
+              </Button>
+            </Reveal>
           </div>
-        </Card>
+
+          <div className="relative isolate mx-auto w-full max-w-md min-w-0 pt-6 pb-9 lg:pt-9 lg:pb-12">
+            <CloudBlob className="-right-24 -top-20 h-52 w-80 bg-surface/25!" />
+            <CloudBlob className="-right-24 -bottom-20 h-36 w-80 bg-surface/20!" />
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -inset-x-4 top-[12%] h-[75%] -rotate-12 rounded-[50%] border border-primary-foreground/25"
+            />
+
+            <Reveal delay={0.16} className="relative mx-2.5 lg:mx-5">
+              <div className="rotate-2">
+                <GlassCard
+                  as="figure"
+                  className="bg-surface/95! p-2 text-foreground motion-reduce:hover:translate-y-0 sm:p-2.5"
+                >
+                  <Image
+                    src="/videos/studynest/scene-welcome.jpg"
+                    alt="Bạn nhỏ Mây chào đón học sinh trước cổng Học viện Mây Mây"
+                    width={1920}
+                    height={1080}
+                    sizes="(min-width: 1024px) 25rem, (min-width: 768px) 40vw, 85vw"
+                    className="aspect-video h-auto w-full rounded-2xl object-cover"
+                  />
+                  <figcaption className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-2 pt-2.5 pb-3.5 sm:px-3">
+                    <span className="text-sm font-semibold">Học viện Mây Mây</span>
+                    <span className="text-xs font-medium text-foreground/85">
+                      Tiểu học • THCS • THPT
+                    </span>
+                  </figcaption>
+                </GlassCard>
+              </div>
+            </Reveal>
+
+            <Reveal delay={0.24} className="absolute top-2 right-0 z-10 lg:top-4">
+              <Pill
+                tone="blue"
+                className="-rotate-2 bg-surface! px-3.5! py-2! text-foreground! shadow-lg"
+              >
+                <Zap aria-hidden="true" className="size-4 text-primary" />
+                Trắc nghiệm tức thì
+              </Pill>
+            </Reveal>
+
+            <Reveal delay={0.32} className="absolute bottom-1 left-0 z-10 lg:bottom-3 lg:left-1">
+              <div className="-rotate-2">
+                <GlassCard className="inline-flex items-center gap-2 rounded-bl-lg! bg-surface! py-1.5 pr-4 pl-1.5 text-foreground motion-reduce:hover:translate-y-0">
+                  <IconBubble tone="lavender" shape="circle" className="size-8!">
+                    <Bot aria-hidden="true" className="size-4" />
+                  </IconBubble>
+                  <span className="text-xs font-semibold">Trợ lý AI</span>
+                </GlassCard>
+              </div>
+            </Reveal>
+          </div>
+        </div>
       </div>
-    </section>
+    </SectionShell>
   );
 };
 

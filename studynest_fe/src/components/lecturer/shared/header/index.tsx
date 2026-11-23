@@ -28,6 +28,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Badge, Button } from "@/components/ui";
+import { logoutEverywhere } from "@/lib/auth/logout";
 import api from "@/lib/utils/fetcher/client/axios";
 import { getImageUrl } from "@/lib/utils/helpers/image";
 import { useRealtimeNotiStore } from "@/stores/notifications";
@@ -165,7 +166,7 @@ export default function LecturerShell({ children }: { children: ReactNode }) {
 
   const handleLogout = async () => {
     try {
-      await api.post("/auth/logout");
+      await logoutEverywhere();
     } catch {
       // Vẫn đăng xuất phía trình duyệt khi mạng lỗi
     } finally {

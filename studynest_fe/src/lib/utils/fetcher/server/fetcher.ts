@@ -18,6 +18,5 @@ export async function fetcher<T>(
     },
     credentials: "include",
   });
-  console.log("res url", `${backendUrl}/api/v1${url}`);
   return res;
 }

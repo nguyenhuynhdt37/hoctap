@@ -67,7 +67,7 @@ export default function GoogleSignInButton({
       window.google.accounts.id.initialize({ client_id: clientId, callback: (response) => { void onCredential(response); } });
       container.current.replaceChildren();
       window.google.accounts.id.renderButton(container.current, {
-        type: "standard", theme: "outline", size: "large", text: "signin_with",
+        type: "standard", theme: "outline", size: "large", text: "continue_with", shape: "pill", locale: "vi",
         width: Math.min(container.current.parentElement?.clientWidth || 300, 400),
       });
       setStatus("ready");

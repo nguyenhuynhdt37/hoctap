@@ -51,6 +51,7 @@ export function Modal({
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.defaultPrevented) return;
       if (event.key === "Escape") {
+        event.preventDefault();
         onCloseRef.current();
         return;
       }
@@ -68,17 +69,11 @@ export function Modal({
         dialog?.focus();
         return;
       }
-      if (
-        event.shiftKey &&
-        (document.activeElement === first || document.activeElement === dialog)
-      ) {
+      const focusOutside = !dialog?.contains(document.activeElement);
+      if (event.shiftKey && (document.activeElement === first || document.activeElement === dialog || focusOutside)) {
         event.preventDefault();
         last?.focus();
-      } else if (
-        !event.shiftKey &&
-        (document.activeElement === last ||
-          !dialog?.contains(document.activeElement))
-      ) {
+      } else if (!event.shiftKey && (document.activeElement === last || focusOutside)) {
         event.preventDefault();
         first.focus();
       }
@@ -161,7 +156,7 @@ export function Modal({
           </div>
         )}
 
-        <div className="flex-1 overflow-y-auto p-6">{children}</div>
+        <div className="relative flex-1 overflow-y-auto p-6">{children}</div>
 
         {footer && (
           <div className="flex flex-wrap items-center justify-end gap-2.5 border-t border-border bg-background/60 px-6 py-4">

@@ -1,40 +1,22 @@
 "use client";
 
+import { EquippedMarks, FramedAvatar } from "@/components/learning-hub/shop/item-art";
+import { useLearnerEquipment } from "@/lib/learning-hub/shop-hooks";
 import { formatDate } from "@/lib/utils/helpers/date";
-import { getImageUrl } from "@/lib/utils/helpers/image";
 import { UserProfile } from "@/types/user/profile";
-import { HiCalendar, HiMail, HiPhotograph } from "react-icons/hi";
+import { HiCalendar, HiMail } from "react-icons/hi";
 
 interface ProfileHeaderProps {
   profileData: UserProfile;
 }
 
 export default function ProfileHeader({ profileData }: ProfileHeaderProps) {
-  const avatarUrl = profileData.avatar
-    ? getImageUrl(profileData.avatar)
-    : null;
+  const equipment = useLearnerEquipment(profileData.id) ?? profileData.equipment;
 
   return (
     <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-white/40 p-8">
       <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
-        {/* Avatar */}
-        <div className="relative">
-          {avatarUrl ? (
-            <img
-              src={avatarUrl}
-              alt={profileData.fullname}
-              className="w-32 h-32 rounded-full object-cover border-4 border-green-200 shadow-lg"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.src = profileData.avatar || "";
-              }}
-            />
-          ) : (
-            <div className="w-32 h-32 rounded-full bg-gray-200 border-4 border-green-200 flex items-center justify-center">
-              <HiPhotograph className="w-16 h-16 text-gray-400" />
-            </div>
-          )}
-        </div>
+        <FramedAvatar src={profileData.avatar} name={profileData.fullname} equipment={equipment} className="size-32 text-2xl" />
 
         {/* Basic Info */}
         <div className="flex-1 text-center md:text-left space-y-3">
@@ -42,6 +24,7 @@ export default function ProfileHeader({ profileData }: ProfileHeaderProps) {
             <h2 className="text-2xl font-bold text-gray-900">
               {profileData.fullname}
             </h2>
+            <EquippedMarks equipment={equipment} className="mt-1 justify-center md:justify-start" />
             {profileData.is_banned && (
               <span className="inline-block mt-2 px-3 py-1 bg-red-100 text-red-700 text-sm font-semibold rounded-full">
                 Đã bị khóa

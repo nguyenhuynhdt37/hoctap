@@ -24,7 +24,6 @@ export default function InfoPanel({
   quizQuestionsCount,
   selectedAnswersCount,
   correctCount,
-  accessToken,
   lessonAuthorId,
 }: InfoPanelProps) {
   const qaSectionRef = useRef<HTMLDivElement | null>(null);
@@ -193,7 +192,6 @@ export default function InfoPanel({
           >
             <QASection
               lessonId={lesson.id}
-              accessToken={accessToken}
               lessonAuthorId={lessonAuthorId}
               containerClassName="w-full bg-surface px-4 sm:px-6 lg:px-8 py-4"
             />

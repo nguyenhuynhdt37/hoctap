@@ -1,5 +1,6 @@
 "use client";
 
+import { safeUUID } from "@/lib/utils/uuid";
 import { triggerCelebration } from "@/lib/utils/helpers/effects";
 import { ActiveLessonResponse } from "@/types/user/activeLesson";
 import confetti from "canvas-confetti";
@@ -378,7 +379,7 @@ export default function VideoLesson({
   const handleQuizComplete = async (_score: number, _total: number) => {
     if (quizSubmitting.current) return;
     quizSubmitting.current = true; setQuizSaveError("");
-    if (!quizAttemptKey.current) quizAttemptKey.current = crypto.randomUUID();
+    if (!quizAttemptKey.current) quizAttemptKey.current = safeUUID();
     try {
       const answers = quizzes.map(quiz => ({ question_id: quiz.id, option_id: quiz.options[selectedAnswers[quiz.id]]?.id || "" }));
       if (answers.some(answer => !answer.option_id)) throw new Error("Hãy trả lời đầy đủ câu hỏi trước khi nộp bài.");

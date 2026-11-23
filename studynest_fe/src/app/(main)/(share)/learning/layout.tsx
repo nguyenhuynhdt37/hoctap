@@ -1,21 +1,18 @@
-import { getServerCookie } from "@/lib/utils/fetcher/server/cookieStore";
+import RequireAuth from "@/components/auth/RequireAuth";
+import { userRoles } from "@/lib/auth/routes";
 import { NotificationWS } from "@/provider/notification-ws";
-import { cookies } from "next/headers";
-import { Suspense } from "react";
+import { UserNotificationsBootstrap } from "@/provider/NotificationHydrator";
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const stores = await cookies();
-  const accessToken = getServerCookie(stores, "access_token");
   return (
-    <>
-      <Suspense fallback={null}>
-        <NotificationWS role_name="USER" accessToken={accessToken || null} />
-      </Suspense>
+    <RequireAuth roles={userRoles}>
+      <UserNotificationsBootstrap />
+      <NotificationWS role_name="USER" />
       {children}
-    </>
+    </RequireAuth>
   );
 }

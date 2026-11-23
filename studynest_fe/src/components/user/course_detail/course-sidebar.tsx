@@ -401,7 +401,10 @@ export default function CourseSidebar({
                 redirectToLearning();
               }, 1500);
             } else if (transaction_id) {
-              const redirectUrl = `/transaction?status=success&order_id=${transaction_id}&redirect=/learning/${courseSlug}`;
+              const params = new URLSearchParams({
+                status: "success", order_id: transaction_id, redirect: `/learning/${courseSlug}`,
+              });
+              const redirectUrl = `/transaction?${params}`;
               if (typeof window !== "undefined") {
                 window.location.replace(redirectUrl);
               } else {
