@@ -82,6 +82,8 @@ export function CoinChip() {
 export function WalletChip({ onNavigate }: { onNavigate?: () => void }) {
   const { data, error, isLoading } = useWalletBalance();
   if (error && !data) return null;
+  // Học viên giờ dùng Coin; chỉ hiện chip VND khi ví còn tiền (thu nhập giảng viên hoặc phần dư nạp tiền).
+  if (data && !Number(data.balance)) return null;
   return (
     <Link
       href="/wallets"

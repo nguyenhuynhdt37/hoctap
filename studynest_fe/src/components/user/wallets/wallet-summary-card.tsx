@@ -1,3 +1,7 @@
+"use client";
+
+import { useCoinBalances } from "@/lib/learning-hub/shop-hooks";
+import { formatCoin } from "@/lib/learning-hub/shop-logic";
 import { WalletSummary } from "@/types/user/wallet";
 import { CircleCheck, Lock, TrendingDown, TrendingUp } from "pulsoicon-react";
 
@@ -27,6 +31,8 @@ const formatDateTime = (val?: string | null) => {
 
 export function WalletSummaryCard({ wallet }: Props) {
   const isLocked = wallet?.is_locked ?? false;
+  const coins = useCoinBalances().data;
+  const vndLeft = Number(wallet?.balance ?? 0);
 
   return (
     <div className="relative overflow-hidden rounded-[28px] border border-white/20 bg-gradient-to-br from-[#1B3348] via-[#244C73] to-[#356FA7] p-7 text-white shadow-lg ring-1 ring-white/15">
@@ -45,9 +51,14 @@ export function WalletSummaryCard({ wallet }: Props) {
           <span className="text-xs font-semibold uppercase tracking-[0.16em] text-white/75">
             Số dư khả dụng
           </span>
-          <p className="font-display text-3xl font-bold tracking-tight text-white sm:text-4xl">
-            {formatCurrency(wallet?.balance)}
+          <p className="font-display text-3xl font-bold tracking-tight text-white sm:text-4xl tabular-nums">
+            {coins ? formatCoin(coins.total) : "…"}
           </p>
+          {coins && (
+            <p className="text-sm text-white/80">
+              {formatCoin(coins.paid)} thật · {formatCoin(coins.bonus)} thưởng
+            </p>
+          )}
         </div>
         <div className="flex flex-col items-end gap-2.5">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/25 bg-white/15 shadow-2xs backdrop-blur-md">
@@ -74,7 +85,7 @@ export function WalletSummaryCard({ wallet }: Props) {
             </svg>
           </div>
           <span className="rounded-full border border-white/30 bg-white/15 px-3 py-0.5 text-[11px] font-bold uppercase tracking-wider text-white backdrop-blur-sm">
-            {wallet?.currency || "VND"}
+            Coin
           </span>
         </div>
       </div>
@@ -84,7 +95,7 @@ export function WalletSummaryCard({ wallet }: Props) {
         <div className="rounded-2xl border border-white/15 bg-white/10 p-3.5 backdrop-blur-md">
           <div className="flex items-center gap-1.5 text-xs font-medium text-white/70">
             <TrendingUp className="h-4 w-4 text-[#A8D1FA]" />
-            <span>Tổng nạp</span>
+            <span>Tổng nạp ví VND</span>
           </div>
           <p className="mt-1 text-base font-bold text-white">
             {formatCurrency(wallet?.total_in)}
@@ -95,12 +106,19 @@ export function WalletSummaryCard({ wallet }: Props) {
         <div className="rounded-2xl border border-white/15 bg-white/10 p-3.5 backdrop-blur-md">
           <div className="flex items-center gap-1.5 text-xs font-medium text-white/70">
             <TrendingDown className="h-4 w-4 text-[#FDB8B8]" />
-            <span>Tổng chi tiêu</span>
+            <span>Tổng chi ví VND</span>
           </div>
           <p className="mt-1 text-base font-bold text-white">
             {formatCurrency(wallet?.total_out)}
           </p>
         </div>
+
+        {vndLeft > 0 && (
+          <div className="rounded-2xl border border-white/15 bg-white/10 p-3.5 backdrop-blur-md sm:col-span-2">
+            <p className="text-xs font-medium text-white/70">Ví VND còn lại (phần dư nạp tiền)</p>
+            <p className="mt-1 text-base font-bold text-white">{formatCurrency(vndLeft)}</p>
+          </div>
+        )}
 
         {/* Trạng thái ví */}
         <div className="rounded-2xl border border-white/15 bg-white/10 p-3.5 backdrop-blur-md sm:col-span-2">
