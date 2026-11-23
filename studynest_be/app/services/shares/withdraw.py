@@ -19,6 +19,7 @@ from app.db.models.database import (
 from app.db.sesson import get_session
 from app.libs.formats.datetime import now
 from app.schemas.shares.notification import NotificationCreateSchema
+from app.services.coin_service import CoinService
 from app.services.shares.currency_service import convert_vnd_to_usd
 from app.services.shares.notification import NotificationService
 from app.services.shares.paypal_service import PayPalService
@@ -151,39 +152,23 @@ class WithdrawService:
     async def request_withdraw_async(
         self,
         lecturer: User,
-        amount: float,
+        coin_amount: int,
         notification_service: NotificationService,
     ):
+        """Giảng viên rút theo số Coin thật; chi trả VND = Coin × tỷ giá. Coin bị khóa ngay khi tạo yêu cầu."""
         try:
-            # Convert amount → Decimal (chuẩn kế toán)
-            amount_dec = Decimal(str(amount)).quantize(
-                Decimal("0.01"), rounding=ROUND_HALF_UP
-            )
+            if not isinstance(coin_amount, int) or coin_amount <= 0:
+                raise HTTPException(400, "Số Coin rút không hợp lệ.")
 
-            if amount_dec <= 0:
-                raise HTTPException(400, "Số tiền rút không hợp lệ.")
-
-            # Load ví
-            wallet: Wallets | None = await self.db.scalar(
-                select(Wallets).where(Wallets.user_id == lecturer.id)
-            )
-            if not wallet:
-                raise HTTPException(404, "Ví không tồn tại.")
-
-            # Config
             settings = await self.db.scalar(select(PlatformSettings))
             if not settings:
                 raise HTTPException(500, "Thiếu cấu hình nền tảng.")
 
-            minimum = Decimal(str(settings.payout_min_balance or 100000))
-            if amount_dec < minimum:
-                raise HTTPException(
-                    400, f"Số tiền rút tối thiểu là {minimum:,.0f} VND."
-                )
-
-            # Không đủ tiền
-            if Decimal(wallet.balance or 0) < amount_dec:
-                raise HTTPException(400, "Số dư không đủ.")
+            rate = int(settings.coin_vnd_rate)
+            minimum_vnd = Decimal(str(settings.payout_min_balance or 100000))
+            min_coin = -(-int(minimum_vnd) // rate)  # làm tròn lên
+            if coin_amount < min_coin:
+                raise HTTPException(400, f"Số Coin rút tối thiểu là {min_coin} Coin.")
 
             # Chặn pending
             existing = await self.db.scalar(
@@ -197,19 +182,16 @@ class WithdrawService:
             if existing:
                 raise HTTPException(400, "Bạn có yêu cầu trước đó chưa hoàn tất.")
 
+            amount_vnd = Decimal(coin_amount) * Decimal(rate)
+
             # ============================================================
             # ATOMIC TRANSACTION
             # ============================================================
             async with self.db.begin_nested():
-
-                # Trừ tiền → Decimal hết
-                wallet.balance = Decimal(wallet.balance or 0) - amount_dec
-                wallet.total_out = Decimal(wallet.total_out or 0) + amount_dec
-
-                # Tạo request
                 withdraw = WithdrawalRequests(
                     lecturer_id=lecturer.id,
-                    amount=amount_dec,
+                    amount=amount_vnd,
+                    coin_amount=coin_amount,
                     currency="VND",
                     status="pending",
                     requested_at=now(),
@@ -217,10 +199,13 @@ class WithdrawService:
                 self.db.add(withdraw)
                 await self.db.flush()
 
-                # Log transaction hold
+                # Khóa Coin thật (không dùng Coin thưởng); thiếu Coin thì từ chối, không đổi gì
+                await CoinService(self.db).debit_paid_async(
+                    lecturer.id, coin_amount, source="withdraw_hold", ref_id=withdraw.id)
+
                 txn = Transactions(
                     user_id=lecturer.id,
-                    amount=amount_dec,
+                    amount=amount_vnd,
                     type="withdraw_hold",
                     direction="out",
                     status="completed",
@@ -228,7 +213,7 @@ class WithdrawService:
                     gateway="internal",
                     currency="VND",
                     ref_id=withdraw.id,
-                    description=f"Khóa {amount_dec:,.0f} VND để rút tiền.",
+                    description=f"Khóa {coin_amount} Coin ({amount_vnd:,.0f} VND) để rút tiền.",
                     created_at=now(),
                 )
                 self.db.add(txn)
@@ -239,7 +224,7 @@ class WithdrawService:
                     user_id=None,
                     roles=["ADMIN"],
                     title="Yêu cầu rút tiền mới 💸",
-                    content=f"Giảng viên {lecturer.fullname} yêu cầu rút {amount_dec:,.0f} VND.",
+                    content=f"Giảng viên {lecturer.fullname} yêu cầu rút {coin_amount} Coin ({amount_vnd:,.0f} VND).",
                     url="/admin/wallet/withdraw-requests",
                     type="withdraw_request",
                     role_target=["ADMIN"],
@@ -253,7 +238,7 @@ class WithdrawService:
                     user_id=lecturer.id,
                     roles=["LECTURER"],
                     title="Yêu cầu rút tiền đã tạo",
-                    content=f"{amount_dec:,.0f} VND đã được khóa.",
+                    content=f"{coin_amount} Coin đã được khóa.",
                     url="/lecturer/wallet/withdraw-history",
                     type="wallet",
                     role_target=["LECTURER"],
@@ -261,9 +246,10 @@ class WithdrawService:
             )
 
             return {
-                "message": "Yêu cầu rút tiền đã được tạo và khóa số dư.",
+                "message": "Yêu cầu rút tiền đã được tạo và khóa Coin.",
                 "withdrawal_id": str(withdraw.id),
-                "amount": float(amount_dec),
+                "coin_amount": coin_amount,
+                "amount": float(amount_vnd),
             }
 
         except HTTPException:
@@ -275,79 +261,36 @@ class WithdrawService:
         self,
         lecturer: User,
     ) -> dict:
-        """
-        Kiểm tra:
-        - Giảng viên có yêu cầu pending không?
-        - Số dư có >= min rút tiền của nền tảng không?
-        """
+        """Kiểm tra giảng viên có rút được không: không có yêu cầu đang chờ và đủ Coin thật tối thiểu."""
         try:
-            # 1) Check pending request
             pending = await self.db.scalar(
                 select(WithdrawalRequests).where(
                     WithdrawalRequests.lecturer_id == lecturer.id,
                     WithdrawalRequests.status == "pending",
                 )
             )
-
             has_pending = bool(pending)
 
-            # 2) Lấy ví giảng viên
-            wallet = await self.db.scalar(
-                select(Wallets).where(Wallets.user_id == lecturer.id)
-            )
-
-            if wallet is None:
-                return {
-                    "pending": has_pending,
-                    "can_withdraw": False,
-                    "reason": "Không tìm thấy ví.",
-                }
-
-            # 3) Lấy min rút tiền từ settings
             settings = await self.db.scalar(select(PlatformSettings))
             if settings is None:
-                return {
-                    "pending": has_pending,
-                    "can_withdraw": False,
-                    "reason": "Thiếu cấu hình nền tảng.",
-                }
+                return {"pending": has_pending, "can_withdraw": False, "reason": "Thiếu cấu hình nền tảng."}
 
-            min_balance = float(settings.payout_min_balance or 0)
-            balance = float(wallet.balance or 0)
+            rate = int(settings.coin_vnd_rate)
+            min_coin = -(-int(settings.payout_min_balance or 0) // rate)
+            balance = (await CoinService(self.db).get_balances_async(lecturer.id)).paid
+            info = {"balance": balance, "min_coin": min_coin, "rate_vnd": rate}
 
-            # 4) Check số dư
-            enough_balance = balance >= min_balance
-
-            # 5) Kết luận
             if has_pending:
-                return {
-                    "pending": True,
-                    "can_withdraw": False,
-                    "reason": "Đang có yêu cầu rút tiền pending.",
-                }
-
-            if not enough_balance:
-                return {
-                    "pending": False,
-                    "can_withdraw": False,
-                    "reason": f"Số dư ví ({balance:,.0f}) nhỏ hơn mức tối thiểu {min_balance:,.0f}.",
-                }
-
-            return {
-                "pending": False,
-                "can_withdraw": True,
-                "reason": None,
-                "balance": balance,
-                "min_balance": min_balance,
-            }
+                return {"pending": True, "can_withdraw": False,
+                        "reason": "Đang có yêu cầu rút tiền pending.", **info}
+            if balance < min_coin:
+                return {"pending": False, "can_withdraw": False,
+                        "reason": f"Số Coin thật ({balance}) nhỏ hơn mức tối thiểu {min_coin} Coin.", **info}
+            return {"pending": False, "can_withdraw": True, "reason": None, **info}
 
         except Exception as e:
             print("❌ Error in check_pending_request_async:", e)
-            return {
-                "pending": False,
-                "can_withdraw": False,
-                "reason": "Lỗi hệ thống khi kiểm tra.",
-            }
+            return {"pending": False, "can_withdraw": False, "reason": "Lỗi hệ thống khi kiểm tra."}
 
     async def get_withdraw_list_async(
         self,

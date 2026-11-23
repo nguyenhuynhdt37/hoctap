@@ -1,0 +1,92 @@
+from decimal import Decimal
+from uuid import uuid4
+
+import pytest
+from fastapi import HTTPException
+from sqlalchemy import func, select, update
+
+from app.db.models.coins import UserPaidCoinBalances
+from app.db.models.database import (
+    PlatformSettings, Transactions, User, UserPeakBalances, WithdrawalRequests,
+)
+from app.services.coin_service import CoinService
+from app.services.shares.withdraw import WithdrawService
+
+pytestmark = pytest.mark.asyncio
+
+
+class Notifier:
+    async def create_notification_async(self, *args, **kwargs):
+        return None
+
+
+async def lecturer(db, *, paid, bonus=0):
+    user = User(fullname="Giảng viên", email=f"{uuid4().hex}@test.invalid", password="!disabled")
+    db.add(user)
+    await db.flush()
+    db.add_all([UserPaidCoinBalances(user_id=user.id, balance=paid),
+                UserPeakBalances(user_id=user.id, current_balance=bonus, total_earned=bonus)])
+    await db.execute(update(PlatformSettings).values(coin_vnd_rate=10000, payout_min_balance=Decimal(100000)))
+    await db.flush()
+    return user
+
+
+async def request(db, user, coin):
+    return await WithdrawService(db).request_withdraw_async(user, coin, Notifier())
+
+
+async def test_withdrawing_coin_locks_coin_and_records_the_vnd_payout(db_session):
+    user = await lecturer(db_session, paid=100)
+    result = await request(db_session, user, 10)
+    withdrawal = await db_session.get(WithdrawalRequests, result["withdrawal_id"])
+    assert withdrawal.amount == Decimal(100_000) and withdrawal.coin_amount == 10 and withdrawal.status == "pending"
+    assert (await CoinService(db_session).get_balances_async(user.id)).paid == 90
+    hold = await db_session.scalar(select(Transactions).where(
+        Transactions.user_id == user.id, Transactions.type == "withdraw_hold"))
+    assert hold is not None and hold.ref_id == withdrawal.id
+
+
+async def test_withdrawing_below_the_minimum_is_rejected(db_session):
+    user = await lecturer(db_session, paid=100)
+    user_id = user.id
+    with pytest.raises(HTTPException) as error:
+        await request(db_session, user, 9)
+    assert error.value.status_code == 400 and "10 Coin" in error.value.detail
+    assert (await CoinService(db_session).get_balances_async(user_id)).paid == 100
+
+
+async def test_withdrawing_more_than_the_paid_coin_changes_nothing(db_session):
+    user = await lecturer(db_session, paid=100)
+    user_id = user.id
+    with pytest.raises(HTTPException) as error:
+        await request(db_session, user, 500)
+    assert error.value.status_code == 400
+    assert (await CoinService(db_session).get_balances_async(user_id)).paid == 100
+    assert await db_session.scalar(select(func.count()).select_from(WithdrawalRequests).where(
+        WithdrawalRequests.lecturer_id == user_id)) == 0
+
+
+async def test_bonus_coin_cannot_be_withdrawn(db_session):
+    user = await lecturer(db_session, paid=0, bonus=999)
+    user_id = user.id
+    with pytest.raises(HTTPException) as error:
+        await request(db_session, user, 10)
+    assert error.value.status_code == 400
+    assert (await CoinService(db_session).get_balances_async(user_id)).bonus == 999
+
+
+async def test_a_second_pending_request_is_rejected(db_session):
+    user = await lecturer(db_session, paid=100)
+    user_id = user.id
+    await request(db_session, user, 10)
+    with pytest.raises(HTTPException) as error:
+        await request(db_session, user, 10)
+    assert error.value.status_code == 400
+    assert (await CoinService(db_session).get_balances_async(user_id)).paid == 90
+
+
+async def test_check_can_request_reports_coin_balance_and_minimum(db_session):
+    user = await lecturer(db_session, paid=100)
+    result = await WithdrawService(db_session).check_can_withdraw_request_async(user)
+    assert result["can_withdraw"] is True and result["balance"] == 100 and result["min_coin"] == 10
+    assert result["rate_vnd"] == 10000

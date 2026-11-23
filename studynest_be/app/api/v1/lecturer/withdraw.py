@@ -38,14 +38,14 @@ async def list_withdraw_requests(
 
 @router.post("/request")
 async def request_withdraw(
-    amount: float,
+    coin_amount: int = Query(..., gt=0),
     authorization_service: AuthorizationService = Depends(AuthorizationService),
     withdraw_service: WithdrawService = Depends(WithdrawService),
     notification_service: NotificationService = Depends(NotificationService),
 ):
     lecturer = await authorization_service.require_role(["LECTURER"])
     return await withdraw_service.request_withdraw_async(
-        lecturer, amount, notification_service
+        lecturer, coin_amount, notification_service
     )
 
 
