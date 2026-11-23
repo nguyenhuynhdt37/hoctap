@@ -7,3 +7,4 @@ export const shopItemsKey = (userId: string, kind: ItemKind) => [hubEndpoints.sh
 export const shopCatalogKeys = (userId: string) => itemKinds.map((kind) => shopItemsKey(userId, kind));
 export const shopInventoryKey = (userId: string) => [hubEndpoints.shopInventory, userId, getHubDataSource()] as const;
 export const levelsKey = (userId: string) => [hubEndpoints.levels, userId, getHubDataSource()] as const;
+export const coinBalancesKey = (userId: string) => [hubEndpoints.coins, userId] as const;

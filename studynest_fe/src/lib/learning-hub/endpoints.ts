@@ -22,6 +22,7 @@ export const hubEndpoints = {
   shopPurchase: (itemId: string) => `${shop}/${id(itemId)}/purchase`,
   shopInventory: "/gamification/inventory",
   equipment: "/gamification/equipment",
+  coins: "/coins",
   checkIn: "/gamification/checkin",
   streak: "/gamification/streak",
   activity: "/gamification/streak/history?limit=100",

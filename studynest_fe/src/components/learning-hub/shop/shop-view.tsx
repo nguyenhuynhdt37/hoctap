@@ -4,7 +4,7 @@ import { Alert, Badge, Button, EmptyState, Modal, Skeleton } from "@/components/
 import { mayPortrait, StudyImage } from "@/components/user/home/study-image";
 import { hubErrorMessage, isHubUnavailable } from "@/lib/learning-hub/errors";
 import { getHubDataSource } from "@/lib/learning-hub/data-source";
-import { useShopActions, useShopInventory, useShopItems } from "@/lib/learning-hub/shop-hooks";
+import { useCoinBalances, useShopActions, useShopInventory, useShopItems } from "@/lib/learning-hub/shop-hooks";
 import {
   coinCopy, createPurchaseConfirmation, emptyEquipment, formatCoin, itemKindLabels, itemKinds, shopItemState,
 } from "@/lib/learning-hub/shop-logic";
@@ -17,6 +17,7 @@ import { useSearchParams } from "next/navigation";
 import { useId, useRef, useState, type KeyboardEvent, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { HubLoadError } from "../hub-page-state";
+import { BuyCoinDialog } from "./buy-coin-dialog";
 import { MockDataChip } from "../mock-data-chip";
 import { EmblemIcon, EquippedMarks, FramedAvatar, RarityBadge, TitleBadge } from "./item-art";
 
@@ -122,6 +123,8 @@ export function ShopView() {
   const catalog = useShopItems(activeTab === "mine" ? undefined : activeTab);
   const inventory = useShopInventory();
   const actions = useShopActions();
+  const coins = useCoinBalances();
+  const [buying, setBuying] = useState(false);
   const [preview, setPreview] = useState<ShopItem>();
   const [confirm, setConfirm] = useState<{ item: ShopItem; attempt: ReturnType<typeof createPurchaseConfirmation> }>();
   const [confirmError, setConfirmError] = useState<unknown>();
@@ -214,10 +217,19 @@ export function ShopView() {
             <p className="mt-2 max-w-sm text-sm leading-relaxed sm:text-base">Dùng Coin đổi khung avatar, danh hiệu và biểu tượng cho chuyến bay của bạn.</p>
             <div className="relative mt-5 inline-flex min-h-11 max-w-full items-center gap-2 overflow-hidden rounded-lg border border-dashed border-accent-vanilla-foreground/50 bg-accent-vanilla px-3 py-2 text-sm text-accent-vanilla-foreground">
               <Coins aria-hidden="true" className="size-4 shrink-0" />
-              <span className="font-semibold">Số dư</span>
+              <span className="font-semibold">Coin thưởng</span>
               {balance !== undefined ? <strong className="border-l border-dashed border-current/35 pl-2 wrap-anywhere tabular-nums">{formatCoin(balance)}</strong>
                 : inventory.error && (catalog.error || activeTab === "mine") ? <span>Chưa tải được</span>
                   : <div role="status"><span className="sr-only">Đang tải số dư</span><Skeleton className="h-4 w-20 bg-surface/80 motion-reduce:animate-none" /></div>}
+            </div>
+            <div className="relative mt-2 flex flex-wrap items-center gap-2">
+              <div className="inline-flex min-h-11 max-w-full items-center gap-2 rounded-lg border border-primary-pastel bg-surface px-3 py-2 text-sm">
+                <Coins aria-hidden="true" className="size-4 shrink-0 text-primary" />
+                <span className="font-semibold">Coin thật</span>
+                {coins.data ? <strong className="border-l border-dashed border-current/35 pl-2 tabular-nums">{formatCoin(coins.data.paid)}</strong>
+                  : coins.error ? <span>Chưa tải được</span> : <Skeleton className="h-4 w-14 motion-reduce:animate-none" />}
+              </div>
+              <Button size="sm" onClick={() => setBuying(true)} disabled={!coins.data} className="min-h-11 rounded-full px-4">Mua Coin</Button>
             </div>
             <Link href="/levels" className="mt-1 flex min-h-11 w-fit items-center rounded-sm text-sm font-semibold text-primary-hover underline underline-offset-4">Xem thưởng theo cấp</Link>
           </div>
@@ -279,6 +291,8 @@ export function ShopView() {
           </section>
         ))}
       </div>
+
+      {coins.data && <BuyCoinDialog open={buying} rateVnd={coins.data.rateVnd} onClose={() => setBuying(false)} />}
 
       {confirm && createPortal(
         <div className="relative z-[70]">

@@ -4,7 +4,8 @@ import { useAuthedSWR } from "@/hooks/auth/useAuthedSWR";
 import { MockDataChip } from "@/components/learning-hub/mock-data-chip";
 import { HubLoadError } from "@/components/learning-hub/hub-page-state";
 import { useGamificationStats, useGamificationStreak } from "@/lib/learning-hub/mission-hooks";
-import { useShopInventory } from "@/lib/learning-hub/shop-hooks";
+import { coinBalanceLabel } from "@/lib/learning-hub/coin-logic";
+import { useCoinBalances, useShopInventory } from "@/lib/learning-hub/shop-hooks";
 import { formatCoin } from "@/lib/learning-hub/shop-logic";
 import { cn } from "@/lib/utils";
 import type { WalletSummary } from "@/types/user/wallet";
@@ -63,12 +64,15 @@ export function StreakChip({ onNavigate }: { onNavigate?: () => void }) {
 export function CoinChip() {
   const { xp } = useGamificationStats();
   const inventory = useShopInventory();
-  const balance = inventory.data?.balance ?? xp?.peak_balance;
+  const coins = useCoinBalances();
+  // Tổng Coin thật + thưởng; chưa tải được số dư Coin thật thì tạm hiện Coin thưởng như trước.
+  const balance = coins.data?.total ?? inventory.data?.balance ?? xp?.peak_balance;
   const label = balance !== undefined ? formatCoin(balance) : undefined;
+  const detail = coins.data ? coinBalanceLabel(coins.data) : label ? `Số dư ${label}` : undefined;
 
   return (
-    <Link href="/shop" aria-label={label ? `Cửa hàng Mây, số dư ${label}` : "Cửa hàng Mây"}
-      title={label} className={cn(chipBase, "min-h-11 min-w-11 justify-center border-accent-vanilla-border bg-accent-vanilla px-2 text-accent-vanilla-foreground hover:bg-accent-vanilla-border/60 md:px-3")}>
+    <Link href="/shop" aria-label={detail ? `Cửa hàng Mây. ${detail}` : "Cửa hàng Mây"}
+      title={detail} className={cn(chipBase, "min-h-11 min-w-11 justify-center border-accent-vanilla-border bg-accent-vanilla px-2 text-accent-vanilla-foreground hover:bg-accent-vanilla-border/60 md:px-3")}>
       <Coins aria-hidden="true" className="size-4 shrink-0" />
       <span aria-hidden="true" className="hidden max-w-24 truncate 2xl:inline">{label ?? "Coin"}</span>
     </Link>

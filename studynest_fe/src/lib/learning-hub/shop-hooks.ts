@@ -1,12 +1,15 @@
 "use client";
 
+import api from "@/lib/utils/fetcher/client/axios";
 import { useUserStore } from "@/stores/user";
 import { useState } from "react";
 import useSWR, { useSWRConfig } from "swr";
 import { getHubDataSource } from "./data-source";
 import { useHubAuthStatus } from "./hooks";
+import { parseCoinBalances, type CoinBalancesResponse } from "./coin-logic";
+import { hubEndpoints } from "./endpoints";
 import { apiShopClient } from "./shop-api";
-import { shopCatalogKeys, shopInventoryKey, shopItemsKey } from "./shop-keys";
+import { coinBalancesKey, shopCatalogKeys, shopInventoryKey, shopItemsKey } from "./shop-keys";
 import type { InventoryResponse, ItemKind, ShopItemsResponse } from "./shop-types";
 
 const queryOptions = { shouldRetryOnError: false };
@@ -30,6 +33,12 @@ export function useShopInventory(enabled = true) {
   const id = useShopUserId();
   return useSWR<InventoryResponse>(enabled && id ? shopInventoryKey(id) : null, async () =>
     (await getShopClient(id!)).getInventory(), queryOptions);
+}
+
+export function useCoinBalances() {
+  const id = useShopUserId();
+  return useSWR(id ? coinBalancesKey(id) : null, async () =>
+    parseCoinBalances((await api.get<CoinBalancesResponse>(hubEndpoints.coins)).data), queryOptions);
 }
 
 export function useShopItems(kind?: ItemKind) {
