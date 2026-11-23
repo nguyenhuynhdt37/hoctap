@@ -3,14 +3,14 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const test = require('node:test');
 const ts = require('../studynest_fe/node_modules/typescript');
-const root = 'studynest_fe/src/components/user/assistant/';
+const root = 'studynest_fe/src/';
 function load(file, extras = {}) {
   const module = { exports: {} };
   const code = ts.transpileModule(fs.readFileSync(root + file, 'utf8'), { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS } }).outputText;
   vm.runInNewContext(code, { module, exports: module.exports, require: name => extras.modules?.[name], ...extras.globals });
   return module.exports;
 }
-const text = load('dictation-text.ts', { globals: { URL } });
+const text = load('components/user/assistant/dictation-text.ts', { globals: { URL } });
 test('snapshots preserve existing draft without duplicating interim words', () => {
   assert.equal(text.dictationDraft('Nháp', 'xin'), 'Nháp xin');
   assert.equal(text.dictationDraft('Nháp', 'xin chào'), 'Nháp xin chào');
@@ -24,7 +24,7 @@ test('socket URL uses TLS and never carries auth in query parameters', () => {
   assert.equal(text.dictationSocketUrl('ws://localhost:8000', 'http://localhost:3000'), 'ws://localhost:8000/api/v1/agent/dictation');
   assert.throws(() => text.dictationSocketUrl('ws://api.example', 'https://app.example'));
 });
-function harness({ pendingMic = false } = {}) {
+function harness({ pendingMic = false, dpop = false } = {}) {
   const updates = [], states = [], errors = [], cleanup = [], sockets = [], processors = [], contexts = [];
   let stateIndex = 0, resolveMic, mediaCalls = 0, ticketCalls = 0, stopped = 0;
   const track = { onended: null, stop() { stopped++; } };
@@ -39,20 +39,56 @@ function harness({ pendingMic = false } = {}) {
     constructor() { processors.push(this); this.port = { onmessage: null, postMessage() {}, close() {} }; }
     connect(target) { return target; } disconnect() {}
   }
-  class Socket {
+  class Socket extends EventTarget {
     static OPEN = 1;
-    constructor(url, protocols) { this.url = url; this.protocols = protocols; this.readyState = 1; this.bufferedAmount = 0; this.sent = []; sockets.push(this); }
-    send(value) { this.sent.push(value); } close() { this.readyState = 3; }
-    event(value) { this.onmessage?.({ data: JSON.stringify(value) }); }
+    constructor(url, protocols) {
+      super(); this.url = String(url); this.protocols = protocols; this.readyState = 0; this.bufferedAmount = 0; this.sent = []; sockets.push(this);
+      this.protocol = protocols[0];
+      queueMicrotask(() => { this.readyState = 1; this.dispatchEvent(new Event('open')); });
+    }
+    send(value) {
+      this.sent.push(value);
+      if (dpop && typeof value === 'string' && JSON.parse(value).type === 'auth') {
+        queueMicrotask(() => this.event({ type: 'ready', sample_rate: 16000, max_seconds: 120 }));
+      }
+    }
+    close() { this.readyState = 3; }
+    event(value) {
+      const event = new MessageEvent('message', { data: JSON.stringify(value) });
+      this.dispatchEvent(event);
+      this.onmessage?.(event);
+    }
   }
   const react = {
     useCallback: fn => fn, useRef: value => ({ current: value }),
     useEffect: fn => cleanup.push(fn()),
     useState: value => { const index = stateIndex++; return [value, next => (index === 0 ? states : errors).push(next)]; },
   };
-  const hook = load('use-dictation.ts', {
-    modules: { react, './dictation-text': text, '@/lib/utils/fetcher/client/axios': { default: { post: async () => { ticketCalls++; return { data: { ticket: 'one-use-ticket' } }; } } } },
-    globals: { window: { isSecureContext: true, AudioContext: Context, AudioWorkletNode: Processor, location: { origin: 'http://localhost:3000' }, addEventListener() {}, removeEventListener() {} }, navigator: { mediaDevices: { getUserMedia: () => { mediaCalls++; return pendingMic ? new Promise(resolve => { resolveMic = resolve; }) : Promise.resolve(stream); } } }, AudioContext: Context, AudioWorkletNode: Processor, WebSocket: Socket, MessageEvent: class {}, AbortController, ArrayBuffer, setTimeout, clearTimeout, process: { env: {} }, console },
+  const mode = { isDpopMode: dpop };
+  const process = { env: dpop ? { NEXT_PUBLIC_AUTH_MODE: 'dpop' } : {} };
+  const http = load('lib/auth/http.ts', { globals: { URL, process } });
+  const authSocket = load('lib/auth/ws.ts', {
+    modules: {
+      '@/lib/auth/mode': mode,
+      '@/lib/auth/http': http,
+      '@/lib/auth/session': { getAccessToken: () => 'test-access' },
+      '@/lib/auth/dpop': { createDpopProof: async () => 'test-proof' },
+    },
+    globals: { URL, WebSocket: Socket, setTimeout, clearTimeout },
+  });
+  const hook = load('components/user/assistant/use-dictation.ts', {
+    modules: {
+      react,
+      './dictation-text': text,
+      '@/lib/auth/http': http,
+      '@/lib/auth/mode': mode,
+      '@/lib/auth/ws': authSocket,
+      '@/lib/utils/fetcher/client/axios': { default: {
+        get: async () => ({}),
+        post: async () => { ticketCalls++; return { data: { ticket: 'one-use-ticket' } }; },
+      } },
+    },
+    globals: { window: { isSecureContext: true, AudioContext: Context, AudioWorkletNode: Processor, location: { origin: 'http://localhost:3000' }, addEventListener() {}, removeEventListener() {} }, navigator: { mediaDevices: { getUserMedia: () => { mediaCalls++; return pendingMic ? new Promise(resolve => { resolveMic = resolve; }) : Promise.resolve(stream); } } }, AudioContext: Context, AudioWorkletNode: Processor, WebSocket: Socket, MessageEvent: class {}, AbortController, ArrayBuffer, setTimeout, clearTimeout, process, console },
   }).useDictation(() => 'Nháp', value => updates.push(value));
   return { hook, states, errors, updates, sockets, processors, contexts, get stopped() { return stopped; }, get mediaCalls() { return mediaCalls; }, get ticketCalls() { return ticketCalls; }, resolveMic: () => resolveMic(stream), cleanup: () => cleanup.forEach(fn => fn?.()) };
 }
@@ -60,6 +96,8 @@ test('updates during recording, stops mic immediately and waits for final text',
   const h = harness();
   try {
     await h.hook.start(); const ws = h.sockets[0]; ws.event({ type: 'ready', sample_rate: 16000, max_seconds: 120 });
+    assert.deepEqual(Array.from(ws.protocols), ['studynest-dictation', 'ticket.one-use-ticket']);
+    assert.equal(h.ticketCalls, 1);
     ws.event({ type: 'transcript', seq: 1, text: 'xin', final: false });
     ws.event({ type: 'transcript', seq: 2, text: 'xin chào', final: false });
     assert.equal(h.updates.at(-1), 'Nháp xin chào'); assert.equal(h.stopped, 0);
@@ -69,6 +107,19 @@ test('updates during recording, stops mic immediately and waits for final text',
     ws.event({ type: 'complete', seq: 3, text: 'xin chào bạn.', final: true });
     assert.equal(h.updates.at(-1), 'Nháp xin chào bạn.'); assert.equal(h.states.at(-1), 'idle');
     assert.equal(ws.readyState, 3); assert.equal(h.contexts[0].state, 'closed');
+  } finally { h.cleanup(); }
+});
+test('DPoP authenticates in the first frame and preserves the initial ready event', async () => {
+  const h = harness({ dpop: true });
+  try {
+    await h.hook.start();
+    const ws = h.sockets[0];
+    assert.equal(h.ticketCalls, 0);
+    assert.equal(ws.url, 'ws://127.0.0.1:8000/api/v1/agent/dictation');
+    assert.equal(new URL(ws.url).search, '');
+    assert.deepEqual(Array.from(ws.protocols), ['studynest-dictation']);
+    assert.equal(JSON.parse(ws.sent[0]).type, 'auth');
+    assert.equal(h.states.at(-1), 'recording');
   } finally { h.cleanup(); }
 });
 test('cancel while permission is pending stops a late media stream without opening a socket', async () => {

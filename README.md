@@ -1,6 +1,6 @@
 <div align="center">
 
-  <img src="studynest_fe/public/logo/maymay-logo.svg" alt="Mây Mây Logo" width="180" />
+  <img src="studynest_fe/public/logo/maymay-lockup.svg" alt="Mây Mây Logo" width="260" />
 
   # ☁️ MÂY MÂY ECOSYSTEM
   ### **Nền Tảng Học Tập Thông Minh & Trợ Giảng AI Đa Nền Tảng**

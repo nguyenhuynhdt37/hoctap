@@ -33,7 +33,7 @@ function load(relative, imports = {}, globals = {}) {
   }).outputText;
   vm.runInNewContext(source, {
     module, exports: module.exports, require: name => imports[name] ?? (name === 'axios' ? axios : require(name)),
-    console, process, URL, Headers, Request, Response, AbortSignal, AbortController, TextDecoder,
+    console, process, URL, Headers, Request, Response, AbortSignal, AbortController, TextDecoder, ReadableStream,
     setTimeout, clearTimeout, atob, window: { location }, navigator: { locks: { request: async (_, callback) => callback() } },
     ...globals,
   }, { filename: relative });
@@ -41,8 +41,22 @@ function load(relative, imports = {}, globals = {}) {
 }
 function reset() { Object.assign(state, { authenticated: false, refreshStatus: 200, refreshes: 0, replayFails: false, attempts: 0 }); }
 async function clientTests() {
-  const refresh = load('src/lib/utils/fetcher/client/refresh-session.ts');
-  const api = load('src/lib/utils/fetcher/client/axios.ts', { './refresh-session': refresh }).default;
+  const globals = {
+    process: { env: {} },
+    fetch: async () => state.authenticated
+      ? new Response('data: {"type":"delta","delta":"hello"}\n\ndata: {"type":"done","data":{"content":"hello"}}\n\n', { headers: { 'Content-Type': 'text/event-stream' } })
+      : new Response(null, { status: 401 }),
+  };
+  const authImports = {
+    '@/lib/auth/http': load('src/lib/auth/http.ts', {}, globals),
+    '@/lib/auth/mode': load('src/lib/auth/mode.ts', {}, globals),
+    '@/lib/auth/session': {},
+  };
+  const refresh = load('src/lib/utils/fetcher/client/refresh-session.ts', authImports, globals);
+  const axiosModule = load('src/lib/utils/fetcher/client/axios.ts', {
+    ...authImports, './refresh-session': refresh,
+  }, globals);
+  const api = axiosModule.default;
   reset();
   await Promise.all(Array.from({ length: 8 }, () => api.get('/private')));
   assert.equal(state.refreshes, 1); assert.equal(state.attempts, 16);
@@ -56,10 +70,8 @@ async function clientTests() {
   await api.get('/private'); assert.equal(state.refreshes, 2);
   reset();
   const events = load('src/lib/utils/fetcher/client/chat-events.ts');
-  const chat = load('src/lib/utils/fetcher/client/chat-stream.ts', { './refresh-session': refresh, './chat-events': events }, {
-    fetch: async () => state.authenticated
-      ? new Response('data: {"type":"delta","delta":"hello"}\n\ndata: {"type":"done","data":{"content":"hello"}}\n\n', { headers: { 'Content-Type': 'text/event-stream' } })
-      : new Response(null, { status: 401 }),
+  const chat = load('src/lib/utils/fetcher/client/chat-stream.ts', {
+    './axios': axiosModule, './chat-events': events,
   });
   const [_, result] = await Promise.all([api.get('/private'), chat.postChatStream('/chat', {}, () => {})]);
   assert.equal(state.refreshes, 1); assert.equal(result.content, 'hello');
@@ -88,7 +100,7 @@ async function middlewareTests() {
       status: config.headers.Cookie.includes('access_token=access-new') ? 200 : 401,
     });
   };
-  const middleware = load('src/middleware.ts', { 'next/server': next }, { fetch }).middleware;
+  const middleware = load('src/middleware.ts', { 'next/server': next }, { fetch, process: { env: {} } }).middleware;
   const request = route => new next.NextRequest(`http://localhost:3000${route}`, {
     headers: { cookie: 'access_token=expired; refresh_token=refresh; theme=dark' },
   });
