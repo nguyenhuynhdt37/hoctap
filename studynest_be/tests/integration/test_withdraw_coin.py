@@ -90,3 +90,42 @@ async def test_check_can_request_reports_coin_balance_and_minimum(db_session):
     result = await WithdrawService(db_session).check_can_withdraw_request_async(user)
     assert result["can_withdraw"] is True and result["balance"] == 100 and result["min_coin"] == 10
     assert result["rate_vnd"] == 10000
+
+
+async def pending_request(db, user, coin):
+    result = await request(db, user, coin)
+    return await db.get(WithdrawalRequests, result["withdrawal_id"])
+
+
+async def test_rejecting_a_request_returns_the_locked_coin(db_session):
+    user = await lecturer(db_session, paid=100)
+    user_id = user.id
+    withdrawal = await pending_request(db_session, user, 10)
+    await WithdrawService(db_session).approve_or_deny_withdrawals_async(
+        False, Notifier(), reason="Sai thông tin", withdraw_ids=[withdrawal.id])
+    assert withdrawal.status == "rejected"
+    assert (await CoinService(db_session).get_balances_async(user_id)).paid == 100
+
+
+async def test_refund_helper_returns_coin_only_once_even_if_a_payout_fails_later(db_session):
+    user = await lecturer(db_session, paid=100)
+    user_id = user.id
+    withdrawal = await pending_request(db_session, user, 10)
+    service = WithdrawService(db_session)
+    await service._refund_withdrawal_hold_async(withdrawal, None)
+    await service._refund_withdrawal_hold_async(withdrawal, None)
+    assert (await CoinService(db_session).get_balances_async(user_id)).paid == 100
+
+
+async def test_legacy_vnd_request_is_still_refunded_to_the_vnd_wallet(db_session):
+    from app.db.models.database import Wallets
+
+    user = await lecturer(db_session, paid=0)
+    wallet = Wallets(user_id=user.id, balance=Decimal(0), total_in=Decimal(0), total_out=Decimal(200_000), currency="VND")
+    db_session.add(wallet)
+    legacy = WithdrawalRequests(lecturer_id=user.id, amount=Decimal(200_000), currency="VND", status="pending")
+    db_session.add(legacy)
+    await db_session.flush()
+    await WithdrawService(db_session)._refund_withdrawal_hold_async(legacy, wallet)
+    assert wallet.balance == Decimal(200_000) and wallet.total_out == Decimal(0)
+    assert (await CoinService(db_session).get_balances_async(user.id)).paid == 0

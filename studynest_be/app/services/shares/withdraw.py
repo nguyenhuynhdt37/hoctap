@@ -521,6 +521,19 @@ class WithdrawService:
                 500, f"Lỗi hệ thống khi lấy chi tiết yêu cầu rút tiền. {e}"
             )
 
+    async def _refund_withdrawal_hold_async(self, w: WithdrawalRequests, wallet: Wallets | None) -> None:
+        """Hoàn phần đã khóa của một yêu cầu rút: Coin thật nếu yêu cầu tính bằng Coin (idempotent theo mã yêu cầu),
+        còn yêu cầu cũ tính bằng VND thì hoàn vào ví VND như trước."""
+        if w.coin_amount is not None:
+            await CoinService(self.db).credit_paid_async(
+                w.lecturer_id, w.coin_amount, source="withdraw_refund", ref_id=w.id)
+            return
+        if wallet is None:
+            return
+        amount = Decimal(w.amount)
+        wallet.balance = Decimal(wallet.balance or 0) + amount
+        wallet.total_out = Decimal(wallet.total_out or 0) - amount
+
     async def approve_or_deny_withdrawals_async(
         self,
         approve: bool,
@@ -576,7 +589,7 @@ class WithdrawService:
                     wallet: Wallets | None = await self.db.scalar(
                         select(Wallets).where(Wallets.user_id == w.lecturer_id)
                     )
-                    if wallet is None:
+                    if wallet is None and w.coin_amount is None:
                         raise HTTPException(500, "Ví giảng viên không tồn tại.")
 
                     if approve:
@@ -592,9 +605,8 @@ class WithdrawService:
                         w.rejected_at = now_time
                         w.error_message = reason or "Yêu cầu rút bị từ chối."
 
-                        # Hoàn tiền
-                        wallet.balance = (wallet.balance or 0) + Decimal(w.amount)
-                        wallet.total_out = (wallet.total_out or 0) - Decimal(w.amount)
+                        # Hoàn phần đã khóa (Coin hoặc VND tùy yêu cầu)
+                        await self._refund_withdrawal_hold_async(w, wallet)
 
                         # Log transaction hoàn tiền
                         refund_txn = Transactions(
@@ -917,13 +929,8 @@ class WithdrawService:
                             .where(Wallets.user_id == current_w.lecturer_id)
                             .with_for_update()
                         )
+                        await self._refund_withdrawal_hold_async(current_w, lecturer_wallet)
                         if lecturer_wallet:
-                            lecturer_wallet.balance = (
-                                Decimal(lecturer_wallet.balance) + amount_decimal
-                            )
-                            lecturer_wallet.total_out = (
-                                Decimal(lecturer_wallet.total_out) - amount_decimal
-                            )
                             lecturer_wallet.last_transaction_at = now()
 
                         refund_trx = Transactions(
