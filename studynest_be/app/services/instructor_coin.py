@@ -22,6 +22,9 @@ async def credit_instructor_earning_async(
     """
     amount = Decimal(amount_vnd)
     coins = CoinService(db)
+    # Khóa ví và số dư Coin trước khi đọc phần dư: hai lần giải phóng đồng thời không được dùng chung một phần dư cũ.
+    await db.refresh(wallet, with_for_update=True)
+    await coins._lock_rows(wallet.user_id)
     if await coins._already_recorded(wallet.user_id, EARNING_SOURCE, earning_id, "paid"):
         return 0
     policy = await billing_policy(db)
