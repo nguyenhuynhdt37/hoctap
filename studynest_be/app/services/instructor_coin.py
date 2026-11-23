@@ -7,10 +7,9 @@ from decimal import Decimal
 
 from app.db.models.database import Wallets
 from app.services.coin_math import split_earning
-from app.services.coin_service import CoinService
+from app.services.coin_service import EARNING_SOURCE, CoinService
 from app.services.coupon_settlement import billing_policy
 
-EARNING_SOURCE = "earning_release"
 
 
 async def credit_instructor_earning_async(

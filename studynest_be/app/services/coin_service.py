@@ -20,6 +20,9 @@ from app.services.coin_math import split_payment
 from app.services.coupon_settlement import billing_policy
 
 TOPUP_SOURCE = "topup"
+EARNING_SOURCE = "earning_release"
+WITHDRAW_HOLD_SOURCE = "withdraw_hold"
+WITHDRAW_REFUND_SOURCE = "withdraw_refund"
 PURCHASE_SOURCE = "course_purchase"
 REFUND_SOURCE = "refund"
 
@@ -89,6 +92,20 @@ class CoinService:
         self._record(user_id, "paid", "credit", amount, before, paid.balance, source, ref_id)
         await self.db.flush()
         return paid.balance
+
+    async def withdrawable_paid_async(self, user_id: uuid.UUID) -> int:
+        """Coin thật được phép rút: chỉ Coin có nguồn từ thu nhập (trừ số đã khóa để rút, cộng số đã hoàn).
+
+        Coin nạp bằng tiền chỉ tiêu được, không rút ra tiền thật.
+        """
+        earned = await self._sum_kind(
+            user_id, "paid", PeakTransactions.source == EARNING_SOURCE, PeakTransactions.type == "credit")
+        held = await self._sum_kind(
+            user_id, "paid", PeakTransactions.source == WITHDRAW_HOLD_SOURCE, PeakTransactions.type == "debit")
+        refunded = await self._sum_kind(
+            user_id, "paid", PeakTransactions.source == WITHDRAW_REFUND_SOURCE, PeakTransactions.type == "credit")
+        balance = (await self.get_balances_async(user_id)).paid
+        return max(0, min(balance, earned - held + refunded))
 
     async def debit_paid_async(
         self, user_id: uuid.UUID, amount: int, *, source: str, ref_id: uuid.UUID,

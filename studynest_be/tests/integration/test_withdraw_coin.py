@@ -20,14 +20,20 @@ class Notifier:
         return None
 
 
-async def lecturer(db, *, paid, bonus=0):
+async def lecturer(db, *, paid, bonus=0, topup=0):
+    """`paid` là Coin thật có nguồn từ thu nhập (rút được); `topup` là Coin nạp bằng tiền (chỉ tiêu được)."""
     user = User(fullname="Giảng viên", email=f"{uuid4().hex}@test.invalid", password="!disabled")
     db.add(user)
     await db.flush()
-    db.add_all([UserPaidCoinBalances(user_id=user.id, balance=paid),
+    db.add_all([UserPaidCoinBalances(user_id=user.id, balance=0),
                 UserPeakBalances(user_id=user.id, current_balance=bonus, total_earned=bonus)])
     await db.execute(update(PlatformSettings).values(coin_vnd_rate=10000, payout_min_balance=Decimal(100000)))
     await db.flush()
+    coins = CoinService(db)
+    if paid:
+        await coins.credit_paid_async(user.id, paid, source="earning_release", ref_id=uuid4())
+    if topup:
+        await coins.credit_paid_async(user.id, topup, source="topup", ref_id=uuid4())
     return user
 
 
@@ -129,3 +135,23 @@ async def test_legacy_vnd_request_is_still_refunded_to_the_vnd_wallet(db_session
     await WithdrawService(db_session)._refund_withdrawal_hold_async(legacy, wallet)
     assert wallet.balance == Decimal(200_000) and wallet.total_out == Decimal(0)
     assert (await CoinService(db_session).get_balances_async(user.id)).paid == 0
+
+
+async def test_coin_bought_with_money_cannot_be_withdrawn(db_session):
+    user = await lecturer(db_session, paid=0, topup=100)
+    user_id = user.id
+    with pytest.raises(HTTPException) as error:
+        await request(db_session, user, 10)
+    assert error.value.status_code == 400 and "thu nhập" in error.value.detail
+    assert (await CoinService(db_session).get_balances_async(user_id)).paid == 100
+
+
+async def test_only_earned_coin_counts_toward_what_can_be_withdrawn(db_session):
+    user = await lecturer(db_session, paid=30, topup=100)
+    user_id = user.id
+    await request(db_session, user, 30)
+    with pytest.raises(HTTPException):
+        await request(db_session, user, 10)  # đã có yêu cầu chờ; và chỉ còn 0 Coin rút được
+    info = await WithdrawService(db_session).check_can_withdraw_request_async(user)
+    assert info["balance"] == 0 and info["paid_balance"] == 100
+    assert (await CoinService(db_session).get_balances_async(user_id)).paid == 100

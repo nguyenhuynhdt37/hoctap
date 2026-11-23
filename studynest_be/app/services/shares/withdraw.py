@@ -184,6 +184,11 @@ class WithdrawService:
 
             amount_vnd = Decimal(coin_amount) * Decimal(rate)
 
+            withdrawable = await CoinService(self.db).withdrawable_paid_async(lecturer.id)
+            if coin_amount > withdrawable:
+                raise HTTPException(
+                    400, f"Chỉ rút được Coin từ thu nhập giảng dạy. Bạn có thể rút tối đa {withdrawable} Coin.")
+
             # ============================================================
             # ATOMIC TRANSACTION
             # ============================================================
@@ -277,15 +282,17 @@ class WithdrawService:
 
             rate = int(settings.coin_vnd_rate)
             min_coin = -(-int(settings.payout_min_balance or 0) // rate)
-            balance = (await CoinService(self.db).get_balances_async(lecturer.id)).paid
-            info = {"balance": balance, "min_coin": min_coin, "rate_vnd": rate}
+            coins = CoinService(self.db)
+            balance = await coins.withdrawable_paid_async(lecturer.id)
+            info = {"balance": balance, "paid_balance": (await coins.get_balances_async(lecturer.id)).paid,
+                    "min_coin": min_coin, "rate_vnd": rate}
 
             if has_pending:
                 return {"pending": True, "can_withdraw": False,
                         "reason": "Đang có yêu cầu rút tiền pending.", **info}
             if balance < min_coin:
                 return {"pending": False, "can_withdraw": False,
-                        "reason": f"Số Coin thật ({balance}) nhỏ hơn mức tối thiểu {min_coin} Coin.", **info}
+                        "reason": f"Số Coin rút được ({balance}) nhỏ hơn mức tối thiểu {min_coin} Coin.", **info}
             return {"pending": False, "can_withdraw": True, "reason": None, **info}
 
         except Exception as e:
