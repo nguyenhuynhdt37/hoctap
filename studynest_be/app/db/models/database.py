@@ -644,6 +644,7 @@ class PeakTransactions(Base):
     event_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
     event_type: Mapped[Optional[str]] = mapped_column(String(100))
     metadata_: Mapped[Optional[dict]] = mapped_column('metadata', JSONB)
+    coin_kind: Mapped[str] = mapped_column(String(10), nullable=False, server_default=text("'bonus'"))
 
     user: Mapped['User'] = relationship('User', back_populates='peak_transactions')
 
@@ -667,6 +668,8 @@ class PlatformSettings(Base):
     max_discounts_per_course: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('2'))
     refund_max_courses_per_month: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('3'))
     monthly_platform_coupon_budget: Mapped[Optional[decimal.Decimal]] = mapped_column(Numeric(14, 2))
+    coin_vnd_rate: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('10000'))
+    bonus_coin_max_share: Mapped[decimal.Decimal] = mapped_column(Numeric(4, 3), nullable=False, server_default=text('0.300'))
     discount_max_percent: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('90'))
     discount_min_price: Mapped[decimal.Decimal] = mapped_column(Numeric(12, 2), nullable=False, server_default=text('1000'))
     course_min_price: Mapped[decimal.Decimal] = mapped_column(Numeric(12, 2), nullable=False, server_default=text('10000'))
@@ -1692,6 +1695,8 @@ class PurchaseItems(Base):
     settlement_base_price: Mapped[Optional[decimal.Decimal]] = mapped_column(Numeric(12, 2))
     settlement_platform_fee: Mapped[Optional[decimal.Decimal]] = mapped_column(Numeric(5, 4))
     coupon_sponsor: Mapped[Optional[str]] = mapped_column(String(10))
+    coin_bonus_used: Mapped[Optional[int]] = mapped_column(Integer)
+    coin_paid_used: Mapped[Optional[int]] = mapped_column(Integer)
     discount_amount: Mapped[Optional[decimal.Decimal]] = mapped_column(Numeric(12, 2))
     course_snapshot: Mapped[Optional[dict]] = mapped_column(JSONB)
     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, server_default=text('now()'))
