@@ -1,6 +1,6 @@
 "use client";
 
-import { HiCheckCircle } from "react-icons/hi";
+import { CircleCheck } from "pulsoicon-react";
 
 interface ExerciseTabsProps {
   exercises: Array<{ id: string; is_pass?: boolean }>;
@@ -28,7 +28,7 @@ export default function ExerciseTabs({
           >
             <span className="text-xs font-semibold">Bài {index + 1}</span>
             {ex.is_pass && (
-              <HiCheckCircle className="w-4 h-4 flex-shrink-0" />
+              <CircleCheck solid className="w-4 h-4 flex-shrink-0" />
             )}
           </button>
         ))}

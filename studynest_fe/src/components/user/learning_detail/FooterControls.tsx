@@ -1,11 +1,11 @@
 "use client";
 
 import {
-  HiArrowLeft,
-  HiArrowRight,
-  HiChevronLeft,
-  HiChevronRight,
-} from "react-icons/hi";
+  ArrowLeft,
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+} from "pulsoicon-react";
 
 interface FooterControlsProps {
   sidebarOpen: boolean;
@@ -47,7 +47,7 @@ export default function FooterControls(props: FooterControlsProps) {
           }`}
           title="Bài trước"
         >
-          <HiArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-4 w-4" />
           <span className="hidden text-sm font-medium min-[480px]:inline">Trước</span>
         </button>
 
@@ -68,9 +68,9 @@ export default function FooterControls(props: FooterControlsProps) {
             title={sidebarOpen ? "Ẩn nội dung khóa học" : "Hiện nội dung khóa học"}
           >
             {sidebarOpen ? (
-              <HiChevronRight className="h-5 w-5" />
+              <ChevronRight className="h-5 w-5" />
             ) : (
-              <HiChevronLeft className="h-5 w-5" />
+              <ChevronLeft className="h-5 w-5" />
             )}
           </button>
         </div>
@@ -90,7 +90,7 @@ export default function FooterControls(props: FooterControlsProps) {
           title="Bài tiếp theo"
         >
           <span className="hidden text-sm font-medium min-[480px]:inline">Tiếp</span>
-          <HiArrowRight className="h-4 w-4" />
+          <ArrowRight className="h-4 w-4" />
         </button>
       </div>
     </div>

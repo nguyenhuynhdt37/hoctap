@@ -2,7 +2,7 @@
 
 import { mayPortrait, StudyImage } from "@/components/user/home/study-image";
 import { cn } from "@/lib/utils";
-import { BookOpen, Brain, Check, ClipboardList, Gift, GraduationCap, Play, type LucideIcon } from "lucide-react";
+import { BookOpen, Brain, Check, ClipboardList, Gift, GraduationCap, Play, type PulsoIcon } from "pulsoicon-react";
 import Link from "next/link";
 import { useId, type ReactNode } from "react";
 import { MockDataChip } from "../mock-data-chip";
@@ -10,7 +10,7 @@ import { CloudShape } from "./home-ui";
 import type { getJourneyState, StepId } from "./journey-state";
 import { number } from "./section";
 
-const stops: Record<StepId, { title: string; icon: LucideIcon; cloud: string }> = {
+const stops: Record<StepId, { title: string; icon: PulsoIcon; cloud: string }> = {
   study: { title: "Học bài đang dở", icon: BookOpen, cloud: "text-primary-pastel" },
   review: { title: "Ôn câu đến hạn", icon: Brain, cloud: "text-accent" },
   missions: { title: "Nhiệm vụ trong ngày", icon: ClipboardList, cloud: "text-accent-vanilla" },
@@ -79,7 +79,7 @@ export function TodayJourney({ journey, sampleReview, stepNotes, claimableCount,
                 <span aria-hidden="true" className={cn("relative grid h-[4.5rem] w-[5.5rem] shrink-0 place-items-center lg:h-24 lg:w-32", active && "scale-110")}>
                   <CloudShape className={cn("absolute inset-0 size-full drop-shadow-md", cloud, status === "pending" && !active && "opacity-80")} />
                   <Icon className={cn("relative mt-2 size-7 lg:size-8", status === "done" ? "text-success-foreground" : "text-foreground")} />
-                  {status === "done" && <span className="absolute -top-0.5 right-1 grid size-7 place-items-center rounded-full border-2 border-surface bg-success-bg text-success-foreground lg:right-3"><Check className="size-4" /></span>}
+                  {status === "done" && <span className="absolute -top-0.5 right-1 grid size-7 place-items-center rounded-full border-2 border-surface bg-success-bg text-success-foreground lg:right-3"><Check animated={false} className="size-4" /></span>}
                   {active && (
                     <span className="may-bob absolute -top-4 -left-1 lg:-top-3 lg:left-1">
                       <StudyImage src={mayPortrait} sizes="40px" className="size-10 rounded-full border-2 border-surface shadow-ambient-md" />

@@ -6,7 +6,7 @@ import { Notification } from "@/types/user/notification";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { HiBell, HiClock } from "react-icons/hi";
+import { Bell, Clock } from "pulsoicon-react";
 
 export function NotificationButton({ role }: { role: string }) {
   const router = useRouter();
@@ -96,7 +96,7 @@ export function NotificationButton({ role }: { role: string }) {
         className="relative p-2 rounded-lg hover:bg-green-50 transition-colors"
         aria-label="Thông báo"
       >
-        <HiBell className="w-5 h-5 text-gray-600" />
+        <Bell className="w-5 h-5 text-gray-600" />
         {unread > 0 && (
           <span className="absolute top-0 right-0 bg-green-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
             {unread > 99 ? "99+" : unread}
@@ -123,7 +123,7 @@ export function NotificationButton({ role }: { role: string }) {
           <div className="flex-1 overflow-y-auto">
             {top10.length === 0 ? (
               <div className="px-6 py-16 text-center">
-                <HiBell className="h-10 w-10 text-gray-300 mx-auto mb-2" />
+                <Bell className="h-10 w-10 text-gray-300 mx-auto mb-2" />
                 <p className="text-sm text-gray-500">Chưa có thông báo nào</p>
               </div>
             ) : (
@@ -167,7 +167,7 @@ export function NotificationButton({ role }: { role: string }) {
                         </p>
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="inline-flex items-center gap-1 text-xs text-gray-400">
-                            <HiClock className="h-3 w-3" />
+                            <Clock className="h-3 w-3" />
                             {formatDate(notification.created_at)}
                           </span>
                           <span className="text-xs text-gray-400">•</span>

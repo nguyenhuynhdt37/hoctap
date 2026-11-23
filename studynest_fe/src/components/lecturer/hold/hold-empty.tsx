@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, EmptyState } from "@/components/ui";
-import { Clock } from "lucide-react";
+import { Clock } from "pulsoicon-react";
 
 export function HoldEarningsEmpty() {
   return (

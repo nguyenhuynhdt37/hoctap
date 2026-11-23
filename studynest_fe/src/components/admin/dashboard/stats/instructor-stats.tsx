@@ -4,7 +4,7 @@ import api from "@/lib/utils/fetcher/client/axios";
 import { InstructorStatsResponse } from "@/types/admin/statistics";
 import useSWR from "swr";
 import Link from "next/link";
-import { HiExternalLink } from "react-icons/hi";
+import { ExternalLink } from "pulsoicon-react";
 
 const formatCurrency = (value: number | null | undefined) => {
   if (value === null || value === undefined || isNaN(value)) return "0 ₫";
@@ -49,7 +49,7 @@ export default function InstructorStats() {
           href="/admin/instructors"
           className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-green-600 border border-green-200 rounded-lg hover:bg-green-50 transition-colors"
         >
-          <HiExternalLink className="w-4 h-4" />
+          <ExternalLink className="w-4 h-4" />
           Chi tiết
         </Link>
       </div>

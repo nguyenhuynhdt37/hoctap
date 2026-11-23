@@ -14,7 +14,7 @@ import {
 } from "@/components/user/home/landing-ui";
 import { cn } from "@/lib/utils";
 import { motion, useReducedMotion } from "framer-motion";
-import { Bot, BookOpen, Check, Eye, EyeOff } from "lucide-react";
+import { Bot, BookOpen, Check, Eye, EyeOff } from "pulsoicon-react";
 import Image from "next/image";
 import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
@@ -168,7 +168,7 @@ function FloatingLearningCards() {
                 )}
               >
                 {answer}
-                {answer === "56" && <Check className="size-3.5" />}
+                {answer === "56" && <Check animated={false} className="size-3.5" />}
               </li>
             ))}
           </ul>
@@ -263,7 +263,7 @@ export default function AuthShell({
                 {benefits.map((benefit, index) => (
                   <Reveal as="li" key={benefit} delay={index * 0.08} className="flex items-center gap-2.5 text-sm font-medium text-foreground">
                     <IconBubble shape="circle" className="size-6! bg-surface!">
-                      <Check aria-hidden="true" className="size-3.5" />
+                      <Check animated={false} aria-hidden="true" className="size-3.5" />
                     </IconBubble>
                     {benefit}
                   </Reveal>

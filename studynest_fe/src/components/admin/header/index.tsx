@@ -7,7 +7,7 @@ import { useRealtimeNotiStore } from "@/stores/notifications";
 import { useUserStore } from "@/stores/user";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { HiSearch } from "react-icons/hi";
+import { Search } from "pulsoicon-react";
 import { NotificationButton } from "./notification";
 
 interface HeaderProps {
@@ -92,7 +92,7 @@ export default function Header({ isCollapsed }: HeaderProps) {
         {/* Search Bar */}
         <div className="flex-1 max-w-md">
           <div className="relative group">
-            <HiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-green-500 group-focus-within:text-green-600 w-5 h-5" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-green-500 group-focus-within:text-green-600 w-5 h-5" />
             <input
               type="text"
               placeholder="Tìm kiếm..."

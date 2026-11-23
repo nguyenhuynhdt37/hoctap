@@ -3,7 +3,7 @@
 import { useUserStore } from "@/stores/user";
 import { UserProfile } from "@/types/user/profile";
 import { useRouter } from "next/navigation";
-import { HiPencil } from "react-icons/hi";
+import { Pencil } from "pulsoicon-react";
 import ProfileCourses from "./profile-courses";
 import ProfileHeader from "./profile-header";
 import ProfileInfo from "./profile-info";
@@ -30,7 +30,7 @@ export default function ProfileDetails({ profileData }: ProfileDetailsProps) {
               onClick={() => router.push("/profile")}
               className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold rounded-xl transition-all shadow-lg shadow-green-500/20"
             >
-              <HiPencil className="h-5 w-5" />
+              <Pencil className="h-5 w-5" />
               Chỉnh sửa hồ sơ
             </button>
           )}

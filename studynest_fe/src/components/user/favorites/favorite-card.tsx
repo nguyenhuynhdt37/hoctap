@@ -4,7 +4,7 @@ import { formatDate } from "@/lib/utils/helpers/date";
 import { getImageUrl } from "@/lib/utils/helpers/image";
 import type { FavouriteCourseItem } from "@/types/user/favourites";
 import Link from "next/link";
-import { HiOutlineHeart, HiOutlineStar } from "react-icons/hi";
+import { Heart, Star } from "pulsoicon-react";
 
 const FALLBACK_THUMBNAIL = "https://placehold.co/600x400/0fbba7/FFFFFF?text=Study+Course";
 
@@ -47,7 +47,7 @@ export const FavoriteCard = ({ course }: FavoriteCardProps) => {
             </h3>
             <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
               <span className="inline-flex items-center gap-1">
-                <HiOutlineStar className="h-4 w-4 text-amber-400" />
+                <Star className="h-4 w-4 text-amber-400" />
                 {course.avg_rating.toFixed(1)}
                 <span className="text-xs text-gray-400">({course.review_count})</span>
               </span>
@@ -64,7 +64,7 @@ export const FavoriteCard = ({ course }: FavoriteCardProps) => {
 
           <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm font-semibold text-green-600">
             <span className="inline-flex items-center gap-2">
-              <HiOutlineHeart className="h-4 w-4" />
+              <Heart className="h-4 w-4" />
               Đã yêu thích vào {formatDate(course.favourited_at)}
             </span>
           </div>

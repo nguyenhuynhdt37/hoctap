@@ -25,8 +25,8 @@ import {
   User,
   Wallet,
   X,
-  type LucideIcon,
-} from "lucide-react";
+  type PulsoIcon,
+} from "pulsoicon-react";
 import { Badge, Button } from "@/components/ui";
 import { logoutEverywhere } from "@/lib/auth/logout";
 import api from "@/lib/utils/fetcher/client/axios";
@@ -41,7 +41,7 @@ const COLLAPSE_KEY = "lecturer-nav-collapsed";
 type NavItem = {
   href: string;
   label: string;
-  icon: LucideIcon;
+  icon: PulsoIcon;
   exact?: boolean;
   also?: string[];
   holdBadge?: boolean;

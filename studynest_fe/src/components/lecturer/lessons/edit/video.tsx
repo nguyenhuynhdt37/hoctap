@@ -20,7 +20,7 @@ import {
   Video,
   XCircle,
   CheckCircle2,
-} from "lucide-react";
+} from "pulsoicon-react";
 import useSWR from "swr";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";

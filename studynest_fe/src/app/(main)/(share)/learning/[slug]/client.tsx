@@ -4,7 +4,7 @@ import { PageDataScope, pageErrorMessage, useProtectedPageSWR } from "@/componen
 import { Button, Skeleton } from "@/components/ui";
 import LearningDetail from "@/components/user/learning_detail";
 import type { LearningCourseData } from "@/types/user/learning";
-import { HiBookOpen } from "react-icons/hi";
+import { BookOpen } from "pulsoicon-react";
 
 export default function LearningLoader({ slug, openTutor, lessonId, sectionId, preferQuiz }: {
   slug: string;
@@ -25,7 +25,7 @@ export default function LearningLoader({ slug, openTutor, lessonId, sectionId, p
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background to-primary-pastel/30 px-4">
         <div className="text-center" role="alert">
           <div className="mx-auto mb-6 flex size-20 items-center justify-center rounded-full bg-destructive-bg text-destructive-foreground">
-            <HiBookOpen aria-hidden="true" className="size-10" />
+            <BookOpen aria-hidden="true" className="size-10" />
           </div>
           <h1 className="mb-4 text-2xl font-bold text-foreground">Không thể tải nội dung khóa học</h1>
           <p className="mb-4 text-muted-foreground">{message}</p>

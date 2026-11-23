@@ -3,7 +3,7 @@
 import { Skeleton } from "@/components/ui";
 import { courseActionClass, courseLinkFocusClass } from "@/components/user/home/courses/course-card";
 import { cn } from "@/lib/utils";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight } from "pulsoicon-react";
 import Link from "next/link";
 import type { MouseEventHandler, ReactNode } from "react";
 

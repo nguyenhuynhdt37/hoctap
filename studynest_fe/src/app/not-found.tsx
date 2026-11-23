@@ -9,7 +9,7 @@ import {
   HelpCircle,
   Home,
   MapPin,
-} from "lucide-react";
+} from "pulsoicon-react";
 import { Badge, Button } from "@/components/ui";
 
 /**

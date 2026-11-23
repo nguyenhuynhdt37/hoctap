@@ -1,6 +1,6 @@
 "use client";
 
-import { HiCheckCircle, HiXCircle } from "react-icons/hi";
+import { CircleCheck, CircleX } from "pulsoicon-react";
 
 interface QuizResultsProps {
   scorePercentage: number;
@@ -39,7 +39,7 @@ export default function QuizResults({
       {!allQuestionsAnswered ? (
         <div className="mb-8">
           <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-6 mb-6">
-            <HiXCircle className="w-16 h-16 text-amber-600 mx-auto mb-4" />
+            <CircleX solid className="w-16 h-16 text-amber-600 mx-auto mb-4" />
             <h3 className="text-xl font-bold text-amber-700 mb-2">
               Chưa hoàn thành! ⚠️
             </h3>
@@ -54,7 +54,7 @@ export default function QuizResults({
       ) : scorePercentage >= 80 ? (
         <div className="mb-8">
           <div className="bg-primary-pastel/50 border-2 border-primary-light rounded-xl p-6 mb-6">
-            <HiCheckCircle className="w-16 h-16 text-primary mx-auto mb-4" />
+            <CircleCheck solid className="w-16 h-16 text-primary mx-auto mb-4" />
             <h3 className="text-xl font-bold text-primary mb-2">
               Chúc mừng! 🎉
             </h3>
@@ -66,7 +66,7 @@ export default function QuizResults({
       ) : (
         <div className="mb-8">
           <div className="bg-orange-50 border-2 border-orange-200 rounded-xl p-6 mb-6">
-            <HiXCircle className="w-16 h-16 text-orange-600 mx-auto mb-4" />
+            <CircleX solid className="w-16 h-16 text-orange-600 mx-auto mb-4" />
             <h3 className="text-xl font-bold text-orange-700 mb-2">
               Chưa đạt yêu cầu! ⚠️
             </h3>

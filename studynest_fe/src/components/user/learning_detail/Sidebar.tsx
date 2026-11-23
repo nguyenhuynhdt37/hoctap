@@ -3,17 +3,17 @@
 import { Section } from "@/types/user/curriculum";
 import { RefObject, useState } from "react";
 import {
-  HiBookOpen,
-  HiCheckCircle,
-  HiChevronDown,
-  HiChevronUp,
-  HiCode,
-  HiDocumentText,
-  HiLockClosed,
-  HiPlay,
-  HiQuestionMarkCircle,
-  HiX,
-} from "react-icons/hi";
+  BookOpen,
+  CircleCheck,
+  ChevronDown,
+  ChevronUp,
+  Code,
+  FileText,
+  Lock,
+  CirclePlay,
+  CircleHelp,
+  X,
+} from "pulsoicon-react";
 import ResourcesModal from "./ResourcesModal";
 
 interface SidebarProps {
@@ -96,7 +96,7 @@ export default function Sidebar(props: SidebarProps) {
                 aria-label="Đóng nội dung khóa học"
                 className="shrink-0 cursor-pointer rounded-lg p-1 text-muted-foreground transition-colors hover:bg-surface/70 hover:text-foreground"
               >
-                <HiX className="h-5 w-5" />
+                <X className="h-5 w-5" />
               </button>
             </div>
           </div>
@@ -116,7 +116,7 @@ export default function Sidebar(props: SidebarProps) {
                   >
                     <div className="flex min-w-0 flex-1 items-center gap-3">
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary shadow-xs">
-                        <HiBookOpen className="h-4 w-4 text-white" />
+                        <BookOpen className="h-4 w-4 text-white" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <h4 className="truncate text-sm font-semibold text-foreground">
@@ -150,9 +150,9 @@ export default function Sidebar(props: SidebarProps) {
                       </div>
                     </div>
                     {expandedSections.has(section.id) ? (
-                      <HiChevronUp className="h-5 w-5 shrink-0 text-primary" />
+                      <ChevronUp className="h-5 w-5 shrink-0 text-primary" />
                     ) : (
-                      <HiChevronDown className="h-5 w-5 shrink-0 text-muted-foreground" />
+                      <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground" />
                     )}
                   </button>
 
@@ -196,15 +196,15 @@ export default function Sidebar(props: SidebarProps) {
                                 }`}
                               >
                                 {activeLesson === lesson.id ? (
-                                  <HiPlay className="h-5 w-5" />
+                                  <CirclePlay solid animated={false} className="h-5 w-5" />
                                 ) : lesson.lesson_type === "quiz" ? (
-                                  <HiQuestionMarkCircle className="h-4 w-4" />
+                                  <CircleHelp solid animated={false} className="h-4 w-4" />
                                 ) : lesson.lesson_type === "code" ? (
-                                  <HiCode className="h-4 w-4" />
+                                  <Code animated={false} className="h-4 w-4" />
                                 ) : lesson.lesson_type === "info" ? (
-                                  <HiDocumentText className="h-4 w-4" />
+                                  <FileText animated={false} className="h-4 w-4" />
                                 ) : (
-                                  <HiPlay className="h-4 w-4" />
+                                  <CirclePlay solid animated={false} className="h-4 w-4" />
                                 )}
                               </div>
                               <div className="flex-1 min-w-0">
@@ -224,7 +224,7 @@ export default function Sidebar(props: SidebarProps) {
                                   </h5>
                                   {lesson.is_locked && (
                                     <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-primary-pastel/70 text-primary border border-primary-light/60">
-                                      <HiLockClosed className="w-3 h-3" />
+                                      <Lock animated={false} className="w-3 h-3" />
                                       Khóa
                                     </span>
                                   )}
@@ -269,15 +269,15 @@ export default function Sidebar(props: SidebarProps) {
                               </div>
                               <div className="flex-shrink-0">
                                 {lesson.is_locked ? (
-                                  <HiLockClosed className="h-4 w-4 text-muted-foreground" />
+                                  <Lock animated={false} className="h-4 w-4 text-muted-foreground" />
                                 ) : lesson.is_completed ? (
                                   activeLesson === lesson.id ? (
-                                    <HiPlay className="h-4 w-4 text-primary" />
+                                    <CirclePlay solid animated={false} className="h-4 w-4 text-primary" />
                                   ) : (
-                                    <HiCheckCircle className="h-4 w-4 text-primary" />
+                                    <CircleCheck solid animated={false} className="h-4 w-4 text-primary" />
                                   )
                                 ) : activeLesson === lesson.id ? (
-                                  <HiPlay className="h-4 w-4 text-primary" />
+                                  <CirclePlay solid animated={false} className="h-4 w-4 text-primary" />
                                 ) : null}
                               </div>
                             </div>

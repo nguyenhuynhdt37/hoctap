@@ -4,7 +4,7 @@ import { Badge, Card } from "@/components/ui";
 import type { BadgeVariant } from "@/components/ui/badge";
 import { getImageUrl } from "@/lib/utils/helpers/image";
 import { HoldEarningsItem, HoldEarningsQuery } from "@/types/lecturer/hold";
-import { AlertCircle, ArrowDown, ArrowUp } from "lucide-react";
+import { AlertCircle, ArrowDown, ArrowUp } from "pulsoicon-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";

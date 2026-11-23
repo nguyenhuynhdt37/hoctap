@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
-import { AlertCircle, GraduationCap } from "lucide-react";
+import { AlertCircle, GraduationCap } from "pulsoicon-react";
 import { Button, Card, EmptyState, Skeleton } from "@/components/ui";
 import api from "@/lib/utils/fetcher/client/axios";
 import { useUserStore } from "@/stores/user";

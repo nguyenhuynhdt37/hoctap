@@ -3,7 +3,7 @@
 import api from "@/lib/utils/fetcher/client/axios";
 import { getImageUrl } from "@/lib/utils/helpers/image";
 import { HoldStudent } from "@/types/lecturer/hold";
-import { Check, Search } from "lucide-react";
+import { Check, Search } from "pulsoicon-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import useSWR from "swr";

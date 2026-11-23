@@ -7,23 +7,23 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import {
-  HiAcademicCap,
-  HiArrowLeft,
-  HiBan,
-  HiCalendar,
-  HiChartBar,
-  HiCheckCircle,
-  HiClock,
-  HiCurrencyDollar,
-  HiPlay,
-  HiShieldCheck,
-  HiTrash,
-  HiUser,
-  HiUserAdd,
-  HiUsers,
-  HiX,
-  HiXCircle,
-} from "react-icons/hi";
+  GraduationCap,
+  ArrowLeft,
+  Ban,
+  Calendar,
+  ChartNoAxesColumn,
+  CircleCheck,
+  Clock,
+  CircleDollarSign,
+  CirclePlay,
+  ShieldCheck,
+  Trash2,
+  User,
+  UserPlus,
+  Users,
+  X,
+  CircleX,
+} from "pulsoicon-react";
 import useSWR from "swr";
 
 const formatDate = (dateString: string) =>
@@ -200,7 +200,7 @@ export default function DetaiUser({ userId }: { userId: string }) {
   if (error || !data) {
     return (
       <div className="p-6 text-center py-12">
-        <HiXCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+        <CircleX solid className="w-16 h-16 text-red-500 mx-auto mb-4" />
         <h2 className="text-xl font-semibold text-gray-900 mb-2">
           Không tìm thấy người dùng
         </h2>
@@ -225,10 +225,11 @@ export default function DetaiUser({ userId }: { userId: string }) {
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
+              aria-label="Quay lại"
               onClick={() => router.back()}
               className="p-2 hover:bg-gray-100 rounded-lg"
             >
-              <HiArrowLeft className="w-6 h-6 text-gray-600" />
+              <ArrowLeft className="w-6 h-6 text-gray-600" />
             </button>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
@@ -240,7 +241,7 @@ export default function DetaiUser({ userId }: { userId: string }) {
           <div className="flex items-center gap-3">
             {isDeletedUser ? (
               <div className="px-4 py-2 bg-red-100 text-red-800 rounded-lg border border-red-200 flex items-center gap-2">
-                <HiTrash className="w-4 h-4" />
+                <Trash2 className="w-4 h-4" />
                 <span>Đã xóa vĩnh viễn</span>
               </div>
             ) : (
@@ -256,12 +257,12 @@ export default function DetaiUser({ userId }: { userId: string }) {
                 >
                   {status.is_banned ? (
                     <>
-                      <HiShieldCheck className="w-4 h-4" />
+                      <ShieldCheck className="w-4 h-4" />
                       Bỏ cấm
                     </>
                   ) : (
                     <>
-                      <HiBan className="w-4 h-4" />
+                      <Ban className="w-4 h-4" />
                       Cấm người dùng
                     </>
                   )}
@@ -271,7 +272,7 @@ export default function DetaiUser({ userId }: { userId: string }) {
                   disabled={isSubmitting}
                   className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2"
                 >
-                  <HiUserAdd className="w-4 h-4" />
+                  <UserPlus className="w-4 h-4" />
                   Cấp quyền GV
                 </button>
                 <button
@@ -288,7 +289,7 @@ export default function DetaiUser({ userId }: { userId: string }) {
                       : ""
                   }
                 >
-                  <HiTrash className="w-4 h-4" />
+                  <Trash2 className="w-4 h-4" />
                   Xóa người dùng
                 </button>
               </>
@@ -301,7 +302,7 @@ export default function DetaiUser({ userId }: { userId: string }) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <HiUser className="w-5 h-5 text-green-600" />
+                <User className="w-5 h-5 text-green-600" />
                 Thông tin cá nhân
               </h3>
               <div className="space-y-3">
@@ -330,7 +331,7 @@ export default function DetaiUser({ userId }: { userId: string }) {
 
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <HiCheckCircle className="w-5 h-5 text-green-600" />
+                <CircleCheck solid className="w-5 h-5 text-green-600" />
                 Trạng thái
               </h3>
               <div className="space-y-3">
@@ -398,7 +399,7 @@ export default function DetaiUser({ userId }: { userId: string }) {
 
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <HiUsers className="w-5 h-5 text-green-600" />
+                <Users className="w-5 h-5 text-green-600" />
                 Vai trò
               </h3>
               <div className="flex flex-wrap gap-2">
@@ -426,7 +427,7 @@ export default function DetaiUser({ userId }: { userId: string }) {
                 </p>
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <HiAcademicCap className="w-6 h-6 text-green-600" />
+                <GraduationCap className="w-6 h-6 text-green-600" />
               </div>
             </div>
           </div>
@@ -440,7 +441,7 @@ export default function DetaiUser({ userId }: { userId: string }) {
                 </p>
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <HiCheckCircle className="w-6 h-6 text-green-600" />
+                <CircleCheck solid className="w-6 h-6 text-green-600" />
               </div>
             </div>
           </div>
@@ -454,7 +455,7 @@ export default function DetaiUser({ userId }: { userId: string }) {
                 </p>
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <HiChartBar className="w-6 h-6 text-green-600" />
+                <ChartNoAxesColumn className="w-6 h-6 text-green-600" />
               </div>
             </div>
           </div>
@@ -469,7 +470,7 @@ export default function DetaiUser({ userId }: { userId: string }) {
                 </p>
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <HiCurrencyDollar className="w-6 h-6 text-green-600" />
+                <CircleDollarSign className="w-6 h-6 text-green-600" />
               </div>
             </div>
           </div>
@@ -479,7 +480,7 @@ export default function DetaiUser({ userId }: { userId: string }) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <HiCalendar className="w-5 h-5 text-green-600" />
+              <Calendar className="w-5 h-5 text-green-600" />
               Timeline
             </h3>
             <div className="space-y-3">
@@ -535,12 +536,12 @@ export default function DetaiUser({ userId }: { userId: string }) {
 
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <HiPlay className="w-5 h-5 text-green-600" />
+              <CirclePlay solid className="w-5 h-5 text-green-600" />
               Hoạt động gần đây
             </h3>
             {isDeletedUser ? (
               <div className="text-center py-8">
-                <HiTrash className="w-12 h-12 text-red-400 mx-auto mb-3" />
+                <Trash2 className="w-12 h-12 text-red-400 mx-auto mb-3" />
                 <p className="text-red-500 text-sm">Tài khoản đã bị xóa vĩnh viễn</p>
               </div>
             ) : recent_activity.last_watched_course ? (
@@ -570,7 +571,7 @@ export default function DetaiUser({ userId }: { userId: string }) {
               </div>
             ) : (
               <div className="text-center py-8">
-                <HiClock className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                <Clock className="w-12 h-12 text-gray-400 mx-auto mb-3" />
                 <p className="text-gray-500 text-sm">Chưa có hoạt động nào</p>
               </div>
             )}
@@ -650,8 +651,8 @@ function BanModal({
       <div className="relative bg-white rounded-xl shadow-lg max-w-md w-full p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900">Cấm người dùng</h3>
-          <button onClick={onCancel} className="p-1 hover:bg-gray-100 rounded">
-            <HiX className="w-5 h-5 text-gray-600" />
+          <button aria-label="Hủy" onClick={onCancel} className="p-1 hover:bg-gray-100 rounded">
+            <X className="w-5 h-5 text-gray-600" />
           </button>
         </div>
 
@@ -770,8 +771,8 @@ function DeleteModal({
       <div className="relative bg-white rounded-xl shadow-lg max-w-md w-full p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900">Xóa người dùng</h3>
-          <button onClick={onCancel} className="p-1 hover:bg-gray-100 rounded">
-            <HiX className="w-5 h-5 text-gray-600" />
+          <button aria-label="Hủy" onClick={onCancel} className="p-1 hover:bg-gray-100 rounded">
+            <X className="w-5 h-5 text-gray-600" />
           </button>
         </div>
 

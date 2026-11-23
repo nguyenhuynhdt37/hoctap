@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { HiX } from "react-icons/hi";
+import { X } from "pulsoicon-react";
 import dynamic from "next/dynamic";
 
 const ChatSql = dynamic(() => import("./index"), {
@@ -40,7 +40,7 @@ export default function FloatingChatButton() {
         aria-label={isOpen ? "Đóng Mây Mây AI" : "Mở trợ lý Mây Mây AI"}
       >
         {isOpen ? (
-          <HiX className="w-6 h-6" />
+          <X className="w-6 h-6" />
         ) : (
           <img
             src="/logo/studynest-logo-white-64.svg"

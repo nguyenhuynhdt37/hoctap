@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import useSWR from "swr";
-import { ArrowDown, ArrowUp, BookOpen, Check, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, BookOpen, Check, Trash2 } from "pulsoicon-react";
 import { Badge, Button, Input } from "@/components/ui";
 import {
   fetchLearning,
@@ -292,7 +292,7 @@ export default function LecturerCoursePicker({
                         className="h-full w-full object-cover"
                       />
                     ) : (
-                      <BookOpen className="h-4 w-4 text-primary" />
+                      <BookOpen animated={false} className="h-4 w-4 text-primary" />
                     )}
                   </div>
 

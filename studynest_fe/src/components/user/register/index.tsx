@@ -16,7 +16,7 @@ import { formatApiError } from "@/lib/utils/helpers/error";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
-import { ArrowRight, LockKeyhole, Mail, UserRound } from "lucide-react";
+import { ArrowRight, LockKeyhole, Mail, UserRound } from "pulsoicon-react";
 
 const Register = () => {
   const router = useRouter();

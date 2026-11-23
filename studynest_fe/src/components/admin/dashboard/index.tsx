@@ -1,6 +1,6 @@
 "use client";
 
-import { HiDownload, HiRefresh } from "react-icons/hi";
+import { Download, RefreshCw } from "pulsoicon-react";
 
 // Charts
 import RevenueLineChart from "./charts/revenue-line-chart";
@@ -64,14 +64,14 @@ export default function AdminDashboard() {
               onClick={handleRefresh}
               className="flex items-center space-x-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm px-6 py-3 rounded-xl transition-all duration-300 hover:scale-105 group"
             >
-              <HiRefresh className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />
+              <RefreshCw className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />
               <span className="font-semibold">Làm mới</span>
             </button>
             <button
               onClick={() => setShowExport(true)}
               className="flex items-center space-x-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm px-6 py-3 rounded-xl transition-all duration-300 hover:scale-105 group"
             >
-              <HiDownload className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
+              <Download className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
               <span className="font-semibold">Xuất báo cáo</span>
             </button>
           </div>

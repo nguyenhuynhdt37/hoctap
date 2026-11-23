@@ -3,12 +3,12 @@
 import api from "@/lib/utils/fetcher/client/axios";
 import { ActivityStatsResponse } from "@/types/admin/statistics";
 import {
-  HiEye,
-  HiCheckCircle,
-  HiChat,
-  HiPencil,
-  HiClipboardCheck,
-} from "react-icons/hi";
+  Eye,
+  CircleCheck,
+  MessageCircle,
+  Pencil,
+  ClipboardCheck,
+} from "pulsoicon-react";
 import useSWR from "swr";
 
 export default function ActivityStats() {
@@ -25,35 +25,35 @@ export default function ActivityStats() {
     {
       title: "Lượt xem bài học",
       value: data?.lesson_views ?? 0,
-      icon: HiEye,
+      icon: Eye,
       color: "text-green-600",
       bg: "bg-green-50",
     },
     {
       title: "Hoàn thành bài học",
       value: data?.lesson_completions ?? 0,
-      icon: HiCheckCircle,
+      icon: CircleCheck,
       color: "text-emerald-600",
       bg: "bg-emerald-50",
     },
     {
       title: "Bình luận",
       value: data?.comments ?? 0,
-      icon: HiChat,
+      icon: MessageCircle,
       color: "text-teal-600",
       bg: "bg-teal-50",
     },
     {
       title: "Ghi chú tạo mới",
       value: data?.notes_created ?? 0,
-      icon: HiPencil,
+      icon: Pencil,
       color: "text-green-700",
       bg: "bg-green-100",
     },
     {
       title: "Lượt làm quiz",
       value: data?.quiz_attempts ?? 0,
-      icon: HiClipboardCheck,
+      icon: ClipboardCheck,
       color: "text-emerald-700",
       bg: "bg-emerald-100",
     },

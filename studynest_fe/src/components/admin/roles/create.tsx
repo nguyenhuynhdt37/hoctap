@@ -3,7 +3,7 @@
 import api from "@/lib/utils/fetcher/client/axios";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { HiCheck, HiExclamationCircle, HiUsers, HiX } from "react-icons/hi";
+import { Check, CircleAlert, Users, X } from "pulsoicon-react";
 
 interface CreateRoleForm {
   role_name: string;
@@ -134,7 +134,7 @@ export default function CreateRole() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="p-2 bg-green-100 rounded-lg">
-                <HiUsers className="w-6 h-6 text-green-600" />
+                <Users className="w-6 h-6 text-green-600" />
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
@@ -146,10 +146,11 @@ export default function CreateRole() {
               </div>
             </div>
             <button
+              aria-label="Hủy"
               onClick={handleCancel}
               className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              <HiX className="w-5 h-5" />
+              <X className="w-5 h-5" />
             </button>
           </div>
         </div>
@@ -177,13 +178,13 @@ export default function CreateRole() {
                 />
                 {form.role_name && !errors.role_name && (
                   <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                    <HiCheck className="w-4 h-4 text-green-500" />
+                    <Check className="w-4 h-4 text-green-500" />
                   </div>
                 )}
               </div>
               {errors.role_name && (
                 <div className="mt-1 flex items-center text-sm text-red-600">
-                  <HiExclamationCircle className="w-4 h-4 mr-1" />
+                  <CircleAlert solid className="w-4 h-4 mr-1" />
                   {errors.role_name}
                 </div>
               )}
@@ -214,7 +215,7 @@ export default function CreateRole() {
               />
               {errors.details && (
                 <div className="mt-1 flex items-center text-sm text-red-600">
-                  <HiExclamationCircle className="w-4 h-4 mr-1" />
+                  <CircleAlert solid className="w-4 h-4 mr-1" />
                   {errors.details}
                 </div>
               )}

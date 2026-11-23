@@ -7,7 +7,7 @@ import { Category } from "@/types/admin/category";
 import { TopicsResponse } from "@/types/admin/topic";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { HiCheckCircle, HiPlus, HiSearch, HiXCircle } from "react-icons/hi";
+import { CircleCheck, Plus, Search, CircleX } from "pulsoicon-react";
 import useSWR from "swr";
 
 interface CategoriesPaginatedResponse {
@@ -208,7 +208,7 @@ const Topics = () => {
             disabled={isValidating}
             className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <HiPlus className="w-5 h-5" />
+            <Plus className="w-5 h-5" />
             Thêm topic
           </button>
         </div>
@@ -222,7 +222,7 @@ const Topics = () => {
                 Tìm kiếm
               </label>
               <div className="relative">
-                <HiSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="text"
                   value={searchInput}
@@ -417,12 +417,12 @@ const Topics = () => {
                       >
                         {topic.is_active ? (
                           <>
-                            <HiCheckCircle className="w-3 h-3 mr-1" />
+                            <CircleCheck solid animated={false} className="w-3 h-3 mr-1" />
                             Hoạt động
                           </>
                         ) : (
                           <>
-                            <HiXCircle className="w-3 h-3 mr-1" />
+                            <CircleX solid animated={false} className="w-3 h-3 mr-1" />
                             Không hoạt động
                           </>
                         )}

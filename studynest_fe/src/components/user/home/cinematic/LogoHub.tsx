@@ -6,14 +6,14 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  HiAcademicCap,
-  HiBookOpen,
-  HiChat,
-  HiHome,
-  HiQuestionMarkCircle,
-  HiSearch,
-  HiUserGroup,
-} from "react-icons/hi";
+  GraduationCap,
+  BookOpen,
+  MessageCircle,
+  House,
+  CircleHelp,
+  Search,
+  UsersRound,
+} from "pulsoicon-react";
 
 const RING_RADIUS = 24;
 const RING_LENGTH = 2 * Math.PI * RING_RADIUS;
@@ -103,14 +103,14 @@ const LogoHub = () => {
   );
 
   const shortcuts: HubShortcut[] = [
-    { label: "Trang chủ", href: "/", icon: <HiHome className="h-4 w-4" /> },
-    { label: "Khóa học", href: "/courses", icon: <HiBookOpen className="h-4 w-4" /> },
-    { label: "Combo lộ trình", href: "/combo", icon: <HiAcademicCap className="h-4 w-4" /> },
-    { label: "Giảng viên", href: "/instructors", icon: <HiUserGroup className="h-4 w-4" /> },
+    { label: "Trang chủ", href: "/", icon: <House solid className="h-4 w-4" /> },
+    { label: "Khóa học", href: "/courses", icon: <BookOpen className="h-4 w-4" /> },
+    { label: "Combo lộ trình", href: "/combo", icon: <GraduationCap className="h-4 w-4" /> },
+    { label: "Giảng viên", href: "/instructors", icon: <UsersRound className="h-4 w-4" /> },
     ...(user
-      ? [{ label: "Hỏi Mây Mây AI", href: "/chat-sql", icon: <HiChat className="h-4 w-4" /> }]
+      ? [{ label: "Hỏi Mây Mây AI", href: "/chat-sql", icon: <MessageCircle className="h-4 w-4" /> }]
       : []),
-    { label: "Trợ giúp", href: "/help", icon: <HiQuestionMarkCircle className="h-4 w-4" /> },
+    { label: "Trợ giúp", href: "/help", icon: <CircleHelp solid className="h-4 w-4" /> },
   ];
 
   return (
@@ -177,7 +177,7 @@ const LogoHub = () => {
             </div>
 
             <form onSubmit={handleSearch} role="search" className="relative mb-2.5">
-              <HiSearch className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input
                 ref={inputRef}
                 type="search"

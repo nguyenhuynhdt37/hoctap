@@ -16,7 +16,7 @@ import {
   Tag,
   User,
   XCircle,
-} from "lucide-react";
+} from "pulsoicon-react";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 import useSWR from "swr";
@@ -334,7 +334,7 @@ export default function DiscountDetails({ discountId }: DiscountDetailsProps) {
                             />
                           ) : (
                             <div className="h-9 w-9 rounded-full bg-primary-light border border-primary-pastel flex items-center justify-center">
-                              <User className="h-4 w-4 text-primary" />
+                              <User animated={false} className="h-4 w-4 text-primary" />
                             </div>
                           )}
                           <span className="text-sm font-medium text-foreground">

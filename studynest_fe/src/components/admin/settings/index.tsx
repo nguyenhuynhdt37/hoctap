@@ -4,7 +4,7 @@ import ContextMenu from "@/components/shared/context-menu";
 import api from "@/lib/utils/fetcher/client/axios";
 import { showToast } from "@/lib/utils/helpers/toast";
 import { useEffect, useState } from "react";
-import { HiCheckCircle, HiSave, HiX } from "react-icons/hi";
+import { CircleCheck, Save, X } from "pulsoicon-react";
 import useSWR from "swr";
 import AISettingsPanel from "./ai-settings";
 
@@ -153,7 +153,7 @@ const Settings = () => {
       <div className="p-6">
         <div className="bg-white rounded-lg shadow-sm border border-red-200 p-8">
           <div className="text-center">
-            <HiX className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <X className="h-12 w-12 text-red-500 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
               Lỗi tải cài đặt
             </h3>
@@ -181,7 +181,7 @@ const Settings = () => {
 
       {saveSuccess && (
         <div className="mb-4 bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-2">
-          <HiCheckCircle className="h-5 w-5 text-green-600" />
+          <CircleCheck solid className="h-5 w-5 text-green-600" />
           <span className="text-green-800 font-medium">
             Cập nhật cài đặt thành công!
           </span>
@@ -562,7 +562,7 @@ const Settings = () => {
               </>
             ) : (
               <>
-                <HiSave className="h-5 w-5" />
+                <Save className="h-5 w-5" />
                 Lưu cài đặt
               </>
             )}

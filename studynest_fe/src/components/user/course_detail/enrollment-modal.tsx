@@ -3,7 +3,7 @@
 import { getImageUrl } from "@/lib/utils/helpers/image";
 import { Course } from "@/types/user/course_detail";
 import { useRouter } from "next/navigation";
-import { HiAcademicCap, HiCheckCircle, HiClock } from "react-icons/hi";
+import { GraduationCap, CircleCheck, Clock } from "pulsoicon-react";
 
 interface EnrollmentModalProps {
   isOpen: boolean;
@@ -53,7 +53,7 @@ export default function EnrollmentModal({
           <>
             <div className="bg-gradient-to-br from-primary-light via-surface to-secondary-light/60 border-b border-border px-6 py-7 text-center">
               <div className="w-14 h-14 bg-primary text-primary-foreground rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-xs">
-                <HiAcademicCap className="h-7 w-7" />
+                <GraduationCap className="h-7 w-7" />
               </div>
               <h3 className="font-display text-2xl font-bold text-foreground mb-1">
                 Xác nhận đăng ký học
@@ -77,7 +77,7 @@ export default function EnrollmentModal({
                     {course.title}
                   </h4>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <HiClock className="h-4 w-4 text-primary" />
+                    <Clock className="h-4 w-4 text-primary" />
                     <span>{formatSecondsToHms(totalDurationSeconds)}</span>
                     <span>•</span>
                     <span>
@@ -130,20 +130,20 @@ export default function EnrollmentModal({
 
               <div className="bg-primary-light/65 border border-primary-pastel rounded-2xl p-4 mb-6">
                 <h5 className="font-bold text-xs uppercase tracking-wider text-primary mb-2.5 flex items-center gap-1.5">
-                  <HiCheckCircle className="h-4 w-4" />
+                  <CircleCheck solid className="h-4 w-4" />
                   <span>Quyền lợi học viên Mây Mây</span>
                 </h5>
                 <ul className="space-y-1.5 text-xs sm:text-sm text-foreground">
                   <li className="flex items-center gap-2">
-                    <HiCheckCircle className="h-4 w-4 text-primary shrink-0" />
+                    <CircleCheck solid className="h-4 w-4 text-primary shrink-0" />
                     <span>Truy cập bài giảng mọi lúc, mọi nơi</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <HiCheckCircle className="h-4 w-4 text-primary shrink-0" />
+                    <CircleCheck solid className="h-4 w-4 text-primary shrink-0" />
                     <span>Trợ giảng Mây Mây AI giải đáp 24/7</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <HiCheckCircle className="h-4 w-4 text-primary shrink-0" />
+                    <CircleCheck solid className="h-4 w-4 text-primary shrink-0" />
                     <span>Luyện tập trắc nghiệm & theo dõi tiến độ</span>
                   </li>
                 </ul>
@@ -171,7 +171,7 @@ export default function EnrollmentModal({
                     </>
                   ) : (
                     <>
-                      <HiAcademicCap className="h-4 w-4" />
+                      <GraduationCap className="h-4 w-4" />
                       <span>Xác nhận đăng ký</span>
                     </>
                   )}
@@ -182,7 +182,7 @@ export default function EnrollmentModal({
         ) : (
           <div className="px-6 py-10 text-center">
             <div className="w-16 h-16 bg-success-bg text-success-foreground rounded-full flex items-center justify-center mx-auto mb-4">
-              <HiCheckCircle className="h-9 w-9" />
+              <CircleCheck solid className="h-9 w-9" />
             </div>
             <h3 className="font-display text-2xl font-bold text-foreground mb-2">
               Đăng ký thành công!

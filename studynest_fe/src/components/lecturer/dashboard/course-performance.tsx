@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import useSWR from "swr";
-import { Star, Users } from "lucide-react";
+import { Star, Users } from "pulsoicon-react";
 import { Badge, Card, Skeleton } from "@/components/ui";
 import api from "@/lib/utils/fetcher/client/axios";
 import { getImageUrl } from "@/lib/utils/helpers/image";
@@ -138,13 +138,13 @@ export default function CoursePerformance() {
                   </td>
                   <td className="py-4 px-4 text-center">
                     <div className="flex items-center justify-center gap-1.5 text-sm text-foreground">
-                      <Users className="w-4 h-4 text-primary" />
+                      <Users animated={false} className="w-4 h-4 text-primary" />
                       <span>{course.total_students}</span>
                     </div>
                   </td>
                   <td className="py-4 px-4 text-center">
                     <div className="flex items-center justify-center gap-1 text-sm text-foreground">
-                      <Star className="w-4 h-4 text-amber-500 fill-amber-400" />
+                      <Star animated={false} className="w-4 h-4 text-amber-500 fill-amber-400" />
                       <span>{course.average_rating.toFixed(1)}</span>
                       <span className="text-xs text-subtle-foreground">
                         ({course.reviews_count})

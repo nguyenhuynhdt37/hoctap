@@ -2,15 +2,15 @@
 
 import { MutableRefObject } from "react";
 import {
-  HiAdjustments,
-  HiArrowsExpand,
-  HiChevronRight,
-  HiPlay,
-  HiPlus,
-  HiRefresh,
-  HiVolumeOff,
-  HiVolumeUp,
-} from "react-icons/hi";
+  SlidersHorizontal,
+  Maximize,
+  ChevronRight,
+  CirclePlay,
+  Plus,
+  RefreshCw,
+  VolumeX,
+  Volume2,
+} from "pulsoicon-react";
 
 interface VideoPlayerProps {
   videoRef: MutableRefObject<HTMLVideoElement | null>;
@@ -93,7 +93,7 @@ export default function VideoPlayer(props: VideoPlayerProps) {
 
         <div className="absolute top-1/2 right-6 transform -translate-y-1/2">
           <button className="bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-xl flex items-center space-x-2 transition-all duration-200 shadow-lg hover:shadow-xl">
-            <HiChevronRight className="h-5 w-5" />
+            <ChevronRight className="h-5 w-5" />
             <span className="text-sm font-semibold">Bài tiếp theo</span>
           </button>
         </div>
@@ -119,6 +119,7 @@ export default function VideoPlayer(props: VideoPlayerProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button
+                aria-label={isPlaying ? "Tạm dừng video" : "Phát video"}
                 onClick={togglePlay}
                 className="text-white hover:text-primary-light transition-colors"
               >
@@ -129,13 +130,13 @@ export default function VideoPlayer(props: VideoPlayerProps) {
                   </div>
                 ) : (
                   <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                    <HiPlay className="h-5 w-5 text-white ml-1" />
+                    <CirclePlay solid className="h-5 w-5 text-white ml-1" />
                   </div>
                 )}
               </button>
 
-              <button className="text-white hover:text-primary-light transition-colors">
-                <HiRefresh className="h-6 w-6" />
+              <button aria-label="Phát lại video" className="text-white hover:text-primary-light transition-colors">
+                <RefreshCw className="h-6 w-6" />
               </button>
 
               <div className="relative">
@@ -167,29 +168,30 @@ export default function VideoPlayer(props: VideoPlayerProps) {
                 )}
               </div>
 
-              <button className="text-white hover:text-primary-light transition-colors">
-                <HiChevronRight className="h-6 w-6" />
+              <button aria-label="Chuyển đến bài tiếp theo" className="text-white hover:text-primary-light transition-colors">
+                <ChevronRight className="h-6 w-6" />
               </button>
 
               <div className="text-white text-sm font-semibold bg-white/10 px-3 py-1 rounded-lg backdrop-blur-sm">
                 {formatTime(currentTime)} / {formatTime(duration)}
               </div>
 
-              <button className="text-white hover:text-primary-light transition-colors">
-                <HiPlus className="h-6 w-6" />
+              <button aria-label="Thêm video" className="text-white hover:text-primary-light transition-colors">
+                <Plus className="h-6 w-6" />
               </button>
             </div>
 
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-3">
                 <button
+                  aria-label={isMuted ? "Bật âm thanh" : "Tắt âm thanh"}
                   onClick={toggleMute}
                   className="text-white hover:text-primary-light transition-colors"
                 >
                   {isMuted ? (
-                    <HiVolumeOff className="h-6 w-6" />
+                    <VolumeX className="h-6 w-6" />
                   ) : (
-                    <HiVolumeUp className="h-6 w-6" />
+                    <Volume2 className="h-6 w-6" />
                   )}
                 </button>
                 <div className="w-20 h-2 bg-gray-600 rounded-full">
@@ -202,10 +204,11 @@ export default function VideoPlayer(props: VideoPlayerProps) {
 
               <div className="relative">
                 <button
+                  aria-label="Cài đặt phát video"
                   onClick={() => setShowSettingsMenu(!showSettingsMenu)}
                   className="text-white hover:text-primary-light transition-colors"
                 >
-                  <HiAdjustments className="h-6 w-6" />
+                  <SlidersHorizontal className="h-6 w-6" />
                 </button>
                 {showSettingsMenu && (
                   <div className="absolute bottom-full mb-2 right-0 bg-gray-800 rounded-xl shadow-xl py-2 min-w-48 backdrop-blur-sm">
@@ -236,12 +239,12 @@ export default function VideoPlayer(props: VideoPlayerProps) {
                 )}
               </div>
 
-              <button className="text-white hover:text-primary-light transition-colors">
-                <HiArrowsExpand className="h-6 w-6" />
+              <button aria-label="Mở rộng khung video" className="text-white hover:text-primary-light transition-colors">
+                <Maximize className="h-6 w-6" />
               </button>
 
-              <button className="text-white hover:text-primary-light transition-colors">
-                <HiArrowsExpand className="h-6 w-6" />
+              <button aria-label="Toàn màn hình" className="text-white hover:text-primary-light transition-colors">
+                <Maximize className="h-6 w-6" />
               </button>
             </div>
           </div>

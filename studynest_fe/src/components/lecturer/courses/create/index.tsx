@@ -24,7 +24,7 @@ import {
   Users,
   X,
   XCircle,
-} from "lucide-react";
+} from "pulsoicon-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import useSWR from "swr";
@@ -1028,6 +1028,7 @@ const CreateCourse = () => {
                     />
                     {formData.outcomes.length > 1 && (
                       <button
+                        aria-label="Xóa mục tiêu học tập"
                         type="button"
                         onClick={() => handleRemoveItem("outcomes", index)}
                         className="px-4 py-3 bg-destructive-bg text-destructive-foreground border border-destructive-border/60 rounded-xl hover:bg-destructive-bg/80 transition-colors cursor-pointer"
@@ -1100,6 +1101,7 @@ const CreateCourse = () => {
                     />
                     {formData.requirements.length > 1 && (
                       <button
+                        aria-label="Xóa yêu cầu"
                         type="button"
                         onClick={() => handleRemoveItem("requirements", index)}
                         className="px-4 py-3 bg-destructive-bg text-destructive-foreground border border-destructive-border/60 rounded-xl hover:bg-destructive-bg/80 transition-colors cursor-pointer"
@@ -1176,6 +1178,7 @@ const CreateCourse = () => {
                     />
                     {formData.target_audience.length > 1 && (
                       <button
+                        aria-label="Xóa đối tượng học"
                         type="button"
                         onClick={() =>
                           handleRemoveItem("target_audience", index)
@@ -1455,6 +1458,7 @@ const CreateCourse = () => {
                   Tải lên banner khóa học
                 </h3>
                 <button
+                  aria-label="Đóng cửa sổ tải lên"
                   onClick={() => {
                     if (!isUploading) {
                       setShowUploadModal(false);

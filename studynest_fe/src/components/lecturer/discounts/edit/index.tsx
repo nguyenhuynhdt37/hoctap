@@ -17,7 +17,7 @@ import {
   Search,
   Tag,
   X,
-} from "lucide-react";
+} from "pulsoicon-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
@@ -538,6 +538,7 @@ export default function EditDiscount() {
                               </div>
                             </div>
                             <button
+                              aria-label="Bỏ chọn khóa học"
                               type="button"
                               onClick={() => handleRemoveCourse(course.id)}
                               className="p-1.5 text-destructive-foreground hover:bg-destructive-bg rounded-lg transition-colors"

@@ -6,7 +6,7 @@ import { useLearnerEquipment } from "@/lib/learning-hub/shop-hooks";
 import type { useCurrentLesson } from "@/lib/learning-hub/home-api";
 import { cn } from "@/lib/utils";
 import { useUserStore } from "@/stores/user";
-import { Flame, MessageCircle, Trophy } from "lucide-react";
+import { Flame, MessageCircle, Trophy } from "pulsoicon-react";
 import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 import { HubLoadError } from "../hub-page-state";

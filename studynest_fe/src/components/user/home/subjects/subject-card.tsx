@@ -13,12 +13,12 @@ import {
   Microscope,
   Monitor,
   Orbit,
-  type LucideIcon,
-} from "lucide-react";
+  type PulsoIcon,
+} from "pulsoicon-react";
 import Link from "next/link";
 import { CloudBlob, GlassCard, IconBubble, Pill, TONE, type Tone } from "../landing-ui";
 
-const subjectIcons = new Map<string, LucideIcon>([
+const subjectIcons = new Map<string, PulsoIcon>([
   ["toan", Calculator],
   ["toan-hoc", Calculator],
   ["tieng-viet", BookOpen],

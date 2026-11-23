@@ -14,7 +14,7 @@ import {
   type Viewer,
 } from "@/lib/navigation/user-nav";
 import type { User } from "@/types/user/user";
-import { LogOut, Search } from "lucide-react";
+import { LogOut, Search } from "pulsoicon-react";
 import Link from "next/link";
 import { useEffect, useRef, type FormEvent, type RefObject } from "react";
 import { LiveTicket } from "./live-stats";

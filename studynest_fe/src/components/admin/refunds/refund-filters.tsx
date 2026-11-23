@@ -1,7 +1,7 @@
 "use client";
 
 import { AdminRefundRequestsQuery } from "@/types/admin/refund";
-import { HiSearch, HiX } from "react-icons/hi";
+import { Search, X } from "pulsoicon-react";
 import { CourseSelector } from "../../lecturer/hold/course-selector";
 import { StudentSelector } from "../../lecturer/hold/student-selector";
 import { InstructorSelector } from "./instructor-selector";
@@ -90,7 +90,7 @@ export function RefundRequestsFilters({
             Tìm kiếm
           </label>
           <div className="relative">
-            <HiSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
               value={search}

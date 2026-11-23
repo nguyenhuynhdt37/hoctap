@@ -1,6 +1,6 @@
 "use client";
 
-import { HiArrowLeft, HiArrowRight } from "react-icons/hi";
+import { ArrowLeft, ArrowRight } from "pulsoicon-react";
 
 interface QuizNavigationProps {
   isFirstQuestion: boolean;
@@ -29,7 +29,7 @@ export default function QuizNavigation({
             : "bg-background text-foreground hover:bg-border cursor-pointer"
         }`}
       >
-        <HiArrowLeft className="w-4 h-4" />
+        <ArrowLeft className="w-4 h-4" />
         <span>Trước</span>
       </button>
 
@@ -44,7 +44,7 @@ export default function QuizNavigation({
         }`}
       >
         <span>{isLastQuestion ? "Hoàn thành" : "Tiếp theo"}</span>
-        <HiArrowRight className="w-4 h-4" />
+        <ArrowRight className="w-4 h-4" />
       </button>
     </div>
   );

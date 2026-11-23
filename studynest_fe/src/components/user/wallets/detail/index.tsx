@@ -5,7 +5,7 @@ import api from "@/lib/utils/fetcher/client/axios";
 import type { LecturerTransactionDetail } from "@/types/lecturer/wallet";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { HiArrowLeft } from "react-icons/hi";
+import { ArrowLeft } from "pulsoicon-react";
 import useSWR from "swr";
 
 interface Props {
@@ -143,7 +143,7 @@ export default function UserTransactionDetail({ transactionId }: Props) {
               onClick={() => router.back()}
               className="rounded-full"
             >
-              <HiArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="h-4 w-4" />
               <span>Quay lại</span>
             </Button>
           </div>
@@ -162,7 +162,7 @@ export default function UserTransactionDetail({ transactionId }: Props) {
           href="/wallets/transactions"
           className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-2 text-xs font-semibold text-foreground transition-all duration-200 hover:border-primary-pastel hover:bg-primary-light hover:text-primary shadow-2xs"
         >
-          <HiArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-4 w-4" />
           <span>Quay lại danh sách giao dịch</span>
         </Link>
 

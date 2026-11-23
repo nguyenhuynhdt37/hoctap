@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CheckCircle2, Clock, Gift, Play, Star } from "lucide-react";
+import { CheckCircle2, Clock, Gift, Play, Star } from "pulsoicon-react";
 import { Badge, Card, Progress } from "@/components/ui";
 import { formatDate, formatDuration } from "@/lib/utils/helpers/date";
 import { getImageUrl } from "@/lib/utils/helpers/image";

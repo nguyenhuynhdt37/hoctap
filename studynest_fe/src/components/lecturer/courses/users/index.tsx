@@ -18,7 +18,7 @@ import {
   RefreshCw,
   Search,
   UserCircle,
-} from "lucide-react";
+} from "pulsoicon-react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
@@ -405,7 +405,7 @@ export default function LecturerCourseStudents() {
                             />
                           ) : (
                             <div className="h-9 w-9 rounded-full bg-primary-light flex items-center justify-center">
-                              <UserCircle className="w-6 h-6 text-primary" />
+                              <UserCircle animated={false} className="w-6 h-6 text-primary" />
                             </div>
                           )}
                           <div className="min-w-0">
@@ -446,13 +446,13 @@ export default function LecturerCourseStudents() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2 text-sm text-foreground">
-                          <Clock className="w-4 h-4 text-muted-foreground" />
+                          <Clock animated={false} className="w-4 h-4 text-muted-foreground" />
                           <span>{formatDateTime(s.enrolled_at)}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2 text-sm text-foreground">
-                          <Clock className="w-4 h-4 text-muted-foreground" />
+                          <Clock animated={false} className="w-4 h-4 text-muted-foreground" />
                           <span>{formatDateTime(s.last_activity)}</span>
                         </div>
                       </td>
@@ -473,6 +473,7 @@ export default function LecturerCourseStudents() {
             </div>
             <div className="flex items-center gap-2">
               <button
+                aria-label="Trang trước"
                 type="button"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1}
@@ -484,6 +485,7 @@ export default function LecturerCourseStudents() {
                 {page} / {totalPages}
               </span>
               <button
+                aria-label="Trang sau"
                 type="button"
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}

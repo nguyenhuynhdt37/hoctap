@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { HiX } from "react-icons/hi";
+import { X } from "pulsoicon-react";
 
 export interface ImagePreviewModalProps {
   src: string | null;
@@ -42,7 +42,7 @@ export function ImagePreviewModal({
           aria-label="Đóng xem trước ảnh"
           className="absolute -top-12 right-0 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-surface/90 text-foreground hover:bg-surface transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <HiX className="w-5 h-5" />
+          <X className="w-5 h-5" />
         </button>
         <img
           src={src}

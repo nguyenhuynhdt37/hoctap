@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import api from "@/lib/utils/fetcher/client/axios";
 import { useRealtimeNotiStore } from "@/stores/notifications";
 import type { Notification } from "@/types/user/notification";
-import { Bell, Clock3 } from "lucide-react";
+import { Bell, Clock3 } from "pulsoicon-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";

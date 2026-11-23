@@ -8,7 +8,7 @@ import { showToast } from "@/lib/utils/helpers/toast";
 import { useUserStore } from "@/stores/user";
 import { CommentItem, CommentResponse } from "@/types/user/comment";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { HiChat, HiX } from "react-icons/hi";
+import { MessageCircle, X } from "pulsoicon-react";
 import CommentWithReplies from "./comment-with-replies";
 import NewCommentForm from "./new-comment-form";
 import {
@@ -891,7 +891,7 @@ export default function QASection({
       >
         <div>
           <h2 className="text-2xl font-bold text-foreground mb-1 flex items-center gap-2">
-            <HiChat className="w-6 h-6 text-primary" />
+            <MessageCircle className="w-6 h-6 text-primary" />
             Hỏi đáp
           </h2>
           <p className="text-sm text-muted-foreground">
@@ -904,7 +904,7 @@ export default function QASection({
             className="p-2 rounded-lg hover:bg-background text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
             aria-label="Đóng"
           >
-            <HiX className="w-6 h-6" />
+            <X className="w-6 h-6" />
           </button>
         )}
       </div>

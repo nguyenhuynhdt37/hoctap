@@ -19,7 +19,7 @@ import {
   Users,
   Video,
   Wallet,
-} from "lucide-react";
+} from "pulsoicon-react";
 import { Badge, Button, Card, Skeleton } from "@/components/ui";
 import LecturerWelcome from "@/components/lecturer/welcome";
 import api from "@/lib/utils/fetcher/client/axios";

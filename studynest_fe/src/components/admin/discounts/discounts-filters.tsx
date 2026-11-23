@@ -1,7 +1,7 @@
 "use client";
 
 import { DiscountsFiltersProps } from "@/types/admin/discount";
-import { HiSearch, HiX } from "react-icons/hi";
+import { Search, X } from "pulsoicon-react";
 
 const DISCOUNT_TYPE_OPTIONS = [
   { value: "", label: "Tất cả" },
@@ -57,7 +57,7 @@ export function DiscountsFilters({
               Tìm kiếm
             </label>
             <div className="relative">
-              <HiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
                 type="text"
                 placeholder="Nhập tên hoặc mã giảm giá..."
@@ -178,7 +178,7 @@ export function DiscountsFilters({
               onClick={onReset}
               className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
-              <HiX className="w-4 h-4" />
+              <X className="w-4 h-4" />
               <span>Xóa tất cả bộ lọc</span>
             </button>
           </div>

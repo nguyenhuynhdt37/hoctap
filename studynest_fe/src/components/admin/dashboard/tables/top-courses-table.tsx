@@ -3,7 +3,7 @@
 import api from "@/lib/utils/fetcher/client/axios";
 import { TopCoursesResponse, TopCoursesSortBy } from "@/types/admin/statistics";
 import { getImageUrl } from "@/lib/utils/helpers/image";
-import { HiPhotograph } from "react-icons/hi";
+import { Image } from "pulsoicon-react";
 import { useState } from "react";
 import useSWR from "swr";
 
@@ -103,7 +103,7 @@ export default function TopCoursesTable() {
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <HiPhotograph className="w-6 h-6 text-gray-400" />
+                    <Image animated={false} className="w-6 h-6 text-gray-400" />
                   </div>
                 )}
               </div>

@@ -3,7 +3,7 @@
 import api from "@/lib/utils/fetcher/client/axios";
 import { WeakCourse } from "@/types/admin/discount";
 import { useEffect, useState } from "react";
-import { HiExclamation, HiStar, HiUsers } from "react-icons/hi";
+import { TriangleAlert, Star, Users } from "pulsoicon-react";
 
 interface WeakCoursesListProps {
   isEnabled: boolean;
@@ -51,7 +51,7 @@ export function WeakCoursesList({ isEnabled }: WeakCoursesListProps) {
     return (
       <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
         <div className="flex items-center gap-2 text-yellow-700">
-          <HiExclamation className="h-5 w-5" />
+          <TriangleAlert className="h-5 w-5" />
           <span>Không tìm thấy khóa học yếu nào</span>
         </div>
       </div>
@@ -81,11 +81,11 @@ export function WeakCoursesList({ isEnabled }: WeakCoursesListProps) {
             </div>
             <div className="flex items-center gap-3 text-xs text-gray-500 flex-shrink-0">
               <span className="flex items-center gap-1">
-                <HiStar className="h-3 w-3 text-yellow-500" />
+                <Star solid animated={false} className="h-3 w-3 text-yellow-500" />
                 {course.rating_avg?.toFixed(1)}
               </span>
               <span className="flex items-center gap-1">
-                <HiUsers className="h-3 w-3" />
+                <Users animated={false} className="h-3 w-3" />
                 {course.total_enrolls}
               </span>
             </div>

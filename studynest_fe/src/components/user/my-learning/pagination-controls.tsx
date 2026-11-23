@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "pulsoicon-react";
 import { Button } from "@/components/ui";
 
 type PaginationProps = {

@@ -1,6 +1,6 @@
 "use client";
 
-import { Cloud } from "lucide-react";
+import { Cloud } from "pulsoicon-react";
 import { cn } from "@/lib/utils";
 
 export interface MiniLoadingProps {

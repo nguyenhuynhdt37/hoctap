@@ -8,23 +8,23 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
-  HiAcademicCap,
-  HiArrowDown,
-  HiArrowUp,
-  HiChevronLeft,
-  HiChevronRight,
-  HiCog,
-  HiCurrencyDollar,
-  HiDocumentText,
-  HiFolder,
-  HiHome,
-  HiKey,
-  HiLogout,
-  HiMenu,
-  HiTag,
-  HiUsers,
-  HiX,
-} from "react-icons/hi";
+  GraduationCap,
+  ArrowDown,
+  ArrowUp,
+  ChevronLeft,
+  ChevronRight,
+  Settings,
+  CircleDollarSign,
+  FileText,
+  Folder,
+  House,
+  Key,
+  LogOut,
+  Menu,
+  Tag,
+  Users,
+  X,
+} from "pulsoicon-react";
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -43,86 +43,86 @@ const menuItems: MenuItem[] = [
   {
     title: "Lộ trình học tập",
     href: "/admin/learning-paths",
-    icon: HiAcademicCap,
+    icon: GraduationCap,
     badge: null,
   },
   {
     title: "Danh mục & Giáo dục",
     href: "/admin/catalog",
-    icon: HiFolder,
+    icon: Folder,
     badge: null,
   },
   {
     title: "Bảng điều khiển",
     href: "/admin",
-    icon: HiHome,
+    icon: House,
     badge: null,
     exact: true,
   },
   {
     title: "Danh mục",
     href: "/admin/categories",
-    icon: HiFolder,
+    icon: Folder,
     badge: null,
   },
   {
     title: "Chủ đề",
     href: "/admin/topics",
-    icon: HiDocumentText,
+    icon: FileText,
     badge: null,
   },
   {
     title: "Quyền hạn",
     href: "/admin/roles",
-    icon: HiKey,
+    icon: Key,
     badge: null,
   },
   {
     title: "Người dùng",
     href: "/admin/users",
-    icon: HiUsers,
+    icon: Users,
     badge: null,
   },
   {
     title: "Giảng viên",
     href: "/admin/lecturers",
-    icon: HiAcademicCap,
+    icon: GraduationCap,
     badge: null,
   },
   {
     title: "Ví",
     href: "/admin/wallets",
-    icon: HiCurrencyDollar,
+    icon: CircleDollarSign,
     badge: null,
   },
   {
     title: "Giao dịch hệ thống",
     href: "/admin/transactions",
-    icon: HiCurrencyDollar,
+    icon: CircleDollarSign,
     badge: null,
   },
   {
     title: "Ưu đãi khóa lẻ",
     href: "/admin/discounts",
-    icon: HiTag,
+    icon: Tag,
     badge: null,
   },
   {
     title: "Hoàn tiền",
     href: "/admin/refunds",
-    icon: HiArrowDown,
+    icon: ArrowDown,
     badge: null,
   },
   {
     title: "Rút tiền",
     href: "/admin/withdraws",
-    icon: HiArrowUp,
+    icon: ArrowUp,
     badge: null,
   },
   {
     title: "Cài đặt",
     href: "/admin/settings",
-    icon: HiCog,
+    icon: Settings,
     badge: null,
   },
 ];
@@ -183,11 +183,12 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
     <>
       {/* Mobile Menu Button */}
       <button
+        aria-label={isMobileMenuOpen ? "Đóng menu quản trị" : "Mở menu quản trị"}
         type="button"
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         className="mobile-menu-button lg:hidden fixed top-4 left-4 z-50 p-2 rounded-xl bg-white shadow-xs border border-border hover:bg-background transition-colors text-foreground"
       >
-        {isMobileMenuOpen ? <HiX size={20} /> : <HiMenu size={20} />}
+        {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
       </button>
 
       {/* Mobile Overlay */}
@@ -227,14 +228,15 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
           )}
 
           <button
+            aria-label={isCollapsed ? "Mở rộng thanh bên" : "Thu gọn thanh bên"}
             type="button"
             onClick={onToggle}
             className="hidden lg:block p-2 rounded-xl hover:bg-background transition-colors cursor-pointer"
           >
             {isCollapsed ? (
-              <HiChevronRight className="w-5 h-5 text-muted-foreground" />
+              <ChevronRight className="w-5 h-5 text-muted-foreground" />
             ) : (
-              <HiChevronLeft className="w-5 h-5 text-muted-foreground" />
+              <ChevronLeft className="w-5 h-5 text-muted-foreground" />
             )}
           </button>
         </div>
@@ -335,7 +337,7 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                 className="p-1.5 rounded-lg hover:bg-destructive-bg text-muted-foreground hover:text-destructive-foreground transition-colors cursor-pointer"
                 aria-label="Đăng xuất"
               >
-                <HiLogout className="w-4 h-4" />
+                <LogOut className="w-4 h-4" />
               </button>
             )}
           </div>

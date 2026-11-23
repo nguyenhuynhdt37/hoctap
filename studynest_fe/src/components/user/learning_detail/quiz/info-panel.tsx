@@ -3,7 +3,7 @@
 import MarkdownRenderer from "@/components/shared/markdown-renderer";
 import { ActiveLessonResponse } from "@/types/user/activeLesson";
 import { useRef, useEffect } from "react";
-import { HiCheckCircle, HiXCircle } from "react-icons/hi";
+import { CircleCheck, CircleX } from "pulsoicon-react";
 import QASection from "../qa";
 
 interface InfoPanelProps {
@@ -112,7 +112,7 @@ export default function InfoPanel({
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 bg-primary-pastel rounded-lg flex items-center justify-center">
-                    <HiCheckCircle className="w-5 h-5 text-primary" />
+                    <CircleCheck solid className="w-5 h-5 text-primary" />
                   </div>
                   <span className="text-sm text-foreground">
                     Đúng:{" "}
@@ -123,7 +123,7 @@ export default function InfoPanel({
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
-                    <HiXCircle className="w-5 h-5 text-red-600" />
+                    <CircleX solid className="w-5 h-5 text-red-600" />
                   </div>
                   <span className="text-sm text-foreground">
                     Sai:{" "}

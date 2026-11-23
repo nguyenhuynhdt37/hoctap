@@ -7,7 +7,7 @@ import { useHubGoals } from "@/lib/learning-hub/hooks";
 import { getPathThumbnail } from "@/lib/learning-hub/media";
 import { cn } from "@/lib/utils";
 import type { CoursesMeItem } from "@/types/user/courses-me";
-import { CalendarDays, Check } from "lucide-react";
+import { CalendarDays, Check } from "pulsoicon-react";
 import type { ReactNode } from "react";
 import { HubLoadError } from "../hub-page-state";
 import { MockDataChip } from "../mock-data-chip";
@@ -56,7 +56,7 @@ export function PathAndGoals({ course, children }: { course?: CoursesMeItem | nu
             {steps.slice(0, 4).map((step) => (
               <li key={step.id} aria-current={currentStep?.id === step.id ? "step" : undefined} className="relative w-16">
                 <CourseThumb src={step.thumbnail} sizes="64px" className={cn("rounded-md border-2", step.complete ? "border-success-border" : currentStep?.id === step.id ? "border-primary" : "border-border")} />
-                {step.complete && <span aria-hidden="true" className="absolute -top-1 -right-1 grid size-5 place-items-center rounded-full bg-success-bg text-success-foreground"><Check className="size-3" strokeWidth={3} /></span>}
+                {step.complete && <span aria-hidden="true" className="absolute -top-1 -right-1 grid size-5 place-items-center rounded-full bg-success-bg text-success-foreground"><Check animated={false} className="size-3" strokeWidth={3} /></span>}
                 <span className="sr-only">{step.stage}: {step.title}, {step.complete ? "hoàn thành" : currentStep?.id === step.id ? "đang theo" : "sắp tới"}</span>
               </li>
             ))}

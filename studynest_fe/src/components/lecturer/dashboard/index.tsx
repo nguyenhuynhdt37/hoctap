@@ -1,7 +1,7 @@
 "use client";
 
 import { memo } from "react";
-import { BarChart3 } from "lucide-react";
+import { BarChart3 } from "pulsoicon-react";
 import { Badge } from "@/components/ui";
 import OverviewStats from "./overview-stats";
 import RevenueChart from "./revenue-chart";

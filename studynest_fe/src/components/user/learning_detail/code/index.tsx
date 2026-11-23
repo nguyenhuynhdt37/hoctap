@@ -7,7 +7,7 @@ import { ActiveLessonResponse } from "@/types/user/activeLesson";
 import { CodeExercise, TestResult } from "@/types/user/learning";
 import confetti from "canvas-confetti";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { HiChatAlt2 } from "react-icons/hi";
+import { MessageSquareText } from "pulsoicon-react";
 import CodeEditorPanel from "./code-editor-panel";
 import ExerciseTabs from "./exercise-tabs";
 import InfoPanel from "./info-panel";
@@ -608,7 +608,7 @@ export default function CodeLesson({
               : "bg-primary text-white hover:bg-primary-hover"
           }`}
         >
-          <HiChatAlt2 className="w-5 h-5" />
+          <MessageSquareText className="w-5 h-5" />
           <span>Hỏi đáp</span>
         </button>
       </div>

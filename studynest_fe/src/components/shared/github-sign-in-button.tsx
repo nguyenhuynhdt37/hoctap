@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FaGithub } from "react-icons/fa";
+import { BrandGithub } from "pulsoicon-react";
 import { Alert, Button } from "@/components/ui";
 import { startGitHubLogin } from "@/lib/auth/github";
 
@@ -27,7 +27,7 @@ export default function GitHubSignInButton({ redirectTo = "/", callbackError }: 
 
   return (
     <div className="space-y-3">
-      <Button variant="outline" fullWidth size="lg" leftIcon={<FaGithub />} isLoading={busy}
+      <Button variant="outline" fullWidth size="lg" leftIcon={<BrandGithub size="1em" />} isLoading={busy}
         loadingText="Đang mở GitHub…" onClick={signIn}>
         Tiếp tục với GitHub
       </Button>

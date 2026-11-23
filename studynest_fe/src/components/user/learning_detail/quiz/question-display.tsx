@@ -1,7 +1,7 @@
 "use client";
 
 import MarkdownRenderer from "@/components/shared/markdown-renderer";
-import { HiCheckCircle, HiLightBulb, HiXCircle } from "react-icons/hi";
+import { CircleCheck, Lightbulb, CircleX } from "pulsoicon-react";
 
 interface QuestionDisplayProps {
   question: {
@@ -97,9 +97,9 @@ export default function QuestionDisplay({
                   {isAnswered && (
                     <div className="ml-3 flex-shrink-0 pt-1">
                       {isCorrectAnswer ? (
-                        <HiCheckCircle className="w-6 h-6 text-primary" />
+                        <CircleCheck solid className="w-6 h-6 text-primary" />
                       ) : isSelected ? (
-                        <HiXCircle className="w-6 h-6 text-red-500" />
+                        <CircleX solid className="w-6 h-6 text-red-500" />
                       ) : null}
                     </div>
                   )}
@@ -128,9 +128,9 @@ export default function QuestionDisplay({
               }`}
             >
               {isCorrect ? (
-                <HiCheckCircle className="w-5 h-5" />
+                <CircleCheck solid className="w-5 h-5" />
               ) : (
-                <HiXCircle className="w-5 h-5" />
+                <CircleX solid className="w-5 h-5" />
               )}
             </div>
             <div className="flex-1">
@@ -158,7 +158,7 @@ export default function QuestionDisplay({
               {question.explanation && (
                 <div className="text-sm text-muted-foreground mt-2">
                   <div className="flex items-start">
-                    <HiLightBulb className="w-4 h-4 text-primary mr-2 mt-0.5 flex-shrink-0" />
+                    <Lightbulb className="w-4 h-4 text-primary mr-2 mt-0.5 flex-shrink-0" />
                     <div>
                       <span className="font-semibold text-primary">
                         Giải thích:

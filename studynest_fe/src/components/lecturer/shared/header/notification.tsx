@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Bell, Clock } from "lucide-react";
+import { Bell, Clock } from "pulsoicon-react";
 import { Badge } from "@/components/ui";
 import api from "@/lib/utils/fetcher/client/axios";
 import { useRealtimeNotiStore } from "@/stores/notifications";

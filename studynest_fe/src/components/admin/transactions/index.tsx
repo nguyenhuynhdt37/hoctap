@@ -10,14 +10,14 @@ import {
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import {
-  HiArrowDown,
-  HiArrowUp,
-  HiClock,
-  HiCurrencyDollar,
-  HiRefresh,
-  HiSearch,
-  HiSortAscending,
-} from "react-icons/hi";
+  ArrowDown,
+  ArrowUp,
+  Clock,
+  CircleDollarSign,
+  RefreshCw,
+  Search,
+  ArrowDownWideNarrow,
+} from "pulsoicon-react";
 import useSWR from "swr";
 
 const formatCurrency = (value: number) =>
@@ -189,7 +189,7 @@ export default function AdminTransactions() {
             onClick={() => mutate()}
             className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
           >
-            <HiRefresh className="w-5 h-5" />
+            <RefreshCw className="w-5 h-5" />
             Tải lại
           </button>
         </div>
@@ -199,7 +199,7 @@ export default function AdminTransactions() {
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-5">
             <div className="flex items-center gap-3 mb-2">
               <div className="h-10 w-10 rounded-lg bg-green-100 flex items-center justify-center">
-                <HiArrowDown className="w-6 h-6 text-green-600" />
+                <ArrowDown className="w-6 h-6 text-green-600" />
               </div>
               <div className="text-sm font-semibold text-gray-700">
                 Tổng tiền vào
@@ -212,7 +212,7 @@ export default function AdminTransactions() {
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-5">
             <div className="flex items-center gap-3 mb-2">
               <div className="h-10 w-10 rounded-lg bg-red-100 flex items-center justify-center">
-                <HiArrowUp className="w-6 h-6 text-red-600" />
+                <ArrowUp className="w-6 h-6 text-red-600" />
               </div>
               <div className="text-sm font-semibold text-gray-700">
                 Tổng tiền ra
@@ -225,7 +225,7 @@ export default function AdminTransactions() {
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-5">
             <div className="flex items-center gap-3 mb-2">
               <div className="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center">
-                <HiCurrencyDollar className="w-6 h-6 text-gray-700" />
+                <CircleDollarSign className="w-6 h-6 text-gray-700" />
               </div>
               <div className="text-sm font-semibold text-gray-700">
                 Tổng giao dịch
@@ -242,7 +242,7 @@ export default function AdminTransactions() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <div className="col-span-1 md:col-span-2">
               <div className="relative">
-                <HiSearch className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" />
+                <Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Tìm theo user, email, khóa học, order_id, transaction_code..."
@@ -330,7 +330,7 @@ export default function AdminTransactions() {
               />
             </div>
             <div className="flex items-center gap-2">
-              <HiSortAscending className="w-5 h-5 text-gray-500" />
+              <ArrowDownWideNarrow className="w-5 h-5 text-gray-500" />
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
@@ -414,7 +414,7 @@ export default function AdminTransactions() {
                         <td className="px-6 py-4">
                           <div className="flex items-center justify-between gap-2 text-sm text-gray-700">
                             <div className="flex items-center gap-2">
-                              <HiClock className="w-4 h-4 text-gray-400" />
+                              <Clock animated={false} className="w-4 h-4 text-gray-400" />
                               <span>{formatDateTime(t.created_at)}</span>
                             </div>
                             <button

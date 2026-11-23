@@ -5,7 +5,7 @@ import { CloudBlob, GlassCard, IconBubble } from "@/components/user/home/landing
 import { mayPortrait, StudyImage } from "@/components/user/home/study-image";
 import { useGamificationStats, useRewardInventory } from "@/lib/learning-hub/mission-hooks";
 import type { RewardInventory } from "@/lib/learning-hub/mission-types";
-import { Copy, Gift, Coins, Ticket } from "lucide-react";
+import { Copy, Gift, Coins, Ticket } from "pulsoicon-react";
 import { useEffect, useId, useState } from "react";
 import { number, SectionLoading, vietnamTimeZone } from "../home/section";
 import { HubLoadError } from "../hub-page-state";

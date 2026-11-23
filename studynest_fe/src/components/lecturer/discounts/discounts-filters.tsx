@@ -11,7 +11,7 @@ import {
   SlidersHorizontal,
   Tag,
   X,
-} from "lucide-react";
+} from "pulsoicon-react";
 
 const DISCOUNT_TYPE_OPTIONS = [
   { value: "", label: "Tất cả" },
@@ -252,6 +252,7 @@ export function DiscountsFilters({
                     Tìm: <strong>&ldquo;{search}&rdquo;</strong>
                   </span>
                   <button
+                    aria-label="Xóa tìm kiếm"
                     type="button"
                     onClick={() => onSearchChange("")}
                     className="hover:opacity-75 transition-opacity"
@@ -276,6 +277,7 @@ export function DiscountsFilters({
                     </strong>
                   </span>
                   <button
+                    aria-label="Xóa lọc"
                     type="button"
                     onClick={() => onDiscountTypeChange("")}
                     className="hover:opacity-75 transition-opacity"
@@ -299,6 +301,7 @@ export function DiscountsFilters({
                     </strong>
                   </span>
                   <button
+                    aria-label="Xóa lọc"
                     type="button"
                     onClick={() => onIsActiveChange(null)}
                     className="hover:opacity-75 transition-opacity"
@@ -322,6 +325,7 @@ export function DiscountsFilters({
                     </strong>
                   </span>
                   <button
+                    aria-label="Xóa lọc"
                     type="button"
                     onClick={() => onValidityChange("")}
                     className="hover:opacity-75 transition-opacity"

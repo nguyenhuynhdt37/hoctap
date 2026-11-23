@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { mayPortrait, StudyImage } from "@/components/user/home/study-image";
 import type { Mission } from "@/lib/learning-hub/mission-types";
 import { cn } from "@/lib/utils";
-import { BookOpen, CalendarDays, Check, ClipboardList, Code2, Flag, Gift, Coins, Trophy, Zap, type LucideIcon } from "lucide-react";
+import { BookOpen, CalendarDays, Check, ClipboardList, Code2, Flag, Gift, Coins, Trophy, Zap, type PulsoIcon } from "pulsoicon-react";
 import { useState } from "react";
 import { hubErrorMessage, isHubUnavailable } from "@/lib/learning-hub/errors";
 import { HubLoadError } from "../hub-page-state";
@@ -17,7 +17,7 @@ import type { useDailyLearningState } from "./use-daily-learning-state";
 
 type DailyLearningState = ReturnType<typeof useDailyLearningState>;
 
-const icons: Partial<Record<Mission["template"], LucideIcon>> = {
+const icons: Partial<Record<Mission["template"], PulsoIcon>> = {
   "lesson.completed": BookOpen,
   "quiz.completed": ClipboardList,
   "code.completed": Code2,

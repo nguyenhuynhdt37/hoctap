@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Cloud, LifeBuoy, LogOut, ShieldAlert } from "lucide-react";
+import { Cloud, LifeBuoy, LogOut, ShieldAlert } from "pulsoicon-react";
 import { Button } from "@/components/ui";
 import { CloudBlob, GlassCard, IconBubble } from "@/components/user/home/landing-ui";
 import { logoutEverywhere } from "@/lib/auth/logout";

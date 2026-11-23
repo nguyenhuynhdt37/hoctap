@@ -3,7 +3,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import useSWR from "swr";
 import Link from "next/link";
-import { BookOpen, RotateCcw, Search, Star } from "lucide-react";
+import { BookOpen, RotateCcw, Search, Star } from "pulsoicon-react";
 import { Badge, Button, Card, EmptyState, Input, Skeleton } from "@/components/ui";
 import api from "@/lib/utils/fetcher/client/axios";
 import { handleImageError } from "@/lib/utils/helpers/image";

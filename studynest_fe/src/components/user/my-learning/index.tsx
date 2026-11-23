@@ -7,7 +7,7 @@ import {
   Clock,
   GraduationCap,
   TrendingUp,
-} from "lucide-react";
+} from "pulsoicon-react";
 import { Badge, Card } from "@/components/ui";
 import { CourseListPanel } from "./course-list-panel";
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { HiArrowDown, HiArrowUp, HiSearch, HiX } from "react-icons/hi";
+import { ArrowDown, ArrowUp, Search, X } from "pulsoicon-react";
 
 interface NotificationsToolbarProps {
   searchQuery: string;
@@ -51,7 +51,7 @@ export function NotificationsToolbar({
   return (
     <div className="rounded-xl border border-border bg-surface p-4 shadow-sm space-y-4">
       <div className="relative">
-        <HiSearch className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-primary" />
+        <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-primary" />
         <input
           type="text"
           value={searchQuery}
@@ -61,10 +61,11 @@ export function NotificationsToolbar({
         />
         {searchQuery && (
           <button
+            aria-label="Xóa nội dung tìm kiếm"
             onClick={() => onSearchChange("")}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-subtle-foreground hover:text-muted-foreground"
           >
-            <HiX className="h-4 w-4" />
+            <X className="h-4 w-4" />
           </button>
         )}
       </div>
@@ -112,12 +113,12 @@ export function NotificationsToolbar({
         >
           {orderDir === "asc" ? (
             <>
-              <HiArrowUp className="h-4 w-4" />
+              <ArrowUp className="h-4 w-4" />
               Tăng dần
             </>
           ) : (
             <>
-              <HiArrowDown className="h-4 w-4" />
+              <ArrowDown className="h-4 w-4" />
               Giảm dần
             </>
           )}

@@ -13,7 +13,7 @@ import {
   Pencil,
   Trash2,
   XCircle,
-} from "lucide-react";
+} from "pulsoicon-react";
 import { useRouter } from "next/navigation";
 
 const formatDateTime = (value?: string | null) => {
@@ -292,6 +292,7 @@ export function DiscountsTable({
                       <DropdownMenu.Root>
                         <DropdownMenu.Trigger asChild>
                           <button
+                            aria-label="Thao tác"
                             type="button"
                             className="p-2 bg-primary hover:bg-primary-hover text-primary-foreground rounded-xl transition-colors shadow-soft-xs"
                             title="Thao tác"
@@ -313,7 +314,7 @@ export function DiscountsTable({
                                 router.push(`/lecturer/discounts/${record.id}`)
                               }
                             >
-                              <Eye className="h-4 w-4 text-primary" />
+                              <Eye animated={false} className="h-4 w-4 text-primary" />
                               <span>Xem chi tiết</span>
                             </DropdownMenu.Item>
 
@@ -326,7 +327,7 @@ export function DiscountsTable({
                                 )
                               }
                             >
-                              <Pencil className="h-4 w-4 text-primary" />
+                              <Pencil animated={false} className="h-4 w-4 text-primary" />
                               <span>Chỉnh sửa</span>
                             </DropdownMenu.Item>
 
@@ -343,12 +344,12 @@ export function DiscountsTable({
                             >
                               {record.is_active ? (
                                 <>
-                                  <XCircle className="h-4 w-4 text-warning-foreground" />
+                                  <XCircle animated={false} className="h-4 w-4 text-warning-foreground" />
                                   <span>Tắt mã giảm giá</span>
                                 </>
                               ) : (
                                 <>
-                                  <CheckCircle2 className="h-4 w-4 text-success-foreground" />
+                                  <CheckCircle2 animated={false} className="h-4 w-4 text-success-foreground" />
                                   <span>Bật mã giảm giá</span>
                                 </>
                               )}
@@ -370,7 +371,7 @@ export function DiscountsTable({
                                     }
                                   }}
                                 >
-                                  <Trash2 className="h-4 w-4" />
+                                  <Trash2 animated={false} className="h-4 w-4" />
                                   <span>Xóa mã giảm giá</span>
                                 </DropdownMenu.Item>
                               </>

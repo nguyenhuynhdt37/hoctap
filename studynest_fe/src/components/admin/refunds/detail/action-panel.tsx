@@ -1,4 +1,4 @@
-import { HiClock } from "react-icons/hi";
+import { Clock } from "pulsoicon-react";
 
 interface ActionPanelProps {
   comment: string;
@@ -18,7 +18,7 @@ export function ActionPanel({
   return (
     <div className="bg-white rounded-xl border border-green-200 shadow-sm p-6">
       <div className="flex items-center gap-3 mb-4">
-        <HiClock className="h-6 w-6 text-yellow-500" />
+        <Clock className="h-6 w-6 text-yellow-500" />
         <div>
           <p className="text-base font-semibold text-gray-900">
             Yêu cầu đang chờ phản hồi của bạn

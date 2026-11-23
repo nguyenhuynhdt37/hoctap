@@ -4,7 +4,7 @@ import { MissionBoard } from "@/components/learning-hub/missions/mission-board";
 import { RewardShelf } from "@/components/learning-hub/missions/reward-shelf";
 import { Reveal, SectionShell } from "@/components/user/home/landing-ui";
 import { StudyImage } from "@/components/user/home/study-image";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "@/components/ui/server-icons";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {

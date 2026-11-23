@@ -1,7 +1,7 @@
 "use client";
 
 import { ReactNode } from "react";
-import { HiChevronDown, HiChevronUp } from "react-icons/hi";
+import { ChevronDown, ChevronUp } from "pulsoicon-react";
 import { cn } from "@/lib/utils";
 
 export interface Column<T> {
@@ -86,12 +86,12 @@ export default function DataTable<T extends Record<string, any>>({
                         <span>{column.title}</span>
                         {isSorted &&
                           (order === "asc" ? (
-                            <HiChevronUp
+                            <ChevronUp
                               className="w-4 h-4 text-primary"
                               aria-hidden="true"
                             />
                           ) : (
-                            <HiChevronDown
+                            <ChevronDown
                               className="w-4 h-4 text-primary"
                               aria-hidden="true"
                             />

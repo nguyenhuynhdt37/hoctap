@@ -4,7 +4,7 @@ import { Alert, Badge, Button, Card, EmptyState, Skeleton } from "@/components/u
 import type { BadgeVariant } from "@/components/ui/badge";
 import api from "@/lib/utils/fetcher/client/axios";
 import { getImageUrl } from "@/lib/utils/helpers/image";
-import { ArrowDown, ArrowUp, Banknote, Plus } from "lucide-react";
+import { ArrowDown, ArrowUp, Banknote, Plus } from "pulsoicon-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";

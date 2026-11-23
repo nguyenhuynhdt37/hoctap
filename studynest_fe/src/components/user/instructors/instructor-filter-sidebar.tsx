@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useMemo } from "react";
-import { Filter, RotateCcw, Star } from "lucide-react";
+import { Filter, RotateCcw, Star } from "pulsoicon-react";
 import { Badge, Button, Modal } from "@/components/ui";
 import type { BrowseGradeOption, InstructorFilterOptions } from "@/types/user/instructor";
 

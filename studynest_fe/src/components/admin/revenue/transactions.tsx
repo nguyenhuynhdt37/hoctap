@@ -7,7 +7,7 @@ import {
 } from "@/types/admin/statistics";
 import { useState } from "react";
 import useSWR from "swr";
-import { HiSearch, HiChevronLeft, HiChevronRight } from "react-icons/hi";
+import { Search, ChevronLeft, ChevronRight } from "pulsoicon-react";
 
 const formatCurrency = (value: number | null | undefined) => {
   if (value === null || value === undefined || isNaN(value)) return "0 ₫";
@@ -210,11 +210,12 @@ export default function RevenueTransactions() {
               </p>
               <div className="flex items-center gap-2">
                 <button
+                  aria-label="Trang trước"
                   onClick={() => setPage(Math.max(1, page - 1))}
                   disabled={page === 1}
                   className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <HiChevronLeft className="w-4 h-4" />
+                  <ChevronLeft className="w-4 h-4" />
                 </button>
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                   let pageNum = i + 1;
@@ -239,11 +240,12 @@ export default function RevenueTransactions() {
                   );
                 })}
                 <button
+                  aria-label="Trang sau"
                   onClick={() => setPage(Math.min(totalPages, page + 1))}
                   disabled={page === totalPages}
                   className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <HiChevronRight className="w-4 h-4" />
+                  <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
             </div>

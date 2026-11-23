@@ -13,17 +13,17 @@ import { Course } from "@/types/user/course_detail";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {
-  HiAcademicCap,
-  HiBookOpen,
-  HiCheckCircle,
-  HiClock,
-  HiGlobe,
-  HiHeart,
-  HiPlay,
-  HiShare,
-  HiShoppingCart,
-  HiCloud,
-} from "react-icons/hi";
+  GraduationCap,
+  BookOpen,
+  CircleCheck,
+  Clock,
+  Earth,
+  Heart,
+  CirclePlay,
+  Share2,
+  ShoppingCart,
+  Cloud,
+} from "pulsoicon-react";
 import EnrollmentModal from "./enrollment-modal";
 
 const DiscountEffect = ({ active = false }: { active?: boolean }) => {
@@ -544,7 +544,7 @@ export default function CourseSidebar({
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   ) : (
                     <>
-                      <HiPlay className="h-5 w-5" />
+                      <CirclePlay solid className="h-5 w-5" />
                       <span>Truy cập bài giảng</span>
                     </>
                   )}
@@ -672,7 +672,7 @@ export default function CourseSidebar({
                     disabled={!courseSlug}
                     className="w-full py-3.5 px-4 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground font-semibold transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs"
                   >
-                    <HiShoppingCart className="h-5 w-5" />
+                    <ShoppingCart className="h-5 w-5" />
                     <span>Đăng ký khóa học ngay</span>
                   </button>
 
@@ -687,7 +687,7 @@ export default function CourseSidebar({
                           : "border border-border text-foreground hover:border-primary-pastel hover:bg-background"
                       }`}
                     >
-                      <HiHeart
+                      <Heart solid
                         className={`h-4 w-4 ${isFavourite ? "fill-current" : ""}`}
                       />
                       <span>
@@ -704,7 +704,7 @@ export default function CourseSidebar({
                       onClick={handleShare}
                       className="flex-1 border border-border text-foreground py-2.5 px-4 rounded-xl text-sm font-medium hover:border-primary-pastel hover:bg-background transition-colors flex items-center justify-center gap-2 cursor-pointer"
                     >
-                      <HiShare className="h-4 w-4" />
+                      <Share2 className="h-4 w-4" />
                       <span>Chia sẻ</span>
                     </button>
                   </div>
@@ -725,7 +725,7 @@ export default function CourseSidebar({
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   ) : (
                     <>
-                      <HiPlay className="h-5 w-5" />
+                      <CirclePlay solid className="h-5 w-5" />
                       <span>Bắt đầu học miễn phí</span>
                     </>
                   )}
@@ -742,7 +742,7 @@ export default function CourseSidebar({
                         : "border border-border text-foreground hover:border-primary-pastel hover:bg-background"
                     }`}
                   >
-                    <HiHeart
+                    <Heart solid
                       className={`h-4 w-4 ${isFavourite ? "fill-current" : ""}`}
                     />
                     <span>{isFavourite ? "Đã lưu" : "Yêu thích"}</span>
@@ -753,7 +753,7 @@ export default function CourseSidebar({
                     onClick={handleShare}
                     className="flex-1 border border-border text-foreground py-2.5 px-4 rounded-xl text-sm font-medium hover:border-primary-pastel hover:bg-background transition-colors flex items-center justify-center gap-2 cursor-pointer"
                   >
-                    <HiShare className="h-4 w-4" />
+                    <Share2 className="h-4 w-4" />
                     <span>Chia sẻ</span>
                   </button>
                 </div>
@@ -770,7 +770,7 @@ export default function CourseSidebar({
 
           <div className="flex justify-between items-center py-2 border-b border-border/70">
             <span className="flex items-center gap-2 text-muted-foreground">
-              <HiClock className="w-4 h-4 text-primary" />
+              <Clock className="w-4 h-4 text-primary" />
               <span>Thời lượng</span>
             </span>
             <span className="font-semibold text-foreground">
@@ -780,7 +780,7 @@ export default function CourseSidebar({
 
           <div className="flex justify-between items-center py-2 border-b border-border/70">
             <span className="flex items-center gap-2 text-muted-foreground">
-              <HiBookOpen className="w-4 h-4 text-primary" />
+              <BookOpen className="w-4 h-4 text-primary" />
               <span>Số bài giảng</span>
             </span>
             <span className="font-semibold text-foreground">
@@ -790,7 +790,7 @@ export default function CourseSidebar({
 
           <div className="flex justify-between items-center py-2 border-b border-border/70">
             <span className="flex items-center gap-2 text-muted-foreground">
-              <HiAcademicCap className="w-4 h-4 text-primary" />
+              <GraduationCap className="w-4 h-4 text-primary" />
               <span>Trình độ</span>
             </span>
             <span className="font-semibold text-foreground">
@@ -806,7 +806,7 @@ export default function CourseSidebar({
 
           <div className="flex justify-between items-center py-2 border-b border-border/70">
             <span className="flex items-center gap-2 text-muted-foreground">
-              <HiGlobe className="w-4 h-4 text-primary" />
+              <Earth className="w-4 h-4 text-primary" />
               <span>Ngôn ngữ giảng dạy</span>
             </span>
             <span className="font-semibold text-foreground">Tiếng Việt</span>
@@ -814,7 +814,7 @@ export default function CourseSidebar({
 
           <div className="flex justify-between items-center pt-2">
             <span className="flex items-center gap-2 text-muted-foreground">
-              <HiCheckCircle className="w-4 h-4 text-primary" />
+              <CircleCheck solid className="w-4 h-4 text-primary" />
               <span>Trợ giảng Mây Mây AI</span>
             </span>
             <span className="font-semibold text-primary">Hỗ trợ 24/7</span>

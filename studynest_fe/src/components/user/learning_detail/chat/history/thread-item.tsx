@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useState } from "react";
-import { HiTrash } from "react-icons/hi";
+import { Trash2 } from "pulsoicon-react";
 import { ChatSession, TutorScope } from "@/types/user/tutor-chat";
 import api from "@/lib/utils/fetcher/client/axios";
 
@@ -134,7 +134,7 @@ function ChatHistoryItem({
           className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-all flex-shrink-0"
           aria-label="Xóa cuộc trò chuyện"
         >
-          <HiTrash className="w-4 h-4" />
+          <Trash2 className="w-4 h-4" />
         </button>
       </div>
     </div>

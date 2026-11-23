@@ -13,7 +13,7 @@ import {
   useState,
 } from "react";
 import { createPortal } from "react-dom";
-import { HiStar, HiUsers } from "react-icons/hi";
+import { Star, Users } from "pulsoicon-react";
 
 const CourseCard = ({
   course,
@@ -192,13 +192,13 @@ const CourseCard = ({
           <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3">
             {typeof course.rating === "number" && course.rating > 0 && (
               <span className="inline-flex items-center gap-1 font-semibold text-warning-foreground">
-                <HiStar className="w-4 h-4 fill-current" />
+                <Star solid className="w-4 h-4 fill-current" />
                 {course.rating.toFixed(1)}
               </span>
             )}
             {typeof course.students === "number" && course.students > 0 && (
               <span className="inline-flex items-center gap-1">
-                <HiUsers className="w-3.5 h-3.5 text-primary" />
+                <Users className="w-3.5 h-3.5 text-primary" />
                 {course.students.toLocaleString("vi-VN")} học viên
               </span>
             )}

@@ -3,7 +3,7 @@
 import { useRealtimeNotiStore } from "@/stores/notifications";
 import { useEffect, useRef } from "react";
 import toast from "react-hot-toast";
-import { Bell } from "lucide-react";
+import { Bell } from "pulsoicon-react";
 
 export function NotificationToastListener() {
   const live = useRealtimeNotiStore((s) => s.latestLiveNotification);

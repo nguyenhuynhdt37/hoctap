@@ -4,7 +4,7 @@ import ContextMenu from "@/components/shared/context-menu";
 import api from "@/lib/utils/fetcher/client/axios";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { HiClock, HiRefresh, HiSearch, HiSortAscending } from "react-icons/hi";
+import { Clock, RefreshCw, Search, ArrowDownWideNarrow } from "pulsoicon-react";
 import useSWR from "swr";
 
 type PlatformWalletHistoryItem = {
@@ -170,7 +170,7 @@ export default function PlatformWalletHistory() {
             onClick={() => mutate()}
             className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
           >
-            <HiRefresh className="w-5 h-5" />
+            <RefreshCw className="w-5 h-5" />
             Tải lại
           </button>
         </div>
@@ -180,7 +180,7 @@ export default function PlatformWalletHistory() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <div className="col-span-1 md:col-span-2">
               <div className="relative">
-                <HiSearch className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" />
+                <Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Tìm theo ghi chú..."
@@ -204,7 +204,7 @@ export default function PlatformWalletHistory() {
               <option value="refund">Hoàn tiền</option>
             </select>
             <div className="flex items-center gap-2">
-              <HiSortAscending className="w-5 h-5 text-gray-500" />
+              <ArrowDownWideNarrow className="w-5 h-5 text-gray-500" />
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
@@ -319,7 +319,7 @@ export default function PlatformWalletHistory() {
                         <td className="px-6 py-4">
                           <div className="flex items-center justify-between gap-2 text-sm text-gray-700">
                             <div className="flex items-center gap-2">
-                              <HiClock className="w-4 h-4 text-gray-400" />
+                              <Clock animated={false} className="w-4 h-4 text-gray-400" />
                               <span>{formatDateTime(item.created_at)}</span>
                             </div>
                             <button

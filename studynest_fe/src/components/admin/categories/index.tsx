@@ -8,13 +8,13 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import {
-  HiChevronDown,
-  HiChevronUp,
-  HiPencil,
-  HiPlus,
-  HiSearch,
-  HiX,
-} from "react-icons/hi";
+  ChevronDown,
+  ChevronUp,
+  Pencil,
+  Plus,
+  Search,
+  X,
+} from "pulsoicon-react";
 import useSWR from "swr";
 
 interface PaginatedResponse {
@@ -276,7 +276,7 @@ const Categories = () => {
             disabled={isValidating}
             className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <HiPlus className="w-5 h-5" />
+            <Plus className="w-5 h-5" />
             Thêm danh mục
           </button>
         </div>
@@ -290,7 +290,7 @@ const Categories = () => {
                 Tìm kiếm
               </label>
               <div className="relative">
-                <HiSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="text"
                   value={searchInput}
@@ -727,7 +727,7 @@ function EditCategoryModal({
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                  <HiPencil className="w-5 h-5 text-white" />
+                  <Pencil className="w-5 h-5 text-white" />
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-white">
@@ -739,10 +739,11 @@ function EditCategoryModal({
                 </div>
               </div>
               <button
+                aria-label="Đóng"
                 onClick={onClose}
                 className="w-8 h-8 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-colors"
               >
-                <HiX className="w-5 h-5 text-white" />
+                <X className="w-5 h-5 text-white" />
               </button>
             </div>
           </div>
@@ -800,9 +801,9 @@ function EditCategoryModal({
                         📋 Thông tin danh mục cha đã chọn
                       </span>
                       {showParentInfo ? (
-                        <HiChevronUp className="w-5 h-5 text-blue-600" />
+                        <ChevronUp className="w-5 h-5 text-blue-600" />
                       ) : (
-                        <HiChevronDown className="w-5 h-5 text-blue-600" />
+                        <ChevronDown className="w-5 h-5 text-blue-600" />
                       )}
                     </button>
 

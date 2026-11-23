@@ -1,5 +1,5 @@
 import { Card, EmptyState } from "@/components/ui";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw } from "pulsoicon-react";
 
 export function RefundRequestsEmpty() {
   return (

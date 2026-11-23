@@ -4,21 +4,21 @@ import { uploadFile } from "@/lib/uploadFile";
 import { sanitizeEditableLearningHtml } from "@/components/shared/markdown-renderer/safe-html";
 import { useEffect, useRef, useState } from "react";
 import {
-  FaAlignCenter,
-  FaAlignJustify,
-  FaAlignLeft,
-  FaAlignRight,
-  FaBold,
-  FaCode,
-  FaImage,
-  FaItalic,
-  FaLink,
-  FaListOl,
-  FaListUl,
-  FaQuoteLeft,
-  FaSpinner,
-  FaUnderline,
-} from "react-icons/fa";
+  AlignCenter,
+  AlignJustify,
+  AlignLeft,
+  AlignRight,
+  Bold,
+  CodeXml,
+  Image,
+  Italic,
+  Link,
+  ListOrdered,
+  List,
+  Quote,
+  SpinnerGap,
+  Underline,
+} from "pulsoicon-react";
 import "./editor.css";
 
 interface RichTextEditorProps {
@@ -451,30 +451,33 @@ export const RichTextEditor = ({
         {/* Text Formatting */}
         <div className="flex gap-1">
           <button
+            aria-label="In đậm"
             type="button"
             onClick={() => execCommandWithFeedback("bold")}
             className="p-2 text-foreground hover:bg-primary-light rounded transition-colors"
             title="In đậm"
           >
-            <FaBold className="w-4 h-4" />
+            <Bold className="w-4 h-4" />
           </button>
 
           <button
+            aria-label="In nghiêng"
             type="button"
             onClick={() => execCommandWithFeedback("italic")}
             className="p-2 text-foreground hover:bg-primary-light rounded transition-colors"
             title="In nghiêng"
           >
-            <FaItalic className="w-4 h-4" />
+            <Italic className="w-4 h-4" />
           </button>
 
           <button
+            aria-label="Gạch chân"
             type="button"
             onClick={() => execCommandWithFeedback("underline")}
             className="p-2 text-foreground hover:bg-primary-light rounded transition-colors"
             title="Gạch chân"
           >
-            <FaUnderline className="w-4 h-4" />
+            <Underline className="w-4 h-4" />
           </button>
         </div>
 
@@ -515,21 +518,23 @@ export const RichTextEditor = ({
         {/* Lists */}
         <div className="flex gap-1">
           <button
+            aria-label="Danh sách có dấu đầu dòng"
             type="button"
             onClick={() => execCommandWithFeedback("insertUnorderedList")}
             className="p-2 text-foreground hover:bg-primary-light rounded transition-colors"
             title="Danh sách có dấu đầu dòng"
           >
-            <FaListUl className="w-4 h-4" />
+            <List className="w-4 h-4" />
           </button>
 
           <button
+            aria-label="Danh sách có số thứ tự"
             type="button"
             onClick={() => execCommandWithFeedback("insertOrderedList")}
             className="p-2 text-foreground hover:bg-primary-light rounded transition-colors"
             title="Danh sách có số thứ tự"
           >
-            <FaListOl className="w-4 h-4" />
+            <ListOrdered className="w-4 h-4" />
           </button>
         </div>
 
@@ -538,39 +543,43 @@ export const RichTextEditor = ({
         {/* Alignment */}
         <div className="flex gap-1">
           <button
+            aria-label="Căn trái"
             type="button"
             onClick={() => execCommandWithFeedback("justifyLeft")}
             className="p-2 text-foreground hover:bg-primary-light rounded transition-colors"
             title="Căn trái"
           >
-            <FaAlignLeft className="w-4 h-4" />
+            <AlignLeft className="w-4 h-4" />
           </button>
 
           <button
+            aria-label="Căn giữa"
             type="button"
             onClick={() => execCommandWithFeedback("justifyCenter")}
             className="p-2 text-foreground hover:bg-primary-light rounded transition-colors"
             title="Căn giữa"
           >
-            <FaAlignCenter className="w-4 h-4" />
+            <AlignCenter className="w-4 h-4" />
           </button>
 
           <button
+            aria-label="Căn phải"
             type="button"
             onClick={() => execCommandWithFeedback("justifyRight")}
             className="p-2 text-foreground hover:bg-primary-light rounded transition-colors"
             title="Căn phải"
           >
-            <FaAlignRight className="w-4 h-4" />
+            <AlignRight className="w-4 h-4" />
           </button>
 
           <button
+            aria-label="Căn đều"
             type="button"
             onClick={() => execCommandWithFeedback("justifyFull")}
             className="p-2 text-foreground hover:bg-primary-light rounded transition-colors"
             title="Căn đều"
           >
-            <FaAlignJustify className="w-4 h-4" />
+            <AlignJustify className="w-4 h-4" />
           </button>
         </div>
 
@@ -579,21 +588,23 @@ export const RichTextEditor = ({
         {/* Special Elements */}
         <div className="flex gap-1">
           <button
+            aria-label="Trích dẫn"
             type="button"
             onClick={() => execCommandWithFeedback("formatBlock", "blockquote")}
             className="p-2 text-foreground hover:bg-primary-light rounded transition-colors"
             title="Trích dẫn"
           >
-            <FaQuoteLeft className="w-4 h-4" />
+            <Quote className="w-4 h-4" />
           </button>
 
           <button
+            aria-label="Chèn code block"
             type="button"
             onClick={insertCodeBlock}
             className="p-2 text-foreground hover:bg-primary-light rounded transition-colors"
             title="Chèn code block"
           >
-            <FaCode className="w-4 h-4" />
+            <CodeXml className="w-4 h-4" />
           </button>
         </div>
 
@@ -602,15 +613,17 @@ export const RichTextEditor = ({
         {/* Media */}
         <div className="flex gap-1">
           <button
+            aria-label="Chèn liên kết"
             type="button"
             onClick={insertLink}
             className="p-2 text-foreground hover:bg-primary-light rounded transition-colors"
             title="Chèn liên kết"
           >
-            <FaLink className="w-4 h-4" />
+            <Link className="w-4 h-4" />
           </button>
 
           <button
+            aria-label="Chèn hình ảnh"
             type="button"
             onClick={insertImage}
             disabled={uploading}
@@ -618,9 +631,9 @@ export const RichTextEditor = ({
             title="Chèn hình ảnh"
           >
             {uploading ? (
-              <FaSpinner className="w-4 h-4 animate-spin" />
+              <SpinnerGap animated={false} className="w-4 h-4 animate-spin" />
             ) : (
-              <FaImage className="w-4 h-4" />
+              <Image className="w-4 h-4" />
             )}
           </button>
         </div>
@@ -647,7 +660,7 @@ export const RichTextEditor = ({
       {uploading && (
         <div className="upload-overlay">
           <div className="flex items-center">
-            <FaSpinner className="w-8 h-8 text-primary animate-spin mr-2" />
+            <SpinnerGap animated={false} className="w-8 h-8 text-primary animate-spin mr-2" />
             <p className="text-foreground font-semibold">Đang tải ảnh lên...</p>
           </div>
         </div>

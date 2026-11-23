@@ -5,7 +5,7 @@ import { showToast } from "@/lib/utils/helpers/toast";
 import { Category } from "@/types/admin/category";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { HiArrowLeft, HiCheckCircle, HiPlus, HiXCircle } from "react-icons/hi";
+import { ArrowLeft, CircleCheck, Plus, CircleX } from "pulsoicon-react";
 import useSWR from "swr";
 
 const CreateCategory = () => {
@@ -64,10 +64,11 @@ const CreateCategory = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
+              aria-label="Về danh sách danh mục"
               onClick={() => router.push("/admin/categories")}
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              <HiArrowLeft className="w-6 h-6 text-gray-600" />
+              <ArrowLeft className="w-6 h-6 text-gray-600" />
             </button>
             <div>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
@@ -86,7 +87,7 @@ const CreateCategory = () => {
           <div className="bg-gradient-to-r from-green-500 to-emerald-600 px-6 py-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                <HiPlus className="w-6 h-6 text-white" />
+                <Plus className="w-6 h-6 text-white" />
               </div>
               <div>
                 <h2 className="text-lg font-semibold text-white">
@@ -175,7 +176,7 @@ const CreateCategory = () => {
               {name.trim() && (
                 <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-2xl p-4 animate-in fade-in slide-in-from-top-2 duration-200">
                   <div className="flex items-center gap-2 mb-3">
-                    <HiCheckCircle className="w-5 h-5 text-green-600" />
+                    <CircleCheck solid className="w-5 h-5 text-green-600" />
                     <h3 className="font-semibold text-green-800">
                       Xem trước danh mục
                     </h3>
@@ -222,7 +223,7 @@ const CreateCategory = () => {
                 disabled={isSubmitting}
                 className="flex items-center gap-2 px-6 py-3 text-gray-600 hover:text-gray-800 border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <HiXCircle className="w-5 h-5" />
+                <CircleX solid className="w-5 h-5" />
                 Hủy
               </button>
               <button
@@ -230,7 +231,7 @@ const CreateCategory = () => {
                 disabled={isSubmitting || !name.trim()}
                 className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-lg transition-all font-semibold shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <HiPlus className="w-5 h-5" />
+                <Plus className="w-5 h-5" />
                 {isSubmitting ? "Đang tạo..." : "Tạo danh mục"}
               </button>
             </div>

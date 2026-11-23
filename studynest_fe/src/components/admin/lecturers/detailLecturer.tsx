@@ -13,21 +13,21 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import {
-  HiAcademicCap,
-  HiArrowLeft,
-  HiBan,
-  HiCheckCircle,
-  HiCurrencyDollar,
-  HiEye,
-  HiPencil,
-  HiStar,
-  HiTrash,
-  HiUser,
-  HiUserRemove,
-  HiUsers,
-  HiX,
-  HiXCircle,
-} from "react-icons/hi";
+  GraduationCap,
+  ArrowLeft,
+  Ban,
+  CircleCheck,
+  CircleDollarSign,
+  Eye,
+  Pencil,
+  Star,
+  Trash2,
+  User,
+  UserMinus,
+  Users,
+  X,
+  CircleX,
+} from "pulsoicon-react";
 import useSWR from "swr";
 
 const formatDate = (dateString: string) =>
@@ -218,7 +218,7 @@ export default function DetailLecturer({ lecturerId }: { lecturerId: string }) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
         <div className="text-center">
-          <HiXCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <CircleX solid className="w-16 h-16 text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">
             Không tìm thấy giảng viên
           </h2>
@@ -251,10 +251,11 @@ export default function DetailLecturer({ lecturerId }: { lecturerId: string }) {
         <div className="mb-6 flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-4">
             <button
+              aria-label="Quay lại"
               onClick={() => router.back()}
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              <HiArrowLeft className="w-6 h-6 text-gray-600" />
+              <ArrowLeft className="w-6 h-6 text-gray-600" />
             </button>
             <div>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-emerald-600 bg-clip-text text-transparent">
@@ -270,7 +271,7 @@ export default function DetailLecturer({ lecturerId }: { lecturerId: string }) {
                 disabled={isSubmitting}
                 className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover disabled:opacity-50 flex items-center gap-2 transition-colors"
               >
-                <HiBan className="w-4 h-4" />
+                <Ban className="w-4 h-4" />
                 Mở chặn
               </button>
             ) : (
@@ -279,7 +280,7 @@ export default function DetailLecturer({ lecturerId }: { lecturerId: string }) {
                 disabled={isSubmitting}
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 flex items-center gap-2 transition-colors"
               >
-                <HiBan className="w-4 h-4" />
+                <Ban className="w-4 h-4" />
                 Cấm giảng viên
               </button>
             )}
@@ -288,14 +289,14 @@ export default function DetailLecturer({ lecturerId }: { lecturerId: string }) {
               disabled={isSubmitting}
               className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 disabled:opacity-50 flex items-center gap-2 transition-colors"
             >
-              <HiUserRemove className="w-4 h-4" />
+              <UserMinus className="w-4 h-4" />
               Gỡ quyền GV
             </button>
             <button
               onClick={() => router.push(`/admin/lecturers/${lecturerId}/edit`)}
               className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover flex items-center gap-2 transition-colors"
             >
-              <HiPencil className="w-4 h-4" />
+              <Pencil className="w-4 h-4" />
               Chỉnh sửa
             </button>
             <button
@@ -303,7 +304,7 @@ export default function DetailLecturer({ lecturerId }: { lecturerId: string }) {
               disabled={isSubmitting || data.is_verified_email}
               className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 flex items-center gap-2 transition-colors"
             >
-              <HiTrash className="w-4 h-4" />
+              <Trash2 className="w-4 h-4" />
               Xóa
             </button>
           </div>
@@ -345,17 +346,17 @@ export default function DetailLecturer({ lecturerId }: { lecturerId: string }) {
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <StatCard
-            icon={HiAcademicCap}
+            icon={GraduationCap}
             label="Tổng khóa học"
             value={coursesData?.total_items || 0}
           />
           <StatCard
-            icon={HiUsers}
+            icon={Users}
             label="Tổng học viên"
             value={totalStudents}
           />
-          <StatCard icon={HiStar} label="Đánh giá TB" value={avgRating} />
-          <StatCard icon={HiEye} label="Tổng lượt xem" value={totalViews} />
+          <StatCard icon={Star} label="Đánh giá TB" value={avgRating} />
+          <StatCard icon={Eye} label="Tổng lượt xem" value={totalViews} />
         </div>
 
         {/* Main Content */}
@@ -363,7 +364,7 @@ export default function DetailLecturer({ lecturerId }: { lecturerId: string }) {
           {/* Personal Info */}
           <div className="bg-white rounded-xl shadow-sm border border-green-200 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <HiUser className="w-5 h-5 text-primary" />
+              <User className="w-5 h-5 text-primary" />
               Thông tin cá nhân
             </h3>
             <div className="space-y-3">
@@ -388,7 +389,7 @@ export default function DetailLecturer({ lecturerId }: { lecturerId: string }) {
           {/* Wallet Info */}
           <div className="bg-white rounded-xl shadow-sm border border-green-200 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <HiCurrencyDollar className="w-5 h-5 text-primary" />
+              <CircleDollarSign className="w-5 h-5 text-primary" />
               Thông tin ví
             </h3>
             <div className="space-y-3">
@@ -415,7 +416,7 @@ export default function DetailLecturer({ lecturerId }: { lecturerId: string }) {
           {/* Upgrade Payment */}
           <div className="bg-white rounded-xl shadow-sm border border-green-200 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <HiCheckCircle className="w-5 h-5 text-primary" />
+              <CircleCheck solid className="w-5 h-5 text-primary" />
               Nâng cấp giảng viên
             </h3>
             <div className="space-y-3">
@@ -446,7 +447,7 @@ export default function DetailLecturer({ lecturerId }: { lecturerId: string }) {
           <div className="bg-white rounded-xl shadow-sm border border-green-200 p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                <HiAcademicCap className="w-5 h-5 text-primary" />
+                <GraduationCap className="w-5 h-5 text-primary" />
                 Khóa học
               </h3>
               <span className="text-sm text-gray-600">
@@ -535,7 +536,7 @@ export default function DetailLecturer({ lecturerId }: { lecturerId: string }) {
               </>
             ) : (
               <div className="text-center py-8">
-                <HiAcademicCap className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                <GraduationCap className="w-12 h-12 text-gray-400 mx-auto mb-3" />
                 <p className="text-gray-500 text-sm">Chưa có khóa học</p>
               </div>
             )}
@@ -545,7 +546,7 @@ export default function DetailLecturer({ lecturerId }: { lecturerId: string }) {
           <div className="bg-white rounded-xl shadow-sm border border-green-200 p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                <HiCurrencyDollar className="w-5 h-5 text-primary" />
+                <CircleDollarSign className="w-5 h-5 text-primary" />
                 Giao dịch
               </h3>
               <span className="text-sm text-gray-600">
@@ -598,7 +599,7 @@ export default function DetailLecturer({ lecturerId }: { lecturerId: string }) {
               </>
             ) : (
               <div className="text-center py-8">
-                <HiCurrencyDollar className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                <CircleDollarSign className="w-12 h-12 text-gray-400 mx-auto mb-3" />
                 <p className="text-gray-500 text-sm">Chưa có giao dịch</p>
               </div>
             )}
@@ -740,10 +741,11 @@ function BanModal({
             Cấm giảng viên
           </h3>
           <button
+            aria-label="Hủy"
             onClick={onCancel}
             className="p-1 hover:bg-gray-100 rounded transition-colors"
           >
-            <HiX className="w-5 h-5 text-gray-600" />
+            <X className="w-5 h-5 text-gray-600" />
           </button>
         </div>
 
@@ -865,10 +867,11 @@ function DeleteModal({
             Xóa giảng viên
           </h3>
           <button
+            aria-label="Hủy"
             onClick={onCancel}
             className="p-1 hover:bg-gray-100 rounded transition-colors"
           >
-            <HiX className="w-5 h-5 text-gray-600" />
+            <X className="w-5 h-5 text-gray-600" />
           </button>
         </div>
 
@@ -936,24 +939,25 @@ function CourseModal({
             </h3>
             <div className="flex items-center gap-4 text-sm text-gray-600">
               <span className="flex items-center gap-1">
-                <HiStar className="w-4 h-4 text-yellow-500" />
+                <Star solid className="w-4 h-4 text-yellow-500" />
                 {course.rating_avg}
               </span>
               <span className="flex items-center gap-1">
-                <HiUsers className="w-4 h-4" />
+                <Users className="w-4 h-4" />
                 {course.total_enrolls} học viên
               </span>
               <span className="flex items-center gap-1">
-                <HiEye className="w-4 h-4" />
+                <Eye className="w-4 h-4" />
                 {course.views} lượt xem
               </span>
             </div>
           </div>
           <button
+            aria-label="Đóng"
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded transition-colors"
           >
-            <HiX className="w-5 h-5 text-gray-600" />
+            <X className="w-5 h-5 text-gray-600" />
           </button>
         </div>
 

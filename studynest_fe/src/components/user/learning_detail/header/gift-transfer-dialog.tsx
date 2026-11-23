@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Alert } from "@/components/ui/states";
 import api from "@/lib/utils/fetcher/client/axios";
 import { useEffect, useId, useRef, useState } from "react";
-import { HiCloud } from "react-icons/hi";
+import { Cloud } from "pulsoicon-react";
 
 interface GiftRecipient {
   user_id: string;
@@ -154,7 +154,7 @@ export default function GiftTransferDialog({
           <div className="flex items-start justify-between gap-3 border-b border-border bg-background/70 px-5 py-4">
             <div className="flex min-w-0 items-start gap-3">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-primary-pastel bg-primary-light text-primary">
-                <HiCloud className="h-5 w-5" />
+                <Cloud className="h-5 w-5" />
               </span>
               <div className="min-w-0">
                 <h2 id={titleId} className="text-base font-semibold text-foreground">

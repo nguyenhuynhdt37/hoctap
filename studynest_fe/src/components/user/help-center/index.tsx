@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { HiAcademicCap, HiBookOpen, HiChat, HiDocumentText, HiInformationCircle, HiQuestionMarkCircle, HiShieldCheck } from "react-icons/hi";
+import { GraduationCap, BookOpen, MessageCircle, FileText, Info, CircleHelp, ShieldCheck } from "pulsoicon-react";
 import { AboutSection } from "./sections/about-section";
 import { BlogSection } from "./sections/blog-section";
 import { ContactSection } from "./sections/contact-section";
@@ -21,16 +21,16 @@ interface HelpMenuItem {
 }
 
 const helpMenuItems: HelpMenuItem[] = [
-  { id: "help", label: "Trung tâm trợ giúp", icon: HiQuestionMarkCircle },
-  { id: "terms", label: "Điều khoản sử dụng", icon: HiDocumentText },
-  { id: "privacy-policy", label: "Chính sách bảo mật", icon: HiShieldCheck },
-  { id: "privacy", label: "Quyền riêng tư", icon: HiShieldCheck },
-  { id: "faq", label: "FAQ", icon: HiQuestionMarkCircle },
-  { id: "about", label: "Giới thiệu", icon: HiInformationCircle },
-  { id: "instructors", label: "Giảng viên", icon: HiAcademicCap },
-  { id: "contact", label: "Liên hệ", icon: HiChat },
-  { id: "support", label: "Hỗ trợ", icon: HiChat },
-  { id: "blog", label: "Blog", icon: HiBookOpen },
+  { id: "help", label: "Trung tâm trợ giúp", icon: CircleHelp },
+  { id: "terms", label: "Điều khoản sử dụng", icon: FileText },
+  { id: "privacy-policy", label: "Chính sách bảo mật", icon: ShieldCheck },
+  { id: "privacy", label: "Quyền riêng tư", icon: ShieldCheck },
+  { id: "faq", label: "FAQ", icon: CircleHelp },
+  { id: "about", label: "Giới thiệu", icon: Info },
+  { id: "instructors", label: "Giảng viên", icon: GraduationCap },
+  { id: "contact", label: "Liên hệ", icon: MessageCircle },
+  { id: "support", label: "Hỗ trợ", icon: MessageCircle },
+  { id: "blog", label: "Blog", icon: BookOpen },
 ];
 
 interface HelpCenterProps {

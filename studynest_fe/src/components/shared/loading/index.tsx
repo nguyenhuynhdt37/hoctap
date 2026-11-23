@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { Cloud } from "lucide-react";
+import { Cloud } from "pulsoicon-react";
 import { cn } from "@/lib/utils";
 
 const quotes = [

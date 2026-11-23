@@ -17,7 +17,7 @@ import {
   Video,
   XCircle,
   CheckCircle2,
-} from "lucide-react";
+} from "pulsoicon-react";
 import useSWR from "swr";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -936,6 +936,7 @@ const CreateQuizLesson = () => {
                     <div className="flex items-center gap-2">
                       {quizzes.length > 1 && (
                         <button
+                          aria-label="Xóa câu hỏi"
                           type="button"
                           onClick={() => {
                             removeQuiz(activeQuizIndex);
@@ -1115,6 +1116,7 @@ const CreateQuizLesson = () => {
                                   </div>
                                   {quiz.options.length > 2 && (
                                     <button
+                                      aria-label="Xóa phương án"
                                       type="button"
                                       onClick={() =>
                                         removeOption(
@@ -1132,7 +1134,7 @@ const CreateQuizLesson = () => {
                                 {option.is_correct && (
                                   <div className="mt-3">
                                     <Badge variant="success" size="sm">
-                                      <CheckCircle2 className="h-3.5 w-3.5 mr-1 inline" />
+                                      <CheckCircle2 animated={false} className="h-3.5 w-3.5 mr-1 inline" />
                                       Đây là đáp án đúng
                                     </Badge>
                                   </div>
@@ -1280,7 +1282,7 @@ const CreateQuizLesson = () => {
                             >
                               <div className="flex items-center gap-2">
                                 {option.is_correct && (
-                                  <CheckCircle2 className="h-4 w-4 text-success-foreground flex-shrink-0" />
+                                  <CheckCircle2 animated={false} className="h-4 w-4 text-success-foreground flex-shrink-0" />
                                 )}
                                 <p
                                   className={`text-sm ${

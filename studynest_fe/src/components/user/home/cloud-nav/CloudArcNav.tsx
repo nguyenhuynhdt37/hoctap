@@ -34,8 +34,8 @@ import {
   UserRoundPlus,
   UsersRound,
   X,
-  type LucideIcon,
-} from "lucide-react";
+  type PulsoIcon,
+} from "pulsoicon-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -85,7 +85,7 @@ const GRADE_LINKS = {
   primary: { href: GRADE_CATALOG_PATH.primary, icon: Cloud, tone: "vanilla" },
   middle: { href: GRADE_CATALOG_PATH.secondary, icon: Lightbulb, tone: "pink" },
   high: { href: GRADE_CATALOG_PATH.highschool, icon: GraduationCap, tone: "lavender" },
-} satisfies Record<LevelId, { href: string; icon: LucideIcon; tone: Tone }>;
+} satisfies Record<LevelId, { href: string; icon: PulsoIcon; tone: Tone }>;
 
 const FOCUS_RING =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface";
@@ -100,7 +100,7 @@ const FOCUSABLE = "a[href], button:not([disabled]), input:not([disabled])";
 type NavItem = {
   id: string;
   label: string;
-  icon: LucideIcon;
+  icon: PulsoIcon;
   tone?: Tone;
   meta?: string;
   unread?: number;

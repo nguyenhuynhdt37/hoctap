@@ -17,7 +17,7 @@ import { RevenueStatsResponse, RevenuePeriod } from "@/types/admin/statistics";
 import { useState, useEffect } from "react";
 import useSWR from "swr";
 import Link from "next/link";
-import { HiExternalLink } from "react-icons/hi";
+import { ExternalLink } from "pulsoicon-react";
 
 ChartJS.register(
   CategoryScale,
@@ -159,7 +159,7 @@ export default function RevenueLineChart() {
             href="/admin/revenue"
             className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-primary border border-primary-pastel rounded-xl hover:bg-primary-light transition-colors"
           >
-            <HiExternalLink className="w-4 h-4" />
+            <ExternalLink className="w-4 h-4" />
             Chi tiết
           </Link>
         </div>

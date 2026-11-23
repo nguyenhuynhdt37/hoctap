@@ -1,6 +1,6 @@
 "use client";
 
-import { HiArrowLeft, HiRefresh } from "react-icons/hi";
+import { ArrowLeft, RefreshCw } from "pulsoicon-react";
 import Link from "next/link";
 import RevenueCompare from "./compare";
 import RevenueTransactions from "./transactions";
@@ -30,10 +30,11 @@ export default function RevenueDetail() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Link
+            aria-label="Về bảng quản trị"
             href="/admin"
             className="p-2 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 transition-colors"
           >
-            <HiArrowLeft className="w-5 h-5 text-gray-600" />
+            <ArrowLeft className="w-5 h-5 text-gray-600" />
           </Link>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
@@ -48,7 +49,7 @@ export default function RevenueDetail() {
           onClick={handleRefresh}
           className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
         >
-          <HiRefresh className="w-4 h-4" />
+          <RefreshCw className="w-4 h-4" />
           <span className="text-sm font-medium">Làm mới</span>
         </button>
       </div>

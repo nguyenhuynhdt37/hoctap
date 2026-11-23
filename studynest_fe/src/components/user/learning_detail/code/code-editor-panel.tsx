@@ -2,7 +2,7 @@
 
 import CodeEditor from "@/components/shared/code-editor";
 import { CodeExercise } from "@/types/user/learning";
-import { HiPlay, HiRefresh } from "react-icons/hi";
+import { CirclePlay, RefreshCw } from "pulsoicon-react";
 import FileExplorer from "./file-explorer";
 
 interface File {
@@ -72,7 +72,7 @@ export default function CodeEditorPanel({
               </>
             ) : (
               <>
-                <HiPlay className="w-4 h-4" />
+                <CirclePlay solid className="w-4 h-4" />
                 <span>Chạy</span>
               </>
             )}
@@ -82,7 +82,7 @@ export default function CodeEditorPanel({
             onClick={onResetCode}
             className="flex min-h-11 cursor-pointer items-center gap-1.5 rounded-xl border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-border"
           >
-            <HiRefresh className="w-4 h-4" />
+            <RefreshCw className="w-4 h-4" />
             <span className="hidden sm:inline">Reset</span>
           </button>
         </div>

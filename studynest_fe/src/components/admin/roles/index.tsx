@@ -10,19 +10,19 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import {
-  HiAcademicCap,
-  HiCheckCircle,
-  HiCog,
-  HiEye,
-  HiKey,
-  HiPencil,
-  HiPlus,
-  HiSearch,
-  HiShieldCheck,
-  HiTrash,
-  HiUsers,
-  HiX,
-} from "react-icons/hi";
+  GraduationCap,
+  CircleCheck,
+  Settings,
+  Eye,
+  Key,
+  Pencil,
+  Plus,
+  Search,
+  ShieldCheck,
+  Trash2,
+  Users,
+  X,
+} from "pulsoicon-react";
 import useSWR from "swr";
 
 interface PaginationInfo {
@@ -253,17 +253,17 @@ export default function RolesManagement() {
     switch (roleName.toLowerCase()) {
       case "admin":
       case "quản trị viên":
-        return <HiShieldCheck className="w-5 h-5" />;
+        return <ShieldCheck className="w-5 h-5" />;
       case "teacher":
       case "giảng viên":
-        return <HiAcademicCap className="w-5 h-5" />;
+        return <GraduationCap className="w-5 h-5" />;
       case "student":
       case "học viên":
-        return <HiUsers className="w-5 h-5" />;
+        return <Users className="w-5 h-5" />;
       case "moderator":
-        return <HiCog className="w-5 h-5" />;
+        return <Settings className="w-5 h-5" />;
       default:
-        return <HiKey className="w-5 h-5" />;
+        return <Key className="w-5 h-5" />;
     }
   };
 
@@ -311,7 +311,7 @@ export default function RolesManagement() {
       sortable: true,
       render: (value: number) => (
         <div className="flex items-center space-x-2">
-          <HiUsers className="w-4 h-4 text-gray-400" />
+          <Users className="w-4 h-4 text-gray-400" />
           <span className="font-medium text-gray-900">{value}</span>
         </div>
       ),
@@ -327,6 +327,7 @@ export default function RolesManagement() {
           <div className="flex items-center space-x-1">
             {/* View Button - Always visible */}
             <button
+              aria-label="Xem chi tiết"
               onClick={() => {
                 setSelectedRole(record);
                 setShowEditModal(true);
@@ -334,11 +335,12 @@ export default function RolesManagement() {
               className="p-2 hover:bg-green-50 rounded-lg transition-all duration-200 hover:scale-105 group"
               title="Xem chi tiết"
             >
-              <HiEye className="w-4 h-4 text-gray-500 group-hover:text-green-600 transition-colors duration-200" />
+              <Eye className="w-4 h-4 text-gray-500 group-hover:text-green-600 transition-colors duration-200" />
             </button>
 
             {/* Edit Button - Always show but with different behavior */}
             <button
+              aria-label={ hasUsers ? "Chỉnh sửa mô tả (đang được sử dụng)" : "Chỉnh sửa vai trò" }
               onClick={() => {
                 setSelectedRole(record);
                 setShowEditModal(true);
@@ -352,7 +354,7 @@ export default function RolesManagement() {
                   : "Chỉnh sửa vai trò"
               }
             >
-              <HiPencil
+              <Pencil
                 className={`w-4 h-4 transition-colors duration-200 ${
                   hasUsers
                     ? "text-gray-500 group-hover:text-yellow-600"
@@ -364,6 +366,7 @@ export default function RolesManagement() {
             {/* Delete Button - Only show if no users */}
             {!hasUsers && (
               <button
+                aria-label="Xóa vai trò"
                 onClick={() => {
                   setSelectedRole(record);
                   setShowDeleteModal(true);
@@ -371,7 +374,7 @@ export default function RolesManagement() {
                 className="p-2 hover:bg-red-50 rounded-lg transition-all duration-200 hover:scale-105 group"
                 title="Xóa vai trò"
               >
-                <HiTrash className="w-4 h-4 text-gray-500 group-hover:text-red-600 transition-colors duration-200" />
+                <Trash2 className="w-4 h-4 text-gray-500 group-hover:text-red-600 transition-colors duration-200" />
               </button>
             )}
 
@@ -431,7 +434,7 @@ export default function RolesManagement() {
           onClick={() => router.push("/admin/roles/create")}
             className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
-            <HiPlus className="w-5 h-5" />
+            <Plus className="w-5 h-5" />
             Thêm vai trò
         </button>
       </div>
@@ -445,7 +448,7 @@ export default function RolesManagement() {
                 Tìm kiếm
               </label>
               <div className="relative">
-                <HiSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="text"
                   value={searchQuery}
@@ -709,7 +712,7 @@ function EditRoleModal({
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                  <HiPencil className="w-5 h-5 text-white" />
+                  <Pencil className="w-5 h-5 text-white" />
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-white">
@@ -727,7 +730,7 @@ function EditRoleModal({
           <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-green-50/50">
             <div className="flex items-center space-x-4">
               <div className="w-14 h-14 bg-gradient-to-br from-green-500 via-green-600 to-green-700 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                <HiKey className="w-7 h-7" />
+                <Key className="w-7 h-7" />
               </div>
               <div className="flex-1 min-w-0">
                 <h4 className="font-semibold text-gray-900 text-lg truncate">
@@ -768,7 +771,7 @@ function EditRoleModal({
                 <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4">
                   <div className="flex items-start space-x-3">
                     <div className="w-5 h-5 bg-yellow-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <HiX className="w-3 h-3 text-white" />
+                      <X className="w-3 h-3 text-white" />
                     </div>
                     <div>
                       <div className="font-semibold text-yellow-800 text-sm">
@@ -837,7 +840,7 @@ function EditRoleModal({
                 <div className="bg-green-50 border border-green-200 rounded-2xl p-4">
                   <div className="flex items-center space-x-3">
                     <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
-                      <HiCheckCircle className="w-3 h-3 text-white" />
+                      <CircleCheck solid className="w-3 h-3 text-white" />
                     </div>
                     <div>
                       <div className="font-semibold text-green-800 text-sm">
@@ -951,7 +954,7 @@ function DeleteRoleModal({
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                  <HiTrash className="w-5 h-5 text-white" />
+                  <Trash2 className="w-5 h-5 text-white" />
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-white">
@@ -969,7 +972,7 @@ function DeleteRoleModal({
           <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-red-50/50">
             <div className="flex items-center space-x-4">
               <div className="w-14 h-14 bg-gradient-to-br from-red-400 to-red-500 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                <HiKey className="w-7 h-7" />
+                <Key className="w-7 h-7" />
               </div>
               <div className="flex-1 min-w-0">
                 <h4 className="font-semibold text-gray-900 text-lg truncate">
@@ -1010,7 +1013,7 @@ function DeleteRoleModal({
             <div className="bg-red-50 border border-red-200 rounded-2xl p-4 mb-4">
               <div className="flex items-start space-x-3">
                 <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <HiX className="w-3 h-3 text-white" />
+                  <X className="w-3 h-3 text-white" />
                 </div>
                 <div>
                   <div className="font-semibold text-red-800 text-sm">

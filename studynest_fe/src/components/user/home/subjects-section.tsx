@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import api from "@/lib/utils/fetcher/client/axios";
 import type { CatalogOptionsWithCourseCounts } from "@/types/catalog";
 import { motion, useReducedMotion } from "framer-motion";
-import { ArrowDown, BookOpen, ChevronDown, LayoutGrid, SlidersHorizontal } from "lucide-react";
+import { ArrowDown, BookOpen, ChevronDown, LayoutGrid, SlidersHorizontal } from "pulsoicon-react";
 import { useMemo, useState } from "react";
 import useSWR from "swr";
 import type { SchoolLevelId } from "./grade-levels-section";

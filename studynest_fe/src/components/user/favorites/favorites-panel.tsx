@@ -4,14 +4,14 @@ import api from "@/lib/utils/fetcher/client/axios";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
 import {
-  HiOutlineAdjustments,
-  HiOutlineRefresh,
-  HiOutlineSearch,
-  HiOutlineSwitchVertical,
-  HiX,
-  HiChevronLeft,
-  HiChevronRight,
-} from "react-icons/hi";
+  SlidersHorizontal,
+  RefreshCw,
+  Search,
+  ArrowUpDown,
+  X,
+  ChevronLeft,
+  ChevronRight,
+} from "pulsoicon-react";
 
 import { CourseSkeletonGrid } from "../my-learning/course-skeleton-grid";
 import { CourseEmptyState, CourseErrorState } from "../my-learning/empty-states";
@@ -149,7 +149,7 @@ export const FavoritesPanel = () => {
           {/* Search */}
           <div className="flex-1">
             <div className="relative">
-              <HiOutlineSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
                 type="text"
                 value={keyword}
@@ -159,10 +159,11 @@ export const FavoritesPanel = () => {
               />
               {keyword && (
                 <button
+                  aria-label="Xóa nội dung tìm kiếm"
                   onClick={() => setKeyword("")}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
                 >
-                  <HiX className="h-5 w-5" />
+                  <X className="h-5 w-5" />
                 </button>
               )}
             </div>
@@ -188,7 +189,7 @@ export const FavoritesPanel = () => {
               className="px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
               aria-label="Đổi chiều sắp xếp"
             >
-              <HiOutlineSwitchVertical className="h-5 w-5 text-gray-600" />
+              <ArrowUpDown className="h-5 w-5 text-gray-600" />
             </button>
           </div>
 
@@ -209,7 +210,7 @@ export const FavoritesPanel = () => {
         <div className="grid gap-3 md:grid-cols-3 mt-4 pt-4 border-t border-gray-100">
           <label className="flex flex-col gap-1 text-sm font-medium text-gray-600">
             <span className="flex items-center gap-1">
-              <HiOutlineAdjustments className="h-4 w-4 text-green-600" />
+              <SlidersHorizontal className="h-4 w-4 text-green-600" />
               Danh mục
             </span>
             <select
@@ -264,7 +265,7 @@ export const FavoritesPanel = () => {
               onClick={clearFilters}
               className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-yellow-600 bg-yellow-50 border border-yellow-200 rounded-lg hover:bg-yellow-100 transition-colors cursor-pointer"
             >
-              <HiOutlineRefresh className="h-4 w-4" />
+              <RefreshCw className="h-4 w-4" />
               Xóa bộ lọc
             </button>
           </div>
@@ -307,11 +308,12 @@ export const FavoritesPanel = () => {
       {!isInitialLoading && !error && totalPages > 1 && (
         <div className="flex items-center justify-center gap-2">
           <button
+            aria-label="Trang trước"
             onClick={() => handlePageChange(page - 1)}
             disabled={page === 1 || isBusy}
             className="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
           >
-            <HiChevronLeft className="h-5 w-5" />
+            <ChevronLeft className="h-5 w-5" />
           </button>
 
           {[...Array(Math.min(5, totalPages))].map((_, i) => {
@@ -342,11 +344,12 @@ export const FavoritesPanel = () => {
           })}
 
           <button
+            aria-label="Trang sau"
             onClick={() => handlePageChange(page + 1)}
             disabled={page === totalPages || isBusy}
             className="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
           >
-            <HiChevronRight className="h-5 w-5" />
+            <ChevronRight className="h-5 w-5" />
           </button>
         </div>
       )}

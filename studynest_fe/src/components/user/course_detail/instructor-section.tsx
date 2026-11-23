@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui";
 import { getImageUrl } from "@/lib/utils/helpers/image";
 import { Instructor } from "@/types/user/course_detail";
 import Link from "next/link";
-import { HiBookOpen, HiStar, HiUserGroup } from "react-icons/hi";
+import { BookOpen, Star, UsersRound } from "pulsoicon-react";
 
 interface InstructorSectionProps {
   instructor: Instructor;
@@ -58,16 +58,16 @@ export default function InstructorSection({
 
           <div className="flex items-center gap-2.5 flex-wrap">
             <Badge variant="default" size="md">
-              <HiBookOpen className="w-3.5 h-3.5 mr-1 inline" />
+              <BookOpen className="w-3.5 h-3.5 mr-1 inline" />
               {instructor.course_count || 0} khóa học
             </Badge>
             <Badge variant="secondary" size="md">
-              <HiUserGroup className="w-3.5 h-3.5 mr-1 inline" />
+              <UsersRound className="w-3.5 h-3.5 mr-1 inline" />
               {(instructor.student_count || 0).toLocaleString("vi-VN")} học viên
             </Badge>
             {instructor.rating_avg ? (
               <Badge variant="vanilla" size="md">
-                <HiStar className="h-3.5 w-3.5 mr-1 inline" />
+                <Star solid className="h-3.5 w-3.5 mr-1 inline" />
                 {instructor.rating_avg.toFixed(1)} (
                 {instructor.evaluated_count || 0} đánh giá)
               </Badge>

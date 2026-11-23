@@ -7,13 +7,13 @@ import type { AdminWithdrawDetail } from "@/types/admin/withdraw";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {
-  HiArrowLeft,
-  HiCheckCircle,
-  HiClock,
-  HiCurrencyDollar,
-  HiUser,
-  HiXCircle,
-} from "react-icons/hi";
+  ArrowLeft,
+  CircleCheck,
+  Clock,
+  CircleDollarSign,
+  User,
+  CircleX,
+} from "pulsoicon-react";
 
 interface Props {
   data: AdminWithdrawDetail;
@@ -46,44 +46,44 @@ const formatDateTime = (val?: string | null) => {
 const getStatusMeta = (status: string) => {
   const meta: Record<
     string,
-    { label: string; class: string; icon: typeof HiCheckCircle }
+    { label: string; class: string; icon: typeof CircleCheck }
   > = {
     pending: {
       label: "Đang chờ",
       class: "bg-yellow-100 text-yellow-700 border-yellow-300",
-      icon: HiClock,
+      icon: Clock,
     },
     approved: {
       label: "Đã duyệt",
       class: "bg-green-100 text-green-700 border-green-300",
-      icon: HiCheckCircle,
+      icon: CircleCheck,
     },
     rejected: {
       label: "Đã từ chối",
       class: "bg-red-100 text-red-700 border-red-300",
-      icon: HiXCircle,
+      icon: CircleX,
     },
     payout_pending: {
       label: "Đang chờ PayPal thanh toán",
       class: "bg-yellow-100 text-yellow-700 border-yellow-300",
-      icon: HiClock,
+      icon: Clock,
     },
     failed: {
       label: "PayPal thanh toán thất bại",
       class: "bg-red-100 text-red-700 border-red-300",
-      icon: HiXCircle,
+      icon: CircleX,
     },
     paid: {
       label: "Đã rút tiền thành công",
       class: "bg-green-100 text-green-700 border-green-300",
-      icon: HiCheckCircle,
+      icon: CircleCheck,
     },
   };
   return (
     meta[status] || {
       label: status,
       class: "bg-gray-100 text-gray-700 border-gray-300",
-      icon: HiClock,
+      icon: Clock,
     }
   );
 };
@@ -135,7 +135,7 @@ export default function AdminWithdrawDetail({ data, onUpdated }: Props) {
           onClick={() => router.back()}
           className="flex items-center gap-2 text-gray-600 hover:text-green-600 transition-colors"
         >
-          <HiArrowLeft className="h-5 w-5" />
+          <ArrowLeft className="h-5 w-5" />
           <span className="font-medium">Quay lại</span>
         </button>
 
@@ -164,7 +164,7 @@ export default function AdminWithdrawDetail({ data, onUpdated }: Props) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div className="p-4 bg-gray-50 rounded-lg">
               <div className="flex items-center gap-2 text-gray-600 mb-2">
-                <HiCurrencyDollar className="h-5 w-5" />
+                <CircleDollarSign className="h-5 w-5" />
                 <span className="text-sm font-medium">Số tiền yêu cầu</span>
               </div>
               <p className="text-2xl font-bold text-gray-900">
@@ -173,7 +173,7 @@ export default function AdminWithdrawDetail({ data, onUpdated }: Props) {
             </div>
             <div className="p-4 bg-gray-50 rounded-lg">
               <div className="flex items-center gap-2 text-gray-600 mb-2">
-                <HiClock className="h-5 w-5" />
+                <Clock className="h-5 w-5" />
                 <span className="text-sm font-medium">Thời gian yêu cầu</span>
               </div>
               <p className="text-lg font-semibold text-gray-900">
@@ -183,7 +183,7 @@ export default function AdminWithdrawDetail({ data, onUpdated }: Props) {
             {data.paypal_batch_id && (
               <div className="p-4 bg-gray-50 rounded-lg">
                 <div className="flex items-center gap-2 text-gray-600 mb-2">
-                  <HiCheckCircle className="h-5 w-5" />
+                  <CircleCheck solid className="h-5 w-5" />
                   <span className="text-sm font-medium">PayPal Batch ID</span>
                 </div>
                 <p className="text-sm font-mono text-gray-900">
@@ -196,7 +196,7 @@ export default function AdminWithdrawDetail({ data, onUpdated }: Props) {
           {canAction && (
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
               <div className="flex items-center gap-3 mb-3">
-                <HiClock className="h-5 w-5 text-yellow-600" />
+                <Clock className="h-5 w-5 text-yellow-600" />
                 <p className="font-semibold text-gray-900">
                   Yêu cầu đang chờ xử lý
                 </p>
@@ -231,7 +231,7 @@ export default function AdminWithdrawDetail({ data, onUpdated }: Props) {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-gray-50 rounded-lg p-6">
               <div className="flex items-center gap-3 mb-4">
-                <HiUser className="h-5 w-5 text-green-600" />
+                <User className="h-5 w-5 text-green-600" />
                 <h2 className="text-lg font-bold text-gray-900">Giảng viên</h2>
               </div>
               <div className="flex items-center gap-4">
@@ -259,7 +259,7 @@ export default function AdminWithdrawDetail({ data, onUpdated }: Props) {
 
             <div className="bg-gray-50 rounded-lg p-6">
               <div className="flex items-center gap-3 mb-4">
-                <HiCurrencyDollar className="h-5 w-5 text-green-600" />
+                <CircleDollarSign className="h-5 w-5 text-green-600" />
                 <h2 className="text-lg font-bold text-gray-900">Ví</h2>
               </div>
               <div className="space-y-3">

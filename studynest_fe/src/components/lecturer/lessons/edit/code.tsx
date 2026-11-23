@@ -32,7 +32,7 @@ import {
   Video,
   X,
   Zap,
-} from "lucide-react";
+} from "pulsoicon-react";
 import useSWR from "swr";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -2312,7 +2312,7 @@ const EditCodeLesson = () => {
       <div className="min-h-screen bg-background">
         <div className="max-w-4xl mx-auto px-4 py-12">
           <div className="flex items-center justify-center gap-2.5">
-            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+            <Loader2 animated={false} className="h-5 w-5 animate-spin text-primary" />
             <span className="text-sm font-medium text-muted-foreground">
               Đang tải...
             </span>
@@ -2402,7 +2402,7 @@ const EditCodeLesson = () => {
               <p className="leading-relaxed">{successMessage}</p>
               {successMessage.includes("chuyển hướng") && (
                 <div className="flex items-center gap-2 text-xs text-success-foreground/80">
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 animated={false} className="h-4 w-4 animate-spin" />
                   <span>Đang chuyển hướng về trang quản lý bài học...</span>
                 </div>
               )}
@@ -2542,6 +2542,7 @@ const EditCodeLesson = () => {
                       </div>
                       {exercises.length > 1 && (
                         <button
+                          aria-label="Xóa bài code"
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -2753,7 +2754,7 @@ const EditCodeLesson = () => {
                   </label>
                   {isLoadingLanguages ? (
                     <div className="flex items-center justify-center gap-2 py-8">
-                      <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                      <Loader2 animated={false} className="h-5 w-5 animate-spin text-primary" />
                       <span className="text-sm text-muted-foreground">
                         Đang tải danh sách ngôn ngữ...
                       </span>
@@ -2823,7 +2824,7 @@ const EditCodeLesson = () => {
                           }))
                         }
                       >
-                        <Code2
+                        <Code2 animated={false}
                           className={`h-4 w-4 flex-shrink-0 ${
                             activeExercise.activeFileId === file.id
                               ? "text-primary-hover"
@@ -2844,6 +2845,7 @@ const EditCodeLesson = () => {
                         )}
                         {activeExercise.codeFiles.length > 1 && (
                           <button
+                            aria-label="Xóa tệp"
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
@@ -2868,6 +2870,7 @@ const EditCodeLesson = () => {
                         Explorer
                       </span>
                       <button
+                        aria-label="New File"
                         type="button"
                         onClick={addCodeFile}
                         className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
@@ -2897,7 +2900,7 @@ const EditCodeLesson = () => {
                               )
                             }
                           >
-                            <Code2
+                            <Code2 animated={false}
                               className={`h-4 w-4 flex-shrink-0 ${
                                 activeExercise.activeFileId === file.id
                                   ? "text-primary-hover"
@@ -2942,6 +2945,7 @@ const EditCodeLesson = () => {
                                 )}
                                 <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 flex-shrink-0">
                                   <button
+                                    aria-label="Rename"
                                     type="button"
                                     onClick={(e) => {
                                       e.stopPropagation();
@@ -2954,6 +2958,7 @@ const EditCodeLesson = () => {
                                   </button>
                                   {activeExercise.codeFiles.length > 1 && (
                                     <button
+                                      aria-label="Delete"
                                       type="button"
                                       onClick={(e) => {
                                         e.stopPropagation();
@@ -3089,6 +3094,7 @@ const EditCodeLesson = () => {
                       </span>
                     </div>
                     <button
+                      aria-label="Đóng kết quả kiểm thử"
                       type="button"
                       onClick={() =>
                         handleExerciseChange(activeExerciseIndex, (ex) => ({
@@ -3189,7 +3195,7 @@ const EditCodeLesson = () => {
                         className="border-t border-border pt-4"
                       >
                         <div className="flex items-center gap-1.5 text-primary-hover mb-2 font-semibold text-sm">
-                          <Terminal className="h-3.5 w-3.5" />
+                          <Terminal animated={false} className="h-3.5 w-3.5" />
                           <span>Test Case {detail.index}</span>
                         </div>
                         <div className="ml-4 space-y-2 text-sm text-foreground">
@@ -3311,7 +3317,7 @@ const EditCodeLesson = () => {
                             }))
                           }
                         >
-                          <Code2
+                          <Code2 animated={false}
                             className={`h-4 w-4 flex-shrink-0 ${
                               activeExercise.activeStarterFileId === file.id
                                 ? "text-primary-hover"
@@ -3365,7 +3371,7 @@ const EditCodeLesson = () => {
                                 )
                               }
                             >
-                              <Code2
+                              <Code2 animated={false}
                                 className={`h-4 w-4 flex-shrink-0 ${
                                   activeExercise.activeStarterFileId === file.id
                                     ? "text-primary-hover"
@@ -3491,6 +3497,7 @@ const EditCodeLesson = () => {
                           </label>
                           {activeExercise.testCases.length > 1 && (
                             <button
+                              aria-label="Xóa test case"
                               type="button"
                               onClick={() => removeTestCase(testCase.id)}
                               className="p-1.5 rounded-lg text-destructive-foreground hover:bg-destructive-bg transition-colors cursor-pointer"

@@ -3,14 +3,14 @@
 import { memo } from "react";
 import { TutorScope, MessageSource } from "@/types/user/tutor-chat";
 import {
-  HiPlay,
-  HiDocumentText,
-  HiCode,
-  HiQuestionMarkCircle,
-  HiLink,
-  HiPhotograph,
-  HiVideoCamera,
-} from "react-icons/hi";
+  CirclePlay,
+  FileText,
+  Code,
+  CircleHelp,
+  Link,
+  Image,
+  Video,
+} from "pulsoicon-react";
 import {
   HoverCard,
   HoverCardContent,
@@ -286,7 +286,7 @@ function formatTime(seconds?: number): string {
 function getSourceIcon(source: MessageSource) {
   switch (source.source_type) {
     case "video":
-      return HiPlay;
+      return CirclePlay;
     case "resource":
       const title = (source.resource_title || "").toLowerCase();
       if (
@@ -294,25 +294,25 @@ function getSourceIcon(source: MessageSource) {
         title.includes("youtube") ||
         title.includes("mp4")
       ) {
-        return HiVideoCamera;
+        return Video;
       }
       if (
         title.includes("image") ||
         title.includes("png") ||
         title.includes("jpg")
       ) {
-        return HiPhotograph;
+        return Image;
       }
       if (source.resource_url?.startsWith("http")) {
-        return HiLink;
+        return Link;
       }
-      return HiDocumentText;
+      return FileText;
     case "code":
-      return HiCode;
+      return Code;
     case "quiz":
-      return HiQuestionMarkCircle;
+      return CircleHelp;
     default:
-      return HiDocumentText;
+      return FileText;
   }
 }
 

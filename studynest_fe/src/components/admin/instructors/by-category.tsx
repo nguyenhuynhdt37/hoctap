@@ -4,11 +4,11 @@ import api from "@/lib/utils/fetcher/client/axios";
 import { InstructorByCategoryResponse } from "@/types/admin/statistics";
 import { getImageUrl } from "@/lib/utils/helpers/image";
 import {
-  HiUser,
-  HiBookOpen,
-  HiUserGroup,
-  HiCurrencyDollar,
-} from "react-icons/hi";
+  User,
+  BookOpen,
+  UsersRound,
+  CircleDollarSign,
+} from "pulsoicon-react";
 import useSWR from "swr";
 
 const formatCurrency = (value: number | null | undefined) => {
@@ -71,11 +71,11 @@ export default function InstructorByCategory() {
               {/* Stats Row */}
               <div className="flex gap-4 mb-4 text-sm">
                 <div className="flex items-center gap-1 text-gray-600">
-                  <HiUserGroup className="w-4 h-4 text-emerald-500" />
+                  <UsersRound animated={false} className="w-4 h-4 text-emerald-500" />
                   <span>{cat.instructor_count} GV</span>
                 </div>
                 <div className="flex items-center gap-1 text-gray-600">
-                  <HiBookOpen className="w-4 h-4 text-teal-500" />
+                  <BookOpen animated={false} className="w-4 h-4 text-teal-500" />
                   <span>{cat.total_courses} khóa</span>
                 </div>
               </div>
@@ -100,7 +100,7 @@ export default function InstructorByCategory() {
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center bg-green-100">
-                            <HiUser className="w-3 h-3 text-green-600" />
+                            <User animated={false} className="w-3 h-3 text-green-600" />
                           </div>
                         )}
                       </div>

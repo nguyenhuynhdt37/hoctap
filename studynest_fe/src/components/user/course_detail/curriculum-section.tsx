@@ -3,11 +3,11 @@
 import { Badge } from "@/components/ui";
 import { Section } from "@/types/user/course_detail";
 import {
-  HiBookOpen,
-  HiChevronDown,
-  HiChevronUp,
-  HiPlay,
-} from "react-icons/hi";
+  BookOpen,
+  ChevronDown,
+  ChevronUp,
+  CirclePlay,
+} from "pulsoicon-react";
 
 interface CurriculumSectionProps {
   sections: Section[];
@@ -58,12 +58,12 @@ export default function CurriculumSection({
           >
             {expandAll ? (
               <>
-                <HiChevronUp className="h-4 w-4" />
+                <ChevronUp className="h-4 w-4" />
                 <span>Thu gọn tất cả</span>
               </>
             ) : (
               <>
-                <HiChevronDown className="h-4 w-4" />
+                <ChevronDown className="h-4 w-4" />
                 <span>Mở rộng tất cả</span>
               </>
             )}
@@ -104,9 +104,9 @@ export default function CurriculumSection({
 
                 <span className="w-8 h-8 rounded-full bg-surface border border-border flex items-center justify-center text-muted-foreground shrink-0">
                   {isExpanded ? (
-                    <HiChevronUp className="h-4 w-4 text-primary" />
+                    <ChevronUp className="h-4 w-4 text-primary" />
                   ) : (
-                    <HiChevronDown className="h-4 w-4" />
+                    <ChevronDown className="h-4 w-4" />
                   )}
                 </span>
               </button>
@@ -122,7 +122,7 @@ export default function CurriculumSection({
                         <span className="w-6 h-6 bg-background border border-border rounded-full flex items-center justify-center text-[11px] font-bold text-muted-foreground shrink-0">
                           {index + 1}
                         </span>
-                        <HiPlay className="h-4 w-4 text-primary shrink-0" />
+                        <CirclePlay solid animated={false} className="h-4 w-4 text-primary shrink-0" />
                         <span className="text-foreground text-sm font-medium truncate">
                           {lesson.title}
                         </span>
@@ -142,7 +142,7 @@ export default function CurriculumSection({
 
                       <div className="flex items-center gap-2.5 shrink-0">
                         <Badge variant="default" size="sm">
-                          <HiBookOpen className="w-3 h-3 mr-1 inline" />
+                          <BookOpen animated={false} className="w-3 h-3 mr-1 inline" />
                           {lesson.lesson_type === "video" ? "Video" : "Bài học"}
                         </Badge>
                         {lesson.duration ? (

@@ -9,7 +9,7 @@ import {
   Search,
   SlidersHorizontal,
   X,
-} from "lucide-react";
+} from "pulsoicon-react";
 import { Button, Card, Input, Select } from "@/components/ui";
 import api from "@/lib/utils/fetcher/client/axios";
 import type {

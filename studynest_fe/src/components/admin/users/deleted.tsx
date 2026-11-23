@@ -12,17 +12,17 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import {
-  HiAcademicCap,
-  HiArrowLeft,
-  HiCheckCircle,
-  HiCog,
-  HiEye,
-  HiRefresh,
-  HiSearch,
-  HiTrash,
-  HiX,
-  HiXCircle,
-} from "react-icons/hi";
+  GraduationCap,
+  ArrowLeft,
+  CircleCheck,
+  Settings,
+  Eye,
+  RefreshCw,
+  Search,
+  Trash2,
+  X,
+  CircleX,
+} from "pulsoicon-react";
 import useSWR from "swr";
 
 export default function UsersDeletedManagement() {
@@ -213,11 +213,12 @@ export default function UsersDeletedManagement() {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
           <button
+            aria-label="Quay lại"
             onClick={() => window.history.back()}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors duration-200"
             title="Quay lại"
           >
-            <HiArrowLeft className="w-6 h-6 text-gray-600" />
+            <ArrowLeft className="w-6 h-6 text-gray-600" />
           </button>
             <div className="flex items-center gap-4">
           <div>
@@ -244,7 +245,7 @@ export default function UsersDeletedManagement() {
             onClick={() => mutate()}
               className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-lg transition-all duration-200"
           >
-            <HiRefresh className="w-4 h-4" />
+            <RefreshCw className="w-4 h-4" />
               Làm mới
           </button>
             <button
@@ -266,7 +267,7 @@ export default function UsersDeletedManagement() {
                 Tìm kiếm
               </label>
               <div className="relative">
-                <HiSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="text"
                   value={searchInput}
@@ -447,7 +448,7 @@ export default function UsersDeletedManagement() {
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                       <div className="flex items-center justify-center space-x-1">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                          <HiTrash className="w-3 h-3 mr-1" />
+                          <Trash2 animated={false} className="w-3 h-3 mr-1" />
                           Đã xóa
                   </span>
                         {user.is_verified_email ? (
@@ -470,11 +471,12 @@ export default function UsersDeletedManagement() {
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                       <div className="flex items-center justify-center gap-2">
                     <button
+                          aria-label="Thao tác"
                           onClick={() => handleUserAction(user)}
                           className="p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
                           title="Thao tác"
                     >
-                          <HiCog className="w-5 h-5" />
+                          <Settings className="w-5 h-5" />
                     </button>
                   </div>
                     </td>
@@ -623,7 +625,7 @@ function DeletedUserActionsModal({
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                  <HiTrash className="w-5 h-5 text-white" />
+                  <Trash2 className="w-5 h-5 text-white" />
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-white">
@@ -635,10 +637,11 @@ function DeletedUserActionsModal({
                 </div>
               </div>
               <button
+                aria-label="Đóng"
                 onClick={onClose}
                 className="p-2 hover:bg-white/20 rounded-full transition-all duration-200 group"
               >
-                <HiX className="w-5 h-5 text-white group-hover:rotate-90 transition-transform duration-200" />
+                <X className="w-5 h-5 text-white group-hover:rotate-90 transition-transform duration-200" />
               </button>
             </div>
           </div>
@@ -696,7 +699,7 @@ function DeletedUserActionsModal({
                 className="w-full flex items-center space-x-4 p-4 text-left hover:bg-blue-50 rounded-2xl transition-all duration-200 group border border-transparent hover:border-blue-200 hover:shadow-md"
               >
                 <div className="p-3 bg-blue-100 rounded-xl group-hover:bg-blue-200 transition-colors duration-200">
-                  <HiEye className="w-5 h-5 text-blue-600" />
+                  <Eye className="w-5 h-5 text-blue-600" />
                 </div>
                 <div className="flex-1">
                   <div className="font-semibold text-gray-900">
@@ -716,7 +719,7 @@ function DeletedUserActionsModal({
             <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-2xl">
               <div className="flex items-start space-x-3">
                 <div className="w-5 h-5 bg-gray-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <HiTrash className="w-3 h-3 text-white" />
+                  <Trash2 className="w-3 h-3 text-white" />
                 </div>
                 <div>
                   <div className="font-semibold text-gray-800 text-sm">
@@ -810,7 +813,7 @@ function DeletedUserDetailsModal({
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                  <HiEye className="w-5 h-5 text-white" />
+                  <Eye className="w-5 h-5 text-white" />
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-white">
@@ -822,10 +825,11 @@ function DeletedUserDetailsModal({
                 </div>
               </div>
               <button
+                aria-label="Đóng"
                 onClick={onClose}
                 className="p-2 hover:bg-white/20 rounded-full transition-all duration-200 group"
               >
-                <HiX className="w-5 h-5 text-white group-hover:rotate-90 transition-transform duration-200" />
+                <X className="w-5 h-5 text-white group-hover:rotate-90 transition-transform duration-200" />
               </button>
             </div>
           </div>
@@ -912,7 +916,7 @@ function DeletedUserDetailsModal({
                       Số khóa học
                     </label>
                     <div className="flex items-center space-x-2">
-                      <HiAcademicCap className="w-4 h-4 text-gray-400" />
+                      <GraduationCap className="w-4 h-4 text-gray-400" />
                       <span className="text-sm text-gray-900 font-medium">
                         {user.total_courses}
                       </span>

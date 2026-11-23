@@ -5,7 +5,7 @@ import { GlassCard, Pill, Reveal, SectionHeader, SectionShell } from "@/componen
 import { mayPortrait, StudyImage } from "@/components/user/home/study-image";
 import { useHubCourseMastery, useHubMasteryCourses } from "@/lib/learning-hub/hooks";
 import type { MasteryStatus } from "@/lib/learning-hub/types";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown } from "pulsoicon-react";
 import { useState } from "react";
 import { HubLoadError } from "./hub-page-state";
 import { HomeLink, SectionLoading } from "./home/section";

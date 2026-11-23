@@ -13,7 +13,7 @@ import React, {
   useState,
   Suspense,
 } from "react";
-import { HiBookOpen } from "react-icons/hi";
+import { BookOpen } from "pulsoicon-react";
 import useSWR from "swr";
 import { TutorChatPanel, ResizablePanel } from "./chat";
 import FooterControls from "./FooterControls";
@@ -435,7 +435,7 @@ function LearningDetail(props: LearningDetailProps) {
             className="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse shadow-sm"
             suppressHydrationWarning
           >
-            <HiBookOpen className="h-10 w-10 text-white" />
+            <BookOpen className="h-10 w-10 text-white" />
           </div>
           <h1 className="text-2xl font-bold text-foreground mb-4">
             Đang tải nội dung khóa học...
@@ -458,7 +458,7 @@ function LearningDetail(props: LearningDetailProps) {
             className="w-20 h-20 bg-gradient-to-r from-red-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-6"
             suppressHydrationWarning
           >
-            <HiBookOpen className="h-10 w-10 text-white" />
+            <BookOpen className="h-10 w-10 text-white" />
           </div>
           <h1 className="text-2xl font-bold text-foreground mb-4">
             Không thể tải nội dung khóa học
@@ -489,7 +489,7 @@ function LearningDetail(props: LearningDetailProps) {
             className="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm"
             suppressHydrationWarning
           >
-            <HiBookOpen className="h-10 w-10 text-white" />
+            <BookOpen className="h-10 w-10 text-white" />
           </div>
           <h1 className="text-2xl font-bold text-foreground mb-4">
             Không tìm thấy khóa học

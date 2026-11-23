@@ -1,7 +1,7 @@
 "use client";
 
 import { Badge, Button } from "@/components/ui";
-import { HiArrowRight, HiCheckCircle, HiLightBulb, HiPlay } from "react-icons/hi";
+import { ArrowRight, CircleCheck, Lightbulb, CirclePlay } from "pulsoicon-react";
 import { LEVELS, SKY_BY_LEVEL, type LevelId, type ThreeHeroFallbackProps } from "./contract";
 
 const sky = SKY_BY_LEVEL.primary;
@@ -48,12 +48,12 @@ export default function ThreeHeroFallback({ onExploreCourses, onSelectGradeLevel
           </p>
           <div className="flex flex-wrap items-center gap-3.5">
             <Button variant="primary" size="lg" onClick={onExploreCourses} className="px-7">
-              <HiPlay className="h-5 w-5" />
+              <CirclePlay solid className="h-5 w-5" />
               Khám phá khóa học
             </Button>
             <Button variant="secondary" size="lg" onClick={() => onSelectGradeLevel("primary")} className="px-6">
               Chọn cấp học
-              <HiArrowRight className="h-5 w-5" />
+              <ArrowRight className="h-5 w-5" />
             </Button>
           </div>
 
@@ -86,11 +86,11 @@ export default function ThreeHeroFallback({ onExploreCourses, onSelectGradeLevel
             <p className="text-xs font-bold uppercase tracking-wider text-accent-foreground">Quiz nhanh</p>
             <p className="mt-1 text-sm font-semibold text-foreground">1/2 + 1/4 = ?</p>
             <div className="mt-3 flex items-center gap-2 rounded-xl bg-surface px-3 py-2 text-sm text-foreground">
-              <HiCheckCircle className="h-4 w-4 text-primary" /> 3/4
+              <CircleCheck solid className="h-4 w-4 text-primary" /> 3/4
             </div>
           </div>
           <div className="absolute bottom-2 left-12 flex max-w-xs -rotate-1 items-start gap-3 rounded-3xl border border-secondary-pastel bg-secondary/90 p-4 shadow-lg backdrop-blur-md">
-            <HiLightBulb aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-secondary-foreground" />
+            <Lightbulb aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-secondary-foreground" />
             <p className="text-sm text-foreground">Mây gợi ý: ôn lại quy đồng mẫu số trước khi làm bài nhé!</p>
           </div>
         </div>

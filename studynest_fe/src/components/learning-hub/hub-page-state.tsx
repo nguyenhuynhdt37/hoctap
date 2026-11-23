@@ -2,7 +2,7 @@
 
 import { Alert, Button, Skeleton } from "@/components/ui";
 import { hubErrorMessage, isHubUnavailable, unavailableMessage } from "@/lib/learning-hub/errors";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw } from "pulsoicon-react";
 
 export function HubLoadError({
   error,

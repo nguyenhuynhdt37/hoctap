@@ -2,7 +2,7 @@
 
 import { getImageUrl } from "@/lib/utils/helpers/image";
 import { useRouter } from "next/navigation";
-import { HiArrowLeft, HiClock, HiCurrencyDollar } from "react-icons/hi";
+import { ArrowLeft, Clock, CircleDollarSign } from "pulsoicon-react";
 
 interface TransactionDetailProps {
   data: any;
@@ -57,7 +57,7 @@ export default function AdminTransactionDetail({
             onClick={() => router.back()}
             className="flex items-center gap-2 text-gray-600 hover:text-green-600 transition-colors mb-4"
           >
-            <HiArrowLeft className="h-5 w-5" />
+            <ArrowLeft className="h-5 w-5" />
             <span className="font-medium">Quay lại</span>
           </button>
           <h1 className="text-3xl font-bold text-gray-900">
@@ -73,7 +73,7 @@ export default function AdminTransactionDetail({
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-5">
             <div className="flex items-center gap-3 mb-2">
               <div className="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center">
-                <HiCurrencyDollar className="w-6 h-6 text-gray-700" />
+                <CircleDollarSign className="w-6 h-6 text-gray-700" />
               </div>
               <div className="text-sm font-semibold text-gray-700">Số tiền</div>
             </div>
@@ -90,7 +90,7 @@ export default function AdminTransactionDetail({
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-5">
             <div className="flex items-center gap-3 mb-2">
               <div className="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center">
-                <HiClock className="w-6 h-6 text-gray-700" />
+                <Clock className="w-6 h-6 text-gray-700" />
               </div>
               <div className="text-sm font-semibold text-gray-700">
                 Thời gian

@@ -164,9 +164,6 @@ importers:
       lowlight:
         specifier: ^3.3.0
         version: 3.3.0
-      lucide-react:
-        specifier: ^0.545.0
-        version: 0.545.0(react@19.2.0)
       markdown-it:
         specifier: ^14.1.0
         version: 14.1.0
@@ -182,6 +179,9 @@ importers:
       marked:
         specifier: ^16.4.1
         version: 16.4.2
+      motion:
+        specifier: 12.23.24
+        version: 12.23.24(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       next:
         specifier: ^16.0.1
         version: 16.0.3(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -191,6 +191,9 @@ importers:
       postcss:
         specifier: ^8.5.32
         version: 8.5.32
+      pulsoicon-react:
+        specifier: 6.2.0
+        version: 6.2.0(motion@12.23.24(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react@19.2.0)
       react:
         specifier: ^19.2.0
         version: 19.2.0
@@ -203,9 +206,6 @@ importers:
       react-hot-toast:
         specifier: ^2.6.0
         version: 2.6.0(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
-      react-icons:
-        specifier: ^5.5.0
-        version: 5.5.0(react@19.2.0)
       react-intersection-observer:
         specifier: ^9.16.0
         version: 9.16.0(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -2181,11 +2181,6 @@ packages:
   lowlight@3.3.0:
     resolution: {integrity: sha512-0JNhgFoPvP6U6lE/UdVsSq99tn6DhjjpAj5MxG49ewd2mOBVtwWYIT8ClyABhq198aXXODMU6Ox8DrGy/CpTZQ==}
 
-  lucide-react@0.545.0:
-    resolution: {integrity: sha512-7r1/yUuflQDSt4f1bpn5ZAocyIxcTyVyBBChSVtBKn5M+392cPmI5YJMWOJKk/HUWGm5wg83chlAZtCcGbEZtw==}
-    peerDependencies:
-      react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
-
   m3u8-parser@4.8.0:
     resolution: {integrity: sha512-UqA2a/Pw3liR6Df3gwxrqghCP17OpPlQj6RBPLYygf/ZSQ4MoSgvdvhvt35qV+3NaaA0FSZx93Ix+2brT1U7cA==}
 
@@ -2289,6 +2284,20 @@ packages:
 
   motion-utils@12.23.6:
     resolution: {integrity: sha512-eAWoPgr4eFEOFfg2WjIsMoqJTW6Z8MTUCgn/GZ3VRpClWBdnbjryiA3ZSNLyxCTmCQx4RmYX6jX1iWHbenUPNQ==}
+
+  motion@12.23.24:
+    resolution: {integrity: sha512-Rc5E7oe2YZ72N//S3QXGzbnXgqNrTESv8KKxABR20q2FLch9gHLo0JLyYo2hZ238bZ9Gx6cWhj9VO0IgwbMjCw==}
+    peerDependencies:
+      '@emotion/is-prop-valid': '*'
+      react: ^18.0.0 || ^19.0.0
+      react-dom: ^18.0.0 || ^19.0.0
+    peerDependenciesMeta:
+      '@emotion/is-prop-valid':
+        optional: true
+      react:
+        optional: true
+      react-dom:
+        optional: true
 
   mpd-parser@0.22.1:
     resolution: {integrity: sha512-fwBebvpyPUU8bOzvhX0VQZgSohncbgYwUyJJoTSNpmy7ccD2ryiCvM7oRkn/xQH5cv73/xU7rJSNCLjdGFor0Q==}
@@ -2514,6 +2523,17 @@ packages:
   proxy-from-env@1.1.0:
     resolution: {integrity: sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==}
 
+  pulsoicon-core@6.2.0:
+    resolution: {integrity: sha512-OzAZ1VCQ2VbtQGFlLYAnxHPOoW37E19zLm0VUrLWy/dvFVNVDDLc9n0GocNXdrqeSFxcDml4y97yI+RCZP8P9w==}
+    peerDependencies:
+      motion: '>=12.0.0'
+
+  pulsoicon-react@6.2.0:
+    resolution: {integrity: sha512-KRmza0CVCadRuVzfZKQJX9LD7z63jNOgTEOqJenJtafEo9GQ4AQFPlUetvPS7RC9XwbxmT3tLWkXrT8/KomNMA==}
+    peerDependencies:
+      motion: '>=12.0.0'
+      react: '>=18.0.0'
+
   punycode.js@2.3.1:
     resolution: {integrity: sha512-uxFIHU0YlHYhDQtV4R9J6a52SLx28BCjT+4ieh7IGbgwVJWO+km431c4yRlREUAsAmt/uMjQUyQHNEPf0M39CA==}
     engines: {node: '>=6'}
@@ -2547,11 +2567,6 @@ packages:
     peerDependencies:
       react: '>=16'
       react-dom: '>=16'
-
-  react-icons@5.5.0:
-    resolution: {integrity: sha512-MEFcXdkP3dLo8uumGI5xN3lDFNsRtrjbOEKDLD7yv76v4wpnEq2Lt2qeHaQOr34I/wPN3s3+N08WkQ+CW37Xiw==}
-    peerDependencies:
-      react: '*'
 
   react-intersection-observer@9.16.0:
     resolution: {integrity: sha512-w9nJSEp+DrW9KmQmeWHQyfaP6b03v+TdXynaoA964Wxt7mdR3An11z4NNCQgL4gKSK7y1ver2Fq+JKH6CWEzUA==}
@@ -4922,10 +4937,6 @@ snapshots:
       devlop: 1.1.0
       highlight.js: 11.11.1
 
-  lucide-react@0.545.0(react@19.2.0):
-    dependencies:
-      react: 19.2.0
-
   m3u8-parser@4.8.0:
     dependencies:
       '@babel/runtime': 7.28.4
@@ -5025,6 +5036,14 @@ snapshots:
       motion-utils: 12.23.6
 
   motion-utils@12.23.6: {}
+
+  motion@12.23.24(react-dom@19.2.0(react@19.2.0))(react@19.2.0):
+    dependencies:
+      framer-motion: 12.23.24(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      tslib: 2.8.1
+    optionalDependencies:
+      react: 19.2.0
+      react-dom: 19.2.0(react@19.2.0)
 
   mpd-parser@0.22.1:
     dependencies:
@@ -5289,6 +5308,16 @@ snapshots:
 
   proxy-from-env@1.1.0: {}
 
+  pulsoicon-core@6.2.0(motion@12.23.24(react-dom@19.2.0(react@19.2.0))(react@19.2.0)):
+    dependencies:
+      motion: 12.23.24(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+
+  pulsoicon-react@6.2.0(motion@12.23.24(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react@19.2.0):
+    dependencies:
+      motion: 12.23.24(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      pulsoicon-core: 6.2.0(motion@12.23.24(react-dom@19.2.0(react@19.2.0))(react@19.2.0))
+      react: 19.2.0
+
   punycode.js@2.3.1: {}
 
   qs@6.14.0:
@@ -5320,10 +5349,6 @@ snapshots:
       goober: 2.1.18(csstype@3.2.1)
       react: 19.2.0
       react-dom: 19.2.0(react@19.2.0)
-
-  react-icons@5.5.0(react@19.2.0):
-    dependencies:
-      react: 19.2.0
 
   react-intersection-observer@9.16.0(react-dom@19.2.0(react@19.2.0))(react@19.2.0):
     dependencies:

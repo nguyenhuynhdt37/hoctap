@@ -2,7 +2,7 @@
 
 import MarkdownRenderer from "@/components/shared/markdown-renderer";
 import { useState } from "react";
-import { HiChevronDown, HiChevronUp } from "react-icons/hi";
+import { ChevronDown, ChevronUp } from "pulsoicon-react";
 
 interface DescriptionSectionProps {
   description: string;
@@ -38,9 +38,9 @@ export default function DescriptionSection({
         >
           <span>{showFull ? "Thu gọn nội dung" : "Xem đầy đủ giới thiệu"}</span>
           {showFull ? (
-            <HiChevronUp className="h-4 w-4" />
+            <ChevronUp className="h-4 w-4" />
           ) : (
-            <HiChevronDown className="h-4 w-4" />
+            <ChevronDown className="h-4 w-4" />
           )}
         </button>
       )}

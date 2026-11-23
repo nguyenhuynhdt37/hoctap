@@ -1,6 +1,6 @@
 "use client";
 
-import { HiXCircle } from "react-icons/hi";
+import { CircleX } from "pulsoicon-react";
 
 const Failed = () => {
   return (
@@ -12,7 +12,7 @@ const Failed = () => {
         >
           <div className="flex justify-center">
             <div className="w-16 h-16 bg-destructive-bg border border-destructive-border rounded-full flex items-center justify-center">
-              <HiXCircle
+              <CircleX solid
                 className="w-10 h-10 text-destructive-foreground"
                 aria-hidden="true"
               />

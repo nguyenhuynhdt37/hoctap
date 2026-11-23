@@ -3,7 +3,7 @@
 import { safeUUID } from "@/lib/utils/uuid";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { HiMicrophone, HiPaperAirplane } from "react-icons/hi";
+import { Mic, Send } from "pulsoicon-react";
 import api from "@/lib/utils/fetcher/client/axios";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/states";
@@ -92,7 +92,7 @@ export default function AccountAssistantPanel() {
   return <div data-agent-private onDragOver={event=>{if(event.dataTransfer.types.includes("Files"))event.preventDefault();}} onDrop={event=>{const files=Array.from(event.dataTransfer.files);if(files.length){event.preventDefault();if(!sending&&!dictating&&!voice?.active)void attachments.add(files);}}} className="relative flex h-full min-h-0 flex-col bg-surface">
     <div className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-2">
       <AssistantSettings />
-      <Button size="sm" variant="pastel" onClick={() => void startVoice()} disabled={agent?.busy || dictating || !attachments.ready} leftIcon={<HiMicrophone />}>{voice?.active ? "Mở lại cuộc gọi" : "Trò chuyện bằng giọng nói"}</Button>
+      <Button size="sm" variant="pastel" onClick={() => void startVoice()} disabled={agent?.busy || dictating || !attachments.ready} leftIcon={<Mic size="1em" />}>{voice?.active ? "Mở lại cuộc gọi" : "Trò chuyện bằng giọng nói"}</Button>
     </div>
     <AgentStatus />
     {error && <Alert variant="warning" className="mx-3 mt-2 text-xs">{error}<Button size="sm" variant="ghost" onClick={() => void load().then(() => setError("")).catch(() => undefined)}>Tải lại</Button></Alert>}
@@ -106,7 +106,7 @@ export default function AccountAssistantPanel() {
     <form onPaste={event=>{const files=Array.from(event.clipboardData.files);if(files.length&&!sending&&!dictating&&!voice?.active){event.preventDefault();void attachments.add(files);}}} onSubmit={send} className="flex items-end gap-2 border-t border-border p-3">
       <div className="flex flex-col"><ChatImageAttachments attachments={attachments} disabled={sending||dictating||voice?.active} /><DictationButton disabled={sending||voice?.active} onBusyChange={setDictating} getValue={()=>input} onValueChange={setInput} /></div>
       <textarea ref={inputElement} aria-label="Nhắn Hannes" placeholder="Hỏi Hannes hoặc dán ảnh vào đây…" rows={2} maxLength={12000} readOnly={dictating} value={input} onChange={event => setInput(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} className="min-h-12 flex-1 resize-none rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-      <Button type="submit" size="icon" disabled={(!input.trim() && !attachments.images.length) || !attachments.ready || loading || sending || dictating || agent?.busy || voice?.active} aria-label="Gửi cho Hannes"><HiPaperAirplane /></Button>
+      <Button type="submit" size="icon" disabled={(!input.trim() && !attachments.images.length) || !attachments.ready || loading || sending || dictating || agent?.busy || voice?.active} aria-label="Gửi cho Hannes"><Send size="1em" /></Button>
     </form>
   </div>;
 }

@@ -8,7 +8,7 @@ import { coinCopy, formatCoin, shopInventoryHref } from "@/lib/learning-hub/shop
 import type { ShopItem } from "@/lib/learning-hub/shop-types";
 import { useUserStore } from "@/stores/user";
 import { motion, useReducedMotion } from "framer-motion";
-import { Cloud, Coins, Flag } from "lucide-react";
+import { Cloud, Coins, Flag } from "pulsoicon-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
@@ -42,14 +42,14 @@ function Celebration({ levelUp, onClose }: { levelUp: LevelUpMoment["levelUp"]; 
         <Link href={shopInventoryHref} onClick={onClose} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary-hover">Xem trong kho</Link>
       </>}>
       <div className="relative isolate mb-4 flex min-w-0 items-center gap-3 overflow-hidden rounded-2xl bg-primary-light p-3.5">
-        <Cloud aria-hidden="true" className="pointer-events-none absolute -right-6 -bottom-8 -z-10 size-24 -rotate-12 text-surface" strokeWidth={1} />
+        <Cloud animated={false} aria-hidden="true" className="pointer-events-none absolute -right-6 -bottom-8 -z-10 size-24 -rotate-12 text-surface" strokeWidth={1} />
         <motion.span
           aria-hidden="true"
           initial={reduce ? false : { y: 16, rotate: -10 }}
           animate={{ y: 0, rotate: 0 }}
           transition={{ duration: reduce ? 0 : 0.48, ease: [0.22, 1, 0.36, 1] }}
           className="grid size-11 shrink-0 place-items-center rounded-full border border-primary-pastel bg-surface text-primary-hover"
-        ><Flag className="size-5" /></motion.span>
+        ><Flag animated={false} className="size-5" /></motion.span>
         <p className="font-semibold wrap-anywhere">Chuyến bay từ cấp {number.format(levelUp.from)} đến cấp {number.format(levelUp.to)}</p>
       </div>
       <ol className="divide-y divide-border">
@@ -57,7 +57,7 @@ function Celebration({ levelUp, onClose }: { levelUp: LevelUpMoment["levelUp"]; 
           <li key={level} className="py-3 first:pt-0">
             <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
               <h3 className="font-bold">Cấp {number.format(level)}</h3>
-              <span className="flex items-center gap-1.5 text-sm font-bold text-accent-vanilla-foreground"><Coins aria-hidden="true" className="size-4" />+{formatCoin(coins)}</span>
+              <span className="flex items-center gap-1.5 text-sm font-bold text-accent-vanilla-foreground"><Coins animated={false} aria-hidden="true" className="size-4" />+{formatCoin(coins)}</span>
             </div>
             {items.length > 0 && <ul className="mt-2 space-y-2">
               {items.map((item) => {

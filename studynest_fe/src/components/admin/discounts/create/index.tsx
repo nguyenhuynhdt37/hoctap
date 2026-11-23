@@ -6,7 +6,7 @@ import { Category } from "@/types/admin/category";
 import { DiscountCourse, DiscountFormData } from "@/types/admin/discount";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { HiArrowLeft, HiCurrencyDollar, HiTag } from "react-icons/hi";
+import { ArrowLeft, CircleDollarSign, Tag } from "pulsoicon-react";
 import { CategorySelector } from "./category-selector";
 import { CourseSelector } from "./course-selector";
 import { WeakCoursesList } from "./weak-courses-list";
@@ -191,7 +191,7 @@ export default function CreateDiscount() {
             onClick={() => router.back()}
             className="flex items-center gap-2 text-gray-600 hover:text-green-600 transition-colors mb-4"
           >
-            <HiArrowLeft className="h-5 w-5" />
+            <ArrowLeft className="h-5 w-5" />
             <span className="font-medium">Quay lại</span>
           </button>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -309,7 +309,7 @@ export default function CreateDiscount() {
                       Số tiền giảm (VND) <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
-                      <HiCurrencyDollar className="absolute left-4 top-2.5 h-5 w-5 text-gray-400" />
+                      <CircleDollarSign className="absolute left-4 top-2.5 h-5 w-5 text-gray-400" />
                       <input
                         type="number"
                         name="fixed_value"
@@ -535,7 +535,7 @@ export default function CreateDiscount() {
                 </>
               ) : (
                 <>
-                  <HiTag className="h-5 w-5" />
+                  <Tag className="h-5 w-5" />
                   <span>Tạo mã giảm giá</span>
                 </>
               )}

@@ -130,8 +130,7 @@ const nextConfig: NextConfig = {
   experimental: {
     mcpServer: true,
     optimizePackageImports: [
-      "lucide-react",
-      "react-icons",
+      "pulsoicon-react",
       "@radix-ui/react-dropdown-menu",
       "@radix-ui/react-hover-card",
       "@radix-ui/react-navigation-menu",

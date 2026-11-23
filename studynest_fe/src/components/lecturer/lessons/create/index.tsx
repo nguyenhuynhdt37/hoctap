@@ -1,7 +1,7 @@
 "use client";
 
 import { Alert, Card } from "@/components/ui";
-import { ChevronRight, Code, HelpCircle, Video } from "lucide-react";
+import { ChevronRight, Code, HelpCircle, Video } from "pulsoicon-react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 const LessonsCreate = () => {

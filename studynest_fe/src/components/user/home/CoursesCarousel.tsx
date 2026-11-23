@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui";
 import { CoursesCarouselProps } from "@/types/user/course";
 import { memo, useMemo } from "react";
-import { HiChevronLeft, HiChevronRight } from "react-icons/hi";
+import { ChevronLeft, ChevronRight } from "pulsoicon-react";
 import CourseCard from "./CourseCard";
 import SkeletonCard from "./SkeletonCard";
 
@@ -109,7 +109,7 @@ const CoursesCarousel = memo(
                 aria-label="Trang trước"
                 className="rounded-full w-11 h-11 hover:bg-primary hover:text-primary-foreground hover:border-primary"
               >
-                <HiChevronLeft className="h-5 w-5" />
+                <ChevronLeft className="h-5 w-5" />
               </Button>
               <Button
                 variant="secondary"
@@ -120,7 +120,7 @@ const CoursesCarousel = memo(
                 aria-label="Trang tiếp theo"
                 className="rounded-full w-11 h-11 hover:bg-primary hover:text-primary-foreground hover:border-primary"
               >
-                <HiChevronRight className="h-5 w-5" />
+                <ChevronRight className="h-5 w-5" />
               </Button>
             </div>
           </div>

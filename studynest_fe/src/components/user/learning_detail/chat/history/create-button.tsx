@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useState } from "react";
-import { HiPlus } from "react-icons/hi";
+import { Plus } from "pulsoicon-react";
 import api from "@/lib/utils/fetcher/client/axios";
 import { ChatThread } from "@/types/user/tutor-chat";
 
@@ -49,7 +49,7 @@ function CreateButton({ lessonId, onCreated }: CreateButtonProps) {
         </>
       ) : (
         <>
-          <HiPlus className="w-4 h-4" />
+          <Plus className="w-4 h-4" />
           <span>Cuộc trò chuyện mới</span>
         </>
       )}

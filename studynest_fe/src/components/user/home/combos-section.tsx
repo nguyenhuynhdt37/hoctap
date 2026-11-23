@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, ArrowUpRight, BookOpen, Layers, ThumbsUp, X } from "lucide-react";
+import { ArrowRight, ArrowUpRight, BookOpen, Layers, ThumbsUp, X } from "pulsoicon-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, type ReactNode } from "react";

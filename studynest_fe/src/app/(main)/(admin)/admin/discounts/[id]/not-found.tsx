@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertCircle, ArrowLeft } from "lucide-react";
+import { AlertCircle, ArrowLeft } from "@/components/ui/server-icons";
 import { Button, Card } from "@/components/ui";
 
 export default function DiscountNotFound() {

@@ -1,6 +1,6 @@
 "use client";
 
-import { HiPlay, HiX } from "react-icons/hi";
+import { CirclePlay, X } from "pulsoicon-react";
 
 interface PreviewItem {
   id: string;
@@ -56,7 +56,7 @@ export default function PreviewModal({
             onClick={onClose}
             aria-label="Đóng"
           >
-            <HiX className="w-4 h-4" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
@@ -82,7 +82,7 @@ export default function PreviewModal({
               <div className="aspect-video flex items-center justify-center bg-gradient-to-br from-primary-light via-surface to-secondary-light/50 p-6">
                 <div className="text-center max-w-md">
                   <div className="w-14 h-14 rounded-full bg-primary text-primary-foreground flex items-center justify-center mx-auto mb-3 shadow-sm">
-                    <HiPlay className="h-7 w-7 translate-x-0.5" />
+                    <CirclePlay solid className="h-7 w-7 translate-x-0.5" />
                   </div>
                   <h4 className="font-bold text-foreground text-base mb-1">
                     Bài giảng mẫu đang được cập nhật
@@ -137,7 +137,7 @@ export default function PreviewModal({
                         </div>
                       </div>
                       {idx === activeIndex && (
-                        <HiPlay className="h-4 w-4 text-primary shrink-0" />
+                        <CirclePlay solid className="h-4 w-4 text-primary shrink-0" />
                       )}
                     </div>
                   </button>

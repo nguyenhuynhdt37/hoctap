@@ -3,12 +3,12 @@
 import api from "@/lib/utils/fetcher/client/axios";
 import { FinanceStatsResponse } from "@/types/admin/statistics";
 import {
-  HiCurrencyDollar,
-  HiArrowDown,
-  HiArrowUp,
-  HiClock,
-  HiRefresh,
-} from "react-icons/hi";
+  CircleDollarSign,
+  ArrowDown,
+  ArrowUp,
+  Clock,
+  RefreshCw,
+} from "pulsoicon-react";
 import useSWR from "swr";
 
 const formatCurrency = (value: number | null | undefined) => {
@@ -55,21 +55,21 @@ export default function FinanceStats() {
       {/* Main Stats */}
       <div className="grid grid-cols-3 gap-4 mb-6">
         <div className="bg-green-50 rounded-xl p-4 text-center">
-          <HiCurrencyDollar className="w-6 h-6 text-green-600 mx-auto mb-2" />
+          <CircleDollarSign className="w-6 h-6 text-green-600 mx-auto mb-2" />
           <p className="text-green-800 text-lg font-bold">
             {formatCurrency(data?.platform_balance)}
           </p>
           <p className="text-green-600 text-xs">Số dư nền tảng</p>
         </div>
         <div className="bg-emerald-50 rounded-xl p-4 text-center">
-          <HiArrowDown className="w-6 h-6 text-emerald-600 mx-auto mb-2" />
+          <ArrowDown className="w-6 h-6 text-emerald-600 mx-auto mb-2" />
           <p className="text-emerald-800 text-lg font-bold">
             {formatCurrency(data?.total_deposits)}
           </p>
           <p className="text-emerald-600 text-xs">Tổng nạp</p>
         </div>
         <div className="bg-teal-50 rounded-xl p-4 text-center">
-          <HiArrowUp className="w-6 h-6 text-teal-600 mx-auto mb-2" />
+          <ArrowUp className="w-6 h-6 text-teal-600 mx-auto mb-2" />
           <p className="text-teal-800 text-lg font-bold">
             {formatCurrency(data?.total_withdrawals)}
           </p>
@@ -81,7 +81,7 @@ export default function FinanceStats() {
       <div className="bg-yellow-50 rounded-xl p-4 mb-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <HiClock className="w-5 h-5 text-yellow-600" />
+            <Clock className="w-5 h-5 text-yellow-600" />
             <div>
               <p className="text-yellow-800 font-semibold">Chờ rút tiền</p>
               <p className="text-yellow-600 text-sm">
@@ -98,7 +98,7 @@ export default function FinanceStats() {
       {/* Refunds */}
       <div className="bg-gray-50 rounded-xl p-4">
         <div className="flex items-center gap-2 mb-3">
-          <HiRefresh className="w-5 h-5 text-gray-600" />
+          <RefreshCw className="w-5 h-5 text-gray-600" />
           <p className="text-gray-800 font-semibold">Hoàn tiền</p>
         </div>
         <div className="grid grid-cols-2 gap-3 text-sm">

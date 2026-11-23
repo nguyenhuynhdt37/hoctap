@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, BookOpen, Compass, Globe2 } from "lucide-react";
+import { ArrowRight, BookOpen, Compass, Globe2 } from "pulsoicon-react";
 import { Badge } from "@/components/ui";
 import type { BrowseSubjectOption } from "@/types/catalog";
 

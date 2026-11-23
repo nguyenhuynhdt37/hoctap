@@ -9,7 +9,7 @@ import {
 } from "@/types/admin/discount";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { HiPlus } from "react-icons/hi";
+import { Plus } from "pulsoicon-react";
 import useSWR from "swr";
 import { DiscountsEmpty } from "./discounts-empty";
 import { DiscountsFilters } from "./discounts-filters";
@@ -188,7 +188,7 @@ export default function DiscountsManagement() {
               onClick={() => router.push("/admin/discounts/create")}
               className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors"
             >
-              <HiPlus className="h-5 w-5" />
+              <Plus className="h-5 w-5" />
               <span>Tạo mã giảm giá</span>
             </button>
           </div>

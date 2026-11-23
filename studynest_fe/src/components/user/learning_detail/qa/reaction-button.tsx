@@ -1,7 +1,7 @@
 "use client";
 
 import { memo } from "react";
-import { HiHeart } from "react-icons/hi";
+import { Heart } from "pulsoicon-react";
 import { CommentItem } from "@/types/user/comment";
 
 interface ReactionButtonProps {
@@ -25,7 +25,7 @@ export default memo(function ReactionButton({
       }`}
       title={isActive ? "Bỏ thích" : "Thích"}
     >
-      <HiHeart className={`w-4 h-4 ${isActive ? "text-secondary-foreground" : ""}`} />
+      <Heart solid className={`w-4 h-4 ${isActive ? "text-secondary-foreground" : ""}`} />
       <span className="text-sm font-medium">
         {isActive ? "Đã thích" : "Thích"}
       </span>

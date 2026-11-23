@@ -4,7 +4,7 @@ import api from "@/lib/utils/fetcher/client/axios";
 import { getImageUrl } from "@/lib/utils/helpers/image";
 import useSWR from "swr";
 import { useCallback, useEffect, useState } from "react";
-import { HiChevronLeft, HiChevronRight } from "react-icons/hi";
+import { ChevronLeft, ChevronRight } from "pulsoicon-react";
 import { useRouter } from "next/navigation";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
@@ -214,7 +214,7 @@ const CourseRecommends = ({ slug }: CourseRecommendsProps) => {
                   className={`${navBtnClass} left-0`}
                   aria-label="Slide trước"
                 >
-                  <HiChevronLeft className="h-5 w-5 md:h-6 md:w-6" />
+                  <ChevronLeft className="h-5 w-5 md:h-6 md:w-6" />
                 </button>
                 <button
                   onClick={() => emblaApi?.scrollNext()}
@@ -222,7 +222,7 @@ const CourseRecommends = ({ slug }: CourseRecommendsProps) => {
                   className={`${navBtnClass} right-0`}
                   aria-label="Slide tiếp theo"
                 >
-                  <HiChevronRight className="h-5 w-5 md:h-6 md:w-6" />
+                  <ChevronRight className="h-5 w-5 md:h-6 md:w-6" />
                 </button>
               </>
             )}

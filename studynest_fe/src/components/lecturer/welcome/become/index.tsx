@@ -5,7 +5,7 @@ import {
   INSTRUCTOR_FEE,
   useBecomeInstructor,
 } from "@/hooks/useBecomeInstructor";
-import { CheckCircle2, GraduationCap, MonitorPlay, Wallet } from "lucide-react";
+import { CheckCircle2, GraduationCap, MonitorPlay, Wallet } from "pulsoicon-react";
 import { useState } from "react";
 
 export const BecomeLecturerAction = () => {

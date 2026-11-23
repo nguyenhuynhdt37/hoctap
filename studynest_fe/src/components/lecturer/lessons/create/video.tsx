@@ -14,7 +14,7 @@ import {
   Video,
   XCircle,
   CheckCircle2,
-} from "lucide-react";
+} from "pulsoicon-react";
 import useSWR from "swr";
 import { VideoFormData, UploadProgress } from "@/types/lecturer/lesson-api";
 import { Button } from "@/components/ui/button";

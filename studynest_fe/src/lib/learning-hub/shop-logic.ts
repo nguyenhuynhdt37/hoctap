@@ -23,13 +23,15 @@ export function shopItemState(item: ShopItem, balance?: number, equipment?: Equi
 
   if (equipped) return { kind: "equipped", label: "Đang dùng" } as const;
   if (item.owned) return { kind: "owned", label: "Đã sở hữu" } as const;
-  if (item.unlock_level !== null && (!item.purchasable || item.price === null)) {
+  if (item.unlock_level !== null && (item.price === null || (!item.purchasable && reason && /(?:đạt|lên|mở ở) cấp /i.test(reason)))) {
     return { kind: "locked", label: `Mở ở cấp ${number.format(item.unlock_level)}`, reason } as const;
   }
-  if (item.price !== null && balance !== undefined && item.price > balance) {
+  const missing = item.price !== null && balance !== undefined ? item.price - balance : 0;
+  const coinBlock = !item.purchasable && reason && /(?:đủ|thiếu|thêm) (?:[\d.,]+ )?Coin\b/i.test(reason);
+  if (coinBlock || ((item.purchasable || !reason) && missing > 0)) {
     return {
       kind: "blocked", label: "Chưa đủ Coin",
-      reason: reason ?? `Cần thêm ${formatCoin(item.price - balance)} để đổi.`,
+      reason: reason ?? `Cần thêm ${formatCoin(missing)} để đổi.`,
     } as const;
   }
   if (item.price === null || !item.purchasable) {

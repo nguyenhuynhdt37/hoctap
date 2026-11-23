@@ -1,6 +1,6 @@
 "use client";
 
-import { HiUserGroup } from "react-icons/hi";
+import { UsersRound } from "pulsoicon-react";
 
 interface TargetAudienceSectionProps {
   targetAudience: string[];
@@ -26,7 +26,7 @@ export default function TargetAudienceSection({
             className="flex items-start gap-3 p-3.5 bg-secondary-light/40 rounded-2xl border border-secondary-pastel/70"
           >
             <span className="w-6 h-6 rounded-full bg-secondary-light text-secondary-foreground flex items-center justify-center mt-0.5 shrink-0">
-              <HiUserGroup className="w-3.5 h-3.5" />
+              <UsersRound animated={false} className="w-3.5 h-3.5" />
             </span>
             <span className="text-foreground text-sm leading-relaxed">
               {audience}

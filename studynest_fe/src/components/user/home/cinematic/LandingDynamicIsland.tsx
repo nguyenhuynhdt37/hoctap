@@ -12,7 +12,7 @@ import {
   useSpring,
   useTransform,
 } from "framer-motion";
-import { ChevronsDown } from "lucide-react";
+import { ChevronsDown } from "pulsoicon-react";
 import LogoHub from "./LogoHub";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -24,20 +24,20 @@ import React, {
   useState,
 } from "react";
 import {
-  HiAcademicCap,
-  HiBell,
-  HiBookOpen,
-  HiHeart,
-  HiHome,
-  HiLightBulb,
-  HiLogin,
-  HiLogout,
-  HiCloud,
-  HiUser,
-  HiUserAdd,
-  HiViewGrid,
-  HiX,
-} from "react-icons/hi";
+  GraduationCap,
+  Bell,
+  BookOpen,
+  Heart,
+  House,
+  Lightbulb,
+  LogIn,
+  LogOut,
+  Cloud,
+  User,
+  UserPlus,
+  LayoutGrid,
+  X,
+} from "pulsoicon-react";
 
 export interface LandingDynamicIslandProps {
   onSkipVideo?: () => void;
@@ -288,7 +288,7 @@ const LandingDynamicIsland: React.FC<LandingDynamicIslandProps> = ({
       <div
         className={`${sizeClass} rounded-full bg-primary-light border border-primary-pastel/80 flex items-center justify-center text-primary`}
       >
-        <HiUser className="w-5 h-5" />
+        <User className="w-5 h-5" />
       </div>
     );
   };
@@ -341,7 +341,7 @@ const LandingDynamicIsland: React.FC<LandingDynamicIslandProps> = ({
             title="Bỏ qua phần lướt video để xem nội dung chính"
             aria-label="Bỏ qua phần lướt video xuống nội dung chính"
           >
-            <ChevronsDown className="w-4 h-4 text-primary animate-bounce group-hover:translate-y-0.5 transition-transform shrink-0" />
+            <ChevronsDown animated={false} className="w-4 h-4 text-primary animate-bounce group-hover:translate-y-0.5 transition-transform shrink-0" />
             <span className="tracking-tight">Bỏ qua</span>
             <span className="hidden sm:inline tracking-tight">video</span>
           </motion.button>
@@ -439,7 +439,7 @@ const LandingDynamicIsland: React.FC<LandingDynamicIslandProps> = ({
                   aria-label="Đóng menu điều hướng"
                   className="w-8 h-8 rounded-full bg-background hover:bg-primary-light text-muted-foreground hover:text-primary flex items-center justify-center transition-colors cursor-pointer shrink-0"
                 >
-                  <HiX className="w-4 h-4" />
+                  <X className="w-4 h-4" />
                 </button>
               </div>
 
@@ -456,7 +456,7 @@ const LandingDynamicIsland: React.FC<LandingDynamicIslandProps> = ({
                   onClick={handleScrollTop}
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-foreground hover:bg-primary-light/80 hover:text-primary transition-colors text-left cursor-pointer"
                 >
-                  <HiHome className="w-4 h-4 text-primary shrink-0" />
+                  <House solid className="w-4 h-4 text-primary shrink-0" />
                   <span>Trang chủ</span>
                 </motion.button>
 
@@ -471,7 +471,7 @@ const LandingDynamicIsland: React.FC<LandingDynamicIslandProps> = ({
                   onNavigate={() => closeIsland(false)}
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-foreground hover:bg-primary-light/80 hover:text-primary transition-colors text-left cursor-pointer"
                 >
-                  <HiBookOpen className="w-4 h-4 text-primary shrink-0" />
+                  <BookOpen className="w-4 h-4 text-primary shrink-0" />
                   <span>Khám phá khóa học</span>
                 </MotionLink>
 
@@ -486,7 +486,7 @@ const LandingDynamicIsland: React.FC<LandingDynamicIslandProps> = ({
                   onNavigate={() => closeIsland(false)}
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-foreground hover:bg-primary-light/80 hover:text-primary transition-colors text-left cursor-pointer"
                 >
-                  <HiAcademicCap className="w-4 h-4 text-primary shrink-0" />
+                  <GraduationCap className="w-4 h-4 text-primary shrink-0" />
                   <span>Đội ngũ giáo viên</span>
                 </MotionLink>
 
@@ -508,7 +508,7 @@ const LandingDynamicIsland: React.FC<LandingDynamicIslandProps> = ({
                   className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs font-medium text-foreground hover:bg-accent-vanilla/55 transition-colors text-left cursor-pointer"
                 >
                   <span className="flex items-center gap-2.5">
-                    <HiCloud className="w-4 h-4 text-warning-foreground shrink-0" />
+                    <Cloud className="w-4 h-4 text-warning-foreground shrink-0" />
                     <span>Tiểu học</span>
                   </span>
                   <Badge variant="vanilla" size="sm">
@@ -528,7 +528,7 @@ const LandingDynamicIsland: React.FC<LandingDynamicIslandProps> = ({
                   className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs font-medium text-foreground hover:bg-secondary-light/65 transition-colors text-left cursor-pointer"
                 >
                   <span className="flex items-center gap-2.5">
-                    <HiLightBulb className="w-4 h-4 text-secondary-foreground shrink-0" />
+                    <Lightbulb className="w-4 h-4 text-secondary-foreground shrink-0" />
                     <span>THCS</span>
                   </span>
                   <Badge variant="secondary" size="sm">
@@ -548,7 +548,7 @@ const LandingDynamicIsland: React.FC<LandingDynamicIslandProps> = ({
                   className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs font-medium text-foreground hover:bg-primary-light/80 transition-colors text-left cursor-pointer"
                 >
                   <span className="flex items-center gap-2.5">
-                    <HiAcademicCap className="w-4 h-4 text-primary shrink-0" />
+                    <GraduationCap className="w-4 h-4 text-primary shrink-0" />
                     <span>THPT</span>
                   </span>
                   <Badge variant="default" size="sm">
@@ -574,7 +574,7 @@ const LandingDynamicIsland: React.FC<LandingDynamicIslandProps> = ({
                     onNavigate={() => closeIsland(false)}
                     className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-foreground hover:bg-primary-light/80 hover:text-primary transition-colors text-left cursor-pointer"
                   >
-                    <HiViewGrid className="w-4 h-4 text-primary shrink-0" />
+                    <LayoutGrid className="w-4 h-4 text-primary shrink-0" />
                     <span>
                       {user.roles?.includes("LECTURER")
                         ? "Bảng điều khiển Giảng viên"
@@ -594,7 +594,7 @@ const LandingDynamicIsland: React.FC<LandingDynamicIslandProps> = ({
                       onNavigate={() => closeIsland(false)}
                       className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-foreground hover:bg-primary-light/80 hover:text-primary transition-colors text-left cursor-pointer"
                     >
-                      <HiBookOpen className="w-4 h-4 text-muted-foreground shrink-0" />
+                      <BookOpen className="w-4 h-4 text-muted-foreground shrink-0" />
                       <span>Khóa học đang học</span>
                     </MotionLink>
                   )}
@@ -610,7 +610,7 @@ const LandingDynamicIsland: React.FC<LandingDynamicIslandProps> = ({
                     onNavigate={() => closeIsland(false)}
                     className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-foreground hover:bg-primary-light/80 hover:text-primary transition-colors text-left cursor-pointer"
                   >
-                    <HiHeart className="w-4 h-4 text-secondary-foreground shrink-0" />
+                    <Heart solid className="w-4 h-4 text-secondary-foreground shrink-0" />
                     <span>Khóa học yêu thích</span>
                   </MotionLink>
 
@@ -625,7 +625,7 @@ const LandingDynamicIsland: React.FC<LandingDynamicIslandProps> = ({
                     onNavigate={() => closeIsland(false)}
                     className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-foreground hover:bg-primary-light/80 hover:text-primary transition-colors text-left cursor-pointer"
                   >
-                    <HiAcademicCap className="w-4 h-4 text-primary shrink-0" />
+                    <GraduationCap className="w-4 h-4 text-primary shrink-0" />
                     <span>
                       {user.roles?.includes("LECTURER")
                         ? "Khu vực giảng viên"
@@ -645,7 +645,7 @@ const LandingDynamicIsland: React.FC<LandingDynamicIslandProps> = ({
                     className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs font-medium text-foreground hover:bg-primary-light/80 hover:text-primary transition-colors text-left cursor-pointer"
                   >
                     <span className="flex items-center gap-2.5">
-                      <HiBell className="w-4 h-4 text-primary shrink-0" />
+                      <Bell className="w-4 h-4 text-primary shrink-0" />
                       <span>Thông báo</span>
                     </span>
                     {unreadCount > 0 && (
@@ -666,7 +666,7 @@ const LandingDynamicIsland: React.FC<LandingDynamicIslandProps> = ({
                     onNavigate={() => closeIsland(false)}
                     className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-foreground hover:bg-primary-light/80 hover:text-primary transition-colors text-left cursor-pointer"
                   >
-                    <HiUser className="w-4 h-4 text-muted-foreground shrink-0" />
+                    <User className="w-4 h-4 text-muted-foreground shrink-0" />
                     <span>Hồ sơ cá nhân</span>
                   </MotionLink>
 
@@ -681,7 +681,7 @@ const LandingDynamicIsland: React.FC<LandingDynamicIslandProps> = ({
                       onClick={handleLogout}
                       className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-destructive-foreground hover:bg-destructive-bg/70 transition-colors text-left cursor-pointer"
                     >
-                      <HiLogout className="w-4 h-4 shrink-0" />
+                      <LogOut className="w-4 h-4 shrink-0" />
                       <span>Đăng xuất</span>
                     </motion.button>
                   </div>
@@ -699,7 +699,7 @@ const LandingDynamicIsland: React.FC<LandingDynamicIslandProps> = ({
                     onNavigate={() => closeIsland(false)}
                     className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border border-primary-pastel bg-background hover:bg-primary-light text-primary text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer"
                   >
-                    <HiLogin className="w-4 h-4 shrink-0" />
+                    <LogIn className="w-4 h-4 shrink-0" />
                     <span>Đăng nhập</span>
                   </MotionLink>
 
@@ -714,7 +714,7 @@ const LandingDynamicIsland: React.FC<LandingDynamicIslandProps> = ({
                     onNavigate={() => closeIsland(false)}
                     className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-semibold whitespace-nowrap shadow-2xs transition-colors cursor-pointer"
                   >
-                    <HiUserAdd className="w-4 h-4 shrink-0" />
+                    <UserPlus className="w-4 h-4 shrink-0" />
                     <span>Đăng ký</span>
                   </MotionLink>
                 </div>

@@ -7,7 +7,7 @@ import {
   LecturerRefundRequestItem,
   LecturerRefundRequestsQuery,
 } from "@/types/lecturer/refund";
-import { ArrowDown, ArrowUp } from "lucide-react";
+import { ArrowDown, ArrowUp } from "pulsoicon-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";

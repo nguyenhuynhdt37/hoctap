@@ -5,13 +5,13 @@ import { PlatformWalletOverview } from "@/types/admin/wallet";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  HiArrowDown,
-  HiArrowUp,
-  HiClock,
-  HiCurrencyDollar,
-  HiEye,
-  HiTag,
-} from "react-icons/hi";
+  ArrowDown,
+  ArrowUp,
+  Clock,
+  CircleDollarSign,
+  Eye,
+  Tag,
+} from "pulsoicon-react";
 
 interface AdminWalletsProps {
   data: PlatformWalletOverview;
@@ -113,7 +113,7 @@ export default function AdminWallets({ data }: AdminWalletsProps) {
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
-              <HiCurrencyDollar className="h-6 w-6 text-green-600" />
+              <CircleDollarSign className="h-6 w-6 text-green-600" />
             </div>
           </div>
           <div>
@@ -128,7 +128,7 @@ export default function AdminWallets({ data }: AdminWalletsProps) {
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
-              <HiArrowDown className="h-6 w-6 text-green-600" />
+              <ArrowDown className="h-6 w-6 text-green-600" />
             </div>
           </div>
           <div>
@@ -143,7 +143,7 @@ export default function AdminWallets({ data }: AdminWalletsProps) {
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="h-12 w-12 bg-red-100 rounded-lg flex items-center justify-center">
-              <HiArrowUp className="h-6 w-6 text-red-600" />
+              <ArrowUp className="h-6 w-6 text-red-600" />
             </div>
           </div>
           <div>
@@ -158,7 +158,7 @@ export default function AdminWallets({ data }: AdminWalletsProps) {
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="h-12 w-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-              <HiTag className="h-6 w-6 text-yellow-600" />
+              <Tag className="h-6 w-6 text-yellow-600" />
             </div>
           </div>
           <div>
@@ -175,7 +175,7 @@ export default function AdminWallets({ data }: AdminWalletsProps) {
         {/* Holding Amount */}
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
           <div className="flex items-center gap-3 mb-2">
-            <HiClock className="h-5 w-5 text-gray-400" />
+            <Clock className="h-5 w-5 text-gray-400" />
             <p className="text-sm font-semibold text-gray-700">
               Số tiền đang giữ
             </p>
@@ -191,7 +191,7 @@ export default function AdminWallets({ data }: AdminWalletsProps) {
         {/* Last Updated */}
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
           <div className="flex items-center gap-3 mb-2">
-            <HiClock className="h-5 w-5 text-gray-400" />
+            <Clock className="h-5 w-5 text-gray-400" />
             <p className="text-sm font-semibold text-gray-700">
               Cập nhật lần cuối
             </p>
@@ -218,14 +218,14 @@ export default function AdminWallets({ data }: AdminWalletsProps) {
             onClick={() => router.push("/admin/wallets/transactions")}
             className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold text-sm flex items-center gap-2"
           >
-            <HiEye className="h-4 w-4" />
+            <Eye className="h-4 w-4" />
             Xem tất cả giao dịch
           </button>
         </div>
 
         {recent_history.length === 0 ? (
           <div className="px-6 py-12 text-center">
-            <HiClock className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+            <Clock className="h-12 w-12 text-gray-300 mx-auto mb-3" />
             <p className="text-gray-600">Chưa có lịch sử giao dịch</p>
           </div>
         ) : (
@@ -278,9 +278,9 @@ export default function AdminWallets({ data }: AdminWalletsProps) {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         {history.amount > 0 ? (
-                          <HiArrowDown className="h-4 w-4 text-green-600" />
+                          <ArrowDown animated={false} className="h-4 w-4 text-green-600" />
                         ) : history.amount < 0 ? (
-                          <HiArrowUp className="h-4 w-4 text-red-600" />
+                          <ArrowUp animated={false} className="h-4 w-4 text-red-600" />
                         ) : null}
                         <span
                           className={`font-semibold ${
@@ -327,7 +327,7 @@ export default function AdminWallets({ data }: AdminWalletsProps) {
                         }}
                         className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
                       >
-                        <HiEye className="h-4 w-4" />
+                        <Eye className="h-4 w-4" />
                         Xem chi tiết
                       </button>
                     </td>

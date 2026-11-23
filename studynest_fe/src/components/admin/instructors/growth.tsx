@@ -16,7 +16,7 @@ import { Line } from "react-chartjs-2";
 import { InstructorGrowthResponse } from "@/types/admin/statistics";
 import { useState, useEffect } from "react";
 import useSWR from "swr";
-import { HiTrendingUp } from "react-icons/hi";
+import { TrendingUp } from "pulsoicon-react";
 
 ChartJS.register(
   CategoryScale,
@@ -131,7 +131,7 @@ export default function InstructorGrowth() {
       <div className="grid grid-cols-2 gap-4 mb-6">
         <div className="bg-primary-light/70 border border-primary-pastel/60 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-1">
-            <HiTrendingUp className="w-4 h-4 text-primary" />
+            <TrendingUp className="w-4 h-4 text-primary" />
             <p className="text-primary text-xs font-semibold uppercase tracking-wider">Mới trong kỳ</p>
           </div>
           <p className="text-2xl font-bold text-foreground">

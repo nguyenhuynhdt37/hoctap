@@ -3,7 +3,7 @@
 import api from "@/lib/utils/fetcher/client/axios";
 import { Category } from "@/types/admin/category";
 import { useEffect, useRef, useState } from "react";
-import { HiSearch, HiX } from "react-icons/hi";
+import { Search, X } from "pulsoicon-react";
 
 interface CategorySelectorProps {
   selectedCategories: Category[];
@@ -68,7 +68,7 @@ export function CategorySelector({
 
       {/* Search Input */}
       <div className="relative">
-        <HiSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
         <input
           type="text"
           value={search}
@@ -123,11 +123,12 @@ export function CategorySelector({
               >
                 <span className="text-green-700">{category.name}</span>
                 <button
+                  aria-label="Bỏ chọn danh mục"
                   type="button"
                   onClick={() => onRemove(category.id)}
                   className="text-green-600 hover:text-red-500 transition-colors"
                 >
-                  <HiX className="h-4 w-4" />
+                  <X className="h-4 w-4" />
                 </button>
               </div>
             ))}

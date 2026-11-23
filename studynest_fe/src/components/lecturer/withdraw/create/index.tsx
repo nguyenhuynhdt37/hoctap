@@ -3,7 +3,7 @@
 import { Alert, Button, Card } from "@/components/ui";
 import api from "@/lib/utils/fetcher/client/axios";
 import { User } from "@/types/user/user";
-import { Send } from "lucide-react";
+import { Send } from "pulsoicon-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";

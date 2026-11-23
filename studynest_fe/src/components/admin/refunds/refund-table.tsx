@@ -8,7 +8,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import { HiArrowDown, HiArrowUp } from "react-icons/hi";
+import { ArrowDown, ArrowUp } from "pulsoicon-react";
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("vi-VN", {
@@ -128,9 +128,9 @@ export function RefundRequestsTable({
                         {sortBy === col.key && (
                           <span className="text-green-600">
                             {orderDir === "asc" ? (
-                              <HiArrowUp className="h-4 w-4" />
+                              <ArrowUp className="h-4 w-4" />
                             ) : (
-                              <HiArrowDown className="h-4 w-4" />
+                              <ArrowDown className="h-4 w-4" />
                             )}
                           </span>
                         )}

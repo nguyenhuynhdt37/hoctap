@@ -11,7 +11,7 @@ import {
 import type { Equipment, ItemKind, ShopItem } from "@/lib/learning-hub/shop-types";
 import { cn } from "@/lib/utils";
 import { useUserStore } from "@/stores/user";
-import { Cloud, Coins, Eye, PackageOpen } from "lucide-react";
+import { Cloud, Coins, Eye, PackageOpen } from "pulsoicon-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useId, useRef, useState, type KeyboardEvent, type RefObject } from "react";
@@ -25,11 +25,12 @@ const tabs: readonly ShopTab[] = [...itemKinds, "mine"];
 const labels = { ...itemKindLabels, mine: "Của tôi" };
 const tabIndex = (tab: string | null) => tabs.findIndex((entry) => entry === tab);
 
-function Preview({ equipment, active, name, avatar, previewRef, onReset }: {
+function Preview({ equipment, active, name, avatar, status, previewRef, onReset }: {
   equipment: Equipment;
   active?: ShopItem;
   name: string;
   avatar?: string | null;
+  status: string;
   previewRef: RefObject<HTMLHeadingElement | null>;
   onReset: () => void;
 }) {
@@ -43,7 +44,7 @@ function Preview({ equipment, active, name, avatar, previewRef, onReset }: {
           <p className="font-semibold wrap-anywhere">{name}</p>
           <EquippedMarks equipment={equipment} className="mt-1" />
           <p role="status" className="mt-1 text-sm wrap-anywhere">
-            {active ? `Đang thử ${coinCopy(active.name)}` : "Trang bị hiện tại"}
+            {active ? `Đang thử ${coinCopy(active.name)}` : status}
           </p>
         </div>
       </div>
@@ -68,9 +69,9 @@ function ItemCard({ item, avatar, name, balance, equipment, previewing, pending,
   const id = useId();
   const tone = { common: "bg-primary-light", rare: "bg-secondary", epic: "bg-accent/65", legendary: "bg-accent-vanilla" }[item.rarity];
   return (
-    <article aria-labelledby={id} className="flex h-full min-w-0 flex-col overflow-hidden rounded-card border border-border bg-surface">
+    <article aria-labelledby={id} className="relative flex h-full min-w-0 flex-col overflow-hidden rounded-card border border-border bg-surface">
       <div className={cn("relative isolate grid h-28 place-items-center overflow-hidden border-b border-border sm:h-36", tone)}>
-        <Cloud aria-hidden="true" strokeWidth={1} className="pointer-events-none absolute -left-5 -bottom-12 -z-10 size-36 rotate-[-12deg] text-surface/80" />
+        <Cloud animated={false} aria-hidden="true" strokeWidth={1} className="pointer-events-none absolute -left-5 -bottom-12 -z-10 size-36 rotate-[-12deg] text-surface/80" />
         <span aria-hidden="true" className="pointer-events-none absolute -top-6 right-3 -z-10 size-16 rounded-full border border-surface/90" />
         {item.kind === "avatar_frame" && <FramedAvatar src={avatar} name={name} equipment={{ avatar_frame: item }} className="size-20 text-xl sm:size-24" />}
         {item.kind === "title" && <TitleBadge item={item} className="mx-3 max-w-[calc(100%-1.5rem)] bg-surface px-2.5 py-1.5 text-sm" />}
@@ -117,20 +118,21 @@ export function ShopView() {
   const previewRef = useRef<HTMLHeadingElement>(null);
   const returnFocus = useRef<HTMLButtonElement | null>(null);
   const previewTrigger = useRef<HTMLButtonElement | null>(null);
-  const attempts = useRef(new Map<string, ReturnType<typeof createPurchaseConfirmation>>());
   const user = useUserStore((state) => state.user);
-  const catalog = useShopItems();
+  const catalog = useShopItems(activeTab === "mine" ? undefined : activeTab);
   const inventory = useShopInventory();
   const actions = useShopActions();
   const [preview, setPreview] = useState<ShopItem>();
-  const [confirm, setConfirm] = useState<ShopItem>();
+  const [confirm, setConfirm] = useState<{ item: ShopItem; attempt: ReturnType<typeof createPurchaseConfirmation> }>();
   const [confirmError, setConfirmError] = useState<unknown>();
   const [equipmentError, setEquipmentError] = useState<unknown>();
   const [message, setMessage] = useState("");
   const equipment = inventory.data?.equipment ?? user?.equipment;
+  const previewStatus = equipment ? "Trang bị hiện tại" : inventory.error
+    ? hubErrorMessage(inventory.error, "Chưa tải được trang bị hiện tại.") : "Đang tải trang bị…";
   const balance = catalog.data?.balance ?? inventory.data?.balance;
   const activeQuery = activeTab === "mine" ? inventory : catalog;
-  const items = activeQuery.data?.items.filter((item) => activeTab === "mine" || item.kind === activeTab) ?? [];
+  const items = activeQuery.data?.items ?? [];
 
   function selectTab(tab: ShopTab) {
     const url = new URL(window.location.href);
@@ -156,7 +158,7 @@ export function ShopView() {
     if (actions.pending) return;
     returnFocus.current = trigger;
     setConfirmError(undefined);
-    setConfirm(item);
+    setConfirm({ item, attempt: createPurchaseConfirmation(item.id) });
   }
 
   function closeConfirmation() {
@@ -173,12 +175,9 @@ export function ShopView() {
   async function purchase() {
     if (!confirm) return;
     setConfirmError(undefined);
-    const attempt = attempts.current.get(confirm.id) ?? createPurchaseConfirmation(confirm.id);
-    attempts.current.set(confirm.id, attempt);
     try {
-      const result = await attempt.submit(actions.purchase);
+      const result = await confirm.attempt.submit(actions.purchase);
       if (!result) return;
-      attempts.current.delete(confirm.id);
       closeConfirmation();
       setMessage(`Đã thêm ${coinCopy(result.item.name)} vào kho.`);
     } catch (error) {
@@ -217,11 +216,12 @@ export function ShopView() {
               <Coins aria-hidden="true" className="size-4 shrink-0" />
               <span className="font-semibold">Số dư</span>
               {balance !== undefined ? <strong className="border-l border-dashed border-current/35 pl-2 wrap-anywhere tabular-nums">{formatCoin(balance)}</strong>
-                : catalog.error && inventory.error ? <span>Chưa tải được</span> : <Skeleton role="status" aria-label="Đang tải số dư" className="h-4 w-20 bg-surface/80" />}
+                : inventory.error && (catalog.error || activeTab === "mine") ? <span>Chưa tải được</span>
+                  : <div role="status"><span className="sr-only">Đang tải số dư</span><Skeleton className="h-4 w-20 bg-surface/80 motion-reduce:animate-none" /></div>}
             </div>
             <Link href="/levels" className="mt-1 flex min-h-11 w-fit items-center rounded-sm text-sm font-semibold text-primary-hover underline underline-offset-4">Xem thưởng theo cấp</Link>
           </div>
-          <Preview equipment={previewEquipment} active={preview} name={name} avatar={user?.avatar} previewRef={previewRef} onReset={() => {
+          <Preview equipment={previewEquipment} active={preview} name={name} avatar={user?.avatar} status={previewStatus} previewRef={previewRef} onReset={() => {
             setPreview(undefined);
             if (previewTrigger.current?.isConnected) previewTrigger.current.focus();
             else previewRef.current?.focus({ preventScroll: true });
@@ -234,13 +234,13 @@ export function ShopView() {
               id={`${id}-${tab}`} aria-controls={`${id}-panel-${tab}`}
               ref={(element) => { tabRefs.current[index] = element; }} tabIndex={tab === activeTab ? 0 : -1}
               onClick={() => selectTab(tab)} onKeyDown={(event) => moveTab(event, index)}
-              className="min-h-11 rounded-xl px-2.5 text-sm font-semibold hover:bg-background aria-selected:bg-primary-light aria-selected:text-primary-hover sm:px-4">
+              className="min-h-11 rounded-xl px-2.5 text-sm font-semibold hover:bg-background focus-visible:outline-2 focus-visible:outline-ring aria-selected:bg-primary-light aria-selected:text-primary-hover sm:px-4">
               {labels[tab]}
             </button>
           ))}
         </div>
         <p role="status" className={cn("text-sm font-semibold text-success-foreground", message ? "mt-3" : "sr-only")}>{message}</p>
-        {equipmentError != null && <Alert className="mt-3" variant="destructive">{hubErrorMessage(equipmentError, "Chưa cập nhật được trang bị. Bạn thử lại nhé.")}</Alert>}
+        {equipmentError != null && <Alert className="mt-3" variant={isHubUnavailable(equipmentError) ? "info" : "destructive"}>{hubErrorMessage(equipmentError, "Chưa cập nhật được trang bị. Bạn thử lại nhé.")}</Alert>}
 
         {tabs.map((tab) => (
           <section key={tab} role="tabpanel" hidden={tab !== activeTab} id={`${id}-panel-${tab}`} aria-labelledby={`${id}-${tab}`} tabIndex={0} className="mt-4 rounded-card">
@@ -249,12 +249,12 @@ export function ShopView() {
                 <HubLoadError error={activeQuery.error} title={tab === "mine" ? "Chưa tải được kho của bạn" : "Chưa tải được vật phẩm"} message="Bạn thử tải lại nhé." onRetry={retry} isRetrying={activeQuery.isValidating} />
               ) : !activeQuery.data ? (
                 <div role="status" aria-label="Đang tải vật phẩm" className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
-                  {[0, 1, 2, 3].map((index) => <Skeleton key={index} className="h-56 rounded-card" />)}
+                  {[0, 1, 2, 3].map((index) => <Skeleton key={index} className="h-56 rounded-card motion-reduce:animate-none" />)}
                 </div>
               ) : (
                 <>
                   {activeQuery.error && <div className="mb-4"><HubLoadError error={activeQuery.error} title="Chưa làm mới được danh sách" message="Bạn thử tải lại nhé." onRetry={retry} isRetrying={activeQuery.isValidating} /></div>}
-                  {items.length === 0 ? <EmptyState icon={<PackageOpen />} title={tab === "mine" ? "Kho đồ đang trống" : "Ngăn này chưa có vật phẩm"}
+                  {items.length === 0 ? <EmptyState icon={<PackageOpen animated={false} />} title={tab === "mine" ? "Kho đồ đang trống" : "Ngăn này chưa có vật phẩm"}
                     description={tab === "mine" ? "Đổi một món bằng Coin hoặc nhận quà khi lên cấp để bắt đầu bộ sưu tập." : undefined}
                     action={tab === "mine" && <Button className="min-h-11" onClick={() => { selectTab(tabs[0]); tabRefs.current[0]?.focus(); }}>Xem khung avatar</Button>} />
                     : <ul className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
@@ -289,7 +289,7 @@ export function ShopView() {
               <Button isLoading={actions.pending} loadingText="Đang đổi…" disabled={isHubUnavailable(confirmError)}
                 onClick={() => void purchase()} className="min-h-11">{confirmError ? "Thử lại" : "Xác nhận đổi"}</Button>
             </>}>
-            <p>Bạn muốn dùng <strong>{formatCoin(confirm.price ?? 0)}</strong> để đổi <strong className="wrap-anywhere">{coinCopy(confirm.name)}</strong>?</p>
+            <p>Bạn muốn dùng <strong>{formatCoin(confirm.item.price ?? 0)}</strong> để đổi <strong className="wrap-anywhere">{coinCopy(confirm.item.name)}</strong>?</p>
             {confirmError != null && <Alert className="mt-4" variant={isHubUnavailable(confirmError) ? "info" : "destructive"}>
               {hubErrorMessage(confirmError, "Chưa đổi được vật phẩm. Bạn thử lại nhé.")}
             </Alert>}

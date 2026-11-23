@@ -16,7 +16,7 @@ import { Line } from "react-chartjs-2";
 import { RevenueTrendsResponse } from "@/types/admin/statistics";
 import { useState, useEffect } from "react";
 import useSWR from "swr";
-import { HiTrendingUp, HiStar } from "react-icons/hi";
+import { TrendingUp, Star } from "pulsoicon-react";
 
 ChartJS.register(
   CategoryScale,
@@ -142,7 +142,7 @@ export default function RevenueTrends() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="bg-primary-light/70 border border-primary-pastel/60 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-1">
-            <HiTrendingUp className="w-4 h-4 text-primary" />
+            <TrendingUp className="w-4 h-4 text-primary" />
             <p className="text-primary text-xs font-semibold uppercase tracking-wider">TB hàng tháng</p>
           </div>
           <p className="text-xl font-bold text-foreground">
@@ -159,7 +159,7 @@ export default function RevenueTrends() {
         </div>
         <div className="bg-surface-muted border border-accent-vanilla rounded-xl p-4 col-span-2">
           <div className="flex items-center gap-2 mb-1">
-            <HiStar className="w-4 h-4 text-warning" />
+            <Star solid className="w-4 h-4 text-warning" />
             <p className="text-warning-foreground text-xs font-semibold uppercase tracking-wider">
               Tháng tốt nhất
             </p>

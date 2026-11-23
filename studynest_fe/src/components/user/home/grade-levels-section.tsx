@@ -9,8 +9,8 @@ import {
   Cloud,
   GraduationCap,
   Lightbulb,
-  type LucideIcon,
-} from "lucide-react";
+  type PulsoIcon,
+} from "pulsoicon-react";
 import type { FC } from "react";
 import {
   CloudBlob,
@@ -39,7 +39,7 @@ interface GradeLevelItem {
   tone: Tone;
   sceneClassName: string;
   offsetClassName: string;
-  icon: LucideIcon;
+  icon: PulsoIcon;
 }
 
 const GRADE_LEVELS: GradeLevelItem[] = [
@@ -147,7 +147,7 @@ const GradeLevelsSection: FC<GradeLevelsSectionProps> = ({
                   >
                     {isSelected && (
                       <Pill className="absolute -top-3.5 right-5 z-10 rotate-2 shadow-sm">
-                        <Check aria-hidden="true" className="size-3.5" />
+                        <Check animated={false} aria-hidden="true" className="size-3.5" />
                         Đang chọn
                       </Pill>
                     )}
@@ -210,7 +210,7 @@ const GradeLevelsSection: FC<GradeLevelsSectionProps> = ({
                       <ul role="list" className="mt-4 space-y-2 border-t border-border pt-4">
                         {level.highlights.map((item) => (
                           <li key={item} className="flex items-start gap-2 text-xs leading-relaxed text-foreground/90">
-                            <Check aria-hidden="true" className={cn("mt-0.5 size-4 shrink-0", tone.fg)} />
+                            <Check animated={false} aria-hidden="true" className={cn("mt-0.5 size-4 shrink-0", tone.fg)} />
                             <span>{item}</span>
                           </li>
                         ))}

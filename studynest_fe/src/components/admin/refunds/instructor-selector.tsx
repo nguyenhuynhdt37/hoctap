@@ -5,7 +5,7 @@ import { getImageUrl } from "@/lib/utils/helpers/image";
 import { AdminLecturer } from "@/types/admin/refund";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { HiSearch, HiX } from "react-icons/hi";
+import { Search, X } from "pulsoicon-react";
 import useSWR from "swr";
 
 interface InstructorItemProps {
@@ -62,7 +62,7 @@ function InstructorItem({
       </div>
       {isSelected && (
         <div className="w-5 h-5 rounded-full bg-green-600 flex items-center justify-center shrink-0">
-          <HiX className="h-3 w-3 text-white rotate-45" />
+          <X className="h-3 w-3 text-white rotate-45" />
         </div>
       )}
     </button>
@@ -173,7 +173,7 @@ export function InstructorSelector({
             ? selectedInstructor.fullname
             : "Chọn giảng viên..."}
         </span>
-        <HiSearch className="h-5 w-5 text-gray-400" />
+        <Search className="h-5 w-5 text-gray-400" />
       </button>
 
       {showDropdown && (
@@ -185,7 +185,7 @@ export function InstructorSelector({
           <div className="absolute z-20 w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-96 overflow-hidden">
             <div className="p-3 border-b border-gray-200">
               <div className="relative">
-                <HiSearch className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
                 <input
                   type="text"
                   value={search}

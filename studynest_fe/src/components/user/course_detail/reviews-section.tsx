@@ -2,7 +2,7 @@
 
 import MarkdownRenderer from "@/components/shared/markdown-renderer";
 import { SampleReview } from "@/types/user/course_detail";
-import { HiStar } from "react-icons/hi";
+import { Star } from "pulsoicon-react";
 
 interface ReviewsSectionProps {
   reviews: SampleReview[];
@@ -43,7 +43,7 @@ export default function ReviewsSection({ reviews }: ReviewsSectionProps) {
                 </div>
               </div>
               <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-accent-vanilla border border-accent-vanilla-border text-warning-foreground text-xs font-bold">
-                <HiStar className="h-3.5 w-3.5" />
+                <Star solid animated={false} className="h-3.5 w-3.5" />
                 <span>{rv.rating.toFixed(1)}</span>
               </div>
             </div>

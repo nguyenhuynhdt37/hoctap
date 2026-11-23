@@ -4,7 +4,7 @@ import MarkdownRenderer from "@/components/shared/markdown-renderer";
 import { ActiveLessonResponse } from "@/types/user/activeLesson";
 import { CodeExercise, TestResult } from "@/types/user/learning";
 import { useRef, useEffect } from "react";
-import { HiCheckCircle, HiXCircle } from "react-icons/hi";
+import { CircleCheck, CircleX } from "pulsoicon-react";
 import QASection from "../qa";
 
 interface InfoPanelProps {
@@ -139,11 +139,11 @@ export default function InfoPanel({
                     </div>
                     <div className="flex items-center gap-3 text-xs">
                       <div className="flex items-center gap-1">
-                        <HiCheckCircle className="w-4 h-4 text-primary" />
+                        <CircleCheck solid className="w-4 h-4 text-primary" />
                         <span className="text-foreground">{testResult.passed}</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <HiXCircle className="w-4 h-4 text-red-600" />
+                        <CircleX solid className="w-4 h-4 text-red-600" />
                         <span className="text-foreground">{testResult.failed}</span>
                       </div>
                       <span className="text-muted-foreground">/ {testResult.total}</span>

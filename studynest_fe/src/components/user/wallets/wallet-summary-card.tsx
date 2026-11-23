@@ -1,5 +1,5 @@
 import { WalletSummary } from "@/types/user/wallet";
-import { HiCheckCircle, HiLockClosed, HiTrendingDown, HiTrendingUp } from "react-icons/hi";
+import { CircleCheck, Lock, TrendingDown, TrendingUp } from "pulsoicon-react";
 
 interface Props {
   wallet: WalletSummary | null;
@@ -83,7 +83,7 @@ export function WalletSummaryCard({ wallet }: Props) {
         {/* Tổng nạp */}
         <div className="rounded-2xl border border-white/15 bg-white/10 p-3.5 backdrop-blur-md">
           <div className="flex items-center gap-1.5 text-xs font-medium text-white/70">
-            <HiTrendingUp className="h-4 w-4 text-[#A8D1FA]" />
+            <TrendingUp className="h-4 w-4 text-[#A8D1FA]" />
             <span>Tổng nạp</span>
           </div>
           <p className="mt-1 text-base font-bold text-white">
@@ -94,7 +94,7 @@ export function WalletSummaryCard({ wallet }: Props) {
         {/* Tổng chi tiêu / rút */}
         <div className="rounded-2xl border border-white/15 bg-white/10 p-3.5 backdrop-blur-md">
           <div className="flex items-center gap-1.5 text-xs font-medium text-white/70">
-            <HiTrendingDown className="h-4 w-4 text-[#FDB8B8]" />
+            <TrendingDown className="h-4 w-4 text-[#FDB8B8]" />
             <span>Tổng chi tiêu</span>
           </div>
           <p className="mt-1 text-base font-bold text-white">
@@ -120,12 +120,12 @@ export function WalletSummaryCard({ wallet }: Props) {
             >
               {isLocked ? (
                 <>
-                  <HiLockClosed className="h-3.5 w-3.5 text-red-200" />
+                  <Lock className="h-3.5 w-3.5 text-red-200" />
                   <span>Đã khóa</span>
                 </>
               ) : (
                 <>
-                  <HiCheckCircle className="h-3.5 w-3.5 text-[#A8D1FA]" />
+                  <CircleCheck solid className="h-3.5 w-3.5 text-[#A8D1FA]" />
                   <span>Sẵn sàng sử dụng</span>
                 </>
               )}

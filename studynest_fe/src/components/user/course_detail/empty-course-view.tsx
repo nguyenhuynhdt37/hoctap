@@ -5,14 +5,14 @@ import { getImageUrl } from "@/lib/utils/helpers/image";
 import { Course } from "@/types/user/course_detail";
 import { useRouter } from "next/navigation";
 import {
-  HiAcademicCap,
-  HiBookOpen,
-  HiCheckCircle,
-  HiClock,
-  HiHeart,
-  HiPlay,
-  HiStar,
-} from "react-icons/hi";
+  GraduationCap,
+  BookOpen,
+  CircleCheck,
+  Clock,
+  Heart,
+  CirclePlay,
+  Star,
+} from "pulsoicon-react";
 
 interface EmptyCourseViewProps {
   course: Course;
@@ -44,7 +44,7 @@ export default function EmptyCourseView({
               />
               <div className="absolute top-4 left-4">
                 <div className="inline-flex items-center gap-2 bg-surface/92 backdrop-blur-md px-4 py-2 rounded-full shadow-xs border border-primary-pastel">
-                  <HiClock className="h-4 w-4 text-primary" />
+                  <Clock className="h-4 w-4 text-primary" />
                   <span className="font-bold text-primary text-xs">
                     Đang hoàn thiện bài giảng
                   </span>
@@ -72,7 +72,7 @@ export default function EmptyCourseView({
           <div className="bg-surface border border-primary-pastel rounded-[24px] p-6 shadow-xs">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 bg-primary-light border border-primary-pastel rounded-2xl flex items-center justify-center shrink-0 text-primary">
-                <HiAcademicCap className="h-6 w-6" />
+                <GraduationCap className="h-6 w-6" />
               </div>
               <div className="flex-1">
                 <h3 className="font-bold text-foreground text-base mb-1">
@@ -88,10 +88,10 @@ export default function EmptyCourseView({
 
           <div className="grid grid-cols-2 gap-3">
             {[
-              { icon: HiPlay, title: "Video bài giảng chuẩn HD" },
-              { icon: HiCheckCircle, title: "Luyện tập tương tác" },
-              { icon: HiBookOpen, title: "Tài liệu chuyên đề" },
-              { icon: HiStar, title: "Trợ giảng Mây Mây AI" },
+              { icon: CirclePlay, title: "Video bài giảng chuẩn HD" },
+              { icon: CircleCheck, title: "Luyện tập tương tác" },
+              { icon: BookOpen, title: "Tài liệu chuyên đề" },
+              { icon: Star, title: "Trợ giảng Mây Mây AI" },
             ].map((feature, idx) => (
               <div
                 key={idx}
@@ -113,7 +113,7 @@ export default function EmptyCourseView({
               onClick={() => router.push("/")}
               className="flex-1 px-6 py-3.5 bg-primary hover:bg-primary-hover text-primary-foreground font-semibold text-sm rounded-xl shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
             >
-              <HiBookOpen className="h-5 w-5" />
+              <BookOpen className="h-5 w-5" />
               <span>Khám phá khóa học khác</span>
             </button>
 
@@ -127,7 +127,7 @@ export default function EmptyCourseView({
                   : "bg-surface border-border text-foreground hover:border-primary-pastel"
               }`}
             >
-              <HiHeart
+              <Heart solid
                 className={`h-5 w-5 ${isFavourite ? "fill-current" : ""}`}
               />
               <span>

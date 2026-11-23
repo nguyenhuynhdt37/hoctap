@@ -2,7 +2,7 @@
 
 import api from "@/lib/utils/fetcher/client/axios";
 import { useState } from "react";
-import { HiDownload, HiX, HiDocumentDownload, HiCode } from "react-icons/hi";
+import { Download, X, FileDown, Code } from "pulsoicon-react";
 
 type ExportFormat = "xlsx" | "json";
 
@@ -101,7 +101,7 @@ export default function ExportComprehensive({ isOpen, onClose }: Props) {
         <div className="flex items-center justify-between p-6 border-b border-gray-100">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-green-100 rounded-lg">
-              <HiDownload className="w-5 h-5 text-green-600" />
+              <Download className="w-5 h-5 text-green-600" />
             </div>
             <div>
               <h3 className="text-lg font-bold text-gray-900">
@@ -113,10 +113,11 @@ export default function ExportComprehensive({ isOpen, onClose }: Props) {
             </div>
           </div>
           <button
+            aria-label="Đóng"
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
-            <HiX className="w-5 h-5 text-gray-500" />
+            <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>
 
@@ -136,7 +137,7 @@ export default function ExportComprehensive({ isOpen, onClose }: Props) {
                     : "border-gray-200 hover:border-gray-300"
                 }`}
               >
-                <HiDocumentDownload
+                <FileDown
                   className={`w-6 h-6 ${
                     format === "xlsx" ? "text-green-600" : "text-gray-400"
                   }`}
@@ -162,7 +163,7 @@ export default function ExportComprehensive({ isOpen, onClose }: Props) {
                     : "border-gray-200 hover:border-gray-300"
                 }`}
               >
-                <HiCode
+                <Code
                   className={`w-6 h-6 ${
                     format === "json" ? "text-green-600" : "text-gray-400"
                   }`}
@@ -251,7 +252,7 @@ export default function ExportComprehensive({ isOpen, onClose }: Props) {
               </>
             ) : (
               <>
-                <HiDownload className="w-4 h-4" />
+                <Download className="w-4 h-4" />
                 <span className="text-sm font-medium">
                   Xuất {format === "xlsx" ? "Excel" : "JSON"}
                 </span>

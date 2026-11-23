@@ -20,7 +20,7 @@ import {
   Trash2,
   UploadCloud,
   X,
-} from "lucide-react";
+} from "pulsoicon-react";
 import useSWR from "swr";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -397,7 +397,7 @@ const Resources = () => {
                           className="flex items-center justify-between p-3 bg-surface-muted/60 rounded-xl border border-border"
                         >
                           <div className="flex items-center gap-3 flex-1">
-                            <FileText className="h-5 w-5 text-primary flex-shrink-0" />
+                            <FileText animated={false} className="h-5 w-5 text-primary flex-shrink-0" />
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium text-foreground truncate">
                                 {file.name}
@@ -476,6 +476,7 @@ const Resources = () => {
                             </div>
                           </div>
                           <button
+                            aria-label="Xóa"
                             onClick={() => setResourceToDelete(resource.id)}
                             className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive-bg rounded-lg transition-colors flex-shrink-0"
                             title="Xóa"
@@ -596,6 +597,7 @@ const Resources = () => {
                             </div>
                           </div>
                           <button
+                            aria-label="Xóa"
                             onClick={() => setResourceToDelete(resource.id)}
                             className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive-bg rounded-lg transition-colors flex-shrink-0"
                             title="Xóa"
@@ -650,7 +652,7 @@ const Resources = () => {
                           className="flex items-center justify-between p-3 bg-surface-muted/60 rounded-xl border border-border"
                         >
                           <div className="flex items-center gap-3 flex-1">
-                            <Archive className="h-5 w-5 text-accent-foreground flex-shrink-0" />
+                            <Archive animated={false} className="h-5 w-5 text-accent-foreground flex-shrink-0" />
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium text-foreground truncate">
                                 {file.name}
@@ -724,6 +726,7 @@ const Resources = () => {
                             </div>
                           </div>
                           <button
+                            aria-label="Xóa"
                             onClick={() => setResourceToDelete(resource.id)}
                             className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive-bg rounded-lg transition-colors flex-shrink-0"
                             title="Xóa"

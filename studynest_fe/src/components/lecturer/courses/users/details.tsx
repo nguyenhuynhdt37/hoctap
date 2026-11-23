@@ -2,7 +2,7 @@
 
 import { Badge, Card } from "@/components/ui";
 import { StudentDetailResponse } from "@/types/lecturer/student-detail";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "pulsoicon-react";
 import Link from "next/link";
 
 export default function LecturerStudentDetails({

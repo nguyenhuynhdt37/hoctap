@@ -6,7 +6,7 @@ import {
   SectionShell,
 } from "@/components/user/home/landing-ui";
 import { cn } from "@/lib/utils";
-import { ArrowRight, Globe } from "lucide-react";
+import { ArrowRight, Globe } from "@/components/ui/server-icons";
 import Image from "next/image";
 import Link from "next/link";
 

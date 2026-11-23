@@ -1,7 +1,7 @@
 "use client";
 
 import { Card } from "@/components/ui";
-import { Check, Play, Upload, X } from "lucide-react";
+import { Check, Play, Upload, X } from "pulsoicon-react";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 
 interface VideoFormProps {
@@ -198,6 +198,7 @@ const VideoForm = memo(
                       </span>
                     </div>
                     <button
+                      aria-label="Xóa tệp"
                       type="button"
                       onClick={() => handleFileChange(null)}
                       className="text-destructive-foreground hover:opacity-80 cursor-pointer transition-opacity"

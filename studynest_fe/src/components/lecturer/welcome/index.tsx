@@ -2,7 +2,7 @@
 
 import { Badge, Button, Card } from "@/components/ui";
 import { useRouter } from "next/navigation";
-import { CircleDollarSign, Play, Users, Video } from "lucide-react";
+import { CircleDollarSign, Play, Users, Video } from "pulsoicon-react";
 import { BecomeLecturerAction } from "./become";
 
 const LecturerWelcome = () => {

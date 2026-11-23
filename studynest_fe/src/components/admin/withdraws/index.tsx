@@ -10,7 +10,7 @@ import type {
 } from "@/types/admin/withdraw";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { HiEye } from "react-icons/hi";
+import { Eye } from "pulsoicon-react";
 import useSWR from "swr";
 
 const formatCurrency = (val: number) =>
@@ -556,7 +556,7 @@ export default function AdminWithdraws() {
                             }}
                             className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
                           >
-                            <HiEye className="h-4 w-4" />
+                            <Eye className="h-4 w-4" />
                             Xem chi tiết
                           </button>
                         </td>

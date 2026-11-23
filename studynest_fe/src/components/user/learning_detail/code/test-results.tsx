@@ -1,7 +1,7 @@
 "use client";
 
 import { TestResult } from "@/types/user/learning";
-import { HiCheckCircle, HiXCircle } from "react-icons/hi";
+import { CircleCheck, CircleX } from "pulsoicon-react";
 
 interface TestCase {
   id: string;
@@ -33,7 +33,7 @@ export default function TestResults({
         {testResult && (
           <div className="flex items-center gap-3 text-xs">
             <div className="flex items-center gap-1">
-              <HiCheckCircle className="w-4 h-4 text-primary" />
+              <CircleCheck solid className="w-4 h-4 text-primary" />
               <span className="text-foreground">
                 <span className="font-semibold text-primary">
                   {testResult.passed}
@@ -104,9 +104,9 @@ export default function TestResults({
                           {passed ? "PASS" : ({ compile_error: "Lỗi biên dịch", runtime_error: "Lỗi chạy", time_limit_exceeded: "Quá thời gian", memory_limit_exceeded: "Quá bộ nhớ", internal_error: "Chưa chạy được", failed: "Chưa đúng" } as Record<string, string>)[testResultDetail.result] || "Chưa đạt"}
                         </span>
                         {passed ? (
-                          <HiCheckCircle className="w-4 h-4 text-primary" />
+                          <CircleCheck solid animated={false} className="w-4 h-4 text-primary" />
                         ) : (
-                          <HiXCircle className="w-4 h-4 text-destructive-foreground" />
+                          <CircleX solid animated={false} className="w-4 h-4 text-destructive-foreground" />
                         )}
                       </>
                     )}

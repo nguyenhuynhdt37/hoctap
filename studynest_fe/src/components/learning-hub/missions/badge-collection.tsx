@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui";
 import { IconBubble } from "@/components/user/home/landing-ui";
 import { mayPortrait, StudyImage } from "@/components/user/home/study-image";
 import { useLearningBadges } from "@/lib/learning-hub/hooks";
-import { Medal } from "lucide-react";
+import { Medal } from "pulsoicon-react";
 import { useId } from "react";
 import { SectionLoading } from "../home/section";
 import { HubLoadError } from "../hub-page-state";

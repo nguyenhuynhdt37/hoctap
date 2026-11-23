@@ -3,11 +3,11 @@
 import MarkdownRenderer from "@/components/shared/markdown-renderer";
 import { UserProfile } from "@/types/user/profile";
 import {
-  HiCalendar,
-  HiIdentification,
-  HiLink,
-  HiLocationMarker,
-} from "react-icons/hi";
+  Calendar,
+  IdCard,
+  Link,
+  MapPin,
+} from "pulsoicon-react";
 
 interface ProfileInfoProps {
   profileData: UserProfile;
@@ -37,7 +37,7 @@ export default function ProfileInfo({ profileData }: ProfileInfoProps) {
         {/* Facebook URL */}
         {profileData.facebook_url && (
           <div className="flex items-start gap-3">
-            <HiLink className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+            <Link className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
             <div>
               <p className="text-sm font-semibold text-gray-700">Facebook</p>
               <a
@@ -55,7 +55,7 @@ export default function ProfileInfo({ profileData }: ProfileInfoProps) {
         {/* Birthday */}
         {profileData.birthday && (
           <div className="flex items-start gap-3">
-            <HiCalendar className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+            <Calendar className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
             <div>
               <p className="text-sm font-semibold text-gray-700">Ngày sinh</p>
               <p className="text-sm text-gray-600">
@@ -72,7 +72,7 @@ export default function ProfileInfo({ profileData }: ProfileInfoProps) {
         {/* Location */}
         {(profileData.conscious || profileData.district) && (
           <div className="flex items-start gap-3">
-            <HiLocationMarker className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+            <MapPin className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
             <div>
               <p className="text-sm font-semibold text-gray-700">Địa chỉ</p>
               <p className="text-sm text-gray-600">
@@ -87,7 +87,7 @@ export default function ProfileInfo({ profileData }: ProfileInfoProps) {
         {/* Citizenship Identity */}
         {profileData.citizenship_identity && (
           <div className="flex items-start gap-3">
-            <HiIdentification className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+            <IdCard className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
             <div>
               <p className="text-sm font-semibold text-gray-700">
                 Số CMND/CCCD

@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, EmptyState } from "@/components/ui";
-import { Tag } from "lucide-react";
+import { Tag } from "pulsoicon-react";
 
 export function DiscountsEmpty() {
   return (

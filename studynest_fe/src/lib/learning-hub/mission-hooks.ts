@@ -8,7 +8,7 @@ import { getHubDataSource } from "./data-source";
 import { hubEndpoints } from "./endpoints";
 import { useHubAuthStatus } from "./hooks";
 import { celebrateLevelUp } from "./level-up-state";
-import { shopInventoryKey, shopItemsKey } from "./shop-keys";
+import { shopCatalogKeys, shopInventoryKey } from "./shop-keys";
 import { apiMissionsClient } from "./missions-api";
 import type { ClaimResult, Mission, MissionsOverview } from "./mission-types";
 
@@ -111,7 +111,7 @@ export function useMissionBoard() {
         setFeedback({ id: mission.id, kind: "success", result });
         celebrateLevelUp(userId, result.level_up);
         void overview.mutate().catch(() => undefined);
-        for (const key of [rewardInventoryKey(userId), shopInventoryKey(userId), shopItemsKey(userId)]) {
+        for (const key of [rewardInventoryKey(userId), shopInventoryKey(userId), ...shopCatalogKeys(userId)]) {
           void mutate(key).catch(() => undefined);
         }
       }

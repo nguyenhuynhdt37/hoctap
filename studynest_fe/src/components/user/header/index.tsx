@@ -21,7 +21,7 @@ import { useRealtimeNotiStore } from "@/stores/notifications";
 import { useUserStore } from "@/stores/user";
 import type { User } from "@/types/user/user";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ChevronDown, LayoutGrid, Search, X } from "lucide-react";
+import { ChevronDown, LayoutGrid, Search, X } from "pulsoicon-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type FormEvent } from "react";
@@ -42,7 +42,7 @@ function AccountAvatar({ user, pathname }: { user: User; pathname: string }) {
     <Link href="/profile" aria-label={[`Hồ sơ của ${user.fullname || "bạn"}`, ...labels].join(", ")}
       aria-current={pathname === "/profile" ? "page" : undefined}
       className={cn("flex min-h-11 shrink-0 items-center gap-1.5 rounded-full", focusRing, "aria-[current=page]:ring-2 aria-[current=page]:ring-primary")}>
-      <TitleBadge item={equipment?.title} className="hidden max-w-24 min-[1260px]:inline-flex [&>span]:truncate [&>span]:whitespace-nowrap" />
+      <TitleBadge item={equipment?.title} className="hidden max-w-24 lg:max-2xl:inline-flex min-[1600px]:inline-flex [&>span]:truncate [&>span]:whitespace-nowrap" />
       <span className="relative inline-grid place-items-center">
         <FramedAvatar src={user.avatar} name={user.fullname} equipment={equipment} className="text-xs" />
         <EmblemIcon item={equipment?.emblem} decorative className="absolute right-0 bottom-0 size-[1.0625rem] rounded-full ring-1 ring-surface" />
@@ -170,7 +170,7 @@ function SkyIsland({ pathname }: { pathname: string }) {
         ref={islandRef}
         className={cn(
           "pointer-events-auto relative isolate mx-auto flex w-full flex-col rounded-[28px] border border-primary-pastel/70 bg-surface/85 transition-[max-width,box-shadow] duration-300 ease-out motion-reduce:transition-none",
-          open ? "max-w-6xl shadow-xl" : cn("max-w-[68rem]", scrolled ? "shadow-lg" : "shadow-md"),
+          open ? "max-w-6xl shadow-xl" : cn("max-w-[68rem] 2xl:max-w-[80rem]", scrolled ? "shadow-lg" : "shadow-md"),
           open && "max-md:fixed max-md:inset-x-2 max-md:top-2 max-md:bottom-2 max-md:z-50 max-md:w-auto max-md:max-w-none max-md:bg-surface",
         )}
       >
@@ -195,7 +195,7 @@ function SkyIsland({ pathname }: { pathname: string }) {
             <span className="whitespace-nowrap text-base font-semibold text-foreground sm:text-lg">Mây Mây</span>
           </Link>
 
-          <nav aria-label="Điều hướng chính" className="ml-1 hidden items-center gap-0.5 xl:flex">
+          <nav aria-label="Điều hướng chính" className="ml-1 hidden items-center gap-0.5 2xl:flex">
             {links.map((link) => {
               const sections = link.href === "/combo" ? ["/combo", "/lo-trinh"] : [link.href];
               const current = isCurrentPage(pathname, link.href);
@@ -220,7 +220,7 @@ function SkyIsland({ pathname }: { pathname: string }) {
           ) : viewer.signedIn && user ? (
             <>
               {dashboard && (
-                <Link href={dashboard.href} className={cn(pillLink, focusRing, "hidden border border-accent-border bg-accent text-accent-foreground hover:bg-accent-border/70 hover:text-accent-foreground xl:inline-flex")}>
+                <Link href={dashboard.href} className={cn(pillLink, focusRing, "hidden border border-accent-border bg-accent text-accent-foreground hover:bg-accent-border/70 hover:text-accent-foreground 2xl:inline-flex")}>
                   <LayoutGrid aria-hidden="true" className="mr-1.5 size-4" />
                   {dashboard.label}
                 </Link>

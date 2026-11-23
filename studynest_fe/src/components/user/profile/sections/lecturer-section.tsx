@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
-import { BsPaypal } from "react-icons/bs";
+import { BrandPaypal } from "pulsoicon-react";
 import { ProfileEditor } from "../hooks/use-profile-form";
 
 export default function LecturerSection({ editor }: { editor: ProfileEditor }) {
@@ -78,7 +78,7 @@ export default function LecturerSection({ editor }: { editor: ProfileEditor }) {
           disabled
           placeholder="Chưa có mã người thanh toán"
         />
-        <Button type="button" variant="outline" onClick={connectPaypal} leftIcon={<BsPaypal />}>
+        <Button type="button" variant="outline" onClick={connectPaypal} leftIcon={<BrandPaypal size="1em" />}>
           Cập nhật PayPal
         </Button>
         {paypalError && (

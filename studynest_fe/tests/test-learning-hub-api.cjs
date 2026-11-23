@@ -73,6 +73,8 @@ function testApp(env = {}) {
     "@/components/shared/user-loader": { useCookieUserStatus: () => "ready" },
     "next/link": ({ children, href }) => React.createElement("a", { href }, children),
     "next/image": ({ src, alt }) => React.createElement("span", { "data-image": src, "aria-label": alt }),
+    // This CommonJS harness checks API behavior. The icon test loads PulsoIcon's ESM exports.
+    "pulsoicon-react": new Proxy({}, { get: () => () => null }),
   };
 
   function load(resolved) {

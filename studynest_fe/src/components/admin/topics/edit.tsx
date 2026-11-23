@@ -8,11 +8,11 @@ import { Category } from "@/types/admin/category";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
-  HiArrowLeft,
-  HiCheckCircle,
-  HiPencil,
-  HiXCircle,
-} from "react-icons/hi";
+  ArrowLeft,
+  CircleCheck,
+  Pencil,
+  CircleX,
+} from "pulsoicon-react";
 import useSWR from "swr";
 
 interface CategoriesPaginatedResponse {
@@ -201,7 +201,7 @@ const EditTopic = ({ topicId }: { topicId: string }) => {
     return (
       <div className="h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <HiXCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <CircleX solid className="w-16 h-16 text-red-500 mx-auto mb-4" />
           <p className="text-red-600 text-lg font-semibold">
             Không tìm thấy topic
           </p>
@@ -223,10 +223,11 @@ const EditTopic = ({ topicId }: { topicId: string }) => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
+              aria-label="Về danh sách chủ đề"
               onClick={() => router.push("/admin/topics")}
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              <HiArrowLeft className="w-5 h-5 text-gray-600" />
+              <ArrowLeft className="w-5 h-5 text-gray-600" />
             </button>
             <div>
               <h1 className="text-2xl font-semibold text-gray-900">
@@ -251,7 +252,7 @@ const EditTopic = ({ topicId }: { topicId: string }) => {
                 {error && (
                   <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                     <div className="flex items-center gap-2">
-                      <HiXCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+                      <CircleX solid className="w-5 h-5 text-red-600 flex-shrink-0" />
                       <p className="text-sm text-red-800">{error}</p>
                     </div>
                   </div>
@@ -355,7 +356,7 @@ const EditTopic = ({ topicId }: { topicId: string }) => {
                 {name.trim() && (
                   <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                     <div className="flex items-center gap-2 mb-3">
-                      <HiCheckCircle className="w-5 h-5 text-green-600" />
+                      <CircleCheck solid className="w-5 h-5 text-green-600" />
                       <h3 className="font-medium text-gray-900">Xem trước</h3>
                     </div>
                     <div className="space-y-2 text-sm">
@@ -418,7 +419,7 @@ const EditTopic = ({ topicId }: { topicId: string }) => {
                     </>
                   ) : (
                     <>
-                      <HiPencil className="w-5 h-5" />
+                      <Pencil className="w-5 h-5" />
                       Cập nhật topic
                     </>
                   )}

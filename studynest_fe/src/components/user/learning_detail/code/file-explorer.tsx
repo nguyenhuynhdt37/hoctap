@@ -1,6 +1,6 @@
 "use client";
 
-import { HiCode } from "react-icons/hi";
+import { Code } from "pulsoicon-react";
 
 interface File {
   id: string;
@@ -37,7 +37,7 @@ export default function FileExplorer({
                 : "text-foreground/80 hover:bg-surface"
             }`}
           >
-            <HiCode
+            <Code
               className={`w-4 h-4 flex-shrink-0 ${
                 activeFileId === file.id
                   ? "text-primary"

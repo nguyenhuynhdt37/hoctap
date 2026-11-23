@@ -9,7 +9,7 @@ import { useMissionBoard } from "@/lib/learning-hub/mission-hooks";
 import type { Mission, MissionStatus, MissionsOverview, XpState } from "@/lib/learning-hub/mission-types";
 import { cn } from "@/lib/utils";
 import { motion, useReducedMotion } from "framer-motion";
-import { ArrowUp, BookOpen, CalendarDays, Check, ClipboardList, Clock3, Code2, Flag, Gift, Coins, Ticket, Trophy, Zap, type LucideIcon } from "lucide-react";
+import { ArrowUp, BookOpen, CalendarDays, Check, ClipboardList, Clock3, Code2, Flag, Gift, Coins, Ticket, Trophy, Zap, type PulsoIcon } from "pulsoicon-react";
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { HomeLink, number, SectionLoading } from "../home/section";
 import type { useDailyLearningState } from "../home/use-daily-learning-state";
@@ -35,7 +35,7 @@ const missionArt = {
   "chapter.quiz_pass": { icon: ClipboardList, tone: "pink" },
   "course.complete": { icon: Trophy, tone: "vanilla" },
   "course.weekly_streak": { icon: CalendarDays, tone: "lavender" },
-} satisfies Record<Mission["template"], { icon: LucideIcon; tone: Tone }>;
+} satisfies Record<Mission["template"], { icon: PulsoIcon; tone: Tone }>;
 
 type CourseGroup = MissionsOverview["long_term"][number];
 type DailyLearningState = ReturnType<typeof useDailyLearningState>;

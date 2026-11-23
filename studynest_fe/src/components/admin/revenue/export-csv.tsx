@@ -2,7 +2,7 @@
 
 import api from "@/lib/utils/fetcher/client/axios";
 import { useState } from "react";
-import { HiDownload, HiCalendar } from "react-icons/hi";
+import { Download, Calendar } from "pulsoicon-react";
 
 type GroupBy = "day" | "month" | "year";
 
@@ -67,7 +67,7 @@ export default function ExportCSV() {
     <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/30 p-6">
       <div className="flex items-center gap-3 mb-6">
         <div className="p-2 bg-green-100 rounded-lg">
-          <HiDownload className="w-5 h-5 text-green-600" />
+          <Download className="w-5 h-5 text-green-600" />
         </div>
         <div>
           <h3 className="text-lg font-bold text-gray-900">Xuất báo cáo CSV</h3>
@@ -138,7 +138,7 @@ export default function ExportCSV() {
               </>
             ) : (
               <>
-                <HiDownload className="w-4 h-4" />
+                <Download className="w-4 h-4" />
                 <span className="text-sm font-medium">Xuất CSV</span>
               </>
             )}

@@ -6,7 +6,7 @@ import { ActiveLessonResponse } from "@/types/user/activeLesson";
 import { QuizQuestion } from "@/types/user/learning";
 import confetti from "canvas-confetti";
 import { useEffect, useRef, useState } from "react";
-import { HiChatAlt2 } from "react-icons/hi";
+import { MessageSquareText } from "pulsoicon-react";
 import InfoPanel from "./info-panel";
 import QuestionDisplay from "./question-display";
 import QuizNavigation from "./quiz-navigation";
@@ -349,7 +349,7 @@ export default function QuizLesson({
               : "bg-primary text-white hover:bg-primary-hover"
           }`}
         >
-          <HiChatAlt2 className="w-5 h-5" />
+          <MessageSquareText className="w-5 h-5" />
           <span>Hỏi đáp</span>
         </button>
       </div>

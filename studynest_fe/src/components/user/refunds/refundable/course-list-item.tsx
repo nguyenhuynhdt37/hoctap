@@ -4,7 +4,7 @@ import { getImageUrl } from "@/lib/utils/helpers/image";
 import { RefundableCourseItem } from "@/types/user/refund";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { HiClock } from "react-icons/hi";
+import { Clock } from "pulsoicon-react";
 
 interface RefundableCourseListItemProps {
   item: RefundableCourseItem;
@@ -126,7 +126,7 @@ export default function RefundableCourseListItem({
           {/* Countdown Timer - Top Right */}
           {timeRemaining.total > 0 && (
             <div className="absolute top-0 right-0 rounded-lg bg-yellow-500 text-white px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 shadow-md z-10">
-              <HiClock className="h-3.5 w-3.5" />
+              <Clock className="h-3.5 w-3.5" />
               <span className="tabular-nums font-mono">
                 {formatCountdown(timeRemaining)}
               </span>

@@ -12,7 +12,7 @@ import {
   Tag,
   User,
   X,
-} from "lucide-react";
+} from "pulsoicon-react";
 import { CourseSelector } from "./course-selector";
 import { StudentSelector } from "./student-selector";
 
@@ -286,6 +286,7 @@ export function HoldEarningsFilters({
                     Tìm: <strong>&ldquo;{search}&rdquo;</strong>
                   </span>
                   <button
+                    aria-label="Xóa tìm kiếm"
                     type="button"
                     onClick={() => onSearchChange("")}
                     className="hover:opacity-75 transition-opacity"
@@ -309,6 +310,7 @@ export function HoldEarningsFilters({
                     </strong>
                   </span>
                   <button
+                    aria-label="Xóa lọc"
                     type="button"
                     onClick={() => onStatusChange("")}
                     className="hover:opacity-75 transition-opacity"

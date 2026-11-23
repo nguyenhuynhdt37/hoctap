@@ -3,7 +3,7 @@
 import api from "@/lib/utils/fetcher/client/axios";
 import { RevenueByCourseResponse } from "@/types/admin/statistics";
 import { getImageUrl } from "@/lib/utils/helpers/image";
-import { HiPhotograph } from "react-icons/hi";
+import { Image } from "pulsoicon-react";
 import useSWR from "swr";
 
 const formatCurrency = (value: number | null | undefined) => {
@@ -92,7 +92,7 @@ export default function RevenueByCourse() {
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <HiPhotograph className="w-5 h-5 text-gray-400" />
+                    <Image animated={false} className="w-5 h-5 text-gray-400" />
                   </div>
                 )}
               </div>

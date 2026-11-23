@@ -21,7 +21,7 @@ import {
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { ArrowRight, LockKeyhole, Mail } from "lucide-react";
+import { ArrowRight, LockKeyhole, Mail } from "pulsoicon-react";
 import { sanitizeRedirect } from "@/lib/auth/safe-redirect";
 
 // ============================================

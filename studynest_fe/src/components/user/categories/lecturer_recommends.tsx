@@ -6,12 +6,12 @@ import { getImageUrl } from "@/lib/utils/helpers/image";
 import useSWR from "swr";
 import { useCallback, useEffect, useState } from "react";
 import {
-  HiUsers,
-  HiBookOpen,
-  HiBadgeCheck,
-  HiChevronLeft,
-  HiChevronRight,
-} from "react-icons/hi";
+  Users,
+  BookOpen,
+  BadgeCheck,
+  ChevronLeft,
+  ChevronRight,
+} from "pulsoicon-react";
 import { useRouter } from "next/navigation";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
@@ -51,7 +51,7 @@ const LecturerCard = ({ item }: { item: LecturerItem }) => {
           />
         </div>
         <span className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground">
-          <HiBadgeCheck className="h-4 w-4" />
+          <BadgeCheck solid className="h-4 w-4" />
         </span>
       </div>
 
@@ -61,14 +61,14 @@ const LecturerCard = ({ item }: { item: LecturerItem }) => {
 
       <div className="mb-4 space-y-2 text-xs text-muted-foreground">
         <div className="flex items-center justify-center gap-1">
-          <HiUsers className="h-4 w-4 text-primary" />
+          <Users className="h-4 w-4 text-primary" />
           <span className="font-semibold text-foreground">
             {item.total_enrolls.toLocaleString()}
           </span>
           <span>học viên</span>
         </div>
         <div className="flex items-center justify-center gap-1">
-          <HiBookOpen className="h-4 w-4 text-primary" />
+          <BookOpen className="h-4 w-4 text-primary" />
           <span className="font-semibold text-foreground">
             {item.total_courses}
           </span>
@@ -171,7 +171,7 @@ const LecturerRecommends = ({ slug }: LecturerRecommendsProps) => {
                   className={`${navBtnClass} left-0`}
                   aria-label="Slide trước"
                 >
-                  <HiChevronLeft className="h-5 w-5 md:h-6 md:w-6" />
+                  <ChevronLeft className="h-5 w-5 md:h-6 md:w-6" />
                 </button>
                 <button
                   onClick={() => emblaApi?.scrollNext()}
@@ -179,7 +179,7 @@ const LecturerRecommends = ({ slug }: LecturerRecommendsProps) => {
                   className={`${navBtnClass} right-0`}
                   aria-label="Slide tiếp theo"
                 >
-                  <HiChevronRight className="h-5 w-5 md:h-6 md:w-6" />
+                  <ChevronRight className="h-5 w-5 md:h-6 md:w-6" />
                 </button>
               </>
             )}

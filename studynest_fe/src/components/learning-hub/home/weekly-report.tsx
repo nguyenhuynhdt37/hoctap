@@ -3,7 +3,7 @@
 import { Button, Skeleton, Textarea } from "@/components/ui";
 import { pathCover, StudyImage } from "@/components/user/home/study-image";
 import { useWeeklyReport } from "@/lib/learning-hub/hooks";
-import { Check, Clipboard, Share2 } from "lucide-react";
+import { Check, Clipboard, Share2 } from "pulsoicon-react";
 import { useState } from "react";
 import { HubLoadError } from "../hub-page-state";
 import { MockDataChip } from "../mock-data-chip";

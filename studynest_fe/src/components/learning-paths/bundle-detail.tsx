@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import useSWR from "swr";
-import { ArrowLeft, BookOpen, Check, ChevronRight } from "lucide-react";
+import { ArrowLeft, BookOpen, Check, ChevronRight } from "pulsoicon-react";
 import { sanitizeRedirect } from "@/lib/auth/safe-redirect";
 import api from "@/lib/utils/fetcher/client/axios";
 import { Button, Badge, Card, Input, Modal } from "@/components/ui";
@@ -151,7 +151,7 @@ export default function BundleDetail({ slug }: { slug: string }) {
                   <ul className="space-y-2 text-sm text-muted-foreground">
                     {items?.map((item, index) => (
                       <li key={index} className="flex items-start gap-2 break-words">
-                        <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+                        <Check animated={false} className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
                         <span className="min-w-0">{item}</span>
                       </li>
                     ))}

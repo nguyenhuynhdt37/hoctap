@@ -8,7 +8,7 @@ import {
   TrendingDown,
   TrendingUp,
   Users,
-} from "lucide-react";
+} from "pulsoicon-react";
 import { Badge, Card, Skeleton } from "@/components/ui";
 import api from "@/lib/utils/fetcher/client/axios";
 import { LecturerOverview } from "@/types/lecturer/statistics";
@@ -101,9 +101,9 @@ export default function OverviewStats() {
                   className="gap-1 text-xs"
                 >
                   {stat.isGrowthPositive ? (
-                    <TrendingUp className="w-3.5 h-3.5" />
+                    <TrendingUp animated={false} className="w-3.5 h-3.5" />
                   ) : (
-                    <TrendingDown className="w-3.5 h-3.5" />
+                    <TrendingDown animated={false} className="w-3.5 h-3.5" />
                   )}
                   {Math.abs(growthValue).toFixed(1)}%
                 </Badge>

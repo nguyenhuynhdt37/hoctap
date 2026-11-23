@@ -6,7 +6,7 @@ import useSWR, { useSWRConfig } from "swr";
 import { getHubDataSource } from "./data-source";
 import { useHubAuthStatus } from "./hooks";
 import { apiShopClient } from "./shop-api";
-import { shopInventoryKey, shopItemsKey } from "./shop-keys";
+import { shopCatalogKeys, shopInventoryKey, shopItemsKey } from "./shop-keys";
 import type { InventoryResponse, ItemKind, ShopItemsResponse } from "./shop-types";
 
 const queryOptions = { shouldRetryOnError: false };
@@ -32,10 +32,10 @@ export function useShopInventory(enabled = true) {
     (await getShopClient(id!)).getInventory(), queryOptions);
 }
 
-export function useShopItems() {
+export function useShopItems(kind?: ItemKind) {
   const id = useShopUserId();
-  return useSWR<ShopItemsResponse>(id ? shopItemsKey(id) : null, async () =>
-    (await getShopClient(id!)).getItems(), queryOptions);
+  return useSWR(id && kind ? shopItemsKey(id, kind) : null, async ([, userId, , itemKind]) =>
+    (await getShopClient(userId)).getItems(itemKind), queryOptions);
 }
 
 export function useLearnerEquipment(profileId?: string) {
@@ -67,15 +67,17 @@ export function useShopActions() {
     return run(async (id) => {
       const result = await (await getShopClient(id)).purchase(itemId, key);
       const { item, balance } = result;
+      const catalogKeys = shopCatalogKeys(id);
+      const inventoryKey = shopInventoryKey(id);
       await Promise.all([
-        mutate<ShopItemsResponse>(shopItemsKey(id), (data) => data && ({
+        ...catalogKeys.map((key) => mutate<ShopItemsResponse>(key, (data) => data && ({
           balance, items: data.items.map((entry) => entry.id === item.id ? item : entry),
-        }), { revalidate: false }),
-        mutate<InventoryResponse>(shopInventoryKey(id), (data) => data && ({
+        }), { revalidate: false })),
+        mutate<InventoryResponse>(inventoryKey, (data) => data && ({
           ...data, balance, items: [...data.items.filter((entry) => entry.id !== item.id), item],
         }), { revalidate: false }),
       ]);
-      for (const cacheKey of [shopInventoryKey(id), shopItemsKey(id)]) {
+      for (const cacheKey of [inventoryKey, ...catalogKeys]) {
         void mutate(cacheKey).catch(() => undefined);
       }
       return result;
@@ -92,7 +94,7 @@ export function useShopActions() {
         items: data.items.map((entry) => ({ ...entry, equipped: equipment[entry.kind]?.id === entry.id })),
       });
       await Promise.all([
-        mutate<ShopItemsResponse>(shopItemsKey(id), markEquipped, { revalidate: false }),
+        ...shopCatalogKeys(id).map((key) => mutate<ShopItemsResponse>(key, markEquipped, { revalidate: false })),
         mutate<InventoryResponse>(shopInventoryKey(id), (data) => data && ({
           ...markEquipped(data)!, equipment,
         }), { revalidate: false }),

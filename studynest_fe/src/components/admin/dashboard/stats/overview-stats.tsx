@@ -3,14 +3,14 @@
 import api from "@/lib/utils/fetcher/client/axios";
 import { OverviewResponse } from "@/types/admin/statistics";
 import {
-  HiUsers,
-  HiBookOpen,
-  HiAcademicCap,
-  HiCurrencyDollar,
-  HiCash,
-  HiArrowUp,
-  HiRefresh,
-} from "react-icons/hi";
+  Users,
+  BookOpen,
+  GraduationCap,
+  CircleDollarSign,
+  Banknote,
+  ArrowUp,
+  RefreshCw,
+} from "pulsoicon-react";
 import useSWR from "swr";
 
 const formatCurrency = (value: number | null | undefined) => {
@@ -74,43 +74,43 @@ export default function OverviewStats() {
     {
       title: "Tổng người dùng",
       value: (data?.total_users ?? 0).toLocaleString("vi-VN"),
-      icon: HiUsers,
+      icon: Users,
       color: "bg-green-500",
     },
     {
       title: "Tổng khóa học",
       value: (data?.total_courses ?? 0).toLocaleString("vi-VN"),
-      icon: HiBookOpen,
+      icon: BookOpen,
       color: "bg-emerald-500",
     },
     {
       title: "Giảng viên",
       value: (data?.total_instructors ?? 0).toLocaleString("vi-VN"),
-      icon: HiAcademicCap,
+      icon: GraduationCap,
       color: "bg-teal-500",
     },
     {
       title: "Tổng doanh thu",
       value: formatCurrency(data?.total_revenue),
-      icon: HiCurrencyDollar,
+      icon: CircleDollarSign,
       color: "bg-green-600",
     },
     {
       title: "Doanh thu hôm nay",
       value: formatCurrency(data?.today_revenue),
-      icon: HiCash,
+      icon: Banknote,
       color: "bg-emerald-600",
     },
     {
       title: "Chờ rút tiền",
       value: (data?.pending_withdrawals ?? 0).toLocaleString("vi-VN"),
-      icon: HiArrowUp,
+      icon: ArrowUp,
       color: "bg-yellow-500",
     },
     {
       title: "Chờ hoàn tiền",
       value: (data?.pending_refunds ?? 0).toLocaleString("vi-VN"),
-      icon: HiRefresh,
+      icon: RefreshCw,
       color: "bg-red-500",
     },
   ];

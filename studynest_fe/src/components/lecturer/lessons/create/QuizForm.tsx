@@ -15,7 +15,7 @@ import {
   Timer,
   X,
   Clock,
-} from "lucide-react";
+} from "pulsoicon-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Alert, EmptyState } from "@/components/ui/states";

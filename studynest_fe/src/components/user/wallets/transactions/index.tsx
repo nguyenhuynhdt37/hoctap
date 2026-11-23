@@ -8,7 +8,7 @@ import {
 } from "@/types/user/wallet";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { HiArrowLeft, HiClock } from "react-icons/hi";
+import { ArrowLeft, Clock } from "pulsoicon-react";
 import useSWR from "swr";
 import { TransactionsFilterBar } from "./filter-bar";
 import { TransactionsPagination } from "./pagination";
@@ -124,7 +124,7 @@ export default function WalletTransactions({
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
-            <HiClock className="h-4 w-4" />
+            <Clock className="h-4 w-4" />
             <span>Sổ cái tài chính</span>
           </div>
           <h1 className="font-display text-3xl font-bold text-foreground sm:text-4xl mt-1">
@@ -140,7 +140,7 @@ export default function WalletTransactions({
           href="/wallets"
           className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-2 text-xs font-semibold text-foreground transition-all duration-200 hover:border-primary-pastel hover:bg-primary-light hover:text-primary shadow-2xs"
         >
-          <HiArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-4 w-4" />
           <span>Quay lại Ví</span>
         </Link>
       </div>

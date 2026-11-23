@@ -9,7 +9,7 @@ import {
   ExternalLink,
   ImagePlus,
   TrendingDown,
-} from "lucide-react";
+} from "pulsoicon-react";
 import CouponManager from "@/components/admin/learning-paths/coupon-manager";
 import {
   fetchLearning,

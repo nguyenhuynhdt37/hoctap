@@ -7,15 +7,15 @@ import {
 } from "@/types/admin/statistics";
 import { getImageUrl } from "@/lib/utils/helpers/image";
 import {
-  HiUser,
-  HiX,
-  HiStar,
-  HiBookOpen,
-  HiUserGroup,
-  HiCurrencyDollar,
-  HiCheckCircle,
-  HiBan,
-} from "react-icons/hi";
+  User,
+  X,
+  Star,
+  BookOpen,
+  UsersRound,
+  CircleDollarSign,
+  CircleCheck,
+  Ban,
+} from "pulsoicon-react";
 import { useState } from "react";
 import useSWR from "swr";
 
@@ -87,7 +87,7 @@ export default function InstructorList() {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-green-100">
-                      <HiUser className="w-6 h-6 text-green-600" />
+                      <User animated={false} className="w-6 h-6 text-green-600" />
                     </div>
                   )}
                 </div>
@@ -157,10 +157,11 @@ function InstructorDetailModal({
             Chi tiết giảng viên
           </h3>
           <button
+            aria-label="Đóng"
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
-            <HiX className="w-5 h-5 text-gray-500" />
+            <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>
 
@@ -181,7 +182,7 @@ function InstructorDetailModal({
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-green-100">
-                    <HiUser className="w-8 h-8 text-green-600" />
+                    <User className="w-8 h-8 text-green-600" />
                   </div>
                 )}
               </div>
@@ -211,28 +212,28 @@ function InstructorDetailModal({
             {/* Stats Grid */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="bg-green-50 rounded-xl p-4 text-center">
-                <HiCurrencyDollar className="w-5 h-5 text-green-600 mx-auto mb-1" />
+                <CircleDollarSign className="w-5 h-5 text-green-600 mx-auto mb-1" />
                 <p className="text-lg font-bold text-green-800">
                   {formatCurrency(data.total_revenue)}
                 </p>
                 <p className="text-green-600 text-xs">Tổng doanh thu</p>
               </div>
               <div className="bg-emerald-50 rounded-xl p-4 text-center">
-                <HiUserGroup className="w-5 h-5 text-emerald-600 mx-auto mb-1" />
+                <UsersRound className="w-5 h-5 text-emerald-600 mx-auto mb-1" />
                 <p className="text-lg font-bold text-emerald-800">
                   {data.total_students}
                 </p>
                 <p className="text-emerald-600 text-xs">Học viên</p>
               </div>
               <div className="bg-teal-50 rounded-xl p-4 text-center">
-                <HiBookOpen className="w-5 h-5 text-teal-600 mx-auto mb-1" />
+                <BookOpen className="w-5 h-5 text-teal-600 mx-auto mb-1" />
                 <p className="text-lg font-bold text-teal-800">
                   {data.total_courses}
                 </p>
                 <p className="text-teal-600 text-xs">Khóa học</p>
               </div>
               <div className="bg-yellow-50 rounded-xl p-4 text-center">
-                <HiStar className="w-5 h-5 text-yellow-600 mx-auto mb-1" />
+                <Star solid className="w-5 h-5 text-yellow-600 mx-auto mb-1" />
                 <p className="text-lg font-bold text-yellow-800">
                   {data.average_rating.toFixed(1)}
                 </p>
@@ -282,7 +283,7 @@ function InstructorDetailModal({
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
-                            <HiBookOpen className="w-5 h-5 text-gray-400" />
+                            <BookOpen animated={false} className="w-5 h-5 text-gray-400" />
                           </div>
                         )}
                       </div>

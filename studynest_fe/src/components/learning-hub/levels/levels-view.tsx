@@ -6,7 +6,7 @@ import { useLevelsOverview } from "@/lib/learning-hub/levels-hooks";
 import { formatCoin, nextMilestone } from "@/lib/learning-hub/shop-logic";
 import type { LevelReward, LevelsOverview } from "@/lib/learning-hub/shop-types";
 import { cn } from "@/lib/utils";
-import { Check, Cloud, Coins, Flag, Gift, MapPin, Ticket } from "lucide-react";
+import { Check, Cloud, Coins, Flag, Gift, MapPin, Ticket } from "pulsoicon-react";
 import Link from "next/link";
 import { HubLoadError } from "../hub-page-state";
 import { MockDataChip } from "../mock-data-chip";
@@ -75,7 +75,7 @@ function FlightStop({ reward, current, milestone }: { reward: LevelReward; curre
       <div className={cn("relative z-10 mt-3 grid size-9 place-items-center rounded-full border-2 bg-surface text-primary-hover sm:mt-4 sm:size-12",
         major && "border-double border-primary bg-primary-light", small && "border-accent-vanilla-border bg-accent-vanilla text-accent-vanilla-foreground",
         reached && !active && !major && "border-success-border bg-success-bg text-success-foreground", active && "border-primary bg-primary-light")}>
-        <StateIcon aria-hidden="true" className="size-4 sm:size-5" />
+        <StateIcon animated={false} aria-hidden="true" className="size-4 sm:size-5" />
       </div>
       <article className={cn("relative isolate min-w-0 scroll-mt-24 overflow-hidden px-3.5 py-3.5 sm:px-6",
         major ? "rounded-[1.5rem] border border-primary-pastel bg-primary-light py-5 sm:py-7"
@@ -87,17 +87,17 @@ function FlightStop({ reward, current, milestone }: { reward: LevelReward; curre
           <h3 className={cn("font-bold", major ? "font-display text-2xl sm:text-3xl" : "text-base sm:text-lg")}>
             {major ? "Đảo mây cấp" : small ? "Trạm mây cấp" : "Cấp"} {number.format(reward.level)}
           </h3>
-          <Badge variant={active ? "info" : reached ? "success" : "outline"} className={cn("w-fit", !reached && "bg-surface")}>
+          <Badge variant={active ? "info" : reached ? "success" : "outline"} className={cn("w-fit", !reached && "bg-surface text-foreground")}>
             {active ? "Bạn đang ở đây" : reached ? "Đã đạt" : nextIsland ? "Đảo kế tiếp" : "Sắp tới"}
           </Badge>
         </div>
         <ul aria-label="Phần thưởng" className="relative mt-2 flex min-w-0 flex-wrap items-center gap-1.5">
           <li className="inline-flex max-w-full items-center gap-1.5 rounded-lg bg-accent-vanilla px-2 py-1 text-xs font-bold text-accent-vanilla-foreground sm:text-sm">
-            <Coins aria-hidden="true" className="size-4 shrink-0" /><span className="wrap-anywhere">+{formatCoin(reward.coins)}</span>
+            <Coins animated={false} aria-hidden="true" className="size-4 shrink-0" /><span className="wrap-anywhere">+{formatCoin(reward.coins)}</span>
           </li>
           {reward.items.map((item) => <li key={item.id} className="min-w-0 max-w-full"><LevelItemReward item={item} /></li>)}
           {(reward.coupon || major) && <li className="inline-flex max-w-full items-start gap-1.5 rounded-lg border border-dashed border-accent-border bg-surface px-2 py-1 text-xs font-medium text-accent-foreground">
-            <Ticket aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+            <Ticket animated={false} aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
             <span className="wrap-anywhere">{reward.coupon
               ? `Mã giảm đến ${reward.coupon.max_percent}% · ${reward.coupon.valid_days} ngày`
               : "Mã giảm giá · Sắp có"}</span>
@@ -132,7 +132,7 @@ export function LevelsView() {
           <HubLoadError error={error} title="Chưa tải được đường bay" message="Bạn thử tải lại để xem cấp và phần thưởng nhé." onRetry={retry} isRetrying={isValidating} />
         ) : (
           <div role="status" aria-label="Đang tải cấp độ" className="space-y-3">
-            <Skeleton className="h-36 rounded-section" /><Skeleton className="h-16 w-3/4 rounded-card" />
+            <Skeleton className="h-36 rounded-section motion-reduce:animate-none" /><Skeleton className="h-16 w-3/4 rounded-card motion-reduce:animate-none" />
           </div>
         )}
 

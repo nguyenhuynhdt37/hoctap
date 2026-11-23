@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui";
 import { WalletTransactionsQuery } from "@/types/user/wallet";
-import { HiRefresh, HiSearch } from "react-icons/hi";
+import { RefreshCw, Search } from "pulsoicon-react";
 
 interface Props {
   searchValue: string;
@@ -64,7 +64,7 @@ export function TransactionsFilterBar({
         >
           <div className="relative flex-1">
             <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
-              <HiSearch className="h-4 w-4" />
+              <Search className="h-4 w-4" />
             </span>
             <input
               value={searchValue}
@@ -145,7 +145,7 @@ export function TransactionsFilterBar({
             disabled={isLoading}
             className="rounded-2xl text-xs font-semibold"
           >
-            <HiRefresh className="h-3.5 w-3.5" />
+            <RefreshCw className="h-3.5 w-3.5" />
             <span>Đặt lại</span>
           </Button>
         </div>

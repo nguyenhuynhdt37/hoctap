@@ -3,7 +3,7 @@
 import { Badge } from "@/components/ui";
 import api from "@/lib/utils/fetcher/client/axios";
 import type { CourseEducation } from "@/types/catalog";
-import { HiAcademicCap, HiCloud } from "react-icons/hi";
+import { GraduationCap, Cloud } from "pulsoicon-react";
 import useSWR from "swr";
 
 export default function CourseEducationInfo({
@@ -34,14 +34,14 @@ export default function CourseEducationInfo({
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="space-y-2.5">
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-primary">
-            <HiAcademicCap className="w-4 h-4" />
+            <GraduationCap className="w-4 h-4" />
             <span>Phân loại Chương trình Phổ thông Mây Mây</span>
           </div>
 
           <div className="flex flex-wrap gap-2">
             {tags.map((x) => (
               <Badge key={x.id} variant="default" size="md">
-                <HiCloud className="w-3 h-3 mr-1 inline" />
+                <Cloud animated={false} className="w-3 h-3 mr-1 inline" />
                 {x.name}
               </Badge>
             ))}

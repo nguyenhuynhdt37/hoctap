@@ -4,7 +4,7 @@ import api from "@/lib/utils/fetcher/client/axios";
 import { Course, FeedResponse } from "@/types/user/course";
 import useSWR from "swr";
 import { useState, useCallback, useEffect, useMemo } from "react";
-import { HiChevronLeft, HiChevronRight } from "react-icons/hi";
+import { ChevronLeft, ChevronRight } from "pulsoicon-react";
 import CourseCard from "@/components/user/home/CourseCard";
 import SkeletonCard from "@/components/user/home/SkeletonCard";
 import useEmblaCarousel from "embla-carousel-react";
@@ -142,7 +142,7 @@ const CoursesSlider = ({
               className={`${navBtnClass} left-0`}
               aria-label="Slide trước"
             >
-              <HiChevronLeft className="h-5 w-5 md:h-6 md:w-6" />
+              <ChevronLeft className="h-5 w-5 md:h-6 md:w-6" />
             </button>
             <div className="overflow-hidden" ref={emblaRef}>
               <div className="flex gap-6">
@@ -171,7 +171,7 @@ const CoursesSlider = ({
               className={`${navBtnClass} right-0`}
               aria-label="Slide tiếp theo"
             >
-              <HiChevronRight className="h-5 w-5 md:h-6 md:w-6" />
+              <ChevronRight className="h-5 w-5 md:h-6 md:w-6" />
             </button>
           </div>
         ) : (

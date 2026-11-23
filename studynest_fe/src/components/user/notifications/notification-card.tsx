@@ -2,7 +2,7 @@
 
 import { Notification } from "@/types/user/notification";
 import Link from "next/link";
-import { HiCheckCircle, HiClock } from "react-icons/hi";
+import { CircleCheck, Clock } from "pulsoicon-react";
 import { useState, useEffect } from "react";
 
 interface NotificationCardProps {
@@ -73,7 +73,7 @@ export function NotificationCard({
           }`}
         >
           {isRead ? (
-            <HiCheckCircle className="h-5 w-5" />
+            <CircleCheck solid className="h-5 w-5" />
           ) : (
             <div className="h-5 w-5 rounded-full bg-primary" />
           )}
@@ -99,7 +99,7 @@ export function NotificationCard({
 
           <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1">
-              <HiClock className="h-3 w-3" />
+              <Clock className="h-3 w-3" />
               {formatDate(notification.created_at)}
             </span>
             <span className="rounded-full bg-primary-light border border-border px-2 py-0.5 text-primary font-medium">

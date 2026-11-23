@@ -32,8 +32,8 @@ import {
   UsersRound,
   Wallet,
   Route,
-  type LucideIcon,
-} from "lucide-react";
+  type PulsoIcon,
+} from "pulsoicon-react";
 
 /** Ai nhìn thấy mục này. `member` gồm cả giảng viên và quản trị. */
 export type NavAudience = "all" | "guest" | "member" | "lecturer" | "admin" | "aspiring-lecturer";
@@ -53,7 +53,7 @@ export interface NavItem {
   href: string;
   label: string;
   description: string;
-  icon: LucideIcon;
+  icon: PulsoIcon;
   audience: NavAudience;
   /** `wide` = ô lớn chiếm cả hàng trong lưới nhóm. */
   size?: "wide";
@@ -67,7 +67,7 @@ export interface NavGroup {
   label: string;
   tagline: string;
   tone: NavTone;
-  icon: LucideIcon;
+  icon: PulsoIcon;
   items: NavItem[];
 }
 

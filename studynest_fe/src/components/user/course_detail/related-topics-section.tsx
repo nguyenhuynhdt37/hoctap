@@ -2,7 +2,7 @@
 
 import { CategoryItem } from "@/types/user/course_detail";
 import Link from "next/link";
-import { HiAcademicCap, HiBookOpen } from "react-icons/hi";
+import { GraduationCap, BookOpen } from "pulsoicon-react";
 
 interface RelatedTopicsSectionProps {
   categories: CategoryItem[];
@@ -17,7 +17,7 @@ export default function RelatedTopicsSection({
     <section className="bg-surface rounded-[24px] shadow-xs border border-border p-6 sm:p-8">
       <div className="flex items-center gap-3 mb-5">
         <div className="w-10 h-10 bg-primary-light border border-primary-pastel rounded-2xl flex items-center justify-center text-primary shrink-0">
-          <HiAcademicCap className="h-5 w-5" />
+          <GraduationCap className="h-5 w-5" />
         </div>
         <div>
           <span className="text-[11px] font-bold uppercase tracking-wider text-primary block">
@@ -38,7 +38,7 @@ export default function RelatedTopicsSection({
           >
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 bg-surface border border-primary-pastel rounded-xl flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors shrink-0">
-                <HiBookOpen className="h-4 w-4" />
+                <BookOpen className="h-4 w-4" />
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors truncate text-sm">

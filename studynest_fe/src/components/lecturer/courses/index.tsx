@@ -36,7 +36,7 @@ import {
   Users,
   X,
   XCircle,
-} from "lucide-react";
+} from "pulsoicon-react";
 import useSWR from "swr";
 
 const LecturerCourses = () => {
@@ -290,6 +290,7 @@ const LecturerCourses = () => {
                 />
                 {search && (
                   <button
+                    aria-label="Xóa nội dung tìm kiếm"
                     onClick={() => handleSearch("")}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
                   >
@@ -375,6 +376,7 @@ const LecturerCourses = () => {
                     <DropdownMenu.Root>
                       <DropdownMenu.Trigger asChild>
                         <button
+                          aria-label="Tùy chọn khóa học"
                           onClick={(e) => {
                             e.stopPropagation();
                           }}
@@ -399,7 +401,7 @@ const LecturerCourses = () => {
                               );
                             }}
                           >
-                            <Pencil className="h-4 w-4 text-primary" />
+                            <Pencil animated={false} className="h-4 w-4 text-primary" />
                             <span>Chỉnh sửa</span>
                           </DropdownMenu.Item>
 
@@ -412,7 +414,7 @@ const LecturerCourses = () => {
                               );
                             }}
                           >
-                            <BarChart3 className="h-4 w-4 text-primary" />
+                            <BarChart3 animated={false} className="h-4 w-4 text-primary" />
                             <span>Thống kê</span>
                           </DropdownMenu.Item>
 
@@ -425,7 +427,7 @@ const LecturerCourses = () => {
                               );
                             }}
                           >
-                            <Users className="h-4 w-4 text-primary" />
+                            <Users animated={false} className="h-4 w-4 text-primary" />
                             <span>Danh sách học viên</span>
                           </DropdownMenu.Item>
 
@@ -436,7 +438,7 @@ const LecturerCourses = () => {
                               router.push(`/course/${course.slug}`);
                             }}
                           >
-                            <Eye className="h-4 w-4 text-primary" />
+                            <Eye animated={false} className="h-4 w-4 text-primary" />
                             <span>Xem trước</span>
                           </DropdownMenu.Item>
 
@@ -449,7 +451,7 @@ const LecturerCourses = () => {
                               );
                             }}
                           >
-                            <BookOpen className="h-4 w-4 text-primary" />
+                            <BookOpen animated={false} className="h-4 w-4 text-primary" />
                             <span>Quản lý chương và bài học</span>
                           </DropdownMenu.Item>
 
@@ -462,7 +464,7 @@ const LecturerCourses = () => {
                               handleDeleteCourse(course.id);
                             }}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 animated={false} className="h-4 w-4" />
                             <span>Xóa</span>
                           </DropdownMenu.Item>
                         </DropdownMenu.Content>
@@ -487,7 +489,7 @@ const LecturerCourses = () => {
                   <div className="grid grid-cols-2 gap-3 mb-4">
                     <div className="bg-background/80 border border-border/60 rounded-xl p-3">
                       <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                        <Users className="h-4 w-4" />
+                        <Users animated={false} className="h-4 w-4" />
                         <span className="text-xs">Học viên</span>
                       </div>
                       <p className="text-lg font-bold text-foreground">
@@ -496,7 +498,7 @@ const LecturerCourses = () => {
                     </div>
                     <div className="bg-background/80 border border-border/60 rounded-xl p-3">
                       <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                        <Eye className="h-4 w-4" />
+                        <Eye animated={false} className="h-4 w-4" />
                         <span className="text-xs">Lượt xem</span>
                       </div>
                       <p className="text-lg font-bold text-foreground">
@@ -520,7 +522,7 @@ const LecturerCourses = () => {
                     {/* Rating & Revenue */}
                     <div className="flex items-center justify-between py-2 border-t border-border/70">
                       <div className="flex items-center gap-1.5">
-                        <Star className="h-5 w-5 text-warning-foreground fill-current" />
+                        <Star animated={false} className="h-5 w-5 text-warning-foreground fill-current" />
                         <span className="font-bold text-foreground">
                           {course.rating_avg.toFixed(1)}
                         </span>
@@ -597,6 +599,7 @@ const LecturerCourses = () => {
         {data && data.pagination.total_pages > 1 && (
           <div className="flex items-center justify-center gap-2">
             <button
+              aria-label="Trang trước"
               onClick={() => handlePageChange(page - 1)}
               disabled={page === 1}
               className="px-4 py-2 border border-border bg-surface text-foreground rounded-xl hover:bg-primary-light/60 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
@@ -634,6 +637,7 @@ const LecturerCourses = () => {
             )}
 
             <button
+              aria-label="Trang sau"
               onClick={() => handlePageChange(page + 1)}
               disabled={page === data.pagination.total_pages}
               className="px-4 py-2 border border-border bg-surface text-foreground rounded-xl hover:bg-primary-light/60 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"

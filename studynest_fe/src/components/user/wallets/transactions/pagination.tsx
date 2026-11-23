@@ -1,4 +1,4 @@
-import { HiChevronLeft, HiChevronRight } from "react-icons/hi";
+import { ChevronLeft, ChevronRight } from "pulsoicon-react";
 
 interface TransactionsPaginationProps {
   page: number;
@@ -83,7 +83,7 @@ export function TransactionsPagination({
             aria-label="Trang trước"
             className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-border bg-surface text-muted-foreground transition hover:border-primary-pastel hover:bg-primary-light hover:text-primary disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
           >
-            <HiChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="h-4 w-4" />
           </button>
 
           {pageRange().map((pageNumber) => {
@@ -112,7 +112,7 @@ export function TransactionsPagination({
             aria-label="Trang tiếp theo"
             className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-border bg-surface text-muted-foreground transition hover:border-primary-pastel hover:bg-primary-light hover:text-primary disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
           >
-            <HiChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-4 w-4" />
           </button>
         </div>
       </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BookOpen, Star, User } from "lucide-react";
+import { BookOpen, Star, User } from "pulsoicon-react";
 import { Badge, Card } from "@/components/ui";
 import { handleImageError } from "@/lib/utils/helpers/image";
 import type { CatalogCourse } from "@/types/catalog";

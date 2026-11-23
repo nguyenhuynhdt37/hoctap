@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { HiCheck, HiChevronRight, HiCode, HiExclamationCircle, HiOutlineLightningBolt } from 'react-icons/hi';
+import { Check, ChevronRight, Code, CircleAlert, Zap } from 'pulsoicon-react';
 import type { AgentEvent } from './contracts';
 import { activityEvent, toolLabel } from './activity';
 
@@ -48,9 +48,9 @@ export function AgentActivity({ events = [], running = false }: { events?: Agent
   const status = running ? activeCall ? activeCall.state === 'tool.awaiting_approval' ? 'Đang chờ xác nhận' : toolLabel(activeCall.name) : !context ? 'Đang chuẩn bị ngữ cảnh' : 'Đang xử lý câu trả lời' : terminal?.type === 'run.cancelled' ? 'Đã dừng' : terminal?.type === 'run.partially_completed' ? 'Hoàn tất một phần' : failed ? 'Chưa hoàn tất' : 'Đã xử lý';
   return <section className="mb-4 min-w-0 text-xs" aria-label="Tiến trình thực hiện">
     <button type="button" aria-expanded={expanded} onClick={() => setExpanded(value => !value)} className="flex w-full items-center gap-2 rounded-lg py-2 text-left text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-      {running ? <HiOutlineLightningBolt className="h-4 w-4 shrink-0 animate-pulse text-primary motion-reduce:animate-none" /> : failed ? <HiExclamationCircle className="h-4 w-4 shrink-0 text-warning-foreground" /> : <HiCheck className="h-4 w-4 shrink-0 text-primary" />}
+      {running ? <Zap animated={false} className="h-4 w-4 shrink-0 animate-pulse text-primary motion-reduce:animate-none" /> : failed ? <CircleAlert solid className="h-4 w-4 shrink-0 text-warning-foreground" /> : <Check className="h-4 w-4 shrink-0 text-primary" />}
       <span className="min-w-0 flex-1 font-medium">{status}{elapsed !== null && <span className="ml-2 font-normal tabular-nums">{elapsed}s</span>}{calls.size > 0 && <span className="ml-2 font-normal">· {calls.size} công cụ</span>}</span>
-      <HiChevronRight className={`shrink-0 transition-transform ${expanded ? 'rotate-90' : ''}`} />
+      <ChevronRight size="1em" className={`shrink-0 transition-transform ${expanded ? 'rotate-90' : ''}`} />
     </button>
     {usage && usedTokens !== null && <p className="mb-1 ml-6 text-xs tabular-nums text-muted-foreground" title={`${String(usage.model || '')} · Ước tính gồm phần trả lời dự phòng. Tự nén khi vượt 80%.`}>
       Context {contextPercent !== null ? `~${contextPercent.toLocaleString('vi-VN', { maximumFractionDigits: 1 })}% · ` : ''}
@@ -74,7 +74,7 @@ export function AgentActivity({ events = [], running = false }: { events?: Agent
 function Stage({ children, active, complete, warning }: { children: React.ReactNode; active?: boolean; complete?: boolean; warning?: boolean }) {
   return <div className="relative min-w-0 leading-relaxed text-foreground">
     <span aria-hidden="true" className={`absolute -left-[22px] top-1 flex h-3 w-3 items-center justify-center rounded-full bg-surface ${warning ? 'text-warning-foreground' : 'text-primary'}`}>
-      {complete ? <HiCheck className="h-3 w-3" /> : <span className={`h-1.5 w-1.5 rounded-full ${active ? 'animate-pulse bg-primary motion-reduce:animate-none' : warning ? 'bg-warning-foreground' : 'bg-border'}`} />}
+      {complete ? <Check className="h-3 w-3" /> : <span className={`h-1.5 w-1.5 rounded-full ${active ? 'animate-pulse bg-primary motion-reduce:animate-none' : warning ? 'bg-warning-foreground' : 'bg-border'}`} />}
     </span>
     {children}
   </div>;
@@ -93,10 +93,10 @@ function ToolStep({ call, running }: { call: Call; running: boolean }) {
   const command = typeof args.command === 'string' ? `$ ${args.command}` : typeof args.sql === 'string' ? args.sql : '';
   return <Stage active={active} complete={done && !unverified} warning={error || unverified}>
     <button type="button" aria-expanded={expanded} onClick={() => setExpanded(value => !value)} className="flex w-full flex-wrap items-center gap-2 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-      <HiCode className="shrink-0 text-muted-foreground" /><span className="min-w-0 flex-1 font-medium">{toolLabel(call.name)}</span>
+      <Code size="1em" className="shrink-0 text-muted-foreground" /><span className="min-w-0 flex-1 font-medium">{toolLabel(call.name)}</span>
       <span className={error || unverified ? 'text-warning-foreground' : 'text-muted-foreground'}>{state}</span>
       {call.ms !== undefined && <span className="tabular-nums text-muted-foreground">{(call.ms / 1000).toFixed(2)}s</span>}
-      <HiChevronRight className={`shrink-0 text-muted-foreground transition-transform ${expanded ? 'rotate-90' : ''}`} />
+      <ChevronRight size="1em" className={`shrink-0 text-muted-foreground transition-transform ${expanded ? 'rotate-90' : ''}`} />
     </button>
     <code className="mt-1 block break-all text-[11px] text-muted-foreground">{call.name}</code>
     {expanded && <div className="mt-2 space-y-2 overflow-hidden rounded-xl border border-border bg-background p-3">

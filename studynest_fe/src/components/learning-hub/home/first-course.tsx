@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { useAuthedSWR } from "@/hooks/auth/useAuthedSWR";
 import { isAxiosError } from "axios";
 import type { CatalogCourseCard, CatalogCourseCardResult } from "@/types/catalog";
-import { BookOpen, Check, X } from "lucide-react";
+import { BookOpen, Check, X } from "pulsoicon-react";
 import { useEffect, useRef, useState } from "react";
 import { HubLoadError } from "../hub-page-state";
 import { CourseThumb } from "./home-ui";

@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui";
-import { HiCheck, HiInformationCircle, HiShieldCheck } from "react-icons/hi";
+import { Check, Info, ShieldCheck } from "pulsoicon-react";
 
 interface Props {
   amount: string;
@@ -70,7 +70,7 @@ export function WalletDepositCard({
       <div className="mt-5 rounded-2xl border border-primary-pastel/70 bg-primary-light/50 px-4 py-3 text-xs text-foreground">
         <div className="flex flex-wrap items-center gap-4 font-medium text-primary">
           <span className="inline-flex items-center gap-1.5">
-            <HiShieldCheck className="h-4 w-4" />
+            <ShieldCheck className="h-4 w-4" />
             Bảo mật PayPal 256-bit
           </span>
           <span className="inline-flex items-center gap-1.5 text-muted-foreground">
@@ -139,7 +139,7 @@ export function WalletDepositCard({
 
         {/* Hướng dẫn ngắn */}
         <div className="flex items-start gap-2 rounded-2xl border border-border/80 bg-background/60 p-3 text-xs leading-relaxed text-muted-foreground">
-          <HiInformationCircle className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+          <Info solid className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
           <span>
             Hệ thống sẽ mở cổng thanh toán PayPal. Sau khi xác nhận, bạn sẽ tự động
             được chuyển hướng trở lại Mây Mây.
@@ -154,7 +154,7 @@ export function WalletDepositCard({
         )}
         {success && (
           <div className="flex items-center gap-2 rounded-2xl border border-primary-pastel bg-primary-light p-3 text-xs font-medium text-primary">
-            <HiCheck className="h-4 w-4 shrink-0" />
+            <Check className="h-4 w-4 shrink-0" />
             <span>{success}</span>
           </div>
         )}

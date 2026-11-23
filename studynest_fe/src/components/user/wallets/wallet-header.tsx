@@ -1,10 +1,10 @@
-import { HiCreditCard } from "react-icons/hi";
+import { CreditCard } from "pulsoicon-react";
 
 export default function WalletHeader() {
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
-        <HiCreditCard className="h-4 w-4" />
+        <CreditCard className="h-4 w-4" />
         <span>Tài chính học tập</span>
       </div>
       <h1 className="font-display text-3xl font-bold text-foreground sm:text-4xl">

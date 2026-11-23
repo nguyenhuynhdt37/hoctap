@@ -4,9 +4,10 @@ import { Button } from "@/components/ui";
 import { useCurrentLesson, useLearningActivity, usePurchasedCourses } from "@/lib/learning-hub/home-api";
 import { hubErrorMessage, isHubUnavailable } from "@/lib/learning-hub/errors";
 import { useHubReviewQueue } from "@/lib/learning-hub/hooks";
+import { useLevelUpMoment } from "@/lib/learning-hub/level-up-state";
 import type { Mission } from "@/lib/learning-hub/mission-types";
 import type { CatalogCourseCard } from "@/types/catalog";
-import { CalendarCheck, Gift, Play } from "lucide-react";
+import { CalendarCheck, Gift, Play } from "pulsoicon-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { HubLoadError } from "../hub-page-state";
 import { CheckInCard } from "./daily-check-in";
@@ -33,6 +34,7 @@ export function LearnerHome() {
   const [trialDone, setTrialDone] = useState(false);
   const [heroClaimId, setHeroClaimId] = useState<string>();
   const focusOnAdvance = useRef<"primary" | "check-in" | null>(null);
+  const celebrating = useLevelUpMoment((state) => Boolean(state.moment));
   const purchases = usePurchasedCourses();
   const current = useCurrentLesson();
   const activity = useLearningActivity();
@@ -71,13 +73,13 @@ export function LearnerHome() {
 
   useEffect(() => {
     const focus = focusOnAdvance.current;
-    if (!focus || pendingClaim || checkIn.claiming || trialOpen) return;
+    if (!focus || pendingClaim || checkIn.claiming || trialOpen || celebrating) return;
     focusOnAdvance.current = null;
     const checkInRegion = document.getElementById("diem-danh-hom-nay");
     const target = focus === "check-in" ? checkInRegion?.querySelector("button") ?? checkInRegion
       : document.querySelector<HTMLElement>("[data-journey-action] :is(a, button)") ?? document.getElementById("journey-status");
     target?.focus({ preventScroll: true });
-  }, [active, checkIn.claiming, checkInState.status, pendingClaim, trialOpen]);
+  }, [active, celebrating, checkIn.claiming, checkInState.status, pendingClaim, trialOpen]);
 
   function claimFromHero(mission: Mission | undefined, focus: "primary" | "check-in") {
     if (!mission || pendingClaim || (claimUnavailable && mission.id === claimable?.id)) return;

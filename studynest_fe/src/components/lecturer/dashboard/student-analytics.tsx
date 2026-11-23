@@ -6,7 +6,7 @@ import { StudentAnalyticsResponse } from "@/types/lecturer/statistics";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
 import useSWR from "swr";
-import { PieChart, UserCircle2, UserPlus } from "lucide-react";
+import { PieChart, UserCircle2, UserPlus } from "pulsoicon-react";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 

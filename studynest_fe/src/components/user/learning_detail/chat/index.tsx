@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useCallback, useEffect, useRef, useState } from "react";
-import { HiChat, HiX, HiMenuAlt2, HiPlus, HiMicrophone } from "react-icons/hi";
+import { MessageCircle, X, AlignLeft, Plus, Mic } from "pulsoicon-react";
 import {
   TutorMessage,
   TutorScope,
@@ -277,6 +277,7 @@ function TutorChatPanel({
         <header className="flex items-center justify-between gap-2 border-b border-border bg-primary-light/40 px-3 py-3">
           <div className="flex min-w-0 items-center gap-2">
             <button
+              aria-label={showHistory ? "Ẩn lịch sử trò chuyện" : "Mở lịch sử trò chuyện"}
               onClick={() => setShowHistory(!showHistory)}
               className={`p-1.5 rounded-lg transition-colors ${
                 showHistory
@@ -284,7 +285,7 @@ function TutorChatPanel({
                   : "text-muted-foreground hover:bg-background"
               }`}
             >
-              <HiMenuAlt2 className="w-5 h-5" />
+              <AlignLeft className="w-5 h-5" />
             </button>
             <img
               src="/logo/studynest-logo.svg"
@@ -304,13 +305,14 @@ function TutorChatPanel({
             <AssistantSettings />
             <button type="button" onClick={() => void openVoice()} disabled={agent?.busy} title="Trò chuyện bằng giọng nói" aria-label="Mở voice Mây Mây"
               className="rounded-lg p-2 text-primary transition-colors hover:bg-primary-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-              <HiMicrophone className="h-5 w-5" />
+              <Mic className="h-5 w-5" />
             </button>
             <button
+              aria-label="Mở danh sách cuộc trò chuyện"
               onClick={() => setShowHistory(true)}
               className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary-light rounded-lg"
             >
-              <HiPlus className="w-4 h-4" />
+              <Plus className="w-4 h-4" />
             </button>
             {onClose && (
               <button
@@ -319,7 +321,7 @@ function TutorChatPanel({
                 aria-label="Đóng trợ giảng"
                 className="rounded-lg p-1.5 text-muted-foreground hover:bg-background"
               >
-                <HiX className="w-4 h-4" />
+                <X className="w-4 h-4" />
               </button>
             )}
           </div>

@@ -5,7 +5,7 @@ import api from "@/lib/utils/fetcher/client/axios";
 import { RefundableCoursesResponse } from "@/types/user/refund";
 import Link from "next/link";
 import { useState } from "react";
-import { HiArrowRight, HiExclamationCircle } from "react-icons/hi";
+import { ArrowRight, CircleAlert } from "pulsoicon-react";
 import useSWR from "swr";
 
 interface RefundableCoursesProps {
@@ -79,7 +79,7 @@ export default function RefundableCourses({
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 transition-colors"
             >
               <span>Yêu cầu hoàn tiền</span>
-              <HiArrowRight className="h-5 w-5" />
+              <ArrowRight className="h-5 w-5" />
             </Link>
           </div>
         </header>
@@ -125,7 +125,7 @@ export default function RefundableCourses({
         {!isLoading && courses.length === 0 && (
           <div className="text-center py-12">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
-              <HiExclamationCircle className="h-8 w-8 text-gray-400" />
+              <CircleAlert solid className="h-8 w-8 text-gray-400" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
               Không có khóa học nào

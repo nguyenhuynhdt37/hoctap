@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui";
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowRight, Check } from "pulsoicon-react";
 import Link from "next/link";
 import {
   GlassCard,
@@ -97,7 +97,7 @@ function ParentTrustSection({
               {TRUST_POINTS.map((point) => (
                 <li key={point}>
                   <Pill tone="vanilla" className="items-start! py-1.5 leading-relaxed">
-                    <Check className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+                    <Check animated={false} className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
                     {point}
                   </Pill>
                 </li>
@@ -116,7 +116,7 @@ function ParentTrustSection({
             >
               <GlassCard className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 gap-y-2 bg-linear-to-br from-surface via-surface to-surface-muted px-4 py-4 sm:px-5 lg:px-6 lg:py-5 motion-reduce:hover:translate-y-0">
                 <IconBubble tone="success" shape="circle" className="h-9! w-9!">
-                  <Check className="size-4" aria-hidden="true" />
+                  <Check animated={false} className="size-4" aria-hidden="true" />
                 </IconBubble>
                 <div className="min-w-0 self-center">
                   <h3 className="text-sm leading-snug font-semibold text-foreground lg:text-base">

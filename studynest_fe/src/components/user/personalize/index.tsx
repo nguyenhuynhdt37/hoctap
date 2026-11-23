@@ -6,7 +6,7 @@ import { formatApiError } from "@/lib/utils/helpers/error";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { HiCheck, HiCloud, HiSearch, HiX } from "react-icons/hi";
+import { Check, Cloud, Search, X } from "pulsoicon-react";
 
 interface Topic {
   id: string;
@@ -193,7 +193,7 @@ const Personalize = ({ learningFields }: PersonalizeProps) => {
           <div className="flex items-center justify-between">
             <Link href="/" className="inline-flex items-center gap-2.5">
               <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary-light text-primary border border-border">
-                <HiCloud className="h-5 w-5" aria-hidden="true" />
+                <Cloud className="h-5 w-5" aria-hidden="true" />
               </span>
               <span className="font-display text-xl font-bold text-foreground">
                 Mây Mây
@@ -275,7 +275,7 @@ const Personalize = ({ learningFields }: PersonalizeProps) => {
                             : "border-border bg-surface group-hover:border-primary/60"
                         }`}
                       >
-                        {isSelected && <HiCheck className="w-3.5 h-3.5" />}
+                        {isSelected && <Check className="w-3.5 h-3.5" />}
                       </span>
                       <span className="text-base font-semibold text-foreground">
                         {learningField.name}
@@ -315,7 +315,7 @@ const Personalize = ({ learningFields }: PersonalizeProps) => {
                         aria-label={`Bỏ chọn ${skill}`}
                         className="text-muted-foreground hover:text-foreground cursor-pointer"
                       >
-                        <HiX className="h-4 w-4" />
+                        <X className="h-4 w-4" />
                       </button>
                     </span>
                   ))}
@@ -329,7 +329,7 @@ const Personalize = ({ learningFields }: PersonalizeProps) => {
                   placeholder="Tìm kiếm môn học hoặc chủ đề..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  leftIcon={<HiSearch className="h-4 w-4" />}
+                  leftIcon={<Search className="h-4 w-4" />}
                 />
               </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { HiChevronLeft, HiChevronRight } from "react-icons/hi";
+import { ChevronLeft, ChevronRight } from "pulsoicon-react";
 import { cn } from "@/lib/utils";
 
 export interface PaginationProps {
@@ -109,7 +109,7 @@ export default function Pagination({
             aria-label="Trang trước"
             className="inline-flex h-9 items-center space-x-1 px-3 text-sm font-medium text-foreground bg-surface border border-border rounded-xl hover:bg-background hover:border-primary-pastel focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 cursor-pointer"
           >
-            <HiChevronLeft className="w-4 h-4" aria-hidden="true" />
+            <ChevronLeft className="w-4 h-4" aria-hidden="true" />
             <span>Trước</span>
           </button>
 
@@ -163,7 +163,7 @@ export default function Pagination({
             className="inline-flex h-9 items-center space-x-1 px-3 text-sm font-medium text-foreground bg-surface border border-border rounded-xl hover:bg-background hover:border-primary-pastel focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 cursor-pointer"
           >
             <span>Sau</span>
-            <HiChevronRight className="w-4 h-4" aria-hidden="true" />
+            <ChevronRight className="w-4 h-4" aria-hidden="true" />
           </button>
         </div>
       </div>

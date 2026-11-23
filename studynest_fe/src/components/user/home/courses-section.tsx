@@ -4,7 +4,7 @@ import { Alert, Button, EmptyState } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import api from "@/lib/utils/fetcher/client/axios";
 import type { CatalogCourseCardResult } from "@/types/catalog";
-import { ArrowDown, ArrowRight, BookOpen, Clock3, GraduationCap, Gift, Star, TrendingUp, X } from "lucide-react";
+import { ArrowDown, ArrowRight, BookOpen, Clock3, GraduationCap, Gift, Star, TrendingUp, X } from "pulsoicon-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useRef, type ReactNode } from "react";

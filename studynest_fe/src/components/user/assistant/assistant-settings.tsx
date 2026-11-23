@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { HiArrowLeft, HiCog } from "react-icons/hi";
+import { ArrowLeft, Settings } from "pulsoicon-react";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/input";
 import { Alert } from "@/components/ui/states";
@@ -20,10 +20,10 @@ export function AssistantSettings() {
   useEffect(() => { if (open) heading.current?.focus(); }, [open]);
   const close = () => { setOpen(false); trigger.current?.focus(); };
   return <>
-    <Button ref={trigger} variant="ghost" size="icon" aria-label="Cài đặt AI" aria-expanded={open} onClick={() => setOpen(true)}><HiCog className="h-5 w-5" /></Button>
+    <Button ref={trigger} variant="ghost" size="icon" aria-label="Cài đặt AI" aria-expanded={open} onClick={() => setOpen(true)}><Settings className="h-5 w-5" /></Button>
     {open && <section aria-label="Cài đặt AI" onKeyDown={event => { if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); close(); } }} className="absolute inset-0 z-30 flex min-h-0 min-w-0 flex-col bg-surface text-foreground">
       <header className="flex items-center gap-2 border-b border-border p-3">
-        <Button variant="ghost" size="icon" aria-label="Quay lại hội thoại" onClick={close}><HiArrowLeft /></Button>
+        <Button variant="ghost" size="icon" aria-label="Quay lại hội thoại" onClick={close}><ArrowLeft size="1em" /></Button>
         <div><h3 ref={heading} tabIndex={-1} className="text-sm font-semibold outline-none">Cài đặt AI</h3><p className="text-xs text-muted-foreground">Tùy chỉnh trợ lý của bạn</p></div>
       </header>
       <nav aria-label="Nhóm cài đặt AI" className="flex gap-1 border-b border-border p-2">

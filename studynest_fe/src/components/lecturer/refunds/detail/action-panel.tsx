@@ -1,5 +1,5 @@
 import { Button, Card } from "@/components/ui";
-import { Clock } from "lucide-react";
+import { Clock } from "pulsoicon-react";
 
 interface ActionPanelProps {
   comment: string;

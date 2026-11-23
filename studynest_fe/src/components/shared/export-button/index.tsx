@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { HiDownload } from "react-icons/hi";
+import { Download } from "pulsoicon-react";
 import { cn } from "@/lib/utils";
 
 export interface ExportButtonProps {
@@ -72,7 +72,7 @@ export default function ExportButton({
           aria-hidden="true"
         />
       ) : (
-        <HiDownload className="w-4 h-4 shrink-0" aria-hidden="true" />
+        <Download className="w-4 h-4 shrink-0" aria-hidden="true" />
       )}
       <span>{children || (isLoading ? "Đang xuất..." : "Xuất Excel")}</span>
     </button>

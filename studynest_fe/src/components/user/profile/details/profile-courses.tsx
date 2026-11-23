@@ -6,7 +6,7 @@ import { getImageUrl } from "@/lib/utils/helpers/image";
 import { CoursesMeResponse } from "@/types/user/courses-me";
 import Link from "next/link";
 import { useState } from "react";
-import { HiAcademicCap, HiOutlineStar } from "react-icons/hi";
+import { GraduationCap, Star } from "pulsoicon-react";
 import useSWR from "swr";
 
 interface ProfileCoursesProps {
@@ -92,7 +92,7 @@ export default function ProfileCourses({
           Khóa học đã mua
         </h3>
         <div className="text-center py-8">
-          <HiAcademicCap className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <GraduationCap className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <p className="text-gray-600">Chưa có khóa học nào</p>
         </div>
       </div>
@@ -141,7 +141,7 @@ export default function ProfileCourses({
                     </h3>
                     <div className="flex items-center gap-3 text-sm text-slate-500">
                       <span className="inline-flex items-center gap-1">
-                        <HiOutlineStar className="h-4 w-4 text-amber-400" />
+                        <Star className="h-4 w-4 text-amber-400" />
                         {course.rating_avg.toFixed(1)}
                         <span className="text-xs text-slate-400">
                           ({course.review_count})

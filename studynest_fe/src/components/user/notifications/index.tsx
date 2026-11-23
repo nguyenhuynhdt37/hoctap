@@ -10,7 +10,7 @@ import {
 } from "@/types/user/notification";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { HiBell, HiExclamationCircle } from "react-icons/hi";
+import { Bell, CircleAlert } from "pulsoicon-react";
 import { NotificationCard } from "./notification-card";
 import { NotificationsToolbar } from "./notifications-toolbar";
 
@@ -111,7 +111,7 @@ export default function Notifications() {
             {data?.unread && data.unread > 0 && (
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-50 border border-green-200">
-                  <HiBell className="h-5 w-5 text-green-600" />
+                  <Bell className="h-5 w-5 text-green-600" />
                   <span className="text-sm font-semibold text-green-700">
                     {data.unread} chưa đọc
                   </span>
@@ -172,7 +172,7 @@ export default function Notifications() {
             {data.items.length === 0 ? (
               <div className="rounded-xl border border-green-200 bg-white p-12 text-center shadow-sm">
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
-                  <HiExclamationCircle className="h-8 w-8 text-gray-400" />
+                  <CircleAlert solid className="h-8 w-8 text-gray-400" />
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
                   Không có thông báo nào

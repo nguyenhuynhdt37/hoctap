@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { BookOpen, Heart, Star, Users } from "lucide-react";
+import { BookOpen, Heart, Star, Users } from "pulsoicon-react";
 import { Badge, Card } from "@/components/ui";
 import { getImageUrl } from "@/lib/utils/helpers/image";
 import type { InstructorItem } from "@/types/user/instructor";

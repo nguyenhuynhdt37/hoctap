@@ -3,7 +3,7 @@
 import { prepareImageUpload } from "@/lib/prepare-image-upload";
 import toast from "react-hot-toast";
 import { memo, useCallback, useRef, useState, useEffect } from "react";
-import { HiPaperAirplane, HiPhotograph, HiX } from "react-icons/hi";
+import { Send, Image, X } from "pulsoicon-react";
 import {
   TutorScope,
   UploadedImage,
@@ -380,10 +380,11 @@ function MessageInput({
 
               {/* Remove Button */}
               <button
+                aria-label="Xóa ảnh đính kèm"
                 onClick={() => removeImage(img.tempId)}
                 className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center shadow-sm z-10 transition-opacity"
               >
-                <HiX className="w-3 h-3" />
+                <X className="w-3 h-3" />
               </button>
 
               {/* OCR Badge */}
@@ -400,7 +401,7 @@ function MessageInput({
       {/* Drag overlay */}
       {isDragging && (
         <div className="mb-2 p-4 border-2 border-dashed border-primary-light rounded-xl bg-primary-pastel/40 text-center">
-          <HiPhotograph className="w-8 h-8 text-primary mx-auto mb-1" />
+          <Image className="w-8 h-8 text-primary mx-auto mb-1" />
           <p className="text-sm text-primary">Thả ảnh vào đây</p>
         </div>
       )}
@@ -417,11 +418,12 @@ function MessageInput({
         />
 
         <button
+          aria-label="Đính kèm ảnh"
           onClick={() => fileRef.current?.click()}
           disabled={disabled}
           className="p-2 text-muted-foreground hover:text-primary hover:bg-primary-pastel/50 rounded-xl disabled:opacity-40 transition-colors cursor-pointer"
         >
-          <HiPhotograph className="w-5 h-5" />
+          <Image className="w-5 h-5" />
         </button>
 
         <DictationButton disabled={isLoading || isUploading || Boolean(voice?.active)} onBusyChange={setDictating} getValue={()=>inputRef.current?.value || ""} onValueChange={text=>{if(inputRef.current){inputRef.current.value=text;inputRef.current.scrollTop=inputRef.current.scrollHeight;}}} />
@@ -436,6 +438,7 @@ function MessageInput({
         />
 
         <button
+          aria-label="Gửi tin nhắn"
           onClick={handleSubmit}
           disabled={disabled}
           className={`px-3 py-2 bg-primary text-white rounded-xl hover:bg-primary-hover disabled:opacity-40 transition-all ${
@@ -445,7 +448,7 @@ function MessageInput({
           {isLoading ? (
             <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
           ) : (
-            <HiPaperAirplane className="w-4 h-4 rotate-90" />
+            <Send className="w-4 h-4 rotate-90" />
           )}
         </button>
       </div>

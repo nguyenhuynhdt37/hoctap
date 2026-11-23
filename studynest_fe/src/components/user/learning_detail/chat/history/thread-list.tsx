@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useCallback, useEffect, useState } from "react";
-import { HiChat, HiX, HiRefresh } from "react-icons/hi";
+import { MessageCircle, X, RefreshCw } from "pulsoicon-react";
 import api from "@/lib/utils/fetcher/client/axios";
 import {
   ChatThread,
@@ -114,20 +114,22 @@ function ChatHistorySidebar({
         <span className="text-sm font-medium text-foreground">Lịch sử chat</span>
         <div className="flex items-center gap-1">
           <button
+            aria-label="Làm mới"
             onClick={fetchThreads}
             className="p-1 text-muted-foreground hover:text-foreground hover:bg-surface rounded transition-colors"
             title="Làm mới"
           >
-            <HiRefresh
+            <RefreshCw animated={false}
               className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
             />
           </button>
           <button
+            aria-label="Đóng"
             onClick={onClose}
             className="p-1 text-muted-foreground hover:text-foreground hover:bg-surface rounded transition-colors"
             title="Đóng"
           >
-            <HiX className="w-4 h-4" />
+            <X className="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -168,7 +170,7 @@ function ChatHistorySidebar({
           </div>
         ) : sessions.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full px-4 text-center">
-            <HiChat className="w-10 h-10 text-muted-foreground/40 mb-3" />
+            <MessageCircle className="w-10 h-10 text-muted-foreground/40 mb-3" />
             <p className="text-sm text-muted-foreground">Chưa có cuộc trò chuyện nào</p>
             <p className="text-xs text-muted-foreground/70 mt-1">
               Bấm nút ở trên để bắt đầu

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { HiMicrophone, HiPhoneMissedCall, HiVolumeOff, HiMinus, HiArrowsExpand } from "react-icons/hi";
+import { Mic, PhoneMissed, VolumeX, Minus, Maximize } from "pulsoicon-react";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/states";
@@ -54,15 +54,15 @@ export default function VoiceDialog({ lessonId, lessonTitle, onClose, onSourceCl
     <aside aria-label="Cuộc gọi Hannes đang chạy" className="fixed bottom-4 left-4 right-4 z-[100] flex items-center gap-3 rounded-2xl border border-primary-pastel bg-surface p-3 shadow-lg sm:left-auto sm:w-auto sm:min-w-80">
       <span className={`h-2.5 w-2.5 rounded-full ${voice.muted ? "bg-muted-foreground" : "bg-primary animate-pulse"}`} />
       <div className="min-w-0 flex-1"><p className="text-sm font-semibold">Hannes · {voice.muted ? "Mic tắt" : labels[voice.state]}</p><p className="max-w-72 truncate text-xs text-muted-foreground">{voice.draft.assistant || voice.draft.user || voice.turns.at(-1)?.content || lessonTitle}</p></div>
-      <Button size="icon" variant="ghost" onClick={voice.toggleMute} aria-label={voice.muted ? "Bật micro" : "Tắt micro"}><HiMicrophone /></Button>
-      <Button size="icon" variant="ghost" onClick={onExpand} aria-label="Mở lại cuộc gọi"><HiArrowsExpand /></Button>
-      <Button size="icon" variant="destructive" onClick={close} aria-label="Kết thúc cuộc gọi"><HiPhoneMissedCall /></Button>
+      <Button size="icon" variant="ghost" onClick={voice.toggleMute} aria-label={voice.muted ? "Bật micro" : "Tắt micro"}><Mic size="1em" /></Button>
+      <Button size="icon" variant="ghost" onClick={onExpand} aria-label="Mở lại cuộc gọi"><Maximize size="1em" /></Button>
+      <Button size="icon" variant="destructive" onClick={close} aria-label="Kết thúc cuộc gọi"><PhoneMissed size="1em" /></Button>
     </aside>
   );
   return (
     <Modal open onClose={close} title="Trò chuyện cùng Mây Mây" description={lessonTitle} size="lg" closeOnOverlayClick={false}>
       <div className="space-y-4">
-        {onMinimize && <div className="flex justify-end"><Button size="sm" variant="ghost" onClick={onMinimize} leftIcon={<HiMinus />}>Thu nhỏ · tiếp tục cuộc gọi</Button></div>}
+        {onMinimize && <div className="flex justify-end"><Button size="sm" variant="ghost" onClick={onMinimize} leftIcon={<Minus size="1em" />}>Thu nhỏ · tiếp tục cuộc gọi</Button></div>}
 
         <div className="rounded-2xl border border-primary-pastel/60 bg-background px-4 pb-5 text-center">
           <VoiceOrb level={voice.level} active={connected} />
@@ -77,11 +77,11 @@ export default function VoiceDialog({ lessonId, lessonTitle, onClose, onSourceCl
             {connected ? <>
               <Button variant={voice.muted ? "pastel" : "outline"} size="icon" onClick={voice.toggleMute}
                 aria-label={voice.muted ? "Bật micro" : "Tắt micro"} aria-pressed={voice.muted}>
-                {voice.muted ? <HiVolumeOff className="h-5 w-5" /> : <HiMicrophone className="h-5 w-5" />}
+                {voice.muted ? <VolumeX className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
               </Button>
-              <Button variant="destructive" onClick={voice.stop} leftIcon={<HiPhoneMissedCall className="h-5 w-5" />}>Kết thúc</Button>
+              <Button variant="destructive" onClick={voice.stop} leftIcon={<PhoneMissed className="h-5 w-5" />}>Kết thúc</Button>
             </> : <Button onClick={() => void voice.start()} disabled={!voice.preferencesLoaded && !voice.preferencesError} isLoading={voice.state === "connecting"}
-              loadingText="Đang kết nối" leftIcon={<HiMicrophone className="h-5 w-5" />}>
+              loadingText="Đang kết nối" leftIcon={<Mic className="h-5 w-5" />}>
               {voice.state === "idle" ? "Bắt đầu nói chuyện" : "Kết nối lại"}
             </Button>}
           </div>

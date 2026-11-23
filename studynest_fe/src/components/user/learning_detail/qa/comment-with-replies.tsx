@@ -2,7 +2,7 @@
 
 import { getImageUrl } from "@/lib/utils/helpers/image";
 import { memo, useCallback, useEffect, useState } from "react";
-import { HiPencil, HiTrash } from "react-icons/hi";
+import { Pencil, Trash2 } from "pulsoicon-react";
 import { CommentItem, CommentResponse } from "@/types/user/comment";
 import CommentContent from "./comment-content";
 import CommentForm from "./comment-form";
@@ -270,14 +270,16 @@ export default memo(function CommentWithReplies({
             {rootFlags.showEdit && (
               <div className="flex items-center gap-1">
                 <button
+                  aria-label="Chỉnh sửa"
                   onClick={() => onEdit(comment.id)}
                   disabled={isDeletingComment === comment.id}
                   className="p-1.5 rounded-full hover:bg-background text-muted-foreground hover:text-primary transition-colors disabled:opacity-50"
                   title="Chỉnh sửa"
                 >
-                  <HiPencil className="w-4 h-4" />
+                  <Pencil className="w-4 h-4" />
                 </button>
                 <button
+                  aria-label="Xóa"
                   onClick={() => onDelete(comment.id)}
                   disabled={
                     isDeletingComment === comment.id ||
@@ -286,7 +288,7 @@ export default memo(function CommentWithReplies({
                   className="p-1.5 rounded-full hover:bg-background text-muted-foreground hover:text-destructive-foreground transition-colors disabled:opacity-50"
                   title="Xóa"
                 >
-                  <HiTrash className="w-4 h-4" />
+                  <Trash2 className="w-4 h-4" />
                 </button>
               </div>
             )}
@@ -421,14 +423,16 @@ export default memo(function CommentWithReplies({
                             {replyFlags.showEdit && (
                               <div className="flex items-center gap-1">
                                 <button
+                                  aria-label="Chỉnh sửa"
                                   onClick={() => onEdit(reply.id)}
                                   disabled={isDeletingComment === reply.id}
                                   className="p-1 rounded-full hover:bg-background text-muted-foreground hover:text-primary transition-colors disabled:opacity-50"
                                   title="Chỉnh sửa"
                                 >
-                                  <HiPencil className="w-3.5 h-3.5" />
+                                  <Pencil className="w-3.5 h-3.5" />
                                 </button>
                                 <button
+                                  aria-label="Xóa"
                                   onClick={() => onDelete(reply.id)}
                                   disabled={
                                     isDeletingComment === reply.id ||
@@ -437,7 +441,7 @@ export default memo(function CommentWithReplies({
                                   className="p-1 rounded-full hover:bg-background text-muted-foreground hover:text-destructive-foreground transition-colors disabled:opacity-50"
                                   title="Xóa"
                                 >
-                                  <HiTrash className="w-3.5 h-3.5" />
+                                  <Trash2 className="w-3.5 h-3.5" />
                                 </button>
                               </div>
                             )}
@@ -568,6 +572,7 @@ export default memo(function CommentWithReplies({
                                           {nestedFlags.showEdit && (
                                               <div className="flex items-center gap-1">
                                                 <button
+                                                  aria-label="Chỉnh sửa"
                                                   onClick={() =>
                                                     onEdit(nestedReply.id)
                                                   }
@@ -578,9 +583,10 @@ export default memo(function CommentWithReplies({
                                                   className="p-1 rounded-full hover:bg-background text-muted-foreground hover:text-primary transition-colors disabled:opacity-50"
                                                   title="Chỉnh sửa"
                                                 >
-                                                  <HiPencil className="w-3 h-3" />
+                                                  <Pencil className="w-3 h-3" />
                                                 </button>
                                                 <button
+                                                  aria-label="Xóa"
                                                   onClick={() =>
                                                     onDelete(nestedReply.id)
                                                   }
@@ -593,7 +599,7 @@ export default memo(function CommentWithReplies({
                                                   className="p-1 rounded-full hover:bg-background text-muted-foreground hover:text-destructive-foreground transition-colors disabled:opacity-50"
                                                   title="Xóa"
                                                 >
-                                                  <HiTrash className="w-3 h-3" />
+                                                  <Trash2 className="w-3 h-3" />
                                                 </button>
                                               </div>
                                             )}

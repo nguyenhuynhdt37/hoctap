@@ -2,7 +2,7 @@
 
 import { playSound, triggerPerfectConfetti } from "@/lib/utils/helpers/effects";
 import { useEffect } from "react";
-import { HiCheckCircle } from "react-icons/hi";
+import { CircleCheck } from "pulsoicon-react";
 
 const Success = () => {
   useEffect(() => {
@@ -20,7 +20,7 @@ const Success = () => {
         >
           <div className="flex justify-center">
             <div className="w-16 h-16 bg-success-bg border border-success-border rounded-full flex items-center justify-center">
-              <HiCheckCircle
+              <CircleCheck solid
                 className="w-10 h-10 text-success-foreground"
                 aria-hidden="true"
               />

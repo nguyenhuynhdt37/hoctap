@@ -12,7 +12,7 @@ import {
   SlidersHorizontal,
   Users,
   X,
-} from "lucide-react";
+} from "pulsoicon-react";
 import { Badge, Button, Card, EmptyState, Input, Skeleton } from "@/components/ui";
 import api from "@/lib/utils/fetcher/client/axios";
 import { useSavedInstructors } from "@/hooks/user/use-saved-instructors";

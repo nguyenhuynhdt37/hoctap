@@ -4,7 +4,7 @@ import TiptapEditor from "@/components/shared/tiptap_editor";
 import api from "@/lib/utils/fetcher/client/axios";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { HiArrowLeft, HiExclamationCircle } from "react-icons/hi";
+import { ArrowLeft, CircleAlert } from "pulsoicon-react";
 
 export default function CreateRefundPage() {
   const router = useRouter();
@@ -87,7 +87,7 @@ export default function CreateRefundPage() {
           <div className="bg-white rounded-xl border border-green-200 shadow-sm p-8">
             <div className="text-center mb-6">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-4">
-                <HiExclamationCircle className="h-8 w-8 text-green-600" />
+                <CircleAlert solid className="h-8 w-8 text-green-600" />
               </div>
               <h1 className="text-2xl font-bold text-gray-900 mb-2">
                 Yêu cầu hoàn tiền đã được gửi thành công
@@ -152,7 +152,7 @@ export default function CreateRefundPage() {
           onClick={() => router.back()}
           className="flex items-center gap-2 text-gray-600 hover:text-green-600 transition-colors mb-6"
         >
-          <HiArrowLeft className="h-5 w-5" />
+          <ArrowLeft className="h-5 w-5" />
           <span className="font-medium">Quay lại</span>
         </button>
 
@@ -191,7 +191,7 @@ export default function CreateRefundPage() {
             </div>
 
             <div className="flex items-start gap-3 p-4 rounded-lg bg-yellow-50 border border-yellow-200">
-              <HiExclamationCircle className="h-5 w-5 text-yellow-600 shrink-0 mt-0.5" />
+              <CircleAlert solid className="h-5 w-5 text-yellow-600 shrink-0 mt-0.5" />
               <div className="text-sm text-yellow-800">
                 <p className="font-semibold mb-1">Lưu ý quan trọng</p>
                 <p>

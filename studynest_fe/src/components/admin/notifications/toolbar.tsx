@@ -1,6 +1,6 @@
 "use client";
 
-import { HiArrowDown, HiArrowUp, HiSearch, HiX } from "react-icons/hi";
+import { ArrowDown, ArrowUp, Search, X } from "pulsoicon-react";
 
 interface ToolbarProps {
   search: string;
@@ -51,7 +51,7 @@ export function Toolbar({
   return (
     <div className="rounded-xl border border-green-200 bg-white p-4 shadow-sm space-y-4">
       <div className="relative">
-        <HiSearch className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-green-500" />
+        <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-green-500" />
         <input
           type="text"
           value={search}
@@ -61,10 +61,11 @@ export function Toolbar({
         />
         {search && (
           <button
+            aria-label="Xóa nội dung tìm kiếm"
             onClick={() => onSearchChange("")}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
           >
-            <HiX className="h-4 w-4" />
+            <X className="h-4 w-4" />
           </button>
         )}
       </div>
@@ -112,12 +113,12 @@ export function Toolbar({
         >
           {orderDir === "asc" ? (
             <>
-              <HiArrowUp className="h-4 w-4" />
+              <ArrowUp className="h-4 w-4" />
               Tăng dần
             </>
           ) : (
             <>
-              <HiArrowDown className="h-4 w-4" />
+              <ArrowDown className="h-4 w-4" />
               Giảm dần
             </>
           )}

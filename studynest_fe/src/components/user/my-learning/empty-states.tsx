@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertCircle, BookOpen, Compass, RotateCcw } from "lucide-react";
+import { AlertCircle, BookOpen, Compass, RotateCcw } from "pulsoicon-react";
 import { Button, Card } from "@/components/ui";
 
 type EmptyStateContent = {

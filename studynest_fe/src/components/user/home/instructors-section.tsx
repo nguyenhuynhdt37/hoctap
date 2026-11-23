@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, BookOpen, Star, Users } from "lucide-react";
+import { ArrowRight, BookOpen, Star, Users } from "pulsoicon-react";
 import { Badge, Card, Skeleton } from "@/components/ui";
 import api from "@/lib/utils/fetcher/client/axios";
 import { getImageUrl } from "@/lib/utils/helpers/image";

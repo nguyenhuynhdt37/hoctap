@@ -2,14 +2,14 @@
 
 import { LessonResource } from "@/types/user/curriculum";
 import {
-  HiCloudDownload,
-  HiDocumentText,
-  HiDownload,
-  HiExternalLink,
-  HiPhotograph,
-  HiVideoCamera,
-  HiX,
-} from "react-icons/hi";
+  CloudDownload,
+  FileText,
+  Download,
+  ExternalLink,
+  Image,
+  Video,
+  X,
+} from "pulsoicon-react";
 
 interface ResourcesModalProps {
   open: boolean;
@@ -26,10 +26,10 @@ export default function ResourcesModal(props: ResourcesModalProps) {
     const type = resourceType?.toLowerCase() || "file";
     switch (type) {
       case "pdf":
-        return <HiDocumentText className="h-5 w-5" />;
+        return <FileText className="h-5 w-5" />;
       case "link":
       case "url":
-        return <HiExternalLink className="h-5 w-5" />;
+        return <ExternalLink className="h-5 w-5" />;
       case "image":
       case "img":
       case "jpg":
@@ -37,20 +37,20 @@ export default function ResourcesModal(props: ResourcesModalProps) {
       case "png":
       case "gif":
       case "webp":
-        return <HiPhotograph className="h-5 w-5" />;
+        return <Image className="h-5 w-5" />;
       case "zip":
       case "archive":
       case "rar":
       case "7z":
-        return <HiCloudDownload className="h-5 w-5" />;
+        return <CloudDownload className="h-5 w-5" />;
       case "video":
       case "mp4":
       case "avi":
       case "mov":
       case "mkv":
-        return <HiVideoCamera className="h-5 w-5" />;
+        return <Video className="h-5 w-5" />;
       default:
-        return <HiDocumentText className="h-5 w-5" />;
+        return <FileText className="h-5 w-5" />;
     }
   };
 
@@ -114,7 +114,7 @@ export default function ResourcesModal(props: ResourcesModalProps) {
             className="p-2 rounded-lg hover:bg-surface/60 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
             aria-label="Đóng"
           >
-            <HiX className="w-5 h-5" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
@@ -123,7 +123,7 @@ export default function ResourcesModal(props: ResourcesModalProps) {
           {resources.length === 0 ? (
             <div className="text-center py-12">
               <div className="w-16 h-16 bg-primary-pastel rounded-full flex items-center justify-center mx-auto mb-4">
-                <HiDocumentText className="w-8 h-8 text-primary" />
+                <FileText className="w-8 h-8 text-primary" />
               </div>
               <p className="text-foreground font-medium">Không có tài nguyên</p>
               <p className="text-sm text-muted-foreground mt-1">
@@ -169,7 +169,7 @@ export default function ResourcesModal(props: ResourcesModalProps) {
                   {/* Download Button */}
                   <div className="flex-shrink-0">
                     <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary text-white group-hover:bg-primary-hover transition-colors">
-                      <HiDownload className="w-4 h-4" />
+                      <Download className="w-4 h-4" />
                       <span className="text-sm font-medium">Tải</span>
                     </div>
                   </div>

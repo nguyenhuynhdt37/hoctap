@@ -4,7 +4,7 @@ import { Button, Skeleton } from "@/components/ui";
 import type { ReactNode } from "react";
 import { hubErrorMessage, isHubUnavailable } from "@/lib/learning-hub/errors";
 import { cn } from "@/lib/utils";
-import { CalendarCheck, Check, Gift, Medal, Coins, Zap } from "lucide-react";
+import { CalendarCheck, Check, Gift, Medal, Coins, Zap } from "pulsoicon-react";
 import { HubLoadError } from "../hub-page-state";
 import { number } from "./section";
 import type { useDailyLearningState } from "./use-daily-learning-state";
@@ -61,7 +61,7 @@ export function CheckInCard({ daily, onClaimReward, onCheckIn, inPrimary }: {
                 "relative grid size-11 place-items-center rounded-full border-2 text-xs font-bold",
                 checked ? "border-success-border bg-success-bg text-success-foreground" : today ? "border-primary bg-surface text-primary ring-4 ring-primary-pastel/70" : "border-dashed border-primary-pastel bg-surface/70 text-foreground",
               )}>
-                <span aria-hidden="true">{checked ? <Check className="size-5" strokeWidth={3} /> : RewardIcon && !today ? <RewardIcon className="size-4" /> : day.day_number}</span>
+                <span aria-hidden="true">{checked ? <Check animated={false} className="size-5" strokeWidth={3} /> : RewardIcon && !today ? <RewardIcon className="size-4" /> : day.day_number}</span>
                 <span className="sr-only">Ngày {day.day_number}: {checked ? "đã điểm danh" : "chưa điểm danh"}</span>
               </li>
             );

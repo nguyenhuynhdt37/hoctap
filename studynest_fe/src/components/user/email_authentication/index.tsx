@@ -17,7 +17,7 @@ import { validateOTP } from "@/lib/utils/validators";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, CheckCircle2, Clock, Mail, RotateCw } from "lucide-react";
+import { ArrowRight, CheckCircle2, Clock, Mail, RotateCw } from "pulsoicon-react";
 import { sanitizeRedirect } from "@/lib/auth/safe-redirect";
 
 const EmailAuthentication = () => {

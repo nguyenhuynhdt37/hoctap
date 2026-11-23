@@ -5,15 +5,15 @@ import GiftTransferDialog from "./gift-transfer-dialog";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {
-  HiChat,
-  HiChevronDown,
-  HiClipboardList,
-  HiClock,
-  HiDownload,
-  HiMenuAlt3,
-  HiCloud,
-  HiStar,
-} from "react-icons/hi";
+  MessageCircle,
+  ChevronDown,
+  ClipboardList,
+  Clock,
+  Download,
+  AlignRight,
+  Cloud,
+  Star,
+} from "pulsoicon-react";
 
 interface LearningHeaderProps {
   courseTitle: string;
@@ -201,7 +201,7 @@ export default function LearningHeader({
                     : "bg-primary-pastel/60 hover:bg-primary-pastel text-primary border border-primary-light/40"
                 }`}
               >
-                <HiChat className="w-4 h-4" />
+                <MessageCircle className="w-4 h-4" />
                 <span className="hidden md:inline">
                   {chatOpen ? "Đóng chat" : "Hỏi trợ giảng"}
                 </span>
@@ -215,13 +215,13 @@ export default function LearningHeader({
               title="Tiến độ của bạn"
               className="flex min-h-10 min-w-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-border bg-background p-2 text-sm font-medium text-foreground transition-colors hover:bg-primary-pastel/40 sm:px-3.5 sm:py-2"
             >
-              <HiClock className="h-4 w-4 text-primary" />
+              <Clock className="h-4 w-4 text-primary" />
               <span className="hidden sm:inline">Tiến độ của bạn</span>
-              <HiChevronDown className="hidden h-4 w-4 text-muted-foreground sm:block" />
+              <ChevronDown className="hidden h-4 w-4 text-muted-foreground sm:block" />
             </button>
 
             <button className="hidden lg:flex items-center space-x-2 px-3.5 py-2 bg-surface hover:bg-background border border-border text-foreground rounded-xl transition-colors cursor-pointer text-sm font-medium">
-              <HiDownload className="w-4 h-4 text-primary" />
+              <Download className="w-4 h-4 text-primary" />
               <span>Chia sẻ</span>
             </button>
 
@@ -234,7 +234,7 @@ export default function LearningHeader({
                 aria-haspopup="menu"
                 className="min-h-10 min-w-10 cursor-pointer rounded-xl border border-transparent p-2 text-muted-foreground transition-colors hover:border-border hover:bg-background hover:text-foreground"
               >
-                <HiMenuAlt3 className="w-5 h-5" />
+                <AlignRight className="w-5 h-5" />
               </button>
 
               {showMoreOptions && (
@@ -258,7 +258,7 @@ export default function LearningHeader({
                     }
                     className={rowClass}
                   >
-                    <HiStar className="w-5 h-5 text-primary" />
+                    <Star solid className="w-5 h-5 text-primary" />
                     <span className="text-foreground text-sm font-medium flex-1">
                       Thích khóa học này
                     </span>
@@ -281,7 +281,7 @@ export default function LearningHeader({
                     }
                     className={rowClass}
                   >
-                    <HiClipboardList className="w-5 h-5 text-primary" />
+                    <ClipboardList className="w-5 h-5 text-primary" />
                     <span className="text-foreground text-sm font-medium flex-1">
                       Lưu trữ khóa học này
                     </span>
@@ -300,7 +300,7 @@ export default function LearningHeader({
                     }}
                     className={rowClass}
                   >
-                    <HiCloud className="w-5 h-5 text-primary" />
+                    <Cloud className="w-5 h-5 text-primary" />
                     <span className="text-foreground text-sm font-medium">
                       Tặng khóa học này
                     </span>

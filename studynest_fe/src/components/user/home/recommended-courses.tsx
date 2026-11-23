@@ -7,10 +7,10 @@ import { RecommendedItem, RecommendedResponse } from "@/types/user/course";
 import useEmblaCarousel from "embla-carousel-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { HiChevronLeft, HiChevronRight } from "react-icons/hi";
+import { ChevronLeft, ChevronRight } from "pulsoicon-react";
 import { useAuthedSWR } from "@/hooks/auth/useAuthedSWR";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight } from "pulsoicon-react";
 import { GlassCard } from "./landing-ui";
 import { CourseLecturer } from "./courses/course-card";
 import { mayPortrait, StudyImage } from "./study-image";
@@ -205,7 +205,7 @@ const RecommendedCourses = ({ embedded = false }: { embedded?: boolean }) => {
                   className="absolute top-1/2 -translate-y-1/2 z-30 -left-3 sm:-left-5 w-10 h-10 md:w-11 md:h-11 rounded-full hover:bg-primary hover:text-primary-foreground hover:border-primary shadow-sm"
                   aria-label="Khóa học trước"
                 >
-                  <HiChevronLeft className="h-5 w-5" />
+                  <ChevronLeft className="h-5 w-5" />
                 </Button>
                 <Button
                   variant="secondary"
@@ -215,7 +215,7 @@ const RecommendedCourses = ({ embedded = false }: { embedded?: boolean }) => {
                   className="absolute top-1/2 -translate-y-1/2 z-30 -right-3 sm:-right-5 w-10 h-10 md:w-11 md:h-11 rounded-full hover:bg-primary hover:text-primary-foreground hover:border-primary shadow-sm"
                   aria-label="Khóa học tiếp theo"
                 >
-                  <HiChevronRight className="h-5 w-5" />
+                  <ChevronRight className="h-5 w-5" />
                 </Button>
               </>
             )}

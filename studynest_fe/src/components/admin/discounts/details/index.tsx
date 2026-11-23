@@ -5,14 +5,14 @@ import { DiscountDetail } from "@/types/admin/discount";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 import {
-  HiArrowLeft,
-  HiCalendar,
-  HiCheckCircle,
-  HiCurrencyDollar,
-  HiTag,
-  HiUser,
-  HiXCircle,
-} from "react-icons/hi";
+  ArrowLeft,
+  Calendar,
+  CircleCheck,
+  CircleDollarSign,
+  Tag,
+  User,
+  CircleX,
+} from "pulsoicon-react";
 
 interface DiscountDetailsProps {
   data: DiscountDetail;
@@ -78,7 +78,7 @@ export default function DiscountDetails({ data }: DiscountDetailsProps) {
             onClick={() => router.back()}
             className="flex items-center gap-2 text-gray-600 hover:text-green-600 transition-colors mb-4"
           >
-            <HiArrowLeft className="h-5 w-5" />
+            <ArrowLeft className="h-5 w-5" />
             <span className="font-medium">Quay lại</span>
           </button>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -91,7 +91,7 @@ export default function DiscountDetails({ data }: DiscountDetailsProps) {
           <div className="flex items-start justify-between mb-6">
             <div className="flex items-center gap-4">
               <div className="h-16 w-16 bg-green-600 rounded-lg flex items-center justify-center">
-                <HiTag className="h-8 w-8 text-white" />
+                <Tag className="h-8 w-8 text-white" />
               </div>
               <div>
                 <h2 className="text-2xl font-bold text-gray-900 mb-1">
@@ -118,9 +118,9 @@ export default function DiscountDetails({ data }: DiscountDetailsProps) {
             </div>
             <div className="flex items-center gap-2">
               {discount.is_active ? (
-                <HiCheckCircle className="h-6 w-6 text-green-600" />
+                <CircleCheck solid className="h-6 w-6 text-green-600" />
               ) : (
-                <HiXCircle className="h-6 w-6 text-gray-400" />
+                <CircleX solid className="h-6 w-6 text-gray-400" />
               )}
             </div>
           </div>
@@ -135,7 +135,7 @@ export default function DiscountDetails({ data }: DiscountDetailsProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="p-4 bg-gray-50 rounded-lg">
               <div className="flex items-center gap-2 text-gray-600 mb-2">
-                <HiCurrencyDollar className="h-5 w-5" />
+                <CircleDollarSign className="h-5 w-5" />
                 <span className="text-sm font-medium">Giá trị giảm</span>
               </div>
               <p className="text-xl font-bold text-gray-900">
@@ -147,7 +147,7 @@ export default function DiscountDetails({ data }: DiscountDetailsProps) {
 
             <div className="p-4 bg-gray-50 rounded-lg">
               <div className="flex items-center gap-2 text-gray-600 mb-2">
-                <HiUser className="h-5 w-5" />
+                <User className="h-5 w-5" />
                 <span className="text-sm font-medium">Đã sử dụng</span>
               </div>
               <p className="text-xl font-bold text-gray-900">
@@ -158,7 +158,7 @@ export default function DiscountDetails({ data }: DiscountDetailsProps) {
 
             <div className="p-4 bg-gray-50 rounded-lg">
               <div className="flex items-center gap-2 text-gray-600 mb-2">
-                <HiUser className="h-5 w-5" />
+                <User className="h-5 w-5" />
                 <span className="text-sm font-medium">Giới hạn/người</span>
               </div>
               <p className="text-xl font-bold text-gray-900">
@@ -168,7 +168,7 @@ export default function DiscountDetails({ data }: DiscountDetailsProps) {
 
             <div className="p-4 bg-gray-50 rounded-lg">
               <div className="flex items-center gap-2 text-gray-600 mb-2">
-                <HiTag className="h-5 w-5" />
+                <Tag className="h-5 w-5" />
                 <span className="text-sm font-medium">Áp dụng cho</span>
               </div>
               <p className="text-lg font-semibold text-gray-900">
@@ -186,7 +186,7 @@ export default function DiscountDetails({ data }: DiscountDetailsProps) {
           {/* Date Range */}
           <div className="mt-6 pt-6 border-t border-gray-200">
             <div className="flex items-center gap-2 text-gray-600 mb-3">
-              <HiCalendar className="h-5 w-5" />
+              <Calendar className="h-5 w-5" />
               <span className="font-medium">Thời gian hiệu lực</span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -248,7 +248,7 @@ export default function DiscountDetails({ data }: DiscountDetailsProps) {
           </h3>
           {usage_history.length === 0 ? (
             <div className="text-center py-12">
-              <HiUser className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+              <User className="h-12 w-12 text-gray-300 mx-auto mb-3" />
               <p className="text-gray-600">Chưa có lịch sử sử dụng</p>
             </div>
           ) : (
@@ -290,7 +290,7 @@ export default function DiscountDetails({ data }: DiscountDetailsProps) {
                             />
                           ) : (
                             <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
-                              <HiUser className="h-5 w-5 text-green-600" />
+                              <User animated={false} className="h-5 w-5 text-green-600" />
                             </div>
                           )}
                           <span className="font-medium text-gray-900">

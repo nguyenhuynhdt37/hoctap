@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui";
 import { WalletTransaction } from "@/types/user/wallet";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { HiArrowDown, HiArrowUp, HiRefresh } from "react-icons/hi";
+import { ArrowDown, ArrowUp, RefreshCw } from "pulsoicon-react";
 
 interface Props {
   transactions: WalletTransaction[];
@@ -195,9 +195,9 @@ export function TransactionsTable({
                           }`}
                         >
                           {income ? (
-                            <HiArrowDown className="h-4 w-4" />
+                            <ArrowDown animated={false} className="h-4 w-4" />
                           ) : (
-                            <HiArrowUp className="h-4 w-4" />
+                            <ArrowUp animated={false} className="h-4 w-4" />
                           )}
                         </div>
                         <div>
@@ -270,7 +270,7 @@ export function TransactionsTable({
                             disabled={retryOrderId === t.order_id}
                             className="inline-flex w-fit items-center gap-1.5 rounded-full border border-primary-pastel bg-surface px-3 py-1 text-xs font-semibold text-primary transition-colors hover:bg-primary-light disabled:opacity-60 cursor-pointer shadow-2xs"
                           >
-                            <HiRefresh
+                            <RefreshCw animated={false}
                               className={`h-3.5 w-3.5 ${
                                 retryOrderId === t.order_id ? "animate-spin" : ""
                               }`}

@@ -4,7 +4,7 @@ import { Progress, Skeleton } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import type { CoursesMeItem } from "@/types/user/courses-me";
 import type { CatalogCourseCard } from "@/types/catalog";
-import { ArrowRight, ArrowUpRight, BookOpen, Clock3, Star, UsersRound } from "lucide-react";
+import { ArrowRight, ArrowUpRight, BookOpen, Clock3, Star, UsersRound } from "pulsoicon-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { CloudBlob, GlassCard, Pill } from "../landing-ui";

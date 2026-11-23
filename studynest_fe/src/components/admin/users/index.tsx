@@ -8,18 +8,18 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import {
-  HiBan,
-  HiClock,
-  HiCog,
-  HiEye,
-  HiPencil,
-  HiSearch,
-  HiShieldCheck,
-  HiTrash,
-  HiUserAdd,
-  HiX,
-  HiXCircle,
-} from "react-icons/hi";
+  Ban,
+  Clock,
+  Settings,
+  Eye,
+  Pencil,
+  Search,
+  ShieldCheck,
+  Trash2,
+  UserPlus,
+  X,
+  CircleX,
+} from "pulsoicon-react";
 import useSWR from "swr";
 
 export default function UsersManagement() {
@@ -494,7 +494,7 @@ Sau khi nhấn OK, người dùng sẽ bị xóa VĨNH VIỄN!`);
               onClick={() => (window.location.href = "/admin/users/deleted")}
               className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <HiTrash className="w-4 h-4" />
+              <Trash2 className="w-4 h-4" />
               Người dùng đã xóa
             </button>
             <button
@@ -516,7 +516,7 @@ Sau khi nhấn OK, người dùng sẽ bị xóa VĨNH VIỄN!`);
                 Tìm kiếm
               </label>
               <div className="relative">
-                <HiSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="text"
                   value={searchInput}
@@ -993,7 +993,7 @@ function UserActionsModal({
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                  <HiCog className="w-5 h-5 text-white" />
+                  <Settings className="w-5 h-5 text-white" />
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-white">
@@ -1005,10 +1005,11 @@ function UserActionsModal({
                 </div>
               </div>
               <button
+                aria-label="Đóng"
                 onClick={onClose}
                 className="p-2 hover:bg-white/20 rounded-full transition-all duration-200 group"
               >
-                <HiX className="w-5 h-5 text-white group-hover:rotate-90 transition-transform duration-200" />
+                <X className="w-5 h-5 text-white group-hover:rotate-90 transition-transform duration-200" />
               </button>
             </div>
           </div>
@@ -1076,7 +1077,7 @@ function UserActionsModal({
                 }}
               >
                 <div className="p-3 bg-emerald-100 rounded-xl group-hover:bg-emerald-200 transition-colors duration-200">
-                  <HiEye className="w-5 h-5 text-emerald-600" />
+                  <Eye className="w-5 h-5 text-emerald-600" />
                 </div>
                 <div className="flex-1">
                   <div className="font-semibold text-gray-900">
@@ -1099,7 +1100,7 @@ function UserActionsModal({
                 }}
               >
                 <div className="p-3 bg-green-100 rounded-xl group-hover:bg-green-200 transition-colors duration-200">
-                  <HiPencil className="w-5 h-5 text-green-600" />
+                  <Pencil className="w-5 h-5 text-green-600" />
                 </div>
                 <div className="flex-1">
                   <div className="font-semibold text-gray-900">
@@ -1132,9 +1133,9 @@ function UserActionsModal({
                   }`}
                 >
                   {isBanned ? (
-                    <HiShieldCheck className="w-5 h-5 text-green-600" />
+                    <ShieldCheck className="w-5 h-5 text-green-600" />
                   ) : (
-                    <HiBan className="w-5 h-5 text-red-600" />
+                    <Ban className="w-5 h-5 text-red-600" />
                   )}
                 </div>
                 <div className="flex-1">
@@ -1163,7 +1164,7 @@ function UserActionsModal({
                 className="w-full flex items-center space-x-4 p-4 text-left hover:bg-teal-50 rounded-2xl transition-all duration-200 group border border-transparent hover:border-teal-200 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <div className="p-3 bg-teal-100 rounded-xl group-hover:bg-teal-200 transition-colors duration-200">
-                  <HiUserAdd className="w-5 h-5 text-teal-600" />
+                  <UserPlus className="w-5 h-5 text-teal-600" />
                 </div>
                 <div className="flex-1">
                   <div className="font-semibold text-gray-900">
@@ -1198,7 +1199,7 @@ function UserActionsModal({
                       : "bg-gray-100"
                   }`}
                 >
-                  <HiTrash
+                  <Trash2
                     className={`w-5 h-5 ${
                       canDelete ? "text-red-600" : "text-gray-400"
                     }`}
@@ -1237,7 +1238,7 @@ function UserActionsModal({
               <div className="mt-4 p-4 bg-red-50 border-2 border-red-300 rounded-2xl">
                 <div className="flex items-start space-x-3">
                   <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <HiX className="w-4 h-4 text-white font-bold" />
+                    <X className="w-4 h-4 text-white font-bold" />
                   </div>
                   <div>
                     <div className="font-bold text-red-900 text-sm">
@@ -1359,7 +1360,7 @@ function BanUserModal({
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                  <HiBan className="w-5 h-5 text-white" />
+                  <Ban className="w-5 h-5 text-white" />
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-white">
@@ -1371,10 +1372,11 @@ function BanUserModal({
                 </div>
               </div>
               <button
+                aria-label="Hủy"
                 onClick={onCancel}
                 className="p-2 hover:bg-white/20 rounded-full transition-all duration-200 group"
               >
-                <HiXCircle className="w-5 h-5 text-white group-hover:rotate-90 transition-transform duration-200" />
+                <CircleX solid className="w-5 h-5 text-white group-hover:rotate-90 transition-transform duration-200" />
               </button>
             </div>
           </div>
@@ -1396,7 +1398,7 @@ function BanUserModal({
                   }`}
                 >
                   <div className="flex items-center justify-center space-x-2">
-                    <HiClock className="w-4 h-4" />
+                    <Clock className="w-4 h-4" />
                     <span>Cấm tạm thời</span>
                   </div>
                 </button>
@@ -1409,7 +1411,7 @@ function BanUserModal({
                   }`}
                 >
                   <div className="flex items-center justify-center space-x-2">
-                    <HiBan className="w-4 h-4" />
+                    <Ban className="w-4 h-4" />
                     <span>Cấm vĩnh viễn</span>
                   </div>
                 </button>
@@ -1476,7 +1478,7 @@ function BanUserModal({
             <div className="p-4 bg-red-50 border border-red-200 rounded-2xl">
               <div className="flex items-start space-x-3">
                 <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <HiBan className="w-3 h-3 text-white" />
+                  <Ban className="w-3 h-3 text-white" />
                 </div>
                 <div>
                   <div className="font-semibold text-red-800 text-sm">

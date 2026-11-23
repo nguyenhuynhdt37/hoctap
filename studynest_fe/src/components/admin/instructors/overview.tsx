@@ -3,11 +3,11 @@
 import api from "@/lib/utils/fetcher/client/axios";
 import { InstructorStatsResponse } from "@/types/admin/statistics";
 import {
-  HiUserGroup,
-  HiCurrencyDollar,
-  HiClock,
-  HiCheck,
-} from "react-icons/hi";
+  UsersRound,
+  CircleDollarSign,
+  Clock,
+  Check,
+} from "pulsoicon-react";
 import useSWR from "swr";
 
 const formatCurrency = (value: number | null | undefined) => {
@@ -33,28 +33,28 @@ export default function InstructorOverview() {
     {
       title: "Tổng giảng viên",
       value: (data?.total ?? 0).toLocaleString("vi-VN"),
-      icon: HiUserGroup,
+      icon: UsersRound,
       color: "bg-green-500",
       bgLight: "bg-green-50",
     },
     {
       title: "Tổng thu nhập",
       value: formatCurrency(data?.total_earnings),
-      icon: HiCurrencyDollar,
+      icon: CircleDollarSign,
       color: "bg-emerald-500",
       bgLight: "bg-emerald-50",
     },
     {
       title: "Chờ thanh toán",
       value: formatCurrency(data?.pending_payout),
-      icon: HiClock,
+      icon: Clock,
       color: "bg-yellow-500",
       bgLight: "bg-yellow-50",
     },
     {
       title: "Đã thanh toán",
       value: formatCurrency(data?.paid_out),
-      icon: HiCheck,
+      icon: Check,
       color: "bg-teal-500",
       bgLight: "bg-teal-50",
     },

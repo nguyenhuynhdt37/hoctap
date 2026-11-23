@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { HiChevronDown, HiChevronUp } from "react-icons/hi";
+import { ChevronDown, ChevronUp } from "pulsoicon-react";
 
 interface FaqItem {
   question: string;
@@ -85,9 +85,9 @@ export function FaqSection() {
                   {faq.question}
                 </span>
                 {isOpen ? (
-                  <HiChevronUp className="h-5 w-5 text-gray-500 flex-shrink-0" />
+                  <ChevronUp className="h-5 w-5 text-gray-500 flex-shrink-0" />
                 ) : (
-                  <HiChevronDown className="h-5 w-5 text-gray-500 flex-shrink-0" />
+                  <ChevronDown className="h-5 w-5 text-gray-500 flex-shrink-0" />
                 )}
               </button>
               {isOpen && (

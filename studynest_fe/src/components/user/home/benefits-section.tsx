@@ -10,8 +10,8 @@ import {
   CodeXml,
   NotebookPen,
   Play,
-  type LucideIcon,
-} from "lucide-react";
+  type PulsoIcon,
+} from "pulsoicon-react";
 import type { ComponentType } from "react";
 import {
   GlassCard,
@@ -28,7 +28,7 @@ interface BenefitItem {
   title: string;
   subtitle: string;
   description: string;
-  icon: LucideIcon;
+  icon: PulsoIcon;
   preview: ComponentType;
   tone: Tone;
   placement: string;

@@ -1,6 +1,6 @@
 "use client";
 
-import { HiCheck } from "react-icons/hi";
+import { Check } from "pulsoicon-react";
 
 interface RequirementsSectionProps {
   requirements: string[];
@@ -26,7 +26,7 @@ export default function RequirementsSection({
             className="flex items-start gap-3 p-3.5 bg-background rounded-2xl border border-border/80"
           >
             <span className="w-5 h-5 rounded-full bg-primary-light text-primary flex items-center justify-center mt-0.5 shrink-0">
-              <HiCheck className="w-3.5 h-3.5" />
+              <Check animated={false} className="w-3.5 h-3.5" />
             </span>
             <span className="text-foreground text-sm leading-relaxed">
               {req}

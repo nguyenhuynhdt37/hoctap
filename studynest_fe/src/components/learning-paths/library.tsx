@@ -14,7 +14,7 @@ import {
   Search,
   Ticket,
   UserRound,
-} from "lucide-react";
+} from "pulsoicon-react";
 import { Badge, Button, Card, EmptyState, Input, Select } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import type { Bundle, PageResult } from "@/types/learning-paths";

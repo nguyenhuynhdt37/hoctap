@@ -6,14 +6,14 @@ import api from "@/lib/utils/fetcher/client/axios";
 import { UserDetailResponse } from "@/types/admin/user-detail";
 import { useEffect, useState } from "react";
 import {
-  HiArrowLeft,
-  HiCheckCircle,
-  HiMail,
-  HiPencil,
-  HiSave,
-  HiUser,
-  HiXCircle,
-} from "react-icons/hi";
+  ArrowLeft,
+  CircleCheck,
+  Mail,
+  Pencil,
+  Save,
+  User,
+  CircleX,
+} from "pulsoicon-react";
 import useSWR from "swr";
 
 interface EditUserProps {
@@ -165,7 +165,7 @@ const EditUser = ({ userId }: EditUserProps) => {
     return (
       <div className="p-6">
         <div className="text-center py-12">
-          <HiXCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <CircleX solid className="w-16 h-16 text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">
             Không tìm thấy người dùng
           </h2>
@@ -191,11 +191,12 @@ const EditUser = ({ userId }: EditUserProps) => {
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <button
+            aria-label="Quay lại"
             onClick={() => window.history.back()}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors duration-200"
             title="Quay lại"
           >
-            <HiArrowLeft className="w-6 h-6 text-gray-600" />
+            <ArrowLeft className="w-6 h-6 text-gray-600" />
           </button>
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
@@ -212,7 +213,7 @@ const EditUser = ({ userId }: EditUserProps) => {
             disabled={!hasChanges || isSubmitting}
             className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-200 font-medium disabled:opacity-50"
           >
-            <HiXCircle className="w-4 h-4" />
+            <CircleX solid className="w-4 h-4" />
             <span>Hủy</span>
           </button>
           <button
@@ -227,7 +228,7 @@ const EditUser = ({ userId }: EditUserProps) => {
               </>
             ) : (
               <>
-                <HiSave className="w-4 h-4" />
+                <Save className="w-4 h-4" />
                 <span>Lưu thay đổi</span>
               </>
             )}
@@ -240,7 +241,7 @@ const EditUser = ({ userId }: EditUserProps) => {
         {/* Header */}
         <div className="bg-gradient-to-r from-green-500 to-emerald-600 px-6 py-4">
           <h3 className="text-lg font-semibold text-white flex items-center space-x-2">
-            <HiPencil className="w-5 h-5" />
+            <Pencil className="w-5 h-5" />
             <span>Thông tin có thể chỉnh sửa</span>
           </h3>
           <p className="text-green-100 text-sm mt-1">
@@ -253,7 +254,7 @@ const EditUser = ({ userId }: EditUserProps) => {
           {/* Email Field */}
           <div>
             <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700 mb-3">
-              <HiMail className="w-4 h-4 text-emerald-600" />
+              <Mail className="w-4 h-4 text-emerald-600" />
               <span>Email</span>
               <span className="text-red-500">*</span>
             </label>
@@ -284,7 +285,7 @@ const EditUser = ({ userId }: EditUserProps) => {
           {/* Full Name Field */}
           <div>
             <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700 mb-3">
-              <HiUser className="w-4 h-4 text-green-600" />
+              <User className="w-4 h-4 text-green-600" />
               <span>Họ và tên</span>
             </label>
             <input
@@ -302,7 +303,7 @@ const EditUser = ({ userId }: EditUserProps) => {
           {/* Read-only Information */}
           <div className="pt-6 border-t border-gray-200">
             <h4 className="text-sm font-semibold text-gray-700 mb-4 flex items-center space-x-2">
-              <HiCheckCircle className="w-4 h-4 text-gray-500" />
+              <CircleCheck solid className="w-4 h-4 text-gray-500" />
               <span>Thông tin không thể chỉnh sửa</span>
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

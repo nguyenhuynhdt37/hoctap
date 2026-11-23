@@ -9,13 +9,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import {
-  HiArrowLeft,
-  HiCheckCircle,
-  HiClock,
-  HiTag,
-  HiUser,
-  HiXCircle,
-} from "react-icons/hi";
+  ArrowLeft,
+  CircleCheck,
+  Clock,
+  Tag,
+  User,
+  CircleX,
+} from "pulsoicon-react";
 import { ActionPanel } from "./action-panel";
 import { DetailRow } from "./detail-row";
 import { SectionCard } from "./section-card";
@@ -187,7 +187,7 @@ export default function AdminRefundDetail({
           onClick={() => router.back()}
           className="flex items-center gap-2 text-gray-600 hover:text-green-600 transition-colors"
         >
-          <HiArrowLeft className="h-5 w-5" />
+          <ArrowLeft className="h-5 w-5" />
           <span className="font-semibold text-sm">Quay lại</span>
         </button>
 
@@ -196,9 +196,9 @@ export default function AdminRefundDetail({
             <div className="h-14 w-14 rounded-full bg-green-50 flex items-center justify-center">
               {data.refund.status === "instructor_rejected" ||
               data.refund.status === "admin_rejected" ? (
-                <HiXCircle className="h-8 w-8 text-red-500" />
+                <CircleX solid className="h-8 w-8 text-red-500" />
               ) : (
-                <HiCheckCircle className="h-8 w-8 text-green-500" />
+                <CircleCheck solid className="h-8 w-8 text-green-500" />
               )}
             </div>
             <div>
@@ -239,7 +239,7 @@ export default function AdminRefundDetail({
           <div className="lg:col-span-2 space-y-6">
             <SectionCard
               title="Thông tin yêu cầu"
-              icon={<HiClock className="h-5 w-5 text-green-600" />}
+              icon={<Clock className="h-5 w-5 text-green-600" />}
             >
               <div className="space-y-4">
                 <DetailRow
@@ -295,7 +295,7 @@ export default function AdminRefundDetail({
 
             <SectionCard
               title="Dòng thời gian"
-              icon={<HiClock className="h-5 w-5 text-green-600" />}
+              icon={<Clock className="h-5 w-5 text-green-600" />}
             >
               <div className="space-y-2">
                 {timeline.map((item, index) => (
@@ -314,7 +314,7 @@ export default function AdminRefundDetail({
 
             <SectionCard
               title="Thông tin mua hàng"
-              icon={<HiTag className="h-5 w-5 text-green-600" />}
+              icon={<Tag className="h-5 w-5 text-green-600" />}
             >
               <div className="space-y-4">
                 <DetailRow
@@ -373,7 +373,7 @@ export default function AdminRefundDetail({
 
             <SectionCard
               title="Thông tin thu nhập"
-              icon={<HiCheckCircle className="h-5 w-5 text-green-600" />}
+              icon={<CircleCheck solid className="h-5 w-5 text-green-600" />}
             >
               <div className="space-y-4">
                 <DetailRow
@@ -415,7 +415,7 @@ export default function AdminRefundDetail({
           <div className="space-y-6">
             <SectionCard
               title="Khóa học"
-              icon={<HiTag className="h-5 w-5 text-green-600" />}
+              icon={<Tag className="h-5 w-5 text-green-600" />}
             >
               <Link
                 href={`/learning/${data.course.course_id}`}
@@ -445,7 +445,7 @@ export default function AdminRefundDetail({
 
             <SectionCard
               title="Giảng viên"
-              icon={<HiUser className="h-5 w-5 text-green-600" />}
+              icon={<User className="h-5 w-5 text-green-600" />}
             >
               <div className="flex items-center gap-3">
                 {instructorAvatar && !avatarError ? (

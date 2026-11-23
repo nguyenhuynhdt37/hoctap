@@ -1,7 +1,7 @@
 "use client";
 
 import { ActiveLessonQuiz } from "@/types/user/activeLesson";
-import { HiArrowLeft, HiArrowRight } from "react-icons/hi";
+import { ArrowLeft, ArrowRight } from "pulsoicon-react";
 
 interface QuizModalProps {
   lessonTitle: string;
@@ -220,7 +220,7 @@ export default function QuizModal({
                       : "bg-background hover:bg-border text-foreground cursor-pointer"
                   }`}
                 >
-                  <HiArrowLeft className="w-4 h-4 inline mr-1" />
+                  <ArrowLeft className="w-4 h-4 inline mr-1" />
                   Trước
                 </button>
                 <button
@@ -235,7 +235,7 @@ export default function QuizModal({
                   {currentQuestionIndex === quizzes.length - 1
                     ? "Hoàn thành"
                     : "Tiếp theo"}
-                  <HiArrowRight className="w-4 h-4 inline ml-1" />
+                  <ArrowRight className="w-4 h-4 inline ml-1" />
                 </button>
               </div>
             </div>

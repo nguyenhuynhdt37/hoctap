@@ -4,7 +4,7 @@ import { EquippedMarks, FramedAvatar } from "@/components/learning-hub/shop/item
 import { useLearnerEquipment } from "@/lib/learning-hub/shop-hooks";
 import { formatDate } from "@/lib/utils/helpers/date";
 import { UserProfile } from "@/types/user/profile";
-import { HiCalendar, HiMail } from "react-icons/hi";
+import { Calendar, Mail } from "pulsoicon-react";
 
 interface ProfileHeaderProps {
   profileData: UserProfile;
@@ -34,16 +34,16 @@ export default function ProfileHeader({ profileData }: ProfileHeaderProps) {
 
           <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm text-gray-600">
             <div className="flex items-center gap-2">
-              <HiMail className="w-4 h-4 text-emerald-600" />
+              <Mail className="w-4 h-4 text-emerald-600" />
               <span>{profileData.email}</span>
             </div>
             <div className="flex items-center gap-2">
-              <HiCalendar className="w-4 h-4 text-emerald-600" />
+              <Calendar className="w-4 h-4 text-emerald-600" />
               <span>Tham gia: {formatDate(profileData.created_at)}</span>
             </div>
             {profileData.last_login_at && (
               <div className="flex items-center gap-2">
-                <HiCalendar className="w-4 h-4 text-emerald-600" />
+                <Calendar className="w-4 h-4 text-emerald-600" />
                 <span>
                   Đăng nhập lần cuối: {formatDate(profileData.last_login_at)}
                 </span>

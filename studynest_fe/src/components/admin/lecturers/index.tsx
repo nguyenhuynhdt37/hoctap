@@ -11,22 +11,22 @@ import {
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import {
-  HiAcademicCap,
-  HiBan,
-  HiCheckCircle,
-  HiClock,
-  HiCog,
-  HiEye,
-  HiPencil,
-  HiSearch,
-  HiShieldCheck,
-  HiStar,
-  HiTrash,
-  HiUserRemove,
-  HiUsers,
-  HiX,
-  HiXCircle,
-} from "react-icons/hi";
+  GraduationCap,
+  Ban,
+  CircleCheck,
+  Clock,
+  Settings,
+  Eye,
+  Pencil,
+  Search,
+  ShieldCheck,
+  Star,
+  Trash2,
+  UserMinus,
+  Users,
+  X,
+  CircleX,
+} from "pulsoicon-react";
 import useSWR from "swr";
 
 export default function LecturersManagement() {
@@ -596,7 +596,7 @@ Sau khi nhấn OK, giảng viên sẽ bị xóa VĨNH VIỄN!`);
                 Tìm kiếm
               </label>
               <div className="relative">
-                <HiSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="text"
                   value={searchInput}
@@ -797,7 +797,7 @@ Sau khi nhấn OK, giảng viên sẽ bị xóa VĨNH VIỄN!`);
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                       <div className="flex items-center justify-center space-x-1">
-                        <HiStar className="w-4 h-4 text-yellow-400" />
+                        <Star solid animated={false} className="w-4 h-4 text-yellow-400" />
                         <span className="font-medium">{lecturer.rating_avg}</span>
                 </div>
                     </td>
@@ -1046,7 +1046,7 @@ function LecturerActionsModal({
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                  <HiCog className="w-5 h-5 text-white" />
+                  <Settings className="w-5 h-5 text-white" />
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-white">
@@ -1058,10 +1058,11 @@ function LecturerActionsModal({
                 </div>
               </div>
               <button
+                aria-label="Đóng"
                 onClick={onClose}
                 className="p-2 hover:bg-white/20 rounded-full transition-all duration-200 group"
               >
-                <HiX className="w-5 h-5 text-white group-hover:rotate-90 transition-transform duration-200" />
+                <X className="w-5 h-5 text-white group-hover:rotate-90 transition-transform duration-200" />
               </button>
             </div>
           </div>
@@ -1133,7 +1134,7 @@ function LecturerActionsModal({
                 }}
               >
                 <div className="p-3 bg-blue-100 rounded-xl group-hover:bg-blue-200 transition-colors duration-200">
-                  <HiEye className="w-5 h-5 text-blue-600" />
+                  <Eye className="w-5 h-5 text-blue-600" />
                 </div>
                 <div className="flex-1">
                   <div className="font-semibold text-gray-900">
@@ -1156,7 +1157,7 @@ function LecturerActionsModal({
                 }}
               >
                 <div className="p-3 bg-green-100 rounded-xl group-hover:bg-green-200 transition-colors duration-200">
-                  <HiPencil className="w-5 h-5 text-green-600" />
+                  <Pencil className="w-5 h-5 text-green-600" />
                 </div>
                 <div className="flex-1">
                   <div className="font-semibold text-gray-900">
@@ -1189,9 +1190,9 @@ function LecturerActionsModal({
                   }`}
                 >
                   {isBanned ? (
-                    <HiShieldCheck className="w-5 h-5 text-green-600" />
+                    <ShieldCheck className="w-5 h-5 text-green-600" />
                   ) : (
-                    <HiBan className="w-5 h-5 text-red-600" />
+                    <Ban className="w-5 h-5 text-red-600" />
                   )}
                 </div>
                 <div className="flex-1">
@@ -1220,7 +1221,7 @@ function LecturerActionsModal({
                 className="w-full flex items-center space-x-4 p-4 text-left hover:bg-orange-50 rounded-2xl transition-all duration-200 group border border-transparent hover:border-orange-200 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <div className="p-3 bg-orange-100 rounded-xl group-hover:bg-orange-200 transition-colors duration-200">
-                  <HiUserRemove className="w-5 h-5 text-orange-600" />
+                  <UserMinus className="w-5 h-5 text-orange-600" />
                 </div>
                 <div className="flex-1">
                   <div className="font-semibold text-gray-900">
@@ -1255,7 +1256,7 @@ function LecturerActionsModal({
                       : "bg-gray-100"
                   }`}
                 >
-                  <HiTrash
+                  <Trash2
                     className={`w-5 h-5 ${
                       canDelete ? "text-red-600" : "text-gray-400"
                     }`}
@@ -1294,7 +1295,7 @@ function LecturerActionsModal({
               <div className="mt-4 p-4 bg-red-50 border-2 border-red-300 rounded-2xl">
                 <div className="flex items-start space-x-3">
                   <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <HiX className="w-4 h-4 text-white font-bold" />
+                    <X className="w-4 h-4 text-white font-bold" />
                   </div>
                   <div>
                     <div className="font-bold text-red-900 text-sm">
@@ -1417,7 +1418,7 @@ function BanLecturerModal({
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                  <HiBan className="w-5 h-5 text-white" />
+                  <Ban className="w-5 h-5 text-white" />
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-white">
@@ -1429,10 +1430,11 @@ function BanLecturerModal({
                 </div>
               </div>
               <button
+                aria-label="Hủy"
                 onClick={onCancel}
                 className="p-2 hover:bg-white/20 rounded-full transition-all duration-200 group"
               >
-                <HiXCircle className="w-5 h-5 text-white group-hover:rotate-90 transition-transform duration-200" />
+                <CircleX solid className="w-5 h-5 text-white group-hover:rotate-90 transition-transform duration-200" />
               </button>
             </div>
           </div>
@@ -1454,7 +1456,7 @@ function BanLecturerModal({
                   }`}
                 >
                   <div className="flex items-center justify-center space-x-2">
-                    <HiClock className="w-4 h-4" />
+                    <Clock className="w-4 h-4" />
                     <span>Cấm tạm thời</span>
                   </div>
                 </button>
@@ -1467,7 +1469,7 @@ function BanLecturerModal({
                   }`}
                 >
                   <div className="flex items-center justify-center space-x-2">
-                    <HiBan className="w-4 h-4" />
+                    <Ban className="w-4 h-4" />
                     <span>Cấm vĩnh viễn</span>
                   </div>
                 </button>
@@ -1534,7 +1536,7 @@ function BanLecturerModal({
             <div className="p-4 bg-red-50 border border-red-200 rounded-2xl">
               <div className="flex items-start space-x-3">
                 <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <HiBan className="w-3 h-3 text-white" />
+                  <Ban className="w-3 h-3 text-white" />
                 </div>
                 <div>
                   <div className="font-semibold text-red-800 text-sm">

@@ -2,7 +2,7 @@
 
 import api from "@/lib/utils/fetcher/client/axios";
 import { RevenueCompareResponse } from "@/types/admin/statistics";
-import { HiTrendingUp, HiTrendingDown, HiCalendar } from "react-icons/hi";
+import { TrendingUp, TrendingDown, Calendar } from "pulsoicon-react";
 import { useState } from "react";
 import useSWR from "swr";
 
@@ -74,7 +74,7 @@ export default function RevenueCompare() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
         <h3 className="text-xl font-bold text-gray-900">So sánh doanh thu</h3>
         <div className="flex items-center gap-2 text-sm text-gray-600">
-          <HiCalendar className="w-4 h-4" />
+          <Calendar className="w-4 h-4" />
           <span>
             {formatDate(dates.current_from)} - {formatDate(dates.current_to)} vs{" "}
             {formatDate(dates.previous_from)} - {formatDate(dates.previous_to)}
@@ -89,9 +89,9 @@ export default function RevenueCompare() {
         }`}
       >
         {isPositive ? (
-          <HiTrendingUp className="w-8 h-8 text-green-600" />
+          <TrendingUp className="w-8 h-8 text-green-600" />
         ) : (
-          <HiTrendingDown className="w-8 h-8 text-red-600" />
+          <TrendingDown className="w-8 h-8 text-red-600" />
         )}
         <div>
           <p

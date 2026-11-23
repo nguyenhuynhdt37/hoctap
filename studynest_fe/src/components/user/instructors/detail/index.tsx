@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { BookOpen, User } from "lucide-react";
+import { BookOpen, User } from "pulsoicon-react";
 import InstructorDetail from "./detail";
 import InstructorCourses from "./courses";
 import type { InstructorDetailProfile } from "@/types/user/instructor";

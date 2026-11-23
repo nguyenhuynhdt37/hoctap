@@ -4,7 +4,7 @@ import { Alert, Badge, Button, Card, Skeleton } from "@/components/ui";
 import type { BadgeVariant } from "@/components/ui/badge";
 import api from "@/lib/utils/fetcher/client/axios";
 import type { LecturerTransactionDetail } from "@/types/lecturer/wallet";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "pulsoicon-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";

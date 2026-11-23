@@ -5,7 +5,7 @@ import { pathCover, StudyImage } from "@/components/user/home/study-image";
 import { useRewardInventory } from "@/lib/learning-hub/mission-hooks";
 import type { RewardInventory } from "@/lib/learning-hub/mission-types";
 import { cn } from "@/lib/utils";
-import { Copy, Coins } from "lucide-react";
+import { Copy, Coins } from "pulsoicon-react";
 import { useEffect, useState } from "react";
 import { HubLoadError } from "../hub-page-state";
 import { MockDataChip } from "../mock-data-chip";

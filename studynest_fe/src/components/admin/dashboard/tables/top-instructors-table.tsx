@@ -6,7 +6,7 @@ import {
   TopInstructorsSortBy,
 } from "@/types/admin/statistics";
 import { getImageUrl } from "@/lib/utils/helpers/image";
-import { HiUser } from "react-icons/hi";
+import { User } from "pulsoicon-react";
 import { useState } from "react";
 import useSWR from "swr";
 
@@ -106,7 +106,7 @@ export default function TopInstructorsTable() {
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-green-100">
-                    <HiUser className="w-5 h-5 text-green-600" />
+                    <User animated={false} className="w-5 h-5 text-green-600" />
                   </div>
                 )}
               </div>

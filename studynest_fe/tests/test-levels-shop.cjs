@@ -8,7 +8,13 @@ const ts = require("typescript");
 
 const src = path.resolve(__dirname, "../src");
 
-function createLoader(stubs = {}) {
+// pulsoicon-react chỉ xuất bản ESM nên loader CommonJS không nạp được; icon chỉ cần là một thẻ svg.
+const iconStub = new Proxy({}, {
+  get: (_, name) => name === "__esModule" ? false
+    : (props) => React.createElement("svg", { "data-icon": String(name), "aria-hidden": props?.["aria-hidden"], className: props?.className }),
+});
+
+function createLoader(stubs = { "pulsoicon-react": iconStub }) {
   const modules = new Map();
 
   function load(resolved) {
@@ -72,6 +78,24 @@ test("registry vẽ khung, biểu tượng và danh hiệu dự phòng cho khóa
   }
 });
 
+test("khóa từ catalog thật và các bộ quà cấp có hình riêng", () => {
+  const { frameArt, emblemArt, titleArt, resolveFrameArt, resolveEmblemArt, resolveTitleArt } = load("components/learning-hub/shop/item-art");
+  for (const [key, design] of Object.entries({
+    "sky-gradient": "frame_sky", "soft-cloud": "frame_cloud", "aurora-ring": "frame_aurora",
+    "moon-ring": "frame_moon", "gold-laurel": "frame_laurel",
+  })) {
+    assert.equal(resolveFrameArt(key), frameArt[design]);
+  }
+  assert.equal(resolveTitleArt("early-reader"), titleArt.title_book);
+  assert.equal(resolveTitleArt("cloud-guide"), titleArt.title_cloud);
+  assert.equal(resolveEmblemArt("blue-breeze"), emblemArt.emblem_breeze);
+  for (const resolve of [resolveFrameArt, resolveTitleArt, resolveEmblemArt]) {
+    const key = resolve === resolveFrameArt ? "milestone-frame" : resolve === resolveTitleArt ? "milestone-title" : "milestone-emblem";
+    assert.equal(new Set([10, 20, 30, 40, 50].map((level) => resolve(key, level))).size, 5);
+    assert.notEqual(resolve(key, 60), resolve("future_asset"));
+  }
+});
+
 test("Coin dùng định dạng Việt Nam và lỗi từ hợp đồng hiển thị đúng tên tiền", () => {
   const { hubErrorMessage } = load("lib/learning-hub/errors");
   const error = (status, detail) => ({ isAxiosError: true, response: { status, data: { detail } } });
@@ -95,6 +119,13 @@ test("chỉ đổi vật phẩm khi đáp ứng quyền mua, giá và số dư",
   assert.deepEqual(shopItemState({ ...frame, purchasable: false, reason: "Bạn thiếu Peak." }, 1000), {
     kind: "blocked", label: "Chưa đủ Coin", reason: "Bạn thiếu Coin.",
   });
+  assert.deepEqual(shopItemState({ ...frame, unlock_level: 10, purchasable: false, reason: "Bạn không có đủ Coin." }, 1000), {
+    kind: "blocked", label: "Chưa đủ Coin", reason: "Bạn không có đủ Coin.",
+  });
+  assert.deepEqual(shopItemState({ ...frame, unlock_level: 10, purchasable: false, reason: "Bạn cần đạt cấp 10 để mua vật phẩm này." }, 1000), {
+    kind: "locked", label: "Mở ở cấp 10", reason: "Bạn cần đạt cấp 10 để mua vật phẩm này.",
+  });
+  assert.equal(shopItemState({ ...frame, unlock_level: 10, purchasable: false, reason: "Vật phẩm này hiện không được bán." }, 1000).label, "Chưa thể đổi");
   assert.deepEqual(shopItemState({ ...frame, price: null, unlock_level: 20, reason: "Quà đảo mây." }, 9000), {
     kind: "locked", label: "Mở ở cấp 20", reason: "Quà đảo mây.",
   });

@@ -12,7 +12,7 @@ import {
   Search,
   Settings,
   ShoppingBag,
-} from "lucide-react";
+} from "pulsoicon-react";
 import {
   fetchLearning,
   LoadError,
@@ -246,7 +246,7 @@ export default function LecturerCombos() {
                     />
                   ) : (
                     <div className="grid size-full place-items-center text-primary">
-                      <Library className="size-8 stroke-[1.5]" aria-hidden="true" />
+                      <Library animated={false} className="size-8 stroke-[1.5]" aria-hidden="true" />
                     </div>
                   )}
 
@@ -256,7 +256,7 @@ export default function LecturerCombos() {
                       variant="outline"
                       className="bg-surface/95 backdrop-blur-xs font-semibold shadow-2xs text-foreground"
                     >
-                      <Layers className="h-3 w-3 mr-1 text-primary" />
+                      <Layers animated={false} className="h-3 w-3 mr-1 text-primary" />
                       {item.course_count} khóa học
                     </Badge>
                   </div>
@@ -341,7 +341,7 @@ export default function LecturerCombos() {
                     {/* Thống kê đơn hàng và doanh thu */}
                     <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
                       <div className="flex items-center gap-1.5">
-                        <ShoppingBag className="h-4 w-4 text-primary" />
+                        <ShoppingBag animated={false} className="h-4 w-4 text-primary" />
                         <span>
                           Đã bán: <strong className="text-foreground">{item.total_orders}</strong> học viên
                         </span>

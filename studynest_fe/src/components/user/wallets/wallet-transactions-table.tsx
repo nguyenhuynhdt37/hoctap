@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui";
 import { WalletTransaction } from "@/types/user/wallet";
 import Link from "next/link";
-import { HiArrowDown, HiArrowRight, HiArrowUp, HiRefresh } from "react-icons/hi";
+import { ArrowDown, ArrowRight, ArrowUp, RefreshCw } from "pulsoicon-react";
 
 interface Props {
   transactions: WalletTransaction[];
@@ -96,7 +96,7 @@ export function WalletTransactionsTable({
           className="inline-flex items-center gap-1.5 rounded-full border border-primary-pastel bg-primary-light px-4 py-2 text-xs font-semibold text-primary transition-all duration-200 hover:bg-primary hover:text-primary-foreground shadow-2xs"
         >
           <span>Xem tất cả</span>
-          <HiArrowRight className="h-3.5 w-3.5" />
+          <ArrowRight className="h-3.5 w-3.5" />
         </Link>
       </div>
 
@@ -150,9 +150,9 @@ export function WalletTransactionsTable({
                           }`}
                         >
                           {income ? (
-                            <HiArrowDown className="h-4 w-4" />
+                            <ArrowDown animated={false} className="h-4 w-4" />
                           ) : (
-                            <HiArrowUp className="h-4 w-4" />
+                            <ArrowUp animated={false} className="h-4 w-4" />
                           )}
                         </div>
                         <div>
@@ -192,7 +192,7 @@ export function WalletTransactionsTable({
                             disabled={retryOrderId === t.order_id}
                             className="inline-flex items-center gap-1.5 rounded-full border border-primary-pastel bg-surface px-3 py-1 text-xs font-semibold text-primary transition-colors hover:bg-primary-light disabled:opacity-60 cursor-pointer shadow-2xs"
                           >
-                            <HiRefresh
+                            <RefreshCw animated={false}
                               className={`h-3.5 w-3.5 ${
                                 retryOrderId === t.order_id ? "animate-spin" : ""
                               }`}

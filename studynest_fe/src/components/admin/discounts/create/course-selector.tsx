@@ -5,7 +5,7 @@ import { getImageUrl } from "@/lib/utils/helpers/image";
 import { DiscountCourse } from "@/types/admin/discount";
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { HiSearch, HiStar, HiX } from "react-icons/hi";
+import { Search, Star, X } from "pulsoicon-react";
 
 interface CourseSelectorProps {
   selectedCourses: DiscountCourse[];
@@ -91,7 +91,7 @@ export function CourseSelector({
 
       {/* Search Input */}
       <div className="relative">
-        <HiSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
         <input
           type="text"
           value={search}
@@ -135,7 +135,7 @@ export function CourseSelector({
                     </p>
                     <div className="flex items-center gap-2 text-xs text-gray-500">
                       <span className="flex items-center gap-1">
-                        <HiStar className="h-3 w-3 text-yellow-500" />
+                        <Star solid className="h-3 w-3 text-yellow-500" />
                         {course.rating_avg?.toFixed(1) || "N/A"}
                       </span>
                       <span>•</span>
@@ -165,11 +165,12 @@ export function CourseSelector({
                   {course.title}
                 </span>
                 <button
+                  aria-label="Bỏ chọn khóa học"
                   type="button"
                   onClick={() => onRemove(course.id)}
                   className="text-green-600 hover:text-red-500 transition-colors"
                 >
-                  <HiX className="h-4 w-4" />
+                  <X className="h-4 w-4" />
                 </button>
               </div>
             ))}

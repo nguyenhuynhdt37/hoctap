@@ -52,7 +52,7 @@ import {
   Plus,
   Trash2,
   X,
-} from "lucide-react";
+} from "pulsoicon-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
@@ -1597,6 +1597,7 @@ function SectionColumn({
             </div>
             <div className="flex items-center gap-1">
               <button
+                aria-label="Chỉnh sửa"
                 onClick={onStartEdit}
                 className="p-2 hover:bg-primary-light/60 rounded-lg transition-colors group cursor-pointer"
                 title="Chỉnh sửa"
@@ -1604,6 +1605,7 @@ function SectionColumn({
                 <Pencil className="h-4 w-4 text-primary group-hover:scale-110 transition-transform" />
               </button>
               <button
+                aria-label="Xóa"
                 onClick={onDelete}
                 className="p-2 hover:bg-destructive-bg rounded-lg transition-colors group cursor-pointer"
                 title="Xóa"
@@ -1652,7 +1654,7 @@ function SectionColumn({
                     <div className="rounded-xl border border-dashed border-primary bg-primary-light/40 mb-2 min-h-[80px] flex items-center justify-center">
                       <div className="flex items-center gap-2 text-primary">
                         <div className="w-6 h-6 bg-primary-light rounded-lg flex items-center justify-center">
-                          <GripVertical className="h-4 w-4 text-primary" />
+                          <GripVertical animated={false} className="h-4 w-4 text-primary" />
                         </div>
                         <span className="text-sm font-medium">
                           Thả vào đây
@@ -1717,6 +1719,7 @@ function SectionColumn({
                 Thêm
               </Button>
               <Button
+                aria-label="Hủy tạo bài học"
                 variant="outline"
                 size="sm"
                 onClick={onCancelCreateLesson}
@@ -1947,6 +1950,7 @@ function LessonCard({
               {/* Actions - Always visible but subtle */}
               <div className="flex items-center justify-end gap-1 pt-2 border-t border-border/70">
                 <button
+                  aria-label="Chỉnh sửa tên"
                   onClick={(e) => {
                     e.stopPropagation();
                     onStartEdit();
@@ -1961,6 +1965,7 @@ function LessonCard({
                 <DropdownMenu.Root>
                   <DropdownMenu.Trigger asChild>
                     <button
+                      aria-label="Thêm tùy chọn"
                       onClick={(e) => {
                         e.stopPropagation();
                       }}

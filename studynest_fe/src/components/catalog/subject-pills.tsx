@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "pulsoicon-react";
 import type { BrowseSubjectOption } from "@/types/catalog";
 
 interface SubjectPillsProps {

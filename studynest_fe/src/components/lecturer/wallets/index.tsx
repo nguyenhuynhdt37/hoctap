@@ -19,7 +19,7 @@ import {
   PlusCircle,
   Search,
   Wallet as WalletIcon,
-} from "lucide-react";
+} from "pulsoicon-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -466,9 +466,9 @@ function TransactionsTable({
                             }`}
                           >
                             {isIncome ? (
-                              <ArrowUpRight className="h-4 w-4" />
+                              <ArrowUpRight animated={false} className="h-4 w-4" />
                             ) : (
-                              <ArrowDownLeft className="h-4 w-4" />
+                              <ArrowDownLeft animated={false} className="h-4 w-4" />
                             )}
                           </div>
                           <div className="font-semibold text-sm text-foreground">

@@ -8,7 +8,7 @@ import { useShopInventory } from "@/lib/learning-hub/shop-hooks";
 import { formatCoin } from "@/lib/learning-hub/shop-logic";
 import { cn } from "@/lib/utils";
 import type { WalletSummary } from "@/types/user/wallet";
-import { Coins, Flame, Flag, Trophy, Wallet } from "lucide-react";
+import { Coins, Flame, Flag, Trophy, Wallet } from "pulsoicon-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -70,7 +70,7 @@ export function CoinChip() {
     <Link href="/shop" aria-label={label ? `Cửa hàng Mây, số dư ${label}` : "Cửa hàng Mây"}
       title={label} className={cn(chipBase, "min-h-11 min-w-11 justify-center border-accent-vanilla-border bg-accent-vanilla px-2 text-accent-vanilla-foreground hover:bg-accent-vanilla-border/60 md:px-3")}>
       <Coins aria-hidden="true" className="size-4 shrink-0" />
-      <span aria-hidden="true" className="hidden max-w-24 truncate lg:inline">{label ?? "Coin"}</span>
+      <span aria-hidden="true" className="hidden max-w-24 truncate 2xl:inline">{label ?? "Coin"}</span>
     </Link>
   );
 }

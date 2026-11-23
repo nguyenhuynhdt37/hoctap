@@ -13,7 +13,7 @@ import {
   NotificationsResponse,
 } from "@/types/user/notification";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, CheckCheck } from "lucide-react";
+import { Bell, CheckCheck } from "pulsoicon-react";
 import { useEffect, useState } from "react";
 
 export default function Notifications() {

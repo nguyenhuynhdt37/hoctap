@@ -8,7 +8,7 @@ import {
   DiscountsQueryParams,
   DiscountsResponse,
 } from "@/types/lecturer/discount";
-import { Plus } from "lucide-react";
+import { Plus } from "pulsoicon-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
