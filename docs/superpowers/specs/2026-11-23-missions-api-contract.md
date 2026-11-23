@@ -1,6 +1,6 @@
 # Hợp đồng API: XP, nhiệm vụ hằng ngày, nhiệm vụ dài hạn (theo khóa)
 
-Cả backend và frontend bám tài liệu này. Đường dẫn cuối cùng do backend quyết theo quy ước router hiện có (`studynest_be/app/api/v1/gamification/`); nếu khác bảng dưới đây, backend PHẢI cập nhật tài liệu này và nêu trong báo cáo. Đã chốt với chủ sản phẩm: XP và Peak đã nhận KHÔNG bị thu hồi khi hoàn tiền; mỗi khóa trong một đơn chỉ áp một mã giảm giá.
+Cả backend và frontend bám tài liệu này. Đường dẫn cuối cùng do backend quyết theo quy ước router hiện có (`studynest_be/app/api/v1/gamification/`); nếu khác bảng dưới đây, backend PHẢI cập nhật tài liệu này và nêu trong báo cáo. Đã chốt với chủ sản phẩm: XP và Coin đã nhận KHÔNG bị thu hồi khi hoàn tiền; mỗi khóa trong một đơn chỉ áp một mã giảm giá.
 
 ## Endpoints (yêu cầu xác thực DPoP như các API user khác)
 
@@ -40,7 +40,7 @@ interface ClaimResult {
   mission: Mission;
   granted: { xp: number; peak: number; coupon: null | { id: string; code_masked: string; expires_at: string } };
   xp: XpState;
-  level_up: null | { from: number; to: number; peak_bonus: number };
+  level_up: null | { from: number; to: number; peak_bonus: number; rewards: Array<{ level: number; coins: number; items: ShopItem[] }> };
 }
 interface RewardInventory { peak_balance: number; coupons: Array<{ id: string; title: string; code_masked: string; max_percent: number; expires_at: string; status: "available" | "used" | "expired" | "revoked" }> }
 ```
@@ -49,9 +49,9 @@ interface RewardInventory { peak_balance: number; coupons: Array<{ id: string; t
 1. **Hằng ngày**: mẫu có sẵn (hoàn thành 1 bài, 3 bài, bài thực hành, điểm danh…) cấu hình ở bảng nhiệm vụ, reset 00:00 giờ Việt Nam. GET luôn đảm bảo nhiệm vụ của hôm nay đã được gán (không đợi có sự kiện mới hiện ra).
 2. **Dài hạn theo khóa, TỰ SINH, không ai phải ra đề**: khi mua khóa (và backfill cho khóa đã sở hữu) sinh từ cấu trúc khóa: mỗi chương `chapter.complete` (target = số bài của chương lúc sinh), `chapter.quiz_pass` cho chương có quiz (điểm ≥ ngưỡng cấu hình), một `course.complete`, một `course.weekly_streak`. Chương có 0 bài thì bỏ qua.
 3. **Tiến độ tính từ nguồn sự thật phía server** (`LessonProgress`, `QuizAttempt`), tính lại idempotent khi có sự kiện và khi GET; không cộng dồn mù từ sự kiện lặp. Hoàn thành là đơn điệu (xong rồi không tụt dù giảng viên thêm bài sau). Chỉ tính khóa còn quyền truy cập (đã mua, chưa hoàn tiền).
-4. **Nhận thưởng (`claim`)**: chỉ khi `completed`; sổ cái `reward_grants` ràng buộc duy nhất `(user_id, mission_id, reward_kind)`; an toàn khi gọi đồng thời; trả `level_up` nếu lên cấp (có thưởng Peak theo `LevelsConfig`). XP và Peak không thu hồi khi hoàn tiền.
+4. **Nhận thưởng (`claim`)**: chỉ khi `completed`; sổ cái `reward_grants` ràng buộc duy nhất `(user_id, mission_id, reward_kind)`; an toàn khi gọi đồng thời; trả `level_up` nếu lên cấp, kèm số Coin và vật phẩm của từng cấp. Kiểu `ShopItem` và lịch thưởng xem trong hợp đồng Cấp độ và Cửa hàng Mây. Snapshot cũ có `level_up.rewards: []` khi phát lại. XP và Coin không thu hồi khi hoàn tiền.
 5. **Mã giảm giá thưởng**: mô hình dữ liệu và `inventory` có sẵn, nhưng việc CẤP mã nằm sau cờ cấu hình `MISSION_COUPON_REWARDS_ENABLED` (mặc định tắt) cho đến khi đối soát tiền theo luật "mã admin trừ hoa hồng nền tảng, tối đa 0,5×platform_fee×giá" được sửa và kiểm thử (xem mục 4b của bản thiết kế). Khi tắt, `reward.coupon` luôn `null`.
-6. Cấp độ: `LevelsConfig`; seed mở rộng đến cấp 20; sau cấp cuối dùng công thức dự phòng đang có.
+6. Cấp độ: `LevelsConfig`; seed mở rộng đến cấp 20; từ cấp 21 dùng `1700 + (L − 20) × 50` XP để đạt cấp `L`.
 
 ## Chi tiết mặc định của backend
 
