@@ -48,6 +48,8 @@ class PlatformSettingsService:
             for field, value in body.dict(exclude_unset=True).items():
                 if field == 'refund_max_courses_per_month' and value is None:
                     raise HTTPException(422, 'Hạn mức hoàn tiền phải là số nguyên từ 0 trở lên.')
+                if field in ('coin_vnd_rate', 'bonus_coin_max_share') and value is None:
+                    raise HTTPException(422, 'Tỷ giá Coin và trần Coin thưởng không được để trống.')
                 setattr(row, field, value)
 
             row.updated_by = admin_id

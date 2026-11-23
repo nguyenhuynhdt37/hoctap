@@ -43,7 +43,7 @@ from app.api.v1.lecturer import withdraw as lecturer_withdraw
 # share
 from app.api.v1.shares import auth, location, notification, profile, upload
 from app.api.v1.shares import storage as file_storage
-from app.api.v1.user import category, favorites, learning, learning_hub, learning_menu, user_preferences, wallets
+from app.api.v1.user import category, coins, favorites, learning, learning_hub, learning_menu, user_preferences, wallets
 from app.api.v1.user import chat_sql as user_chat_sql
 from app.api.v1.user import course_enroll as course_enroll
 from app.api.v1.user import courses as user_courses
@@ -187,6 +187,7 @@ app.include_router(bundle_management.router, prefix=prefix)
 app.include_router(auth.router, prefix=prefix)
 app.include_router(location.router, prefix=prefix)
 app.include_router(wallets.router, prefix=prefix)
+app.include_router(coins.router, prefix=prefix)
 app.include_router(notification.router, prefix=prefix)
 app.include_router(upload.router, prefix=prefix)
 app.include_router(file_storage.router, prefix=prefix)
