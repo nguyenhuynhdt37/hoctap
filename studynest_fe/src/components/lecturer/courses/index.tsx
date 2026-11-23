@@ -1,4 +1,5 @@
 "use client";
+import { formatVndAsCoin } from "@/lib/learning-hub/coin-logic";
 
 import api from "@/lib/utils/fetcher/client/axios";
 import { getImageUrl } from "@/lib/utils/helpers/image";
@@ -175,13 +176,7 @@ const LecturerCourses = () => {
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
+  const formatCurrency = (amount: number) => formatVndAsCoin(amount);
 
   const formatNumber = (num: number) => {
     if (num >= 1000000) {

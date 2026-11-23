@@ -25,8 +25,11 @@ interface Reward {
 
 interface CheckInDay {
   day_number: number;
+  calendar_date?: string | null;
   checkin_date: string | null;
   is_checked: boolean;
+  is_today?: boolean;
+  is_missed?: boolean;
   reward: Reward | null;
 }
 

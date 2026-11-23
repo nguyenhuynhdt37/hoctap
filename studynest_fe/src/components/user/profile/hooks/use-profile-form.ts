@@ -28,7 +28,7 @@ export function useProfileForm(profile: UserProfile, mode: ProfileMode) {
   const initial = profileValuesFrom(profile);
   const [values, setValues] = useState<ProfileValues>(initial);
   const [baseline, setBaseline] = useState<ProfileValues>(initial);
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(true);
   const [saving, setSaving] = useState(false);
   const [generatingBio, setGeneratingBio] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<ProfileFieldErrors>({});
@@ -106,7 +106,7 @@ export function useProfileForm(profile: UserProfile, mode: ProfileMode) {
     setValues(baseline);
     setFieldErrors({});
     setFormError("");
-    setEditing(false);
+    setSuccess("");
   };
 
   const generateBio = async () => {
@@ -142,7 +142,6 @@ export function useProfileForm(profile: UserProfile, mode: ProfileMode) {
     try {
       await api.put("/profile", buildProfilePayload(values, baseline, mode));
       setBaseline(values);
-      setEditing(false);
       setSuccess("Đã lưu hồ sơ.");
       router.refresh();
     } catch (error) {

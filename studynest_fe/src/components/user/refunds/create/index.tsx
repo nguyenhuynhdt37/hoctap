@@ -1,6 +1,7 @@
 "use client";
 
 import TiptapEditor from "@/components/shared/tiptap_editor";
+import { formatVndAsCoin } from "@/lib/learning-hub/coin-logic";
 import api from "@/lib/utils/fetcher/client/axios";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -58,12 +59,7 @@ export default function CreateRefundPage() {
     }
   };
 
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-      maximumFractionDigits: 0,
-    }).format(value);
+  const formatCurrency = (value: number) => formatVndAsCoin(value);
 
   const formatDateTime = (value: string) => {
     try {

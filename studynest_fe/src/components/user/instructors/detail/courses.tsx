@@ -5,6 +5,8 @@ import useSWR from "swr";
 import Link from "next/link";
 import { BookOpen, RotateCcw, Search, Star } from "pulsoicon-react";
 import { Badge, Button, Card, EmptyState, Input, Skeleton } from "@/components/ui";
+import { CoinPrice } from "@/components/ui";
+import { formatCoursePriceCoin } from "@/lib/learning-hub/coin-logic";
 import api from "@/lib/utils/fetcher/client/axios";
 import { handleImageError } from "@/lib/utils/helpers/image";
 import { useUserStore } from "@/stores/user";
@@ -16,14 +18,8 @@ import type {
 
 const fetcher = <T,>(url: string) => api.get<T>(url).then((res) => res.data);
 
-function formatPrice(amount: number, currency?: string | null): string {
-  if (amount === 0) return "Miễn phí";
-  const validCurrency = currency || "VND";
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: validCurrency === "USD" ? "USD" : "VND",
-    maximumFractionDigits: validCurrency === "USD" ? 2 : 0,
-  }).format(amount);
+function formatPrice(amount: number, _currency?: string | null): string {
+  return formatCoursePriceCoin(amount);
 }
 
 interface InstructorCoursesProps {
@@ -438,15 +434,7 @@ export default function InstructorCourses({ instructorId }: InstructorCoursesPro
                         </div>
 
                         <div className="text-right">
-                          <span
-                            className={
-                              isFree
-                                ? "text-sm font-bold text-success-foreground"
-                                : "text-base font-bold text-primary"
-                            }
-                          >
-                            {formatPrice(course.base_price, course.currency)}
-                          </span>
+                          <CoinPrice priceVnd={course.base_price} size="sm" />
                         </div>
                       </div>
                     </div>

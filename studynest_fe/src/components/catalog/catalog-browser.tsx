@@ -14,6 +14,7 @@ import {
   X,
 } from "pulsoicon-react";
 import { Badge, Button, Card, EmptyState, Input, Skeleton } from "@/components/ui";
+import { formatCoin, vndToCoin } from "@/lib/learning-hub/coin-logic";
 import api from "@/lib/utils/fetcher/client/axios";
 import type {
   BrowseFilters,
@@ -414,19 +415,17 @@ export default function CatalogBrowser() {
       } else if (min && max) {
         chips.push({
           key: "price",
-          label: `Giá: ${Number(min).toLocaleString("vi-VN")} - ${Number(
-            max
-          ).toLocaleString("vi-VN")} ₫`,
+          label: `Giá: ${vndToCoin(min).toLocaleString("vi-VN")} – ${formatCoin(vndToCoin(max))}`,
         });
       } else if (max) {
         chips.push({
           key: "price",
-          label: `Giá: Dưới ${Number(max).toLocaleString("vi-VN")} ₫`,
+          label: `Giá: Dưới ${formatCoin(vndToCoin(max))}`,
         });
       } else if (min) {
         chips.push({
           key: "price",
-          label: `Giá: Trên ${Number(min).toLocaleString("vi-VN")} ₫`,
+          label: `Giá: Trên ${formatCoin(vndToCoin(min))}`,
         });
       }
     }
@@ -476,8 +475,8 @@ export default function CatalogBrowser() {
         </div>
       )}
 
-      {/* 3. Toolbar: Ô Tìm Kiếm, Sắp Xếp, Chuyển Chế Độ Xem (Grid/List) & Nút Lọc Mobile */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
+      {/* 3. Floating Glass Command Bar: Tìm Kiếm, Sắp Xếp, View Mode & Lọc Mobile */}
+      <div className="flex flex-col items-stretch justify-between gap-3 rounded-[24px] border border-primary-pastel/80 bg-surface/90 p-3 shadow-ambient-sm backdrop-blur-md sm:flex-row sm:items-center">
         {/* Form tìm kiếm với label accessible */}
         <form onSubmit={handleSearchSubmit} className="flex-1 max-w-lg flex items-center gap-2">
           <label htmlFor={searchInputId} className="sr-only">
@@ -733,8 +732,13 @@ export default function CatalogBrowser() {
                     : "flex flex-col gap-4"
                 }
               >
-                {items.map((course) => (
-                  <CatalogCard key={course.id} course={course} viewMode={viewMode} />
+                {items.map((course, index) => (
+                  <CatalogCard
+                    key={course.id}
+                    course={course}
+                    viewMode={viewMode}
+                    featured={viewMode === "grid" && index === 0 && items.length >= 2}
+                  />
                 ))}
               </div>
 

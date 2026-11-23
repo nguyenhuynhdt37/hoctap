@@ -23,6 +23,8 @@ export const hubEndpoints = {
   shopInventory: "/gamification/inventory",
   equipment: "/gamification/equipment",
   coins: "/coins",
+  coinRate: "/coins/rate",
+  exchangeWhite: "/coins/exchange-white",
   checkIn: "/gamification/checkin",
   streak: "/gamification/streak",
   activity: "/gamification/streak/history?limit=100",

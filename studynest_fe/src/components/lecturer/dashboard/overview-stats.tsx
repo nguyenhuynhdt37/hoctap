@@ -13,14 +13,9 @@ import { Badge, Card, Skeleton } from "@/components/ui";
 import api from "@/lib/utils/fetcher/client/axios";
 import { LecturerOverview } from "@/types/lecturer/statistics";
 
-const formatCurrency = (value: number | null | undefined) => {
-  if (value === null || value === undefined || Number.isNaN(value)) return "0 ₫";
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-    maximumFractionDigits: 0,
-  }).format(value);
-};
+import { formatVndAsCoin } from "@/lib/learning-hub/coin-logic";
+
+const formatCurrency = (value: number | null | undefined) => formatVndAsCoin(value);
 
 export default function OverviewStats() {
   const { data, isLoading } = useSWR<LecturerOverview>(

@@ -7,14 +7,18 @@ from decimal import ROUND_DOWN, Decimal
 from uuid import UUID, uuid4
 
 from fastapi import HTTPException
-from sqlalchemy import delete, func, literal_column, select, text, update
+from sqlalchemy import and_, delete, func, literal_column, select, text, update
 
+from app.db.models.catalog import EducationLevel, Grade, Subject, course_grades
 from app.db.models.database import (
     CourseEnrollments,
     Courses,
+    CourseSections,
     DiscountHistory,
     Discounts,
     InstructorEarnings,
+    Lessons,
+    LessonVideos,
     RewardInstances,
     PurchaseItems,
     Transactions,
@@ -22,6 +26,7 @@ from app.db.models.database import (
     Wallets,
 )
 from app.db.models.learning_paths import (
+    BundleCoupon,
     BundleItem,
     BundleOrder,
     BundleOrderLine,
@@ -31,13 +36,14 @@ from app.db.models.learning_paths import (
     PathVersion,
     StageGroup,
     StageOption,
+    UserBundleBookmark,
 )
 from app.libs.formats.datetime import VIETNAM_TIMEZONE
 from app.libs.formats.datetime import now as legacy_now
 from app.schemas.learning_paths import BUNDLE_PRESENTATION_FIELDS
 from app.services.billing_ledger import check_coupon_budget, hold_payment, lock_treasury, record_coupon_cost
-from app.services.coin_math import allocate, price_to_coin
-from app.services.coin_service import CoinService, PaymentSplit
+from app.services.coin_math import allocate, price_to_coin, purchase_cashback_bonus
+from app.services.coin_service import PURCHASE_CASHBACK_SOURCE, CoinService, PaymentSplit
 from app.services.bundle_coupons import BundleCouponService
 from app.services.coupon_settlement import CENT, billing_policy, coupon_cap, money, settle
 from app.services.gamification.coupon_rewards import (
@@ -210,17 +216,31 @@ class BundleService:
             await self.db.flush()
         return await self.detail(version.id, admin=True)
 
-    async def learning_metadata(self, version_ids):
-        """Public author and ordered course count, fetched once for a page."""
+    async def learning_metadata(self, version_ids, user_id=None):
+        """Tổng hợp metadata giàu thông tin cho danh sách combo (batch query, không N+1)."""
         if not version_ids:
             return {}
+
+        now_utc = datetime.now(UTC)
         rows = (
             await self.db.execute(
                 select(
                     BundleVersion.id,
+                    BundleVersion.bundle_id,
+                    BundleVersion.price,
                     User.id.label("instructor_id"),
                     User.fullname,
+                    User.avatar.label("instructor_avatar"),
                     func.count(BundleItem.id).label("course_count"),
+                    func.coalesce(
+                        func.sum(
+                            func.greatest(
+                                func.coalesce(BundleItem.list_price, 0),
+                                func.coalesce(Courses.base_price, 0),
+                            )
+                        ),
+                        0,
+                    ).label("standalone_total"),
                 )
                 .select_from(BundleVersion)
                 .join(CourseBundle, CourseBundle.id == BundleVersion.bundle_id)
@@ -229,19 +249,215 @@ class BundleService:
                     User.id == literal_column("public.course_bundles.owner_id"),
                 )
                 .outerjoin(BundleItem, BundleItem.version_id == BundleVersion.id)
+                .outerjoin(Courses, Courses.id == BundleItem.course_id)
                 .where(BundleVersion.id.in_(version_ids))
-                .group_by(BundleVersion.id, User.id, User.fullname)
+                .group_by(
+                    BundleVersion.id,
+                    BundleVersion.bundle_id,
+                    BundleVersion.price,
+                    User.id,
+                    User.fullname,
+                    User.avatar,
+                )
             )
         ).all()
-        return {
-            row.id: {
-                "course_count": row.course_count,
-                "instructor": {"id": row.instructor_id, "name": row.fullname}
-                if row.instructor_id
-                else None,
-            }
-            for row in rows
+
+        bundle_ids = list({row.bundle_id for row in rows})
+
+        # 1. Preview khóa học bên trong mỗi version (tối đa 4 khóa)
+        course_rows = (
+            await self.db.execute(
+                select(
+                    BundleItem.version_id,
+                    Courses.id,
+                    Courses.title,
+                    Courses.thumbnail_url,
+                    Courses.base_price,
+                )
+                .join(Courses, Courses.id == BundleItem.course_id)
+                .where(BundleItem.version_id.in_(version_ids))
+                .order_by(BundleItem.version_id, BundleItem.position.asc())
+            )
+        ).all()
+        courses_by_version: dict = {}
+        for cr in course_rows:
+            bucket = courses_by_version.setdefault(cr.version_id, [])
+            if len(bucket) < 4:
+                bucket.append(
+                    {
+                        "id": cr.id,
+                        "title": cr.title,
+                        "thumbnail_url": cr.thumbnail_url,
+                        "base_price": float(cr.base_price or 0),
+                    }
+                )
+
+        # 2. Tổng số bài học & thời lượng video
+        lesson_stats_rows = (
+            await self.db.execute(
+                select(
+                    BundleItem.version_id,
+                    func.count(Lessons.id).label("lesson_count"),
+                    func.coalesce(func.sum(LessonVideos.duration), 0).label("duration_seconds"),
+                )
+                .select_from(BundleItem)
+                .join(CourseSections, CourseSections.course_id == BundleItem.course_id)
+                .join(Lessons, Lessons.section_id == CourseSections.id)
+                .outerjoin(LessonVideos, LessonVideos.lesson_id == Lessons.id)
+                .where(BundleItem.version_id.in_(version_ids))
+                .group_by(BundleItem.version_id)
+            )
+        ).all()
+        lesson_stats = {
+            r.version_id: (int(r.lesson_count or 0), int(r.duration_seconds or 0))
+            for r in lesson_stats_rows
         }
+
+        # 3. Cấp học & môn học
+        facet_rows = (
+            await self.db.execute(
+                select(
+                    BundleItem.version_id,
+                    EducationLevel.code.label("level_code"),
+                    Subject.code.label("subject_code"),
+                    Subject.name.label("subject_name"),
+                )
+                .select_from(BundleItem)
+                .join(Courses, Courses.id == BundleItem.course_id)
+                .outerjoin(Subject, and_(Subject.id == Courses.subject_id, Subject.is_active.is_(True)))
+                .outerjoin(course_grades, course_grades.c.course_id == Courses.id)
+                .outerjoin(Grade, and_(Grade.id == course_grades.c.grade_id, Grade.is_active.is_(True)))
+                .outerjoin(
+                    EducationLevel,
+                    and_(
+                        EducationLevel.id == Grade.education_level_id,
+                        EducationLevel.is_active.is_(True),
+                        EducationLevel.code.in_(("tieu-hoc", "thcs", "thpt")),
+                    ),
+                )
+                .where(BundleItem.version_id.in_(version_ids))
+            )
+        ).all()
+        levels_by_version: dict[UUID, list[str]] = {}
+        subjects_by_version: dict[UUID, dict[str, str]] = {}
+        for fr in facet_rows:
+            if fr.level_code:
+                lv = levels_by_version.setdefault(fr.version_id, [])
+                if fr.level_code not in lv:
+                    lv.append(fr.level_code)
+            if fr.subject_code and fr.subject_name:
+                subjects_by_version.setdefault(fr.version_id, {})[fr.subject_code] = fr.subject_name
+
+        # 4. Mã giảm giá đang hoạt động của combo
+        coupon_rows = (
+            await self.db.execute(
+                select(BundleCoupon)
+                .where(
+                    BundleCoupon.bundle_id.in_(bundle_ids),
+                    BundleCoupon.is_active.is_(True),
+                    BundleCoupon.starts_at <= now_utc,
+                    BundleCoupon.ends_at >= now_utc,
+                )
+                .order_by(BundleCoupon.value.desc(), BundleCoupon.ends_at.asc())
+            )
+        ).scalars().all() if bundle_ids else []
+        policy = await billing_policy(self.db)
+        coupon_by_bundle: dict[UUID, dict] = {}
+        for cp in coupon_rows:
+            if cp.bundle_id in coupon_by_bundle:
+                continue
+            val = float(cp.value or 0)
+            label = (
+                f"Giảm {int(val)}%"
+                if cp.discount_type == "percent"
+                else f"Giảm {price_to_coin(Decimal(cp.value or 0), policy.coin_vnd_rate)}"
+            )
+            coupon_by_bundle[cp.bundle_id] = {
+                "code": cp.code,
+                "discount_type": cp.discount_type,
+                "value": val,
+                "ends_at": cp.ends_at.isoformat() if cp.ends_at else None,
+                "label": label,
+            }
+
+        # 5. Số lượt mua theo bundle
+        order_rows = (
+            await self.db.execute(
+                select(BundleVersion.bundle_id, func.count(BundleOrder.id).label("cnt"))
+                .join(BundleVersion, BundleVersion.id == BundleOrder.version_id)
+                .where(BundleVersion.bundle_id.in_(bundle_ids))
+                .group_by(BundleVersion.bundle_id)
+            )
+        ).all() if bundle_ids else []
+        purchase_counts = {r.bundle_id: int(r.cnt or 0) for r in order_rows}
+
+        # 6. Bookmark của user hiện tại
+        bookmarked_ids: set[UUID] = set()
+        if user_id and bundle_ids:
+            bm_rows = (
+                await self.db.scalars(
+                    select(UserBundleBookmark.bundle_id).where(
+                        UserBundleBookmark.user_id == user_id,
+                        UserBundleBookmark.bundle_id.in_(bundle_ids),
+                    )
+                )
+            ).all()
+            bookmarked_ids = set(bm_rows)
+
+        result = {}
+        for row in rows:
+            bundle_price = Decimal(row.price or 0)
+            standalone = max(Decimal(row.standalone_total or 0), bundle_price)
+            savings_amount = max(Decimal(0), standalone - bundle_price)
+            savings_percent = (
+                int((savings_amount * Decimal(100) / standalone).quantize(Decimal("1"), rounding=ROUND_DOWN))
+                if standalone > 0 and savings_amount > 0
+                else 0
+            )
+            l_count, dur_sec = lesson_stats.get(row.id, (0, 0))
+            subj_dict = subjects_by_version.get(row.id, {})
+            result[row.id] = {
+                "course_count": int(row.course_count or 0),
+                "instructor": (
+                    {"id": row.instructor_id, "name": row.fullname, "avatar": row.instructor_avatar}
+                    if row.instructor_id
+                    else None
+                ),
+                "standalone_total": float(standalone),
+                "savings_amount": float(savings_amount),
+                "savings_percent": savings_percent,
+                "courses_preview": courses_by_version.get(row.id, []),
+                "lesson_count": l_count,
+                "duration_seconds": dur_sec,
+                "levels": levels_by_version.get(row.id, []),
+                "subjects": [{"code": k, "name": v} for k, v in subj_dict.items()],
+                "active_coupon": coupon_by_bundle.get(row.bundle_id),
+                "purchase_count": purchase_counts.get(row.bundle_id, 0),
+                "is_bookmarked": row.bundle_id in bookmarked_ids,
+            }
+        return result
+
+    async def toggle_bookmark(self, user_id: UUID, bundle_id: UUID) -> dict:
+        root = await self.db.get(CourseBundle, bundle_id)
+        if not root or root.deleted_at is not None or not root.is_active:
+            raise HTTPException(404, "Không tìm thấy combo")
+        existing = await self.db.get(UserBundleBookmark, (user_id, bundle_id))
+        if existing:
+            await self.db.delete(existing)
+            bookmarked = False
+        else:
+            self.db.add(UserBundleBookmark(user_id=user_id, bundle_id=bundle_id))
+            bookmarked = True
+        await self.db.commit()
+        count = int(
+            await self.db.scalar(
+                select(func.count(UserBundleBookmark.bundle_id)).where(
+                    UserBundleBookmark.user_id == user_id
+                )
+            )
+            or 0
+        )
+        return {"bundle_id": bundle_id, "bookmarked": bookmarked, "bookmarked_count": count}
 
     async def listing(
         self,
@@ -254,7 +470,12 @@ class BundleService:
         history_id=None,
         price_filter="all",
         sort="title",
+        level=None,
+        has_coupon=False,
+        saved_only=False,
+        user_id=None,
     ):
+        now_utc = datetime.now(UTC)
         stmt = (
             select(BundleVersion, CourseBundle.slug, CourseBundle.is_active)
             .join(CourseBundle, CourseBundle.id == BundleVersion.bundle_id)
@@ -287,32 +508,120 @@ class BundleService:
             stmt = stmt.where(BundleVersion.price == 0)
         elif price_filter == "paid":
             stmt = stmt.where(BundleVersion.price > 0)
-
-        sort_columns = {
-            "title": BundleVersion.title,
-            "recent": BundleVersion.published_at.desc().nulls_last(),
-            "price_asc": BundleVersion.price.asc(),
-            "price_desc": BundleVersion.price.desc(),
-        }
-        total = await self.db.scalar(select(func.count()).select_from(stmt.subquery()))
-        rows = (
-            await self.db.execute(
-                stmt.order_by(
-                    sort_columns[sort], BundleVersion.version.desc(), BundleVersion.id
+        if level:
+            level_exists = (
+                select(BundleItem.id)
+                .join(course_grades, course_grades.c.course_id == BundleItem.course_id)
+                .join(Grade, and_(Grade.id == course_grades.c.grade_id, Grade.is_active.is_(True)))
+                .join(
+                    EducationLevel,
+                    and_(
+                        EducationLevel.id == Grade.education_level_id,
+                        EducationLevel.is_active.is_(True),
+                        EducationLevel.code == level,
+                    ),
                 )
-                .offset((page - 1) * limit)
-                .limit(limit)
+                .where(BundleItem.version_id == BundleVersion.id)
+                .exists()
             )
-        ).all()
-        metadata = await self.learning_metadata([v.id for v, _, _ in rows])
-        return {
-            "items": [
-                {**record(v), "slug": slug, "is_active": visible, **metadata[v.id]}
+            stmt = stmt.where(level_exists)
+        if has_coupon:
+            coupon_exists = (
+                select(BundleCoupon.id)
+                .where(
+                    BundleCoupon.bundle_id == CourseBundle.id,
+                    BundleCoupon.is_active.is_(True),
+                    BundleCoupon.starts_at <= now_utc,
+                    BundleCoupon.ends_at >= now_utc,
+                )
+                .exists()
+            )
+            stmt = stmt.where(coupon_exists)
+        if saved_only:
+            if not user_id:
+                return {
+                    "items": [],
+                    "total": 0,
+                    "page": page,
+                    "limit": limit,
+                    "summary": {"max_savings_percent": 0, "with_coupon_count": 0, "bookmarked_count": 0},
+                }
+            bm_exists = (
+                select(UserBundleBookmark.bundle_id)
+                .where(
+                    UserBundleBookmark.user_id == user_id,
+                    UserBundleBookmark.bundle_id == CourseBundle.id,
+                )
+                .exists()
+            )
+            stmt = stmt.where(bm_exists)
+
+        total = int(await self.db.scalar(select(func.count()).select_from(stmt.subquery())) or 0)
+
+        if sort == "savings_desc":
+            all_rows = (await self.db.execute(stmt)).all()
+            metadata = await self.learning_metadata([v.id for v, _, _ in all_rows], user_id=user_id)
+            enriched = [
+                {**record(v), "slug": slug, "is_active": visible, **metadata.get(v.id, {})}
+                for v, slug, visible in all_rows
+            ]
+            enriched.sort(
+                key=lambda x: (
+                    x.get("savings_percent", 0),
+                    x.get("savings_amount", 0),
+                    x.get("published_at") or "",
+                ),
+                reverse=True,
+            )
+            start_idx = (page - 1) * limit
+            page_items = enriched[start_idx : start_idx + limit]
+        else:
+            sort_columns = {
+                "title": BundleVersion.title,
+                "recent": BundleVersion.published_at.desc().nulls_last(),
+                "price_asc": BundleVersion.price.asc(),
+                "price_desc": BundleVersion.price.desc(),
+            }
+            rows = (
+                await self.db.execute(
+                    stmt.order_by(
+                        sort_columns.get(sort, BundleVersion.title),
+                        BundleVersion.version.desc(),
+                        BundleVersion.id,
+                    )
+                    .offset((page - 1) * limit)
+                    .limit(limit)
+                )
+            ).all()
+            metadata = await self.learning_metadata([v.id for v, _, _ in rows], user_id=user_id)
+            page_items = [
+                {**record(v), "slug": slug, "is_active": visible, **metadata.get(v.id, {})}
                 for v, slug, visible in rows
-            ],
+            ]
+
+        bookmarked_count = 0
+        if user_id:
+            bookmarked_count = int(
+                await self.db.scalar(
+                    select(func.count(UserBundleBookmark.bundle_id)).where(
+                        UserBundleBookmark.user_id == user_id
+                    )
+                )
+                or 0
+            )
+        max_savings = max((item.get("savings_percent", 0) for item in page_items), default=0)
+        with_coupon_count = sum(1 for item in page_items if item.get("active_coupon"))
+
+        return {
+            "items": page_items,
             "total": total,
             "page": page,
             "limit": limit,
+            "summary": {
+                "max_savings_percent": max_savings,
+                "with_coupon_count": with_coupon_count,
+                "bookmarked_count": bookmarked_count,
+            },
         }
 
     async def by_slug(self, slug):
@@ -474,7 +783,7 @@ class BundleService:
             await self.db.flush()
         return await self.detail(version.id, admin=True)
 
-    async def quote(self, version_id, user_id=None, lock=False, coupon_code=None):
+    async def quote(self, version_id, user_id=None, lock=False, coupon_code=None, auto_best=False):
         stmt = select(BundleVersion).where(BundleVersion.id == version_id)
         version = await self.db.scalar(stmt)
         if not version or version.status != "published":
@@ -568,6 +877,7 @@ class BundleService:
         fee = policy.platform_fee
         coupon, reward, reward_instance = None, None, None
         sponsor, value, fixed, maximum = None, None, False, None
+        auto_applied = False
         if coupon_code and coupon_code.strip().upper().startswith(REWARD_CODE_PREFIX):
             reward = await find_discount(self.db, coupon_code, lock=lock, reward_only=True)
             owned_reward = await reward_inventory_entry(self.db, reward.id, user_id) if reward and user_id else None
@@ -575,13 +885,53 @@ class BundleService:
                 raise HTTPException(422, "Mã thưởng không còn hiệu lực hoặc không thuộc về bạn.")
             reward_instance = await self.db.get(RewardInstances, owned_reward.reward_instance_id)
             sponsor, value = "platform", reward.percent_value
-        else:
+        elif coupon_code:
             coupon = await BundleCouponService(self.db).resolve(
                 root.id, coupon_code, subtotal, user_id, lock,
             )
             if coupon:
                 sponsor, value = BundleCouponService.sponsor(coupon, owner_id), coupon.value
                 fixed, maximum = coupon.discount_type == "fixed", coupon.max_discount
+        elif auto_best and not lock and subtotal > 0:
+            now_utc = datetime.now(UTC)
+            candidates = (
+                await self.db.scalars(
+                    select(BundleCoupon).where(
+                        BundleCoupon.bundle_id == root.id,
+                        BundleCoupon.is_active.is_(True),
+                        BundleCoupon.starts_at <= now_utc,
+                        BundleCoupon.ends_at >= now_utc,
+                    )
+                )
+            ).all()
+            best_discount = Decimal("0.00")
+            best_tuple = None
+            coupon_svc = BundleCouponService(self.db)
+            for cand in candidates:
+                try:
+                    resolved = await coupon_svc.resolve(root.id, cand.code, subtotal, user_id, False)
+                    if not resolved:
+                        continue
+                    c_sponsor = BundleCouponService.sponsor(resolved, owner_id)
+                    c_fixed = resolved.discount_type == "fixed"
+                    c_discounts = allocate_coupon(
+                        prices,
+                        fee,
+                        c_sponsor,
+                        resolved.value,
+                        fixed=c_fixed,
+                        maximum=resolved.max_discount,
+                        instructor_max=Decimal(policy.discount_max_percent),
+                    )
+                    c_total = sum(c_discounts)
+                    if c_total > best_discount:
+                        best_discount = c_total
+                        best_tuple = (resolved, c_sponsor, resolved.value, c_fixed, resolved.max_discount)
+                except HTTPException:
+                    continue
+            if best_tuple:
+                coupon, sponsor, value, fixed, maximum = best_tuple
+                auto_applied = True
 
         discounts = [Decimal("0.00")] * len(prices)
         if sponsor:
@@ -621,6 +971,7 @@ class BundleService:
         return {
             **canonical,
             "quote_hash": digest,
+            "auto_applied": auto_applied,
             "title": version.title,
             "full_price": str(version.price),
             "owned_credit": str(version.price - subtotal),
@@ -748,9 +1099,14 @@ class BundleService:
             split = PaymentSplit(0, 0)
             if total:
                 hold_payment(self.db, treasury, total, note=f"Combo {order.id}: giữ chờ đối soát")
-                # Trả bằng Coin: thưởng trước (có trần), thiếu Coin thật thì từ chối (HTTP 400, chưa trừ gì).
-                split = await CoinService(self.db).debit_for_purchase_async(
-                    user_id, price_to_coin(total, policy.coin_vnd_rate), ref_id=order.id)
+                bundle_price_coin = price_to_coin(total, policy.coin_vnd_rate)
+                coin_service = CoinService(self.db)
+                split = await coin_service.debit_for_purchase_async(
+                    user_id, bundle_price_coin, ref_id=order.id)
+                cashback_bonus = purchase_cashback_bonus(bundle_price_coin)
+                if cashback_bonus > 0:
+                    await coin_service.credit_bonus_async(
+                        user_id, cashback_bonus, source=PURCHASE_CASHBACK_SOURCE, ref_id=order.id)
             line_paid = {
                 item["course_id"]: settle(
                     Decimal(item["allocated_price"]), fee, sponsor, Decimal(item["coupon_discount"]),

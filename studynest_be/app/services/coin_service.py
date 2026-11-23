@@ -16,7 +16,13 @@ from app.db.models.coins import UserPaidCoinBalances
 from app.db.models.database import PeakTransactions, UserPeakBalances
 from app.db.sesson import get_session
 from app.repositories.gamification.balances import get_or_create_account_row
-from app.services.coin_math import split_payment
+from app.services.coin_math import (
+    BONUS_COINS_PER_GOLD,
+    BONUS_MAX_COINS_SHARE,
+    WHITE_PER_GOLD_EXCHANGE,
+    gold_to_white_exchange,
+    split_payment,
+)
 from app.services.coupon_settlement import billing_policy
 
 TOPUP_SOURCE = "topup"
@@ -24,6 +30,9 @@ EARNING_SOURCE = "earning_release"
 WITHDRAW_HOLD_SOURCE = "withdraw_hold"
 WITHDRAW_REFUND_SOURCE = "withdraw_refund"
 PURCHASE_SOURCE = "course_purchase"
+PURCHASE_CASHBACK_SOURCE = "purchase_cashback"
+EXCHANGE_TO_WHITE_SOURCE = "exchange_to_white"
+EXCHANGE_FROM_GOLD_SOURCE = "exchange_from_gold"
 REFUND_SOURCE = "refund"
 
 
@@ -37,6 +46,7 @@ class CoinBalances:
 class PaymentSplit:
     bonus_use: int
     paid_use: int
+    bonus_gold_discount: int = 0
 
 
 class CoinService:
@@ -132,19 +142,73 @@ class CoinService:
         await self.db.flush()
         return paid.balance
 
+    async def credit_bonus_async(
+        self, user_id: uuid.UUID, amount: int, *, source: str, ref_id: uuid.UUID | None,
+    ) -> int:
+        """Cộng Coin trắng (ảo/thưởng); gọi lại với cùng (source, ref_id) không cộng thêm."""
+        if amount <= 0:
+            return (await self.get_balances_async(user_id)).bonus
+        _, bonus = await self._lock_rows(user_id)
+        if await self._already_recorded(user_id, source, ref_id, "bonus"):
+            return bonus.current_balance
+        before = bonus.current_balance
+        bonus.current_balance = before + amount
+        bonus.total_earned += amount
+        bonus.version += 1
+        bonus.updated_at = func.now()
+        self._record(user_id, "bonus", "credit", amount, before, bonus.current_balance, source, ref_id)
+        await self.db.flush()
+        return bonus.current_balance
+
+    async def exchange_gold_to_white_async(
+        self, user_id: uuid.UUID, gold_amount: int,
+    ) -> tuple[int, CoinBalances]:
+        """Đổi đồng vàng sang đồng trắng (1 đồng vàng = 5 đồng trắng) trong một transaction atomic."""
+        if gold_amount <= 0:
+            raise HTTPException(status_code=400, detail="Số lượng đổi phải lớn hơn 0.")
+        white_gained = gold_to_white_exchange(gold_amount, WHITE_PER_GOLD_EXCHANGE)
+        paid, bonus = await self._lock_rows(user_id)
+        if paid.balance < gold_amount:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Không đủ số dư đồng vàng. Cần {gold_amount} nhưng bạn chỉ có {paid.balance}.",
+            )
+        ref_id = uuid.uuid4()
+        paid_before = paid.balance
+        paid.balance = paid_before - gold_amount
+        paid.version += 1
+        paid.updated_at = func.now()
+        self._record(
+            user_id, "paid", "debit", gold_amount, paid_before, paid.balance,
+            EXCHANGE_TO_WHITE_SOURCE, ref_id, {"white_gained": white_gained, "ratio": WHITE_PER_GOLD_EXCHANGE},
+        )
+        bonus_before = bonus.current_balance
+        bonus.current_balance = bonus_before + white_gained
+        bonus.total_earned += white_gained
+        bonus.version += 1
+        bonus.updated_at = func.now()
+        self._record(
+            user_id, "bonus", "credit", white_gained, bonus_before, bonus.current_balance,
+            EXCHANGE_FROM_GOLD_SOURCE, ref_id, {"gold_spent": gold_amount, "ratio": WHITE_PER_GOLD_EXCHANGE},
+        )
+        await self.db.flush()
+        return white_gained, CoinBalances(bonus=bonus.current_balance, paid=paid.balance)
+
     async def debit_for_purchase_async(
         self, user_id: uuid.UUID, price_coin: int, *, ref_id: uuid.UUID,
     ) -> PaymentSplit:
-        """Trừ Coin thưởng trước (có trần), phần còn lại trừ Coin thật. Thiếu Coin thật thì không trừ gì."""
+        """Chiết khấu tối đa 50% lượng Coin trắng (10 Coin trắng = 1 Coin vàng), phần còn lại trừ Coin vàng."""
         if price_coin <= 0:
-            return PaymentSplit(0, 0)
-        policy = await billing_policy(self.db)
+            return PaymentSplit(0, 0, 0)
         paid, bonus = await self._lock_rows(user_id)
-        bonus_use, paid_use = split_payment(price_coin, bonus.current_balance, policy.bonus_coin_max_share)
+        bonus_use, paid_use = split_payment(
+            price_coin, bonus.current_balance, BONUS_MAX_COINS_SHARE, BONUS_COINS_PER_GOLD
+        )
+        bonus_gold_discount = bonus_use // BONUS_COINS_PER_GOLD
         if paid_use > paid.balance:
             raise HTTPException(
                 status_code=400,
-                detail=f"Không đủ Coin. Cần {paid_use} Coin thật nhưng bạn chỉ có {paid.balance}.",
+                detail=f"Không đủ Coin vàng. Cần {paid_use} Coin vàng nhưng bạn chỉ có {paid.balance}.",
             )
         if bonus_use:
             before = bonus.current_balance
@@ -160,7 +224,7 @@ class CoinService:
             paid.updated_at = func.now()
             self._record(user_id, "paid", "debit", paid_use, before, paid.balance, PURCHASE_SOURCE, ref_id)
         await self.db.flush()
-        return PaymentSplit(bonus_use, paid_use)
+        return PaymentSplit(bonus_use, paid_use, bonus_gold_discount)
 
     async def _sum_kind(self, user_id: uuid.UUID, kind: str, *conditions) -> int:
         return int(await self.db.scalar(

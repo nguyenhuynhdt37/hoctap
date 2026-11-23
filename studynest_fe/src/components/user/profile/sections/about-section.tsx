@@ -1,8 +1,10 @@
 "use client";
 
+import MarkdownRenderer from "@/components/shared/markdown-renderer";
+import TiptapEditor from "@/components/shared/tiptap_editor";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input, Textarea } from "@/components/ui/input";
+import { Input } from "@/components/ui/input";
 import { ProfileEditor } from "../hooks/use-profile-form";
 
 export default function AboutSection({ editor }: { editor: ProfileEditor }) {
@@ -14,7 +16,7 @@ export default function AboutSection({ editor }: { editor: ProfileEditor }) {
         <div className="flex items-start justify-between gap-3">
           <div>
             <CardTitle>Giới thiệu</CardTitle>
-            <CardDescription>Một đoạn ngắn để người khác biết bạn.</CardDescription>
+            <CardDescription>Một đoạn ngắn để người khác biết bạn (hỗ trợ định dạng Markdown).</CardDescription>
           </div>
           <Button
             type="button"
@@ -30,16 +32,32 @@ export default function AboutSection({ editor }: { editor: ProfileEditor }) {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <Textarea
-          label="Về bạn"
-          value={values.bio}
-          disabled={!editing}
-          rows={5}
-          maxLength={2000}
-          placeholder="Bạn đang học gì, và muốn tiến bộ điều gì?"
-          error={fieldErrors.bio}
-          onChange={(event) => update({ bio: event.target.value })}
-        />
+        <div>
+          <p className="mb-1.5 text-sm font-medium text-foreground">Về bạn</p>
+          {editing ? (
+            <div className="overflow-hidden rounded-xl border border-input bg-surface">
+              <TiptapEditor
+                value={values.bio}
+                onChange={(markdown) => update({ bio: markdown })}
+                placeholder="Bạn đang học gì, và muốn tiến bộ điều gì?"
+                minHeight="160px"
+              />
+            </div>
+          ) : values.bio.trim() ? (
+            <div className="rounded-xl border border-border bg-background px-3.5 py-3 text-sm text-foreground">
+              <MarkdownRenderer content={values.bio} isHtml={false} />
+            </div>
+          ) : (
+            <p className="rounded-xl border border-border bg-background px-3.5 py-3 text-sm text-muted-foreground">
+              Chưa có giới thiệu về bạn.
+            </p>
+          )}
+          {fieldErrors.bio && (
+            <p role="alert" className="mt-1.5 text-xs font-medium text-destructive-foreground">
+              {fieldErrors.bio}
+            </p>
+          )}
+        </div>
         <Input
           label="Facebook"
           type="url"

@@ -106,25 +106,22 @@ class DailyCheckinRepository:
         user_id: uuid.UUID,
         event_id: uuid.UUID,
         cycle_days: int,
+        event_start_date: Optional[datetime.date] = None,
     ) -> datetime.date:
-        """Tính ngày bắt đầu của chu kỳ hiện tại dựa trên số ngày đã check-in.
+        """Tính ngày bắt đầu của chu kỳ hiện tại theo lịch ngày thực tế.
 
-        Logic:
-          - Đếm tổng số bản ghi Check-in.
-          - cycle_day_of_user = total_checkins % cycle_days
-          - Ngày bắt đầu cycle = today - (cycle_day_of_user - 1) ngày
+        - Chu kỳ 7 ngày: luôn bắt đầu từ Thứ 2 của tuần hiện tại (múi giờ Việt Nam).
+        - Chu kỳ khác 7 ngày: neo theo `event_start_date` hoặc ngày đầu tháng.
         """
-        count_stmt = select(func.count(UserCheckins.id)).where(
-            and_(
-                UserCheckins.user_id == user_id,
-                UserCheckins.event_id == event_id,
-            )
-        )
-        total: int = (await self.db.scalar(count_stmt)) or 0
-        day_in_cycle = total % cycle_days  # 0-indexed vị trí hôm nay trong chu kỳ
         today = datetime.datetime.now(VIETNAM).date()
-        cycle_start = today - datetime.timedelta(days=day_in_cycle)
-        return cycle_start
+        if cycle_days <= 0:
+            return today
+        if cycle_days == 7:
+            return today - datetime.timedelta(days=today.weekday())
+        anchor = event_start_date or today.replace(day=1)
+        days_since = max(0, (today - anchor).days)
+        cycle_index = days_since // cycle_days
+        return anchor + datetime.timedelta(days=cycle_index * cycle_days)
 
     async def get_consecutive_day(
         self,

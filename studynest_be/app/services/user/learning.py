@@ -1916,6 +1916,11 @@ class LearningService:
                 )
                 my_react_set = {str(cid) for (cid,) in res_my.fetchall()}
 
+            # 🎭 Tải batch trang bị (Khung Avatar, Danh hiệu, Huy hiệu) + Cấp độ & Chuỗi Streak
+            gamif_map = await LearningService._load_qa_user_badges_async(
+                self.db, list({r.user_id for r in rows if r.user_id})
+            )
+
             # 🧱 Chuẩn hóa dữ liệu trả về
             items = []
             for c in rows:
@@ -1929,6 +1934,7 @@ class LearningService:
                         "user_id": str(c.user_id),
                         "user_name": getattr(c.user, "fullname", None),
                         "user_avatar": getattr(c.user, "avatar", None),
+                        "gamification": gamif_map.get(c.user_id),
                         "content": c.content,
                         "depth": c.depth,
                         "created_at": c.created_at.isoformat(),
@@ -2154,6 +2160,14 @@ class LearningService:
     ):
         async with AsyncSessionLocal() as db:
             try:
+                cleaned_content = (schema.content or "").strip()
+                if not cleaned_content:
+                    return {"error": "Nội dung bình luận không được để trống"}
+                if len(cleaned_content) > 12000:
+                    return {
+                        "error": "Nội dung vượt quá giới hạn 12.000 ký tự. Vui lòng rút gọn bớt."
+                    }
+
                 depth = 0
                 root_id = None
 
@@ -2181,7 +2195,7 @@ class LearningService:
                     user_id=user.id,
                     parent_id=schema.parent_id,
                     root_id=root_id,
-                    content=schema.content.strip(),
+                    content=cleaned_content,
                     depth=depth,
                     created_at=await to_utc_naive(get_now()),
                     updated_at=await to_utc_naive(get_now()),
@@ -2323,6 +2337,8 @@ class LearningService:
                         f"Lỗi khi tạo thông báo bình luận: {notif_err}"
                     )
 
+                gamif_map = await LearningService._load_qa_user_badges_async(db, [user.id])
+
                 return {
                     "type": "comment_created",
                     "comment": {
@@ -2332,6 +2348,7 @@ class LearningService:
                         "user_id": str(new_comment.user_id),
                         "user_avatar": user.avatar,
                         "user_name": user.fullname,
+                        "gamification": gamif_map.get(user.id),
                         "parent_id": (
                             str(new_comment.parent_id)
                             if new_comment.parent_id
@@ -2352,6 +2369,57 @@ class LearningService:
             except Exception as e:
                 await db.rollback()
                 return {"error": f"Lỗi khi tạo bình luận: {e}"}
+
+    @staticmethod
+    async def _load_qa_user_badges_async(
+        db: AsyncSession, user_ids: list[uuid.UUID]
+    ) -> dict[uuid.UUID, dict]:
+        """Batch-load cấp độ, chuỗi streak và trang bị (khung avatar, danh hiệu, huy hiệu) cho Q&A."""
+        if not user_ids:
+            return {}
+        from collections import defaultdict
+        from app.db.models.database import UserGamificationProfiles
+        from app.db.models.shop import ShopItemRow, UserEquipment
+        from app.schemas.gamification.shop import Equipment
+        from app.services.gamification.shop_items import serialize_item
+
+        prof_rows = (
+            await db.execute(
+                select(
+                    UserGamificationProfiles.user_id,
+                    UserGamificationProfiles.level,
+                    UserGamificationProfiles.current_streak,
+                ).where(UserGamificationProfiles.user_id.in_(user_ids))
+            )
+        ).all()
+        prof_map = {
+            uid: (int(lvl or 1), int(streak or 0))
+            for uid, lvl, streak in prof_rows
+        }
+
+        eq_rows = (
+            await db.execute(
+                select(UserEquipment.user_id, ShopItemRow)
+                .join(ShopItemRow, ShopItemRow.id == UserEquipment.item_id)
+                .where(UserEquipment.user_id.in_(user_ids))
+            )
+        ).all()
+        grouped: dict[uuid.UUID, dict[str, object]] = defaultdict(dict)
+        for uid, item_row in eq_rows:
+            grouped[uid][item_row.kind] = serialize_item(
+                item_row, owned=True, equipped=True
+            )
+
+        out: dict[uuid.UUID, dict] = {}
+        for uid in user_ids:
+            lvl, streak = prof_map.get(uid, (1, 0))
+            eq = Equipment(**grouped.get(uid, {})).model_dump(mode="json")
+            out[uid] = {
+                "level": lvl,
+                "current_streak": streak,
+                "equipment": eq,
+            }
+        return out
 
     @staticmethod
     async def update_lesson_comment_async(
@@ -2378,6 +2446,11 @@ class LearningService:
                 new_content = (schema.content or "").strip()
                 if not new_content:
                     return {"error": "Nội dung không được rỗng", "code": 422}
+                if len(new_content) > 12000:
+                    return {
+                        "error": "Nội dung vượt quá giới hạn 12.000 ký tự. Vui lòng rút gọn bớt.",
+                        "code": 422,
+                    }
 
                 comment.content = new_content
                 comment.updated_at = get_now()  # ✅ không await

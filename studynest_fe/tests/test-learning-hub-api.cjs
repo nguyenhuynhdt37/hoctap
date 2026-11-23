@@ -312,3 +312,37 @@ test("claim chưa triển khai giữ nhiệm vụ chờ nhận và không đổi
   assert.equal(board.overview.data.daily[0].status, "completed");
   assert.equal(app.loaded("lib/learning-hub/missions-mock.ts"), false);
 });
+
+test("SkyHero lấy đúng giờ Việt Nam và đổi lời chào, bầu trời theo sáng/trưa/chiều/tối/đêm", () => {
+  const app = testApp({ NODE_ENV: "production" });
+  const { SkyHero, getVietnamHour, phaseOf } = app.load("components/learning-hub/home/sky-hero");
+  const cases = [
+    { iso: "2026-11-23T07:30:00+07:00", hour: 7, phase: "morning", greeting: "Chào buổi sáng" },
+    { iso: "2026-11-23T12:15:00+07:00", hour: 12, phase: "noon", greeting: "Chào buổi trưa" },
+    { iso: "2026-11-23T15:45:00+07:00", hour: 15, phase: "afternoon", greeting: "Chào buổi chiều" },
+    { iso: "2026-11-23T19:30:00+07:00", hour: 19, phase: "evening", greeting: "Chào buổi tối" },
+    { iso: "2026-11-23T22:30:00+07:00", hour: 22, phase: "night", greeting: "Đêm khuya rồi" },
+    { iso: "2026-11-24T00:05:00+07:00", hour: 0, phase: "night", greeting: "Đêm khuya rồi" },
+  ];
+
+  for (const item of cases) {
+    const ts = Date.parse(item.iso);
+    assert.equal(getVietnamHour(ts), item.hour);
+    assert.equal(phaseOf(item.hour), item.phase);
+
+    const markup = render(() => React.createElement(SkyHero, {
+      daily: {
+        now: ts,
+        xp: null,
+        source: "api",
+        streak: { data: null, error: null, isValidating: false, mutate: () => Promise.resolve() },
+        board: { overview: { error: null, isValidating: false, mutate: () => Promise.resolve() } },
+      },
+      journey: { active: "study", remaining: 1 },
+      current: {},
+    }));
+
+    assert.match(markup, new RegExp(`data-sky-phase="${item.phase}"`));
+    assert.match(markup, new RegExp(item.greeting));
+  }
+});

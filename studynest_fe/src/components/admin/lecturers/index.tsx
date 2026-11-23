@@ -1,6 +1,7 @@
 "use client"
 
 import ContextMenu from "@/components/shared/context-menu";
+import { formatVndAsCoin } from "@/lib/learning-hub/coin-logic";
 import api from "@/lib/utils/fetcher/client/axios";
 import { showToast } from "@/lib/utils/helpers/toast";
 import {
@@ -151,7 +152,7 @@ export default function LecturersManagement() {
     course_count: "Số khóa học",
     student_count: "Số học viên",
     rating_avg: "Đánh giá",
-    wallet_balance: "Số dư ví",
+    wallet_balance: "Số dư Coin vàng",
   };
 
   const clearFilters = () => {
@@ -510,12 +511,7 @@ Sau khi nhấn OK, giảng viên sẽ bị xóa VĨNH VIỄN!`);
     });
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(amount);
-  };
+  const formatCurrency = (amount: number) => formatVndAsCoin(amount);
 
   const handleExportExcel = async () => {
     try {
@@ -736,7 +732,7 @@ Sau khi nhấn OK, giảng viên sẽ bị xóa VĨNH VIỄN!`);
                   Đánh giá
                 </th>
                 <th className="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  Số dư ví
+                  Số dư Coin vàng
                 </th>
                 <th className="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">
                   Trạng thái

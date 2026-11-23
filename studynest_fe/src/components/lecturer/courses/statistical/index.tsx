@@ -25,12 +25,9 @@ import { useEffect, useMemo, useState } from "react";
 
 type StatsResponse = LecturerCourseStats;
 
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-    maximumFractionDigits: 0,
-  }).format(value);
+import { formatVndAsCoin } from "@/lib/learning-hub/coin-logic";
+
+const formatCurrency = (value: number) => formatVndAsCoin(value);
 
 const formatNumber = (value: number) =>
   new Intl.NumberFormat("vi-VN").format(Number.isFinite(value) ? value : 0);

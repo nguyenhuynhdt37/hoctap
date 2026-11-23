@@ -52,6 +52,19 @@ export interface BundleItem {
   allocated_price: Money;
   available: boolean;
 }
+export interface BundleCoursePreview {
+  id: string;
+  title: string;
+  thumbnail_url?: string | null;
+  base_price?: number;
+}
+export interface BundleActiveCoupon {
+  code: string;
+  discount_type: "percent" | "fixed";
+  value: number;
+  ends_at: string | null;
+  label: string;
+}
 export interface Bundle {
   id: string;
   bundle_id: string;
@@ -72,7 +85,18 @@ export interface Bundle {
   items?: BundleItem[];
   refund_policy?: string;
   course_count?: number;
-  instructor?: { id: string; name: string } | null;
+  instructor?: { id: string; name: string; avatar?: string | null } | null;
+  standalone_total?: number;
+  savings_amount?: number;
+  savings_percent?: number;
+  courses_preview?: BundleCoursePreview[];
+  lesson_count?: number;
+  duration_seconds?: number;
+  levels?: string[];
+  subjects?: { code: string; name: string }[];
+  active_coupon?: BundleActiveCoupon | null;
+  purchase_count?: number;
+  is_bookmarked?: boolean;
 }
 export interface BundleQuote {
   version_id: string;
@@ -91,6 +115,7 @@ export interface BundleQuote {
   subtotal: Money;
   discount_amount: Money;
   coupon_code: string | null;
+  auto_applied?: boolean;
   currency: string;
   quote_hash: string;
   refund_days: number;
@@ -137,6 +162,11 @@ export interface PageResult<T> {
   total: number;
   page: number;
   limit: number;
+  summary?: {
+    max_savings_percent: number;
+    with_coupon_count: number;
+    bookmarked_count: number;
+  };
 }
 export interface PathDraft {
   path_id?: string;

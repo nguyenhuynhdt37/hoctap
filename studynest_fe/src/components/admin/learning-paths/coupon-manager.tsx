@@ -1,4 +1,5 @@
 "use client";
+import { coinToVnd, DEFAULT_COIN_VND_RATE, vndToCoin } from "@/lib/learning-hub/coin-logic";
 import { useEffect, useState, type FormEvent } from "react";
 import useSWR from "swr";
 import { Badge, Button, Input } from "@/components/ui";
@@ -56,12 +57,18 @@ export default function CouponManager({
     const form = new FormData(event.currentTarget);
     const optionalNumber = (name: string) =>
       String(form.get(name) || "").trim() ? Number(form.get(name)) : null;
+    const rawValue = Number(form.get("value") || 0);
+    const rawMinTotal = Number(form.get("min_total") || 0);
+    const rawMaxDiscount = optionalNumber("max_discount");
     const payload = {
       code: String(form.get("code")).trim().toUpperCase(),
       discount_type: type,
-      value: String(form.get("value")),
-      min_total: String(form.get("min_total") || "0"),
-      max_discount: type === "percent" ? optionalNumber("max_discount") : null,
+      value: type === "fixed" ? String(coinToVnd(rawValue, DEFAULT_COIN_VND_RATE)) : String(rawValue),
+      min_total: String(coinToVnd(rawMinTotal, DEFAULT_COIN_VND_RATE)),
+      max_discount:
+        type === "percent" && rawMaxDiscount !== null
+          ? coinToVnd(rawMaxDiscount, DEFAULT_COIN_VND_RATE)
+          : null,
       starts_at: new Date(String(form.get("starts_at"))).toISOString(),
       ends_at: new Date(String(form.get("ends_at"))).toISOString(),
       max_uses: optionalNumber("max_uses"),
@@ -171,31 +178,37 @@ export default function CouponManager({
             </label>
             <Input
               name="value"
-              label={type === "percent" ? "Mức giảm · %" : "Mức giảm · VND"}
+              label={type === "percent" ? "Mức giảm · %" : "Mức giảm · Coin"}
               type="number"
               required
-              min="0.01"
+              min={type === "percent" ? "0.01" : "1"}
               max={type === "percent" ? 100 : undefined}
-              step="0.01"
-              defaultValue={selected?.value?.toString() || ""}
+              step={type === "percent" ? "0.01" : "1"}
+              defaultValue={
+                selected?.value != null
+                  ? type === "fixed"
+                    ? String(vndToCoin(selected.value))
+                    : selected.value.toString()
+                  : ""
+              }
             />
             <Input
               name="min_total"
-              label="Thanh toán tối thiểu · VND"
+              label="Thanh toán tối thiểu · Coin"
               type="number"
               required
               min={0}
-              step="0.01"
-              defaultValue={selected?.min_total?.toString() || "0"}
+              step="1"
+              defaultValue={selected?.min_total != null ? String(vndToCoin(selected.min_total)) : "0"}
             />
             {type === "percent" && (
               <Input
                 name="max_discount"
-                label="Giảm tối đa · VND (không bắt buộc)"
+                label="Giảm tối đa · Coin (không bắt buộc)"
                 type="number"
-                min="0.01"
-                step="0.01"
-                defaultValue={selected?.max_discount?.toString() || ""}
+                min="1"
+                step="1"
+                defaultValue={selected?.max_discount != null ? String(vndToCoin(selected.max_discount)) : ""}
               />
             )}
             <Input

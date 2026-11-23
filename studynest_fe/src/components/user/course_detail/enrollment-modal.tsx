@@ -1,5 +1,6 @@
 "use client";
 
+import { CoinBadge, CoinPrice } from "@/components/ui";
 import { paymentCheck, vndToCoinCeil } from "@/lib/learning-hub/coin-logic";
 import { useCoinBalances } from "@/lib/learning-hub/shop-hooks";
 import { getImageUrl } from "@/lib/utils/helpers/image";
@@ -98,27 +99,15 @@ export default function EnrollmentModal({
                     </span>
                   </div>
                   <div className="mt-2">
-                    {finalPrice !== undefined &&
-                    finalPrice < course.base_price ? (
-                      <div className="space-y-0.5">
-                        <div className="text-xs text-subtle-foreground line-through">
-                          {formatPrice(course.base_price, course.currency)}
-                        </div>
-                        <div className="text-xl font-bold text-primary">
-                          {formatPrice(finalPrice, course.currency)}
-                        </div>
-                        {discountAmount !== undefined && discountAmount > 0 && (
-                          <div className="text-xs text-success-foreground font-semibold">
-                            Tiết kiệm{" "}
-                            {formatPrice(discountAmount, course.currency)}
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="text-xl font-bold text-primary">
-                        {formatPrice(course.base_price, course.currency)}
-                      </span>
-                    )}
+                    <CoinPrice
+                      priceVnd={finalPrice ?? course.base_price}
+                      originalPriceVnd={
+                        finalPrice !== undefined && finalPrice < course.base_price
+                          ? course.base_price
+                          : undefined
+                      }
+                      size="md"
+                    />
                   </div>
 
                   {discountCode && (
@@ -159,19 +148,47 @@ export default function EnrollmentModal({
               </div>
 
               {payment && coins.data && (
-                <div className="mb-6 rounded-2xl border border-accent-vanilla-border bg-accent-vanilla p-4 text-sm text-accent-vanilla-foreground">
-                  <p className="font-bold">Thanh toán {priceCoin} Coin</p>
-                  <p className="mt-1">
-                    Dùng {payment.bonusUse} Coin thưởng + {payment.paidUse} Coin thật.
-                  </p>
-                  <p className="mt-1 text-xs">
-                    Số dư của bạn: {coins.data.paid} Coin thật, {coins.data.bonus} Coin thưởng.
-                  </p>
+                <div className="mb-6 space-y-3 rounded-2xl border border-[#E2B545]/70 bg-[#FFFDF5] p-4 text-sm text-foreground">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="font-bold text-foreground">Chi tiết thanh toán</span>
+                    <CoinBadge kind="gold" amount={priceCoin} size="sm" />
+                  </div>
+                  <div className="space-y-2 text-xs sm:text-sm">
+                    {payment.bonusUse > 0 ? (
+                      <div className="flex flex-wrap items-center gap-1.5 text-foreground">
+                        <span>Chiết khấu tự động:</span>
+                        <CoinBadge kind="white" amount={payment.bonusUse} size="sm" />
+                        <span className="text-muted-foreground">=</span>
+                        <CoinBadge kind="gold" amount={`-${payment.bonusGoldDiscount}`} size="sm" />
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground">
+                        Chưa áp dụng chiết khấu (tỷ lệ 10:1, tối đa 50%).
+                      </p>
+                    )}
+                    <div className="flex flex-wrap items-center gap-1.5 font-semibold text-[#784705]">
+                      <span>Thanh toán:</span>
+                      <CoinBadge kind="gold" amount={payment.paidUse} size="sm" />
+                    </div>
+                    {payment.cashbackBonus > 0 && (
+                      <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-[#CBD5E1] bg-gradient-to-r from-[#FFFFFF] to-[#F1F5F9] px-3 py-2 text-xs font-medium text-[#334155]">
+                        <span>Hoàn ngay (20%):</span>
+                        <CoinBadge kind="white" amount={`+${payment.cashbackBonus}`} size="sm" />
+                        <span>cho lần mua tiếp theo</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 border-t border-border/70 pt-2.5 text-xs">
+                    <span className="text-muted-foreground">Số dư:</span>
+                    <CoinBadge kind="gold" amount={coins.data.paid} size="sm" />
+                    <CoinBadge kind="white" amount={coins.data.bonus} size="sm" />
+                  </div>
                   {lacksCoin && (
-                    <p role="alert" className="mt-2 font-semibold text-destructive-foreground">
-                      Bạn cần thêm {payment.missingPaid} Coin thật.{" "}
-                      <Link href="/shop" className="underline underline-offset-4">Mua Coin</Link>
-                    </p>
+                    <div role="alert" className="flex flex-wrap items-center gap-1.5 font-semibold text-destructive-foreground">
+                      <span>Cần thêm</span>
+                      <CoinBadge kind="gold" amount={payment.missingPaid} size="sm" />
+                      <Link href="/wallets" className="underline underline-offset-4">Nạp ngay</Link>
+                    </div>
                   )}
                 </div>
               )}

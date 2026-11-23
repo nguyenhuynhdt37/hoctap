@@ -169,10 +169,36 @@ class TestCanCheckin:
 # ──────────────────────────────────────────────────────────────────────────────
 
 
+class _FrozenDateTime(datetime.datetime):
+    """Helper giả lập ngày hiện tại cố định cho unit test lịch theo thứ."""
+
+    fixed_date: datetime.date = datetime.date(2026, 11, 23)  # Thứ 2
+
+    @classmethod
+    def now(cls, tz=None):
+        return datetime.datetime(
+            cls.fixed_date.year,
+            cls.fixed_date.month,
+            cls.fixed_date.day,
+            10,
+            0,
+            0,
+            tzinfo=tz,
+        )
+
+
+def _patch_today(target_date: datetime.date):
+    class _Patched(_FrozenDateTime):
+        fixed_date = target_date
+
+    return patch("app.services.gamification.daily_checkin_service.datetime.datetime", _Patched)
+
+
 class TestClaimCheckinSuccess:
     @pytest.mark.asyncio
-    async def test_first_checkin_creates_record_and_credits_peak(self):
-        """Lần check-in đầu tiên → tạo bản ghi, cộng Peak, ghi log."""
+    async def test_first_checkin_on_monday_creates_record_and_credits_peak(self):
+        """Điểm danh vào Thứ 2 → tính ngày 1, tạo bản ghi, cộng Peak, ghi log."""
+        monday = datetime.date(2026, 11, 23)  # Thứ 2
         service, repo = _make_service()
         user = _make_user()
         event = _make_event(cycle_days=7)
@@ -182,7 +208,7 @@ class TestClaimCheckinSuccess:
 
         repo.get_active_event.return_value = event
         repo.get_today_checkin.return_value = None
-        repo.get_checkin_history.return_value = []          # 0 lần trước
+        repo.get_checkin_history.return_value = []
         repo.get_consecutive_day.return_value = 1
         repo.get_reward_by_day.return_value = reward_cfg
         repo.create_checkin.return_value = MagicMock()
@@ -194,13 +220,13 @@ class TestClaimCheckinSuccess:
         repo.create_activity_log.return_value = MagicMock()
         repo.increment_active_days.return_value = None
         repo.get_all_rewards_for_event.return_value = [reward_cfg]
-        repo.get_current_cycle_start.return_value = datetime.date.today()
         profile.current_streak = 1
         profile.best_streak = 1
 
         service.db.commit = AsyncMock()
 
-        result = await service.claim_checkin(user)
+        with _patch_today(monday):
+            result = await service.claim_checkin(user)
 
         assert result.success is True
         assert result.current_day == 1
@@ -208,6 +234,9 @@ class TestClaimCheckinSuccess:
         assert result.reward.reward_amount == 50
         assert result.current_peak_balance == 50
         assert result.current_streak == 1
+        assert result.calendar[0].is_checked is True
+        assert result.calendar[0].is_today is True
+        assert result.calendar[0].is_missed is False
         repo.create_checkin.assert_called_once()
         repo.credit_peak_wallet.assert_called_once()
         repo.create_peak_transaction.assert_called_once()
@@ -215,18 +244,75 @@ class TestClaimCheckinSuccess:
         repo.increment_active_days.assert_called_once()
 
     @pytest.mark.asyncio
+    async def test_skip_monday_checkin_tuesday_only_counts_tuesday(self):
+        """Thứ 2 không điểm danh, Thứ 3 mới điểm danh → T2 bị bỏ lỡ, chỉ tính T3 (day=2)."""
+        tuesday = datetime.date(2026, 11, 24)  # Thứ 3
+        monday = datetime.date(2026, 11, 23)   # Thứ 2
+        service, repo = _make_service()
+        user = _make_user()
+        event = _make_event(cycle_days=7)
+        reward_mon = _make_reward(day=1, amount=10)
+        reward_tue = _make_reward(day=2, amount=20)
+        profile = _make_profile(streak=0, best=0)
+        balance = _make_balance(current=0)
+
+        repo.get_active_event.return_value = event
+        repo.get_today_checkin.return_value = None
+        repo.get_checkin_history.return_value = []  # Thứ 2 không điểm danh
+        repo.get_consecutive_day.return_value = 1
+        repo.get_reward_by_day.return_value = reward_tue
+        repo.create_checkin.return_value = MagicMock()
+        repo.get_or_create_gamification_profile.return_value = profile
+        repo.update_streak.return_value = None
+        repo.get_or_create_peak_balance.return_value = balance
+        repo.credit_peak_wallet.return_value = (0, 20)
+        repo.create_peak_transaction.return_value = MagicMock()
+        repo.create_activity_log.return_value = MagicMock()
+        repo.increment_active_days.return_value = None
+        repo.get_all_rewards_for_event.return_value = [reward_mon, reward_tue]
+        profile.current_streak = 1
+        profile.best_streak = 1
+
+        service.db.commit = AsyncMock()
+
+        with _patch_today(tuesday):
+            result = await service.claim_checkin(user)
+
+        assert result.current_day == 2
+        repo.get_reward_by_day.assert_called_once_with(event.id, 2)
+        # Ô Thứ 2: bỏ lỡ, KHÔNG được tính
+        assert result.calendar[0].day_number == 1
+        assert result.calendar[0].calendar_date == monday
+        assert result.calendar[0].is_checked is False
+        assert result.calendar[0].is_missed is True
+        assert result.calendar[0].is_today is False
+        # Ô Thứ 3: chỉ tính Thứ 3
+        assert result.calendar[1].day_number == 2
+        assert result.calendar[1].calendar_date == tuesday
+        assert result.calendar[1].is_checked is True
+        assert result.calendar[1].checkin_date == tuesday
+        assert result.calendar[1].is_today is True
+        assert result.calendar[1].is_missed is False
+        # Thứ 4..CN: chưa tới
+        assert all((not d.is_checked and not d.is_missed) for d in result.calendar[2:])
+
+    @pytest.mark.asyncio
     async def test_streak_increments_on_consecutive_days(self):
-        """Ngày thứ 2 liên tiếp → streak = 2."""
+        """Điểm danh Thứ 2 rồi Thứ 3 liên tiếp → day=2, streak=2."""
+        monday = datetime.date(2026, 11, 23)
+        tuesday = datetime.date(2026, 11, 24)
         service, repo = _make_service()
         user = _make_user()
         event = _make_event(cycle_days=7)
         reward_cfg = _make_reward(day=2, amount=100)
         profile = _make_profile(streak=1, best=1)
         balance = _make_balance(current=50)
+        mon_record = MagicMock()
+        mon_record.checkin_date = monday
 
         repo.get_active_event.return_value = event
         repo.get_today_checkin.return_value = None
-        repo.get_checkin_history.return_value = [MagicMock()]   # 1 lần trước
+        repo.get_checkin_history.return_value = [mon_record]
         repo.get_consecutive_day.return_value = 2
         repo.get_reward_by_day.return_value = reward_cfg
         repo.create_checkin.return_value = MagicMock()
@@ -238,32 +324,38 @@ class TestClaimCheckinSuccess:
         repo.create_activity_log.return_value = MagicMock()
         repo.increment_active_days.return_value = None
         repo.get_all_rewards_for_event.return_value = [reward_cfg]
-        repo.get_current_cycle_start.return_value = datetime.date.today() - datetime.timedelta(1)
         profile.current_streak = 2
         profile.best_streak = 2
 
         service.db.commit = AsyncMock()
 
-        result = await service.claim_checkin(user)
+        with _patch_today(tuesday):
+            result = await service.claim_checkin(user)
 
         assert result.current_day == 2
         assert result.current_streak == 2
+        assert result.calendar[0].is_checked is True
+        assert result.calendar[1].is_checked is True
         repo.update_streak.assert_called_once_with(profile, 2)
 
     @pytest.mark.asyncio
-    async def test_cycle_resets_after_7_days(self):
-        """Sau 7 lần check-in → ngày mới là 1 (chu kỳ mới)."""
+    async def test_cycle_resets_on_new_monday(self):
+        """Sang Thứ 2 tuần mới → ngày mới là 1, không dính lịch tuần trước."""
+        next_monday = datetime.date(2026, 11, 30)  # Thứ 2 tuần sau
+        prev_week_records = [
+            MagicMock(checkin_date=datetime.date(2026, 11, 23) + datetime.timedelta(days=i))
+            for i in range(7)
+        ]
         service, repo = _make_service()
         user = _make_user()
         event = _make_event(cycle_days=7)
-        # 7 bản ghi cũ → day = 7%7+1 = 1
         reward_cfg = _make_reward(day=1, amount=50)
         profile = _make_profile(streak=7, best=7)
         balance = _make_balance(current=350)
 
         repo.get_active_event.return_value = event
         repo.get_today_checkin.return_value = None
-        repo.get_checkin_history.return_value = [MagicMock()] * 7
+        repo.get_checkin_history.return_value = prev_week_records
         repo.get_consecutive_day.return_value = 8
         repo.get_reward_by_day.return_value = reward_cfg
         repo.create_checkin.return_value = MagicMock()
@@ -275,16 +367,17 @@ class TestClaimCheckinSuccess:
         repo.create_activity_log.return_value = MagicMock()
         repo.increment_active_days.return_value = None
         repo.get_all_rewards_for_event.return_value = [reward_cfg]
-        repo.get_current_cycle_start.return_value = datetime.date.today()
         profile.current_streak = 8
         profile.best_streak = 8
 
         service.db.commit = AsyncMock()
 
-        result = await service.claim_checkin(user)
+        with _patch_today(next_monday):
+            result = await service.claim_checkin(user)
 
-        # 7 lần trước → day = (7 % 7) + 1 = 1
         assert result.current_day == 1
+        assert result.calendar[0].is_checked is True
+        assert all(not d.is_checked for d in result.calendar[1:])
 
 
 # ──────────────────────────────────────────────────────────────────────────────

@@ -1,4 +1,5 @@
 "use client";
+import { formatVndAsCoin } from "@/lib/learning-hub/coin-logic";
 
 import { Badge, Card } from "@/components/ui";
 import type { BadgeVariant } from "@/components/ui/badge";
@@ -210,10 +211,7 @@ export function DiscountsTable({
                       </span>
                     ) : (
                       <span className="text-sm font-semibold text-foreground tabular-nums">
-                        {new Intl.NumberFormat("vi-VN", {
-                          style: "currency",
-                          currency: "VND",
-                        }).format(record.fixed_value ?? 0)}
+                        {formatVndAsCoin(record.fixed_value ?? 0)}
                       </span>
                     )}
                   </td>

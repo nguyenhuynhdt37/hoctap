@@ -25,9 +25,9 @@ export default function ProfileScreen({
   const divisions = useAdminDivisions(editor.values.conscious);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-16">
       <form
-        className="mx-auto grid max-w-5xl gap-6 px-4 py-8 lg:grid-cols-[280px_minmax(0,1fr)] lg:px-6"
+        className="mx-auto max-w-6xl space-y-6 px-4 py-8 sm:px-6"
         onSubmit={(event) => {
           event.preventDefault();
           void editor.submit();
@@ -39,35 +39,39 @@ export default function ProfileScreen({
           districts={divisions.districts}
         />
 
-        <div className="space-y-4">
-          {editor.formError && <Alert variant="destructive" title={editor.formError} />}
-          {editor.success && <Alert variant="success" title={editor.success} />}
+        {editor.formError && <Alert variant="destructive" title={editor.formError} />}
+        {editor.success && <Alert variant="success" title={editor.success} />}
 
-          <AccountSection editor={editor} />
-          <AboutSection editor={editor} />
-          <LocationSection editor={editor} divisions={divisions} />
-          {mode === "lecturer" && <LecturerSection editor={editor} />}
+        <div id="profile-details" className="scroll-mt-24 grid gap-5 lg:grid-cols-2 lg:items-start">
+          <div className="space-y-5">
+            <AccountSection editor={editor} />
+            <LocationSection editor={editor} divisions={divisions} />
+          </div>
+          <div className="space-y-5">
+            <AboutSection editor={editor} />
+            {mode === "lecturer" && <LecturerSection editor={editor} />}
+          </div>
+        </div>
 
-          {editor.editing && (
-            <div className="sticky bottom-4 z-20 flex items-center justify-between gap-3 rounded-[20px] border border-border bg-surface p-3 shadow-md">
-              <p className="text-sm text-muted-foreground">
-                {editor.dirty ? "Có thay đổi chưa lưu" : "Chưa có thay đổi"}
-              </p>
-              <div className="flex gap-2">
-                <Button type="button" variant="outline" onClick={editor.cancel}>
-                  Hủy
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={!editor.dirty}
-                  isLoading={editor.saving}
-                  loadingText="Đang lưu..."
-                >
-                  Lưu
-                </Button>
-              </div>
-            </div>
-          )}
+        <div className="sticky bottom-4 z-20 flex flex-wrap items-center justify-between gap-3 rounded-[22px] border border-primary-pastel bg-surface/95 p-3.5 shadow-lg backdrop-blur-md">
+          <p className="text-sm font-medium text-muted-foreground">
+            {editor.dirty ? "Bạn có thay đổi chưa lưu" : "Chỉnh sửa trực tiếp các ô phía trên rồi bấm Lưu"}
+          </p>
+          <div className="flex gap-2">
+            {editor.dirty && (
+              <Button type="button" variant="outline" onClick={editor.cancel}>
+                Hủy thay đổi
+              </Button>
+            )}
+            <Button
+              type="submit"
+              disabled={!editor.dirty}
+              isLoading={editor.saving}
+              loadingText="Đang lưu..."
+            >
+              Lưu thay đổi
+            </Button>
+          </div>
         </div>
       </form>
     </div>

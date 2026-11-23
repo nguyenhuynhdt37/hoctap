@@ -4,10 +4,15 @@ import { useRef } from "react";
 import useSWRInfinite from "swr/infinite";
 import { levelsKey } from "./shop-keys";
 import { getShopClient, useShopUserId } from "./shop-hooks";
-import { levelPageSize, mergeLevelRewards, nextLevelFrom } from "./shop-logic";
+import { mergeLevelRewards } from "./shop-logic";
 import type { LevelsOverview } from "./shop-types";
 
 type LevelPage = LevelsOverview & { nextFrom: number };
+
+/** Cấp đầu tiên trong hệ thống (backend chỉ nhận `from >= 1`): trang /levels luôn bắt đầu từ đây. */
+export const FIRST_LEVEL = 1;
+/** Mỗi lần tải 25 cấp (backend cho phép tối đa 50) để lộ trình đủ dài mà không nặng. */
+export const LEVELS_PER_LOAD = 25;
 
 export function useLevelsOverview() {
   const userId = useShopUserId();
@@ -15,11 +20,12 @@ export function useLevelsOverview() {
   const { data, error, isValidating, size, setSize, mutate } = useSWRInfinite(
     (index: number, previous: LevelPage | null) => {
       if (!userId || (index > 0 && !previous)) return null;
-      return [...levelsKey(userId), previous?.nextFrom] as const;
+      return [...levelsKey(userId), previous?.nextFrom ?? FIRST_LEVEL] as const;
     },
     async ([, id, , from]): Promise<LevelPage> => {
-      const page = await (await getShopClient(id)).getLevels({ from, count: levelPageSize });
-      return { ...page, nextFrom: nextLevelFrom(page.current.level, from) };
+      const start = typeof from === "number" && from >= FIRST_LEVEL ? from : FIRST_LEVEL;
+      const page = await (await getShopClient(id)).getLevels({ from: start, count: LEVELS_PER_LOAD });
+      return { ...page, nextFrom: start + LEVELS_PER_LOAD };
     },
     {
       shouldRetryOnError: false,

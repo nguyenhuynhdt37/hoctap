@@ -16,6 +16,16 @@ export interface CoinBalancesResponse {
   bonus_max_share: number;
 }
 
+export interface CoinRateResponse {
+  rate_vnd: number;
+  bonus_max_share: number;
+}
+
+export const DEFAULT_COIN_VND_RATE = 10_000;
+export const BONUS_COINS_PER_GOLD = 10;
+export const WHITE_PER_GOLD_EXCHANGE = 5;
+export const BONUS_MAX_COINS_SHARE = 0.5;
+export const PURCHASE_CASHBACK_RATE = 0.2;
 export const MIN_TOPUP_VND = 50_000;
 
 const money = new Intl.NumberFormat("vi-VN");
@@ -26,16 +36,91 @@ export const coinToVnd = (coin: number, rateVnd: number) => coin * rateVnd;
 
 export const vndToCoinCeil = (vnd: number, rateVnd: number) => Math.ceil(vnd / rateVnd);
 
-export function splitCoinPayment(priceCoin: number, bonusBalance: number, maxShare: number) {
-  const cap = Math.floor(priceCoin * maxShare);
-  const bonusUse = Math.max(0, Math.min(bonusBalance, cap, priceCoin));
-  return { bonusUse, paidUse: priceCoin - bonusUse };
+function toFiniteNumber(value: number | string | null | undefined): number {
+  if (value === null || value === undefined || value === "") return 0;
+  const num = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(num) ? num : 0;
 }
 
-export function paymentCheck(priceCoin: number, balances: Pick<CoinBalances, "bonus" | "paid" | "rateVnd" | "bonusMaxShare">) {
-  const { bonusUse, paidUse } = splitCoinPayment(priceCoin, balances.bonus, balances.bonusMaxShare);
+export function vndToCoin(vnd: number | string | null | undefined, rateVnd = DEFAULT_COIN_VND_RATE): number {
+  const amount = toFiniteNumber(vnd);
+  if (amount === 0) return 0;
+  const rate = rateVnd > 0 ? rateVnd : DEFAULT_COIN_VND_RATE;
+  const sign = amount < 0 ? -1 : 1;
+  return sign * Math.ceil(Math.abs(amount) / rate);
+}
+
+export function formatCoin(coin: number | string | null | undefined): string {
+  const num = Math.round(toFiniteNumber(coin));
+  return `${money.format(num)} Coin`;
+}
+
+export function formatVndAsCoin(
+  vnd: number | string | null | undefined,
+  rateVnd = DEFAULT_COIN_VND_RATE,
+): string {
+  return formatCoin(vndToCoin(vnd, rateVnd));
+}
+
+export function formatCoursePriceCoin(
+  vnd: number | string | null | undefined,
+  rateVnd = DEFAULT_COIN_VND_RATE,
+): string {
+  const amount = toFiniteNumber(vnd);
+  if (amount <= 0) return "Miễn phí";
+  return formatCoin(vndToCoin(amount, rateVnd));
+}
+
+export function splitCoinPayment(
+  priceCoin: number,
+  bonusBalance: number,
+  maxShare = BONUS_MAX_COINS_SHARE,
+  bonusPerGold = BONUS_COINS_PER_GOLD,
+) {
+  if (priceCoin <= 0 || bonusPerGold <= 0) {
+    return { bonusUse: 0, bonusGoldDiscount: 0, paidUse: Math.max(0, priceCoin) };
+  }
+  const maxBonusCoins = Math.floor(priceCoin * maxShare);
+  const usableBonus = Math.max(0, Math.min(bonusBalance, maxBonusCoins));
+  const bonusGoldDiscount = Math.min(Math.floor(usableBonus / bonusPerGold), priceCoin);
+  const bonusUse = bonusGoldDiscount * bonusPerGold;
+  return { bonusUse, bonusGoldDiscount, paidUse: priceCoin - bonusGoldDiscount };
+}
+
+export function purchaseCashbackBonus(priceCoin: number, rate = PURCHASE_CASHBACK_RATE) {
+  if (priceCoin <= 0) return 0;
+  return Math.floor(priceCoin * rate);
+}
+
+export function paymentCheck(
+  priceCoin: number,
+  balances: Pick<CoinBalances, "bonus" | "paid" | "rateVnd" | "bonusMaxShare">,
+) {
+  const { bonusUse, bonusGoldDiscount, paidUse } = splitCoinPayment(
+    priceCoin,
+    balances.bonus,
+    BONUS_MAX_COINS_SHARE,
+    BONUS_COINS_PER_GOLD,
+  );
   const missingPaid = Math.max(0, paidUse - balances.paid);
-  return { ok: missingPaid === 0, bonusUse, paidUse, missingPaid };
+  const cashbackBonus = purchaseCashbackBonus(priceCoin);
+  return { ok: missingPaid === 0, bonusUse, bonusGoldDiscount, paidUse, missingPaid, cashbackBonus };
+}
+
+export function exchangeWhiteQuote(goldAmount: number, paidBalance: number, ratio = WHITE_PER_GOLD_EXCHANGE) {
+  const whiteGained = goldAmount > 0 && Number.isInteger(goldAmount) ? goldAmount * ratio : 0;
+  if (!Number.isInteger(goldAmount) || goldAmount < 1) {
+    return { goldAmount, whiteGained: 0, valid: false, reason: "Nhập tối thiểu 1." };
+  }
+  if (goldAmount > paidBalance) {
+    return {
+      goldAmount,
+      whiteGained,
+      valid: false,
+      reason: `Số dư không đủ (hiện có ${paidBalance}).`,
+    };
+  }
+  return { goldAmount, whiteGained, valid: true, reason: null };
 }
 
 export function buyCoinQuote(coin: number, rateVnd: number) {
@@ -58,7 +143,7 @@ export function parseCoinBalances(response: CoinBalancesResponse): CoinBalances 
 }
 
 export function coinBalanceLabel(balances: Pick<CoinBalances, "bonus" | "paid" | "total">) {
-  return `Số dư ${balances.total} Coin: ${balances.paid} Coin thật, ${balances.bonus} Coin thưởng`;
+  return `${balances.paid} Coin vàng, ${balances.bonus} Coin trắng`;
 }
 
 /** Giảng viên rút theo số Coin; `withdrawable` là Coin có nguồn từ thu nhập (backend `check-can-request.balance`). */

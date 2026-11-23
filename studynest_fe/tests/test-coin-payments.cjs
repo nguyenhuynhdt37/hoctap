@@ -30,18 +30,22 @@ test("Coin quy đổi theo tỷ giá 10.000đ", () => {
   assert.equal(coin.vndToCoinCeil(1, 10000), 1);
 });
 
-test("chia thanh toán dùng Coin thưởng trước, chặn bởi trần và số dư, khớp backend", () => {
-  assert.deepEqual(coin.splitCoinPayment(100, 500, 0.3), { bonusUse: 30, paidUse: 70 });
-  assert.deepEqual(coin.splitCoinPayment(100, 10, 0.3), { bonusUse: 10, paidUse: 90 });
-  assert.deepEqual(coin.splitCoinPayment(100, 0, 0.3), { bonusUse: 0, paidUse: 100 });
-  assert.deepEqual(coin.splitCoinPayment(50, 100, 0.3), { bonusUse: 15, paidUse: 35 });
+test("chia thanh toán: tối đa 50% lượng Coin trắng, 10 Coin trắng = 1 Coin vàng, khớp backend", () => {
+  assert.deepEqual(coin.splitCoinPayment(100, 500), { bonusUse: 50, bonusGoldDiscount: 5, paidUse: 95 });
+  assert.deepEqual(coin.splitCoinPayment(100, 50), { bonusUse: 50, bonusGoldDiscount: 5, paidUse: 95 });
+  assert.deepEqual(coin.splitCoinPayment(100, 37), { bonusUse: 30, bonusGoldDiscount: 3, paidUse: 97 });
+  assert.deepEqual(coin.splitCoinPayment(100, 9), { bonusUse: 0, bonusGoldDiscount: 0, paidUse: 100 });
+  assert.deepEqual(coin.splitCoinPayment(100, 0), { bonusUse: 0, bonusGoldDiscount: 0, paidUse: 100 });
+  assert.deepEqual(coin.splitCoinPayment(50, 100), { bonusUse: 20, bonusGoldDiscount: 2, paidUse: 48 });
+  assert.equal(coin.purchaseCashbackBonus(100), 20);
+  assert.equal(coin.purchaseCashbackBonus(50), 10);
 });
 
-test("đủ Coin thật mới cho thanh toán, thiếu thì báo đúng số cần nạp thêm", () => {
-  assert.deepEqual(coin.paymentCheck(50, { bonus: 100, paid: 100, rateVnd: 10000, bonusMaxShare: 0.3 }),
-    { ok: true, bonusUse: 15, paidUse: 35, missingPaid: 0 });
-  assert.deepEqual(coin.paymentCheck(50, { bonus: 100, paid: 10, rateVnd: 10000, bonusMaxShare: 0.3 }),
-    { ok: false, bonusUse: 15, paidUse: 35, missingPaid: 25 });
+test("đủ Coin vàng mới cho thanh toán, thiếu thì báo đúng số cần nạp thêm và hoàn 20% Coin trắng", () => {
+  assert.deepEqual(coin.paymentCheck(100, { bonus: 100, paid: 100, rateVnd: 10000, bonusMaxShare: 0.5 }),
+    { ok: true, bonusUse: 50, bonusGoldDiscount: 5, paidUse: 95, missingPaid: 0, cashbackBonus: 20 });
+  assert.deepEqual(coin.paymentCheck(100, { bonus: 100, paid: 10, rateVnd: 10000, bonusMaxShare: 0.5 }),
+    { ok: false, bonusUse: 50, bonusGoldDiscount: 5, paidUse: 95, missingPaid: 85, cashbackBonus: 20 });
 });
 
 test("báo giá nạp Coin: tối thiểu 50.000đ, hiển thị số tiền VND tương ứng", () => {
@@ -56,7 +60,7 @@ test("báo giá nạp Coin: tối thiểu 50.000đ, hiển thị số tiền VND
 test("ánh xạ phản hồi API và nhãn truy cập nêu cả hai loại Coin", () => {
   const balances = coin.parseCoinBalances({ bonus: 50, paid: 100, total: 150, rate_vnd: 10000, bonus_max_share: 0.3 });
   assert.deepEqual(balances, { bonus: 50, paid: 100, total: 150, rateVnd: 10000, bonusMaxShare: 0.3 });
-  assert.equal(coin.coinBalanceLabel(balances), "Số dư 150 Coin: 100 Coin thật, 50 Coin thưởng");
+  assert.equal(coin.coinBalanceLabel(balances), "100 Coin vàng, 50 Coin trắng");
   assert.doesNotMatch(coin.coinBalanceLabel(balances), /peak/i);
 });
 
@@ -70,4 +74,25 @@ test("báo giá rút Coin: tối thiểu, tối đa theo Coin rút được, và
   assert.match(high.reason, /100 Coin/);
   assert.equal(coin.withdrawQuote(0, 100, 10000, 10).valid, false);
   assert.equal(coin.withdrawQuote(10.5, 100, 10000, 10).valid, false);
+});
+
+test("định dạng hiển thị giá khóa học và số tiền VND sang Coin an toàn", () => {
+  assert.equal(coin.vndToCoin(500_000), 50);
+  assert.equal(coin.vndToCoin(500_001), 51);
+  assert.equal(coin.vndToCoin(-50_000), -5);
+  assert.equal(coin.vndToCoin(null), 0);
+  assert.equal(coin.vndToCoin("not-a-number"), 0);
+  assert.equal(coin.formatCoin(1200), "1.200 Coin");
+  assert.equal(coin.formatVndAsCoin(0), "0 Coin");
+  assert.equal(coin.formatVndAsCoin(799_000), "80 Coin");
+  assert.equal(coin.formatCoursePriceCoin(0), "Miễn phí");
+  assert.equal(coin.formatCoursePriceCoin(null), "Miễn phí");
+  assert.equal(coin.formatCoursePriceCoin(499_000), "50 Coin");
+});
+
+test("báo giá đổi đồng vàng sang đồng trắng tại shop theo tỷ lệ 1:5", () => {
+  assert.deepEqual(coin.exchangeWhiteQuote(1, 10), { goldAmount: 1, whiteGained: 5, valid: true, reason: null });
+  assert.deepEqual(coin.exchangeWhiteQuote(5, 10), { goldAmount: 5, whiteGained: 25, valid: true, reason: null });
+  assert.equal(coin.exchangeWhiteQuote(0, 10).valid, false);
+  assert.equal(coin.exchangeWhiteQuote(11, 10).valid, false);
 });

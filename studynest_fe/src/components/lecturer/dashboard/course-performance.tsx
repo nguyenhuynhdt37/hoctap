@@ -8,13 +8,9 @@ import api from "@/lib/utils/fetcher/client/axios";
 import { getImageUrl } from "@/lib/utils/helpers/image";
 import { CoursePerformanceItem } from "@/types/lecturer/statistics";
 
-const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-    maximumFractionDigits: 0,
-  }).format(value);
-};
+import { formatVndAsCoin } from "@/lib/learning-hub/coin-logic";
+
+const formatCurrency = (value: number) => formatVndAsCoin(value);
 
 export default function CoursePerformance() {
   const { data, isLoading } = useSWR<CoursePerformanceItem[]>(

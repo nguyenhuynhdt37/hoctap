@@ -2,7 +2,6 @@
 
 import { useAuthReady } from "@/hooks/auth/useAuthedSWR";
 import { connectWebSocket } from "@/hooks/websocket/connectWebSocket";
-import { isDpopMode } from "@/lib/auth/mode";
 import { useRealtimeNotiStore } from "@/stores/notifications";
 import { useUserStore } from "@/stores/user";
 import type { Notification } from "@/types/user/notification";
@@ -22,7 +21,7 @@ export function NotificationWS({ role_name }: { role_name: string }) {
   const add = useRealtimeNotiStore((state) => state.add);
 
   useEffect(() => {
-    if (!isDpopMode || !ready || !userId) return;
+    if (!ready || !userId) return;
 
     let active = true;
     let socket: WebSocket | undefined;

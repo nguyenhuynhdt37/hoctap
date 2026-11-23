@@ -1,4 +1,5 @@
 "use client";
+import { formatVndAsCoin } from "@/lib/learning-hub/coin-logic";
 
 import ContextMenu from "@/components/shared/context-menu";
 import { Discount, DiscountsTableProps } from "@/types/admin/discount";
@@ -225,10 +226,7 @@ export function DiscountsTable({
                       </span>
                     ) : (
                       <span className="text-sm font-semibold text-gray-900">
-                        {new Intl.NumberFormat("vi-VN", {
-                          style: "currency",
-                          currency: "VND",
-                        }).format(record.fixed_value ?? 0)}
+                        {formatVndAsCoin(record.fixed_value ?? 0)}
                       </span>
                     )}
                   </td>

@@ -1,4 +1,5 @@
 "use client";
+import { coinToVnd, DEFAULT_COIN_VND_RATE, vndToCoin } from "@/lib/learning-hub/coin-logic";
 
 import api from "@/lib/utils/fetcher/client/axios";
 import { showToast } from "@/lib/utils/helpers/toast";
@@ -276,7 +277,7 @@ export default function CreateDiscount() {
                     onChange={handleInputChange}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   >
-                    <option value="fixed">Giảm trực tiếp (VND)</option>
+                    <option value="fixed">Giảm trực tiếp (Coin)</option>
                     <option value="percent">Giảm theo phần trăm (%)</option>
                   </select>
                 </div>
@@ -306,20 +307,26 @@ export default function CreateDiscount() {
                 ) : (
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Số tiền giảm (VND) <span className="text-red-500">*</span>
+                      Số Coin giảm <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
                       <CircleDollarSign className="absolute left-4 top-2.5 h-5 w-5 text-gray-400" />
                       <input
                         type="number"
                         name="fixed_value"
-                        value={formData.fixed_value || ""}
-                        onChange={handleInputChange}
-                        min="1000"
-                        step="1000"
+                        value={formData.fixed_value ? vndToCoin(formData.fixed_value) : ""}
+                        onChange={(e) => {
+                          const raw = e.target.value;
+                          setFormData((prev) => ({
+                            ...prev,
+                            fixed_value: raw ? coinToVnd(Math.max(1, Math.round(Number(raw) || 0)), DEFAULT_COIN_VND_RATE) : null,
+                          }));
+                        }}
+                        min="1"
+                        step="1"
                         required
                         className="w-full pl-12 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                        placeholder="Ví dụ: 50000"
+                        placeholder="Ví dụ: 5"
                       />
                     </div>
                   </div>

@@ -28,13 +28,9 @@ ChartJS.register(
   Filler
 );
 
-const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-    maximumFractionDigits: 0,
-  }).format(value);
-};
+import { formatVndAsCoin } from "@/lib/learning-hub/coin-logic";
+
+const formatCurrency = (value: number) => formatVndAsCoin(value);
 
 export default function RevenueChart() {
   const [period, setPeriod] = useState<"month" | "year">("month");

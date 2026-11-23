@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
 } from 'react-native'
 import { useRouter } from 'expo-router'
+import { formatCoursePrice } from '@/src/utils/format'
 import { Feather } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 import * as Haptics from 'expo-haptics'
@@ -93,10 +94,7 @@ export function CourseCard({ course, section = 'newest', onPress }: CourseCardPr
     }
   }
 
-  const formatPrice = (price: number) => {
-    if (price === 0) return 'Miễn phí'
-    return `${price.toLocaleString('en-US')}đ`
-  }
+  const formatPrice = (price: number) => formatCoursePrice(price)
 
   const badge = SECTION_BADGE[section]
 

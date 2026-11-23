@@ -36,16 +36,9 @@ interface IsLecturerResponse {
   is_lecturer: boolean;
 }
 
-const formatCurrency = (value?: number | null) => {
-  if (value === null || value === undefined || Number.isNaN(value)) {
-    return "0 ₫";
-  }
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-    maximumFractionDigits: 0,
-  }).format(value);
-};
+import { formatVndAsCoin } from "@/lib/learning-hub/coin-logic";
+
+const formatCurrency = (value?: number | null) => formatVndAsCoin(value);
 
 const LecturerHome = ({ isLecturer }: { isLecturer?: boolean }) => {
   const router = useRouter();

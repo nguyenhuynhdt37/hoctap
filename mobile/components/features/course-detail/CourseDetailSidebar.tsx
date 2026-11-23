@@ -255,7 +255,7 @@ export function CourseDetailSidebar({ course, router, isDark = false }: CourseDe
                 <Text className={`text-4xl font-black text-center ${isDiscountApplied ? 'text-red-500' : isDark ? 'text-white' : 'text-zinc-900'}`}>
                   {formatCurrency(finalPrice).split(' ')[0]}
                 </Text>
-                <Text className={`text-sm font-bold ml-2 ${isDiscountApplied ? 'text-red-500/70' : isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>VND</Text>
+                <Text className={`text-sm font-bold ml-2 ${isDiscountApplied ? 'text-red-500/70' : isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>Coin</Text>
               </View>
               {isDiscountApplied && discountInfo?.discount_percent_value && (
                 <View className="mt-2 px-3 py-1 bg-red-100 dark:bg-red-500/10 rounded-full">

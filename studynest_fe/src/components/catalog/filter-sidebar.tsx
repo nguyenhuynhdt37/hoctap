@@ -75,26 +75,15 @@ export function FilterSidebar({
     return list;
   }, [options, values.level, values.subject]);
 
-  const currency = values.currency === "USD" ? "USD" : "VND";
-
   const pricePresets = useMemo(() => {
-    if (currency === "USD") {
-      return [
-        { label: "Tất cả mức giá", min: "", max: "" },
-        { label: "Miễn phí", min: "0", max: "0" },
-        { label: "Dưới $25", min: "", max: "25" },
-        { label: "$25 – $50", min: "25", max: "50" },
-        { label: "Trên $50", min: "50", max: "" },
-      ];
-    }
     return [
       { label: "Tất cả mức giá", min: "", max: "" },
       { label: "Miễn phí", min: "0", max: "0" },
-      { label: "Dưới 300.000 ₫", min: "", max: "300000" },
-      { label: "300.000 ₫ – 700.000 ₫", min: "300000", max: "700000" },
-      { label: "Trên 700.000 ₫", min: "700000", max: "" },
+      { label: "Dưới 30 Coin", min: "", max: "300000" },
+      { label: "30 – 70 Coin", min: "300000", max: "700000" },
+      { label: "Trên 70 Coin", min: "700000", max: "" },
     ];
-  }, [currency]);
+  }, []);
 
   const selectStyle =
     "w-full h-10 px-3 rounded-xl border border-input bg-surface text-xs font-medium text-foreground transition-colors hover:border-primary-pastel focus:outline-none focus:border-ring focus:ring-2 focus:ring-ring/15 cursor-pointer";

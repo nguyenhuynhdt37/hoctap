@@ -39,11 +39,9 @@ const formatDate = (dateString: string) =>
     minute: "2-digit",
   });
 
-const formatCurrency = (amount: number) =>
-  new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-  }).format(amount);
+import { formatVndAsCoin } from "@/lib/learning-hub/coin-logic";
+
+const formatCurrency = (amount: number) => formatVndAsCoin(amount);
 
 const handleError = (error: any, defaultMsg: string) => {
   const status = error.response?.status;

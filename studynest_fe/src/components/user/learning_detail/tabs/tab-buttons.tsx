@@ -1,11 +1,27 @@
 "use client";
 
+import {
+  BookOpen,
+  FileText,
+  Layers,
+  MessageCircle,
+  SlidersHorizontal,
+} from "pulsoicon-react";
+
 interface TabButtonsProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
   isQAModalOpen: boolean;
   onOpenQA: () => void;
 }
+
+const TABS = [
+  { id: "lesson", label: "Tổng quan bài học", icon: BookOpen },
+  { id: "notes", label: "Ghi chú", icon: FileText },
+  { id: "qa", label: "Hỏi đáp", icon: MessageCircle },
+  { id: "tools", label: "Công cụ học tập", icon: SlidersHorizontal },
+  { id: "overview", label: "Thông tin khóa học", icon: Layers },
+] as const;
 
 export default function TabButtons({
   activeTab,
@@ -14,62 +30,26 @@ export default function TabButtons({
   onOpenQA,
 }: TabButtonsProps) {
   return (
-    <div className="border-b border-border bg-gradient-to-r from-primary-pastel/40 to-secondary-pastel/30">
-      <div className="mx-auto max-w-6xl">
-        <div className="flex max-w-full overflow-x-auto">
+    <div className="flex items-center gap-1.5 overflow-x-auto rounded-full border border-primary-pastel/70 bg-surface/90 p-1.5 shadow-2xs backdrop-blur-md">
+      {TABS.map(({ id, label, icon: Icon }) => {
+        const active = id === "qa" ? isQAModalOpen : activeTab === id;
+        return (
           <button
-            onClick={() => setActiveTab("lesson")}
-            className={`shrink-0 cursor-pointer border-b-2 px-4 py-4 text-sm font-semibold transition-all duration-200 ${
-              activeTab === "lesson"
-                ? "border-primary text-primary bg-surface"
-                : "border-transparent text-muted-foreground hover:text-primary hover:bg-surface/60"
+            key={id}
+            type="button"
+            onClick={() => (id === "qa" ? onOpenQA() : setActiveTab(id))}
+            aria-pressed={active}
+            className={`inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold transition-all sm:text-sm ${
+              active
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:bg-primary-light hover:text-primary"
             }`}
           >
-            Tổng quan bài học
+            <Icon className="size-4" animated={false} aria-hidden="true" />
+            <span>{label}</span>
           </button>
-          <button
-            onClick={() => setActiveTab("tools")}
-            className={`shrink-0 cursor-pointer border-b-2 px-4 py-4 text-sm font-semibold transition-all duration-200 ${
-              activeTab === "tools"
-                ? "border-primary text-primary bg-surface"
-                : "border-transparent text-muted-foreground hover:text-primary hover:bg-surface/60"
-            }`}
-          >
-            Công cụ học tập
-          </button>
-          <button
-            onClick={() => setActiveTab("notes")}
-            className={`shrink-0 cursor-pointer border-b-2 px-4 py-4 text-sm font-semibold transition-all duration-200 ${
-              activeTab === "notes"
-                ? "border-primary text-primary bg-surface"
-                : "border-transparent text-muted-foreground hover:text-primary hover:bg-surface/60"
-            }`}
-          >
-            Ghi chú
-          </button>
-          <button
-            onClick={onOpenQA}
-            className={`shrink-0 cursor-pointer border-b-2 px-4 py-4 text-sm font-semibold transition-all duration-200 ${
-              isQAModalOpen
-                ? "border-primary text-primary bg-surface"
-                : "border-transparent text-muted-foreground hover:text-primary hover:bg-surface/60"
-            }`}
-          >
-            Hỏi đáp
-          </button>
-          <button
-            onClick={() => setActiveTab("overview")}
-            className={`shrink-0 cursor-pointer border-b-2 px-4 py-4 text-sm font-semibold transition-all duration-200 ${
-              activeTab === "overview"
-                ? "border-primary text-primary bg-surface"
-                : "border-transparent text-muted-foreground hover:text-primary hover:bg-surface/60"
-            }`}
-          >
-            Tổng quan khóa học
-          </button>
-        </div>
-      </div>
+        );
+      })}
     </div>
   );
 }
-

@@ -24,7 +24,7 @@ from typing import Any, Dict, List, Literal, Optional
 
 from fastapi import Depends
 
-from app.core.llm import LLMService
+from app.core.llm import LLMService, get_llm_service
 
 Mode = Literal["NO_SEARCH", "REUSE", "SEARCH"]
 
@@ -557,7 +557,7 @@ _message_classifier_service: Optional[MessageClassifierService] = None
 
 
 def get_message_classifier_service(
-    llm_service: LLMService = Depends(LLMService),
+    llm_service: LLMService = Depends(get_llm_service),
 ) -> MessageClassifierService:
     global _message_classifier_service
     if _message_classifier_service is None:

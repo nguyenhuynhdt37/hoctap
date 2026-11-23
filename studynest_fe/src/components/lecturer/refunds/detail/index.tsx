@@ -1,4 +1,5 @@
 "use client";
+import { formatVndAsCoin } from "@/lib/learning-hub/coin-logic";
 
 import { Badge, Card } from "@/components/ui";
 import type { BadgeVariant } from "@/components/ui/badge";
@@ -32,11 +33,7 @@ type RefundStatus = LecturerRefundDetailData["refund"]["status"];
 
 const formatCurrency = (value: number | null | undefined) => {
   if (value === null || value === undefined) return "—";
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-    maximumFractionDigits: 0,
-  }).format(value);
+  return formatVndAsCoin(value);
 };
 
 const formatDateTime = (value?: string | null) => {

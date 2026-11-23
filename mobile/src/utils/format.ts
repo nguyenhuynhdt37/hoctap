@@ -1,11 +1,27 @@
+import { DEFAULT_COIN_VND_RATE, formatCoursePriceCoin, formatVndAsCoin } from './coin';
+
 /**
- * Format number to VND currency string
- * @param amount Number to format
- * @returns Formatted string (e.g., 500.000 VND)
+ * Format VND amount from API into Coin string (e.g., 50 Coin)
  */
-export const formatCurrency = (amount: number): string => {
+export const formatCurrency = (
+  amount: number | string | null | undefined,
+  rateVnd = DEFAULT_COIN_VND_RATE,
+): string => formatVndAsCoin(amount, rateVnd);
+
+/**
+ * Format course price from VND amount into Coin or "Miễn phí"
+ */
+export const formatCoursePrice = (
+  amount: number | string | null | undefined,
+  rateVnd = DEFAULT_COIN_VND_RATE,
+): string => formatCoursePriceCoin(amount, rateVnd);
+
+/**
+ * Format real-money VND string (only for top-up / bank transfer flows)
+ */
+export const formatVnd = (amount: number): string => {
   if (amount === undefined || amount === null) return '0 VND';
-  
+
   return new Intl.NumberFormat('vi-VN', {
     style: 'currency',
     currency: 'VND',

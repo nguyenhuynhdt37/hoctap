@@ -93,6 +93,7 @@ function LearningDetail(props: LearningDetailProps) {
 
   // UI states
   const [sidebarOpen, setSidebarOpen] = useState(!openTutor);
+  const [focusMode, setFocusMode] = useState(false);
   const [activeLesson, setActiveLesson] = useState("");
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set()
@@ -505,23 +506,46 @@ function LearningDetail(props: LearningDetailProps) {
   const closeTutorChat = () => {
     setChatOpen(false);
     // Below md the sidebar is a full-width overlay. Reopening it would cover the lesson.
-    if (window.matchMedia("(min-width: 768px)").matches) {
+    if (!focusMode && window.matchMedia("(min-width: 768px)").matches) {
       setSidebarOpen(true);
     }
   };
 
+  const toggleFocusMode = () => {
+    setFocusMode((prev) => {
+      const next = !prev;
+      if (next) {
+        setSidebarOpen(false);
+        setChatOpen(false);
+      } else if (window.matchMedia("(min-width: 768px)").matches) {
+        setSidebarOpen(true);
+      }
+      return next;
+    });
+  };
+
+  const currentSectionTitle =
+    curriculumData.sections.find((s) =>
+      s.lessons.some((l) => l.id === initialActiveLesson?.id)
+    )?.title || "";
+
   return (
-    <div className="flex h-dvh max-w-full flex-col overflow-hidden bg-background">
+    <div className="flex h-dvh max-w-full flex-col overflow-hidden bg-gradient-to-br from-background via-primary-light/25 to-secondary/15">
       <LearningHeader
         courseTitle={curriculumData.title}
         courseId={courseData.id}
         onOpenProgress={() => setOpenProgress(true)}
+        completedLessons={curriculumData.completed_lessons || 0}
+        totalLessons={curriculumData.total_lessons || 0}
+        focusMode={focusMode}
+        onToggleFocusMode={toggleFocusMode}
         chatOpen={chatOpen}
         onToggleChat={() => {
           if (chatOpen) {
             closeTutorChat();
             return;
           }
+          setFocusMode(false);
           setChatOpen(true);
           setSidebarOpen(false);
         }}
@@ -529,64 +553,109 @@ function LearningDetail(props: LearningDetailProps) {
 
       {/* Main Layout */}
       <div className="flex min-h-0 min-w-0 w-full flex-1">
-        {/* Main Content Area */}
-        <div data-learning-lesson className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
+        {/* Main Content Area — Video Full-Width + Cloudy Studio Content */}
+        <div
+          data-learning-lesson
+          className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto"
+        >
           {lessonLinkFailed && (
-            <Alert variant="warning" className="m-4">Chưa mở được bài học từ liên kết. Bạn có thể chọn bài trong danh sách của khóa học.</Alert>
+            <div className="px-4 pt-3 sm:px-6">
+              <Alert variant="warning">
+                Chưa mở được bài học từ liên kết. Bạn có thể chọn bài trong danh sách của khóa học.
+              </Alert>
+            </div>
           )}
-          <LessonRenderer
-            activeLessonData={initialActiveLesson}
-            onMarkCompleted={markLessonCompleted}
-            completedLessons={completedLessons}
-            onNext={() =>
-              setActiveLessonAndRefresh(navigationData?.next_lesson_id || "")
-            }
-            onPrev={() =>
-              setActiveLessonAndRefresh(navigationData?.prev_lesson_id || "")
-            }
-            hasNext={navigationData?.can_next ?? false}
-            hasPrev={navigationData?.can_prev ?? false}
-            onSeekToTime={seekCurrentVideo}
-            lessonAuthorId={instructorData?.id ?? null}
-          />
 
-          {/* Chỉ hiển thị LearningTabs khi không phải quiz và code lesson */}
-          {initialActiveLesson?.lesson_type !== "quiz" &&
-            initialActiveLesson?.lesson_type !== "code" && (
-              <LearningTabs
-                activeTab={activeTab}
-                setActiveTab={setActiveTab}
-                title={curriculumData.title}
-                notes={notes}
-                setNotes={setNotes}
-                course={courseData}
-                instructor={instructorData}
-                lessonOverview={
-                  initialActiveLesson
-                    ? {
-                        id: initialActiveLesson.id,
-                        section_id: initialActiveLesson.id,
-                        title: initialActiveLesson.title || "Bài học",
-                        description: initialActiveLesson.description || null,
-                        lesson_type: initialActiveLesson.lesson_type || "video",
-                        duration: initialActiveLesson.duration || 0,
-                        resources: initialActiveLesson.resources || [],
-                        quizzes_count: initialActiveLesson.quizzes?.length || 0,
-                        quizzes:
-                          initialActiveLesson.quizzes?.map((q) => ({
-                            id: q.id,
-                            question: q.question,
-                            options: q.options.map((opt) => opt.text),
-                            correct_answer: q.options.findIndex(
-                              (opt) => opt.is_correct
-                            ),
-                          })) || [],
-                      }
-                    : undefined
-                }
-                onSeekToTime={seekCurrentVideo}
-              />
+          {/* Khung Video / Bài học trải full-width 100% */}
+          <div className="w-full border-b border-primary-pastel/60 bg-surface">
+            <LessonRenderer
+              activeLessonData={initialActiveLesson}
+              onMarkCompleted={markLessonCompleted}
+              completedLessons={completedLessons}
+              onNext={() =>
+                setActiveLessonAndRefresh(navigationData?.next_lesson_id || "")
+              }
+              onPrev={() =>
+                setActiveLessonAndRefresh(navigationData?.prev_lesson_id || "")
+              }
+              hasNext={navigationData?.can_next ?? false}
+              hasPrev={navigationData?.can_prev ?? false}
+              onSeekToTime={seekCurrentVideo}
+              lessonAuthorId={instructorData?.id ?? null}
+            />
+          </div>
+
+          <div
+            className={`mx-auto w-full space-y-5 px-3 py-4 sm:px-6 sm:py-5 ${
+              focusMode ? "max-w-[1440px]" : "max-w-6xl"
+            }`}
+          >
+            {/* Banner bài đang học gọn đẹp ngay dưới video */}
+            {initialActiveLesson && (
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-primary-pastel/70 bg-surface/90 px-4 py-3 shadow-2xs backdrop-blur-sm">
+                <div className="min-w-0 flex-1">
+                  {currentSectionTitle && (
+                    <p className="truncate text-[11px] font-bold tracking-wider text-primary uppercase">
+                      {currentSectionTitle}
+                    </p>
+                  )}
+                  <h2 className="truncate font-display text-base font-bold text-foreground sm:text-lg">
+                    {initialActiveLesson.title}
+                  </h2>
+                </div>
+                <div className="flex shrink-0 items-center gap-2 text-xs font-bold">
+                  {initialActiveLesson.duration ? (
+                    <span className="rounded-full bg-primary-light px-2.5 py-1 text-primary">
+                      {formatDuration(initialActiveLesson.duration)}
+                    </span>
+                  ) : null}
+                  {completedLessons.has(initialActiveLesson.id) && (
+                    <span className="rounded-full border border-success-border bg-success-bg px-2.5 py-1 text-success-foreground">
+                      ✓ Đã hoàn thành
+                    </span>
+                  )}
+                </div>
+              </div>
             )}
+
+            {/* Chỉ hiển thị LearningTabs khi không phải quiz và code lesson */}
+            {initialActiveLesson?.lesson_type !== "quiz" &&
+              initialActiveLesson?.lesson_type !== "code" && (
+                <LearningTabs
+                  activeTab={activeTab}
+                  setActiveTab={setActiveTab}
+                  title={curriculumData.title}
+                  notes={notes}
+                  setNotes={setNotes}
+                  course={courseData}
+                  instructor={instructorData}
+                  lessonOverview={
+                    initialActiveLesson
+                      ? {
+                          id: initialActiveLesson.id,
+                          section_id: initialActiveLesson.id,
+                          title: initialActiveLesson.title || "Bài học",
+                          description: initialActiveLesson.description || null,
+                          lesson_type: initialActiveLesson.lesson_type || "video",
+                          duration: initialActiveLesson.duration || 0,
+                          resources: initialActiveLesson.resources || [],
+                          quizzes_count: initialActiveLesson.quizzes?.length || 0,
+                          quizzes:
+                            initialActiveLesson.quizzes?.map((q) => ({
+                              id: q.id,
+                              question: q.question,
+                              options: q.options.map((opt) => opt.text),
+                              correct_answer: q.options.findIndex(
+                                (opt) => opt.is_correct
+                              ),
+                            })) || [],
+                        }
+                      : undefined
+                  }
+                  onSeekToTime={seekCurrentVideo}
+                />
+              )}
+          </div>
         </div>
 
         {/* Tutor Chat Panel - Resizable - nằm giữa content và sidebar */}
@@ -656,11 +725,13 @@ function LearningDetail(props: LearningDetailProps) {
         toggleSidebar={() => {
           const newSidebarOpen = !sidebarOpen;
           setSidebarOpen(newSidebarOpen);
-          // Khi mở sidebar thì đóng chat
           if (newSidebarOpen) {
+            setFocusMode(false);
             setChatOpen(false);
           }
         }}
+        focusMode={focusMode}
+        onToggleFocusMode={toggleFocusMode}
         currentTitle={initialActiveLesson?.title || ""}
         currentDuration={
           initialActiveLesson?.duration

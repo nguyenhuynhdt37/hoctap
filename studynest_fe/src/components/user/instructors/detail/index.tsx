@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { BookOpen, User } from "pulsoicon-react";
+import { ArrowLeft, BookOpen, ChevronRight, GraduationCap, UserRound } from "pulsoicon-react";
 import InstructorDetail from "./detail";
 import InstructorCourses from "./courses";
 import type { InstructorDetailProfile } from "@/types/user/instructor";
@@ -18,69 +17,81 @@ export default function InstructorTabs({
   initialProfile,
   initialUnavailable,
 }: InstructorTabsProps) {
-  const [activeTab, setActiveTab] = useState<"detail" | "courses">("detail");
+  const courseCount = initialProfile?.public_course_count ?? initialProfile?.course_count ?? 0;
 
   return (
-    <div className="space-y-6">
-      {/* Breadcrumb điều hướng */}
-      <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Link href="/" className="hover:text-primary transition-colors">
-          Trang chủ
-        </Link>
-        <span aria-hidden="true" className="text-border">
-          /
-        </span>
-        <Link href="/instructors" className="hover:text-primary transition-colors">
-          Đội ngũ giáo viên
-        </Link>
-        <span aria-hidden="true" className="text-border">
-          /
-        </span>
-        <span className="font-medium text-foreground">Hồ sơ giáo viên</span>
-      </nav>
+    <div className="space-y-8">
+      {/* Thanh Breadcrumb & Sticky Section Jump Pills */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+          <Link href="/instructors" className="inline-flex items-center gap-1.5 text-primary hover:underline">
+            <ArrowLeft className="size-3.5" aria-hidden="true" />
+            Đội ngũ giáo viên
+          </Link>
+          <ChevronRight className="size-3.5 text-muted-foreground" aria-hidden="true" />
+          <span className="max-w-xs truncate text-foreground">
+            {initialProfile?.name ?? "Hồ sơ giáo viên"}
+          </span>
+        </nav>
 
-      {/* Tab Navigation chuẩn Cloudy Blue */}
-      <div className="flex flex-wrap items-center gap-1 border-b border-border bg-surface rounded-2xl px-3 py-1.5 shadow-2xs">
-        <button
-          type="button"
-          onClick={() => setActiveTab("detail")}
-          aria-pressed={activeTab === "detail"}
-          className={`inline-flex items-center gap-2 px-4 py-3 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
-            activeTab === "detail"
-              ? "bg-primary-light text-primary shadow-2xs"
-              : "text-muted-foreground hover:text-foreground hover:bg-surface-hover"
-          }`}
+        <nav
+          aria-label="Điều hướng nhanh hồ sơ"
+          className="flex flex-wrap items-center gap-1.5 rounded-full border border-primary-pastel/70 bg-surface p-1 shadow-2xs"
         >
-          <User className="w-4 h-4" />
-          <span>Giới thiệu</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab("courses")}
-          aria-pressed={activeTab === "courses"}
-          className={`inline-flex items-center gap-2 px-4 py-3 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
-            activeTab === "courses"
-              ? "bg-primary-light text-primary shadow-2xs"
-              : "text-muted-foreground hover:text-foreground hover:bg-surface-hover"
-          }`}
-        >
-          <BookOpen className="w-4 h-4" />
-          <span>Khóa học</span>
-        </button>
+          <a
+            href="#tong-quan-giao-vien"
+            className="inline-flex min-h-8 items-center gap-1.5 rounded-full bg-primary-light px-3.5 text-xs font-bold text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+          >
+            <UserRound className="size-3.5" animated={false} aria-hidden="true" />
+            <span>Tổng quan</span>
+          </a>
+          <a
+            href="#ban-do-chuyen-mon"
+            className="inline-flex min-h-8 items-center gap-1.5 rounded-full px-3.5 text-xs font-bold text-foreground transition-colors hover:bg-primary-light hover:text-primary"
+          >
+            <GraduationCap className="size-3.5" animated={false} aria-hidden="true" />
+            <span>Chuyên môn</span>
+          </a>
+          <a
+            href="#khoa-hoc-giao-vien"
+            className="inline-flex min-h-8 items-center gap-1.5 rounded-full px-3.5 text-xs font-bold text-foreground transition-colors hover:bg-primary-light hover:text-primary"
+          >
+            <BookOpen className="size-3.5" animated={false} aria-hidden="true" />
+            <span>Khóa học{courseCount > 0 ? ` (${courseCount})` : ""}</span>
+          </a>
+        </nav>
       </div>
 
-      {/* Tab Content */}
-      <div className="pt-2">
-        {activeTab === "detail" && (
-          <InstructorDetail
-            instructorId={instructorId}
-            initialProfile={initialProfile}
-            initialUnavailable={initialUnavailable}
-          />
-        )}
-        {activeTab === "courses" && <InstructorCourses instructorId={instructorId} />}
-      </div>
+      {/* Phần 1: Hồ sơ Portfolio & Bản đồ Chuyên môn */}
+      <InstructorDetail
+        instructorId={instructorId}
+        initialProfile={initialProfile}
+        initialUnavailable={initialUnavailable}
+      />
+
+      {/* Phần 2: Toàn bộ Khóa học của giáo viên hiển thị trực tiếp */}
+      <section
+        id="khoa-hoc-giao-vien"
+        className="scroll-mt-24 space-y-5 rounded-[2rem] border border-primary-pastel/70 bg-surface/85 p-5 shadow-xs sm:p-7"
+      >
+        <div className="flex flex-wrap items-end justify-between gap-3 border-b border-border pb-4">
+          <div>
+            <p className="text-[11px] font-extrabold tracking-[0.16em] text-primary uppercase">
+              Thư viện bài giảng
+            </p>
+            <h2 className="mt-0.5 font-display text-2xl font-bold text-foreground sm:text-3xl">
+              Khóa học của {initialProfile?.name ?? "giáo viên"}
+            </h2>
+          </div>
+          {courseCount > 0 && (
+            <span className="rounded-full border border-primary-pastel bg-primary-light px-3.5 py-1 text-xs font-extrabold text-primary">
+              {courseCount} khóa học công khai
+            </span>
+          )}
+        </div>
+
+        <InstructorCourses instructorId={instructorId} />
+      </section>
     </div>
   );
 }

@@ -10,14 +10,9 @@ import {
 } from "pulsoicon-react";
 import useSWR from "swr";
 
-const formatCurrency = (value: number | null | undefined) => {
-  if (value === null || value === undefined || isNaN(value)) return "0 ₫";
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-    maximumFractionDigits: 0,
-  }).format(value);
-};
+import { formatVndAsCoin } from "@/lib/learning-hub/coin-logic";
+
+const formatCurrency = (value: number | null | undefined) => formatVndAsCoin(value);
 
 export default function InstructorOverview() {
   const { data, isLoading } = useSWR<InstructorStatsResponse>(

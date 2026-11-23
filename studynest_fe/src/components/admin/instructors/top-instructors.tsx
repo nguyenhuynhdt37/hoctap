@@ -1,4 +1,5 @@
 "use client";
+import { formatVndAsCoin } from "@/lib/learning-hub/coin-logic";
 
 import api from "@/lib/utils/fetcher/client/axios";
 import {
@@ -13,11 +14,7 @@ import useSWR from "swr";
 const formatValue = (value: number | null | undefined, metric: string) => {
   const safeValue = value ?? 0;
   if (metric === "revenue") {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-      maximumFractionDigits: 0,
-    }).format(safeValue);
+    return formatVndAsCoin(safeValue);
   }
   return safeValue.toLocaleString("vi-VN");
 };

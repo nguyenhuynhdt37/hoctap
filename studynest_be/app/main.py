@@ -58,6 +58,7 @@ from app.api.v1.user import agent_memory, agent_advisor
 # --- GAMIFICATION ROUTES ---
 from app.api.v1.gamification import badges as gamification_badges
 from app.api.v1.gamification import daily_checkin as gamification_checkin
+from app.api.v1.gamification import leaderboard as gamification_leaderboard
 from app.api.v1.gamification import missions as gamification_missions
 from app.api.v1.gamification import profile as gamification_profile
 from app.api.v1.gamification import shop as gamification_shop
@@ -215,6 +216,7 @@ app.include_router(user_chat_sql.router, prefix=prefix)
 # --- GAMIFICATION ROUTES ---
 app.include_router(gamification_badges.router, prefix=prefix)
 app.include_router(gamification_checkin.router, prefix=prefix)
+app.include_router(gamification_leaderboard.router, prefix=prefix)
 app.include_router(gamification_profile.router, prefix=prefix)
 app.include_router(gamification_missions.router, prefix=prefix)
 app.include_router(gamification_shop.router, prefix=prefix)

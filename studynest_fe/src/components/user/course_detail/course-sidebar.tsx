@@ -1,4 +1,5 @@
 "use client";
+import { CoinPrice } from "@/components/ui";
 
 import api from "@/lib/utils/fetcher/client/axios";
 import { showToast } from "@/lib/utils/helpers/toast";
@@ -123,7 +124,16 @@ export default function CourseSidebar({
         setAvailableDiscounts(discounts);
 
         if (discounts.length > 0 && isInitialLoadRef.current) {
-          const firstDiscountCode = discounts[0].discount_code;
+          const calcSaving = (d: AvailableDiscount) =>
+            d.discount_type === "percent"
+              ? (course.base_price * (d.percent_value ?? 0)) / 100
+              : (d.fixed_value ?? 0);
+          const bestDiscount = discounts.reduce(
+            (best: AvailableDiscount, cur: AvailableDiscount) =>
+              calcSaving(cur) > calcSaving(best) ? cur : best,
+            discounts[0],
+          );
+          const firstDiscountCode = bestDiscount.discount_code;
           setDiscountInput(firstDiscountCode);
           isInitialLoadRef.current = false;
 
@@ -504,26 +514,18 @@ export default function CourseSidebar({
               </span>
               {hasPrice ? (
                 discountAmount > 0 && isDiscountApplied ? (
-                  <div className="flex flex-wrap items-baseline gap-2.5">
-                    <span className="text-3xl font-bold text-primary">
-                      {formatPrice(displayPrice, course.currency)}
-                    </span>
-                    <span className="text-sm text-subtle-foreground line-through">
-                      {formatPrice(course.base_price, course.currency)}
-                    </span>
-                    <span className="text-xs text-success-foreground bg-success-bg px-2.5 py-0.5 rounded-full font-semibold">
-                      Tiết kiệm {formatPrice(discountAmount, course.currency)}
-                    </span>
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <CoinPrice
+                      priceVnd={displayPrice}
+                      originalPriceVnd={course.base_price}
+                      size="lg"
+                    />
                   </div>
                 ) : (
-                  <div className="text-3xl font-bold text-foreground">
-                    {formatPrice(course.base_price, course.currency)}
-                  </div>
+                  <CoinPrice priceVnd={course.base_price} size="lg" />
                 )
               ) : (
-                <div className="text-3xl font-bold text-primary">
-                  {formatPrice(course.base_price, course.currency)}
-                </div>
+                <CoinPrice priceVnd={course.base_price} size="lg" />
               )}
             </div>
           )}

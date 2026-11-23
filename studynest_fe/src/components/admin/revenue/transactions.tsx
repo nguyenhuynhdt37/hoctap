@@ -9,14 +9,9 @@ import { useState } from "react";
 import useSWR from "swr";
 import { Search, ChevronLeft, ChevronRight } from "pulsoicon-react";
 
-const formatCurrency = (value: number | null | undefined) => {
-  if (value === null || value === undefined || isNaN(value)) return "0 ₫";
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-    maximumFractionDigits: 0,
-  }).format(value);
-};
+import { formatVndAsCoin } from "@/lib/learning-hub/coin-logic";
+
+const formatCurrency = (value: number | null | undefined) => formatVndAsCoin(value);
 
 const formatDateTime = (value: string) => {
   return new Date(value).toLocaleDateString("vi-VN", {

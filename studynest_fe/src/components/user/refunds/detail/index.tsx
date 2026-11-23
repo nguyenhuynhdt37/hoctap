@@ -1,5 +1,6 @@
 "use client";
 
+import { formatVndAsCoin } from "@/lib/learning-hub/coin-logic";
 import { getImageUrl } from "@/lib/utils/helpers/image";
 import { showToast } from "@/lib/utils/helpers/toast";
 import { RefundDetailData } from "@/types/user/refund";
@@ -25,11 +26,7 @@ interface RefundRequestDetailProps {
 
 const formatCurrency = (value: number | null | undefined) => {
   if (value === null || value === undefined) return "—";
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-    maximumFractionDigits: 0,
-  }).format(value);
+  return formatVndAsCoin(value);
 };
 
 const formatDateTime = (value?: string | null) => {

@@ -1,5 +1,6 @@
 "use client";
 
+import MarkdownRenderer from "@/components/shared/markdown-renderer";
 import TiptapEditor from "@/components/shared/tiptap_editor";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,9 +46,13 @@ export default function LecturerSection({ editor }: { editor: ProfileEditor }) {
                 minHeight="180px"
               />
             </div>
+          ) : values.instructor_description.trim() ? (
+            <div className="rounded-xl border border-border bg-background px-3.5 py-3 text-sm text-foreground">
+              <MarkdownRenderer content={values.instructor_description} isHtml={false} />
+            </div>
           ) : (
-            <p className="rounded-xl border border-border bg-background px-3.5 py-3 text-sm text-foreground whitespace-pre-wrap">
-              {values.instructor_description.trim() || "Chưa có giới thiệu giảng viên."}
+            <p className="rounded-xl border border-border bg-background px-3.5 py-3 text-sm text-muted-foreground">
+              Chưa có giới thiệu giảng viên.
             </p>
           )}
           {fieldErrors.instructor_description && (

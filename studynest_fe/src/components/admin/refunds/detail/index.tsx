@@ -1,4 +1,5 @@
 "use client";
+import { formatVndAsCoin } from "@/lib/learning-hub/coin-logic";
 
 import api from "@/lib/utils/fetcher/client/axios";
 import { getImageUrl } from "@/lib/utils/helpers/image";
@@ -30,11 +31,7 @@ type RefundStatus = AdminRefundDetailData["refund"]["status"];
 
 const formatCurrency = (value: number | null | undefined) => {
   if (value === null || value === undefined) return "—";
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-    maximumFractionDigits: 0,
-  }).format(value);
+  return formatVndAsCoin(value);
 };
 
 const formatDateTime = (value?: string | null) => {

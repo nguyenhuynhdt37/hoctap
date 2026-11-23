@@ -1,6 +1,8 @@
 "use client";
 
 import CourseEducationInfo from "@/components/catalog/course-education";
+import { formatCoursePriceCoin } from "@/lib/learning-hub/coin-logic";
+import { useCoinRate } from "@/lib/learning-hub/shop-hooks";
 import api from "@/lib/utils/fetcher/client/axios";
 import { showToast } from "@/lib/utils/helpers/toast";
 import { useUserStore } from "@/stores/user";
@@ -28,6 +30,7 @@ const CourseDetail = () => {
   const params = useParams();
   const router = useRouter();
   const user = useUserStore((s) => s.user);
+  const coinRateVnd = useCoinRate();
   const slug = params?.slug as string;
 
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
@@ -101,17 +104,8 @@ const CourseDetail = () => {
     setExpandAllSections(!expandAllSections);
   };
 
-  const formatPrice = (price: number, currency = "VND") => {
-    if (price === 0) return "Miễn phí";
-    try {
-      return new Intl.NumberFormat("vi-VN", {
-        style: "currency",
-        currency,
-        maximumFractionDigits: 0,
-      }).format(price);
-    } catch {
-      return `${price.toLocaleString("en-US")} ${currency}`;
-    }
+  const formatPrice = (price: number, _currency?: string) => {
+    return formatCoursePriceCoin(price, coinRateVnd);
   };
 
   const formatDate = (dateString: string) => {
@@ -263,6 +257,7 @@ const CourseDetail = () => {
             is_free: boolean;
             transaction_id: string | null;
             total_paid: string;
+            coin_cashback_bonus?: number;
             items: Array<{
               course_id: string;
               price: string;
@@ -272,8 +267,12 @@ const CourseDetail = () => {
           }>("/user/transaction/courses/checkout", checkoutPayload);
 
           if (checkoutResponse.status === 200 && checkoutResponse.data) {
-            const { is_free, transaction_id, message } = checkoutResponse.data;
-            showToast.success(message || "Thanh toán thành công! 🎉");
+            const { is_free, transaction_id, message, coin_cashback_bonus } = checkoutResponse.data;
+            const successMsg =
+              coin_cashback_bonus && coin_cashback_bonus > 0
+                ? `Thanh toán thành công! Bạn được hoàn +${coin_cashback_bonus} Coin trắng (20%) cho lần mua tiếp theo.`
+                : message || "Thanh toán thành công!";
+            showToast.success(successMsg);
 
             if (is_free) {
               setTimeout(() => {

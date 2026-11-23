@@ -1,4 +1,5 @@
 "use client";
+import { coinToVnd, DEFAULT_COIN_VND_RATE, formatCoursePriceCoin, vndToCoin } from "@/lib/learning-hub/coin-logic";
 
 import { Button, Card } from "@/components/ui";
 import api from "@/lib/utils/fetcher/client/axios";
@@ -290,7 +291,7 @@ export default function CreateDiscount() {
                     onChange={handleInputChange}
                     className="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-xl text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
                   >
-                    <option value="fixed">Giảm trực tiếp (VND)</option>
+                    <option value="fixed">Giảm trực tiếp (Coin)</option>
                     <option value="percent">Giảm theo phần trăm (%)</option>
                   </select>
                 </div>
@@ -321,7 +322,7 @@ export default function CreateDiscount() {
                 ) : (
                   <div>
                     <label className="block text-sm font-semibold text-foreground mb-2">
-                      Số tiền giảm (VND){" "}
+                      Số Coin giảm{" "}
                       <span className="text-destructive-foreground">*</span>
                     </label>
                     <div className="relative">
@@ -329,12 +330,19 @@ export default function CreateDiscount() {
                       <input
                         type="number"
                         name="fixed_value"
-                        value={formData.fixed_value || ""}
-                        onChange={handleInputChange}
+                        value={formData.fixed_value ? vndToCoin(formData.fixed_value) : ""}
+                        onChange={(e) => {
+                          const raw = e.target.value;
+                          setFormData((prev) => ({
+                            ...prev,
+                            fixed_value: raw ? coinToVnd(Math.max(1, Math.round(Number(raw) || 0)), DEFAULT_COIN_VND_RATE) : null,
+                          }));
+                        }}
                         min="1"
+                        step="1"
                         required
                         className="w-full pl-10 pr-4 py-2.5 text-sm bg-surface border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
-                        placeholder="Ví dụ: 50000"
+                        placeholder="Ví dụ: 5"
                       />
                     </div>
                   </div>
@@ -494,12 +502,7 @@ export default function CreateDiscount() {
                                             {course.title}
                                           </p>
                                           <p className="text-xs font-medium text-primary mt-1">
-                                            {course.base_price > 0
-                                              ? new Intl.NumberFormat("vi-VN", {
-                                                  style: "currency",
-                                                  currency: "VND",
-                                                }).format(course.base_price)
-                                              : "Miễn phí"}
+                                            {formatCoursePriceCoin(course.base_price)}
                                           </p>
                                         </div>
                                         <Check className="h-4 w-4 text-primary shrink-0" />

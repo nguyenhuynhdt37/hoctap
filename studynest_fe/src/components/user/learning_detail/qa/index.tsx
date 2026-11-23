@@ -1,1050 +1,923 @@
 "use client";
 
-import { useAuthedSWR } from "@/hooks/auth/useAuthedSWR";
-import { connectWebSocket } from "@/hooks/websocket/connectWebSocket";
-import { isDpopMode } from "@/lib/auth/mode";
-import api from "@/lib/utils/fetcher/client/axios";
-import { showToast } from "@/lib/utils/helpers/toast";
-import { useUserStore } from "@/stores/user";
-import { CommentItem, CommentResponse } from "@/types/user/comment";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { MessageCircle, X } from "pulsoicon-react";
-import CommentWithReplies from "./comment-with-replies";
-import NewCommentForm from "./new-comment-form";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  applyCommentListEvent,
-  mapCreatedComment,
-  replyRefusalMessage,
-} from "./qa-rules";
-import TypingIndicator from "./typing-indicator";
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Crown,
+  Flame,
+  Heart,
+  MessageCircle,
+  Pencil,
+  Search,
+  Star,
+  Trash2,
+  Wifi,
+  WifiOff,
+  X,
+} from "pulsoicon-react";
+import { Button, Skeleton } from "@/components/ui";
+import { EmblemIcon, FramedAvatar, TitleBadge } from "@/components/learning-hub/shop/item-art";
+import {
+  QAImageLightbox,
+  QAMarkdownContent,
+  type LightboxImage,
+} from "./qa-media-content";
+import { QARichComposer } from "./qa-rich-composer";
+import { useLearnerEquipment } from "@/lib/learning-hub/shop-hooks";
+import type { Equipment } from "@/lib/learning-hub/shop-types";
+import { connectWebSocket } from "@/hooks/websocket/connectWebSocket";
+import api from "@/lib/utils/fetcher/client/axios";
+import { getImageUrl } from "@/lib/utils/helpers/image";
+import { showToast } from "@/lib/utils/helpers/toast";
+import { cn } from "@/lib/utils";
+import { useUserStore } from "@/stores/user";
 
-// ============================================================================
-// TYPES & INTERFACES
-// ============================================================================
+interface QAGamification {
+  level: number;
+  current_streak: number;
+  equipment?: Equipment;
+}
+
+interface QAComment {
+  id: string;
+  root_id: string;
+  parent_id: string | null;
+  lesson_id: string;
+  user_id: string;
+  user_name: string | null;
+  user_avatar: string | null;
+  gamification?: QAGamification | null;
+  content: string;
+  depth: number;
+  created_at: string;
+  reply_count_all: number;
+  is_owner?: boolean;
+  is_author?: boolean;
+  reactions: {
+    total: number;
+    has_reacted: boolean;
+  };
+}
 
 interface QASectionProps {
   lessonId: string;
-  accessToken?: string;
   lessonAuthorId?: string | null;
   isModal?: boolean;
   onClose?: () => void;
   containerClassName?: string;
 }
 
-// ============================================================================
-// UTILITIES
-// ============================================================================
+type FilterTab = "latest" | "popular" | "mine";
 
-const usePreventBodyScroll = (isOpen: boolean) => {
-  useEffect(() => {
-    document.body.style.overflow = isOpen ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [isOpen]);
-};
+const QUICK_PROMPTS = [
+  "Thầy/cô giải thích kỹ hơn đoạn này giúp em với ạ!",
+  "Cho em xin thêm 1 ví dụ thực tế cho kiến thức này được không ạ?",
+  "Em làm theo nhưng bị vướng ở bước này, mọi người xem giúp em nhé:",
+] as const;
 
-// ============================================================================
-// MAIN COMPONENT - QASection
-// ============================================================================
+function formatRelativeTime(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "Vừa xong";
+  const diffSec = Math.max(0, Math.floor((Date.now() - date.getTime()) / 1000));
+  if (diffSec < 45) return "Vừa xong";
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin} phút trước`;
+  const diffHour = Math.floor(diffMin / 60);
+  if (diffHour < 24) return `${diffHour} giờ trước`;
+  const diffDay = Math.floor(diffHour / 24);
+  if (diffDay < 7) return `${diffDay} ngày trước`;
+  return date.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
+}
+
+function IdentityHeader({
+  name,
+  avatar,
+  gamification,
+  isAuthor,
+  isOwner,
+  createdAt,
+  compact = false,
+}: {
+  name: string | null;
+  avatar: string | null;
+  gamification?: QAGamification | null;
+  isAuthor?: boolean;
+  isOwner?: boolean;
+  createdAt?: string;
+  compact?: boolean;
+}) {
+  const displayName = name?.trim() || "Học viên Mây Mây";
+  const level = gamification?.level ?? 1;
+  const streak = gamification?.current_streak ?? 0;
+  const equipment = gamification?.equipment;
+
+  return (
+    <div className="flex items-start gap-3">
+      <div className="relative shrink-0">
+        <FramedAvatar
+          src={avatar ? getImageUrl(avatar) : null}
+          name={displayName}
+          equipment={equipment}
+          className={compact ? "size-10 text-xs" : "size-12 text-sm"}
+        />
+        <EmblemIcon
+          item={equipment?.emblem}
+          decorative
+          className={cn(
+            "absolute -right-0.5 -bottom-0.5 rounded-full ring-2 ring-surface",
+            compact ? "size-4" : "size-5",
+          )}
+        />
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="truncate text-sm font-extrabold text-foreground">{displayName}</span>
+
+          {isAuthor && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-accent-vanilla-border bg-accent-vanilla px-2 py-0.5 text-[10px] font-extrabold text-accent-vanilla-foreground">
+              <Crown className="size-3" animated={false} aria-hidden="true" />
+              Giảng viên
+            </span>
+          )}
+
+          {isOwner && !isAuthor && (
+            <span className="rounded-full bg-primary-light px-2 py-0.5 text-[10px] font-bold text-primary">
+              Bạn
+            </span>
+          )}
+
+          <TitleBadge item={equipment?.title} className="max-w-44 [&>span]:truncate" />
+        </div>
+
+        <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] font-semibold">
+          <span className="inline-flex items-center gap-0.5 rounded-full border border-primary-pastel/80 bg-primary-light/70 px-2 py-0.2 text-primary tabular-nums">
+            <Star className="size-2.5" animated={false} aria-hidden="true" />
+            Cấp {level}
+          </span>
+
+          {streak > 0 && (
+            <span className="inline-flex items-center gap-0.5 rounded-full border border-secondary-pastel bg-secondary/75 px-2 py-0.2 text-secondary-foreground tabular-nums">
+              <Flame className="size-2.5" animated={false} aria-hidden="true" />
+              {streak} ngày
+            </span>
+          )}
+
+          {createdAt && (
+            <span className="font-medium text-muted-foreground">· {formatRelativeTime(createdAt)}</span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function QASection({
   lessonId,
-  lessonAuthorId = null,
+  lessonAuthorId,
   isModal = false,
   onClose,
   containerClassName,
 }: QASectionProps) {
-  usePreventBodyScroll(isModal);
   const user = useUserStore((s) => s.user);
-  const currentUserId = user?.id ? String(user.id) : null;
-  const lessonAuthorIdRef = useRef<string | null>(lessonAuthorId ?? null);
-  lessonAuthorIdRef.current = lessonAuthorId ?? null;
+  const myEquipment = useLearnerEquipment();
 
-  // State management
-  const [expandedReplies, setExpandedReplies] = useState<Set<string>>(
-    new Set()
-  );
-  const [expandedDepth1Replies, setExpandedDepth1Replies] = useState<
-    Set<string>
-  >(new Set());
-  const [depth2RepliesData, setDepth2RepliesData] = useState<{
-    [parentId: string]: CommentResponse;
-  }>({});
-  const [replyingTo, setReplyingTo] = useState<string | null>(null);
-  const [editingComment, setEditingComment] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isCreatingComment, setIsCreatingComment] = useState(false);
-  const [isDeletingComment, setIsDeletingComment] = useState<string | null>(
-    null
-  );
-  const [reloadRepliesFor, setReloadRepliesFor] = useState<string | null>(null);
-  const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
-  const [wsStatus, setWsStatus] = useState<
-    "connecting" | "connected" | "disconnected" | "reconnecting"
-  >(isDpopMode ? "connecting" : "disconnected");
+  const [comments, setComments] = useState<QAComment[]>([]);
+  const [repliesByRoot, setRepliesByRoot] = useState<Record<string, QAComment[]>>({});
+  const [expandedRoots, setExpandedRoots] = useState<Set<string>>(new Set());
+  const [loadingReplies, setLoadingReplies] = useState<Record<string, boolean>>({});
+  const [loading, setLoading] = useState(true);
+  const [wsConnected, setWsConnected] = useState(false);
+  const [typingUsers, setTypingUsers] = useState<Record<string, number>>({});
 
-  // Refs
-  const wsRef = useRef<WebSocket | null>(null);
-  const typingTimeoutRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const [filter, setFilter] = useState<FilterTab>("latest");
+  const [search, setSearch] = useState("");
+  const [draft, setDraft] = useState("");
+  const [sending, setSending] = useState(false);
+
+  const [replyTargetId, setReplyTargetId] = useState<string | null>(null);
+  const [replyDraft, setReplyDraft] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState("");
+  const [lightboxImage, setLightboxImage] = useState<LightboxImage | null>(null);
+
+  const socketRef = useRef<WebSocket | null>(null);
   const lastTypingSentRef = useRef<number>(0);
-  const updateRepliesCallbacksRef = useRef<Map<string, () => void>>(new Map());
-  const updateDepth2RepliesCallbacksRef = useRef<Map<string, () => void>>(
-    new Map()
-  );
-  // Ref để lưu expandedReplies mới nhất, tránh stale closure
-  const expandedRepliesRef = useRef<Set<string>>(new Set());
-  const expandedDepth1RepliesRef = useRef<Set<string>>(new Set());
-  // Refs cho reconnect logic
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const reconnectAttemptsRef = useRef<number>(0);
 
-  // SWR - Fetch root comments
-  const {
-    data: rootCommentsData,
-    error: rootError,
-    isLoading: isLoadingRoot,
-    mutate: mutateRoot,
-  } = useAuthedSWR<CommentResponse>(
-    lessonId && currentUserId ? `/learning/${lessonId}/comments?depth_target=0&limit=20` : null,
-    { revalidateOnFocus: !isDpopMode, refreshInterval: isDpopMode ? 0 : 15_000, dedupingInterval: 2000 }
-  );
-
-  // Fetch replies function
-  const fetchReplies = useCallback(
-    async (
-      rootId: string,
-      depthTarget: number = 1,
-      cursor: string | null = null
-    ) => {
-      const params = new URLSearchParams({
-        root_id: rootId,
-        depth_target: depthTarget.toString(),
-        limit: "20",
-      });
-      if (cursor) params.append("cursor", cursor);
-      const response = await api.get<CommentResponse>(
-        `/learning/${lessonId}/comments?${params.toString()}`
-      );
-      return response.data;
-    },
-    [lessonId]
-  );
-
-  // Load more root comments
-  const loadMoreRoot = useCallback(async () => {
-    if (!rootCommentsData?.has_next || !rootCommentsData.next_cursor) return;
+  const fetchRootComments = useCallback(async () => {
+    setLoading(true);
     try {
-      const params = new URLSearchParams({
-        depth_target: "0",
-        limit: "20",
-        cursor: rootCommentsData.next_cursor,
-      });
-      const response = await api.get<CommentResponse>(
-        `/learning/${lessonId}/comments?${params.toString()}`
+      const res = await api.get<{ items: QAComment[] }>(
+        `/learning/${lessonId}/comments`,
+        { params: { depth_target: 0, limit: 40 } },
       );
-      if (response.data.items.length > 0) {
-        mutateRoot(
-          {
-            ...rootCommentsData,
-            items: [...rootCommentsData.items, ...response.data.items],
-            next_cursor: response.data.next_cursor,
-            has_next: response.data.has_next,
-          },
-          false
+      setComments(res.data?.items ?? []);
+    } catch {
+      showToast.error("Chưa tải được danh sách hỏi đáp.");
+    } finally {
+      setLoading(false);
+    }
+  }, [lessonId]);
+
+  const fetchReplies = useCallback(
+    async (rootId: string) => {
+      setLoadingReplies((prev) => ({ ...prev, [rootId]: true }));
+      try {
+        const res = await api.get<{ items: QAComment[] }>(
+          `/learning/${lessonId}/comments`,
+          { params: { root_id: rootId, depth_target: 1, limit: 50 } },
         );
+        setRepliesByRoot((prev) => ({ ...prev, [rootId]: res.data?.items ?? [] }));
+      } catch {
+        showToast.error("Không tải được các phản hồi.");
+      } finally {
+        setLoadingReplies((prev) => ({ ...prev, [rootId]: false }));
       }
-    } catch (err) {
-      console.error("Failed to load more comments:", err);
-    }
-  }, [rootCommentsData, lessonId, mutateRoot]);
+    },
+    [lessonId],
+  );
 
-  const reloadAllExpandedReplies = useCallback(() => {
-    const allExpandedRootIds = Array.from(expandedRepliesRef.current);
-    allExpandedRootIds.forEach((rootId) => {
-      const updateCallback = updateRepliesCallbacksRef.current.get(rootId);
-      if (updateCallback) {
-        updateCallback();
-      } else {
-        setReloadRepliesFor(rootId);
-      }
-    });
-
-    const allExpandedDepth1Ids = Array.from(expandedDepth1RepliesRef.current);
-    allExpandedDepth1Ids.forEach((depth1Id) => {
-      const updateDepth2Callback =
-        updateDepth2RepliesCallbacksRef.current.get(depth1Id);
-      if (updateDepth2Callback) {
-        updateDepth2Callback();
-      }
-    });
-
-    if (allExpandedRootIds.length > 0) {
-      setTimeout(() => setReloadRepliesFor(null), 200);
-    }
-  }, []);
-
-  // WebSocket connection với auto-reconnect
   useEffect(() => {
-    if (!isDpopMode || !lessonId || !currentUserId) return;
+    void fetchRootComments();
+  }, [fetchRootComments]);
+
+  // Kết nối WebSocket Realtime cho phòng bài học
+  useEffect(() => {
+    if (!lessonId || !user?.id) return;
     let active = true;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
+    let attempts = 0;
 
-    const connect = async (isReconnect = false) => {
-      if (!active) return;
+    const handleFrame = (event: any) => {
+      if (!active || !event) return;
 
-      if (isReconnect) {
-        setWsStatus("reconnecting");
-      } else {
-        setWsStatus("connecting");
+      if (event.type === "comment_created" && event.comment) {
+        const incoming: QAComment = {
+          ...event.comment,
+          reply_count_all: 0,
+          is_owner: event.comment.user_id === user.id,
+          is_author: Boolean(lessonAuthorId && event.comment.user_id === lessonAuthorId),
+          reactions: event.comment.reactions ?? { total: 0, has_reacted: false },
+        };
+        if (incoming.depth === 0 || !incoming.parent_id) {
+          setComments((prev) =>
+            prev.some((c) => c.id === incoming.id) ? prev : [incoming, ...prev],
+          );
+        } else {
+          const rootId = incoming.root_id || incoming.parent_id;
+          setComments((prev) =>
+            prev.map((c) =>
+              c.id === rootId ? { ...c, reply_count_all: (c.reply_count_all || 0) + 1 } : c,
+            ),
+          );
+          setRepliesByRoot((prev) => {
+            const list = prev[rootId] ?? [];
+            if (list.some((r) => r.id === incoming.id)) return prev;
+            return { ...prev, [rootId]: [...list, incoming] };
+          });
+          setExpandedRoots((prev) => new Set(prev).add(rootId));
+        }
+        return;
       }
 
+      if (event.type === "comment_updated" && event.comment) {
+        const { id, content } = event.comment;
+        setComments((prev) => prev.map((c) => (c.id === id ? { ...c, content } : c)));
+        setRepliesByRoot((prev) => {
+          const next = { ...prev };
+          for (const key of Object.keys(next)) {
+            next[key] = next[key].map((r) => (r.id === id ? { ...r, content } : r));
+          }
+          return next;
+        });
+        return;
+      }
+
+      if (event.type === "comment_deleted") {
+        const deletedId = event.id || event.comment_id || event.comment?.id;
+        if (!deletedId) return;
+        setComments((prev) => prev.filter((c) => c.id !== deletedId));
+        setRepliesByRoot((prev) => {
+          const next = { ...prev };
+          for (const key of Object.keys(next)) {
+            const before = next[key].length;
+            next[key] = next[key].filter((r) => r.id !== deletedId);
+            if (next[key].length < before) {
+              setComments((roots) =>
+                roots.map((c) =>
+                  c.id === key ? { ...c, reply_count_all: Math.max(0, c.reply_count_all - 1) } : c,
+                ),
+              );
+            }
+          }
+          return next;
+        });
+        return;
+      }
+
+      if (event.type === "typing" && event.user_id && event.user_id !== user.id) {
+        setTypingUsers((prev) => ({ ...prev, [event.user_id]: Date.now() }));
+      }
+    };
+
+    const connect = async () => {
+      if (!active) return;
       try {
         const ws = await connectWebSocket(
           `/api/v1/learning/ws/comments/${lessonId}`,
-          "USER",
-          (data) => {
-            if (!active || useUserStore.getState().user?.id !== currentUserId) return;
-            // Handle errors
-            if (data.error) {
-              showToast.error(`Lỗi: ${data.error}`);
-              setIsSubmitting(false);
-              setIsCreatingComment(false);
-              return;
-            }
-
-            // Typing event
-            if (data.type === "typing" && data.user_id) {
-              const typingUserId = String(data.user_id);
-
-              if (
-                currentUserId &&
-                String(typingUserId) === String(currentUserId)
-              ) {
-                return; // Skip own typing indicator
-              }
-
-              setTypingUsers((prev) => {
-                const newSet = new Set(prev);
-                newSet.add(typingUserId);
-                return newSet;
-              });
-
-              const existingTimeout =
-                typingTimeoutRef.current.get(typingUserId);
-              if (existingTimeout) {
-                clearTimeout(existingTimeout);
-              }
-              const timeout = setTimeout(() => {
-                setTypingUsers((prev) => {
-                  const newSet = new Set(prev);
-                  newSet.delete(typingUserId);
-                  return newSet;
-                });
-                typingTimeoutRef.current.delete(typingUserId);
-              }, 3000);
-              typingTimeoutRef.current.set(typingUserId, timeout);
-              return;
-            }
-
-            // Comment updated
-            if (data.type === "comment_updated" && data.comment) {
-              const updatedComment = data.comment;
-
-              mutateRoot((current) => {
-                if (!current) return current;
-                return {
-                  ...current,
-                  items: applyCommentListEvent(current.items, {
-                    type: "comment_updated",
-                    comment: updatedComment,
-                  }),
-                };
-              }, false);
-
-              if (updatedComment.depth !== 0) {
-                const rootId = updatedComment.root_id;
-                if (rootId) {
-                  if (updatedComment.depth === 1) {
-                    const updateCallback =
-                      updateRepliesCallbacksRef.current.get(rootId);
-                    if (updateCallback && expandedRepliesRef.current.has(rootId)) {
-                      updateCallback();
-                    }
-                  } else if (
-                    updatedComment.depth === 2 &&
-                    updatedComment.parent_id
-                  ) {
-                    const updateDepth2Callback =
-                      updateDepth2RepliesCallbacksRef.current.get(
-                        updatedComment.parent_id
-                      );
-                    if (updateDepth2Callback) {
-                      updateDepth2Callback();
-                    }
-                  }
-                }
-              }
-
-              setEditingComment(null);
-              setIsSubmitting(false);
-              return;
-            }
-
-            // Comment reacted (user đã react)
-            if (data.type === "comment_reacted" && data.comment_id) {
-              const commentId = data.comment_id;
-              const reactions = data.reactions || {
-                total: 0,
-                has_reacted: false,
-              };
-
-              mutateRoot((current) => {
-                if (!current) return current;
-                return {
-                  ...current,
-                  items: applyCommentListEvent(current.items, {
-                    type: "comment_reacted",
-                    comment_id: commentId,
-                    reactions,
-                  }),
-                };
-              }, false);
-
-              reloadAllExpandedReplies();
-              return;
-            }
-
-            // Comment unreacted (user đã unreact)
-            if (data.type === "comment_unreacted" && data.comment_id) {
-              const commentId = data.comment_id;
-              const reactions = data.reactions || {
-                total: 0,
-                has_reacted: false,
-              };
-
-              mutateRoot((current) => {
-                if (!current) return current;
-                return {
-                  ...current,
-                  items: applyCommentListEvent(current.items, {
-                    type: "comment_unreacted",
-                    comment_id: commentId,
-                    reactions,
-                  }),
-                };
-              }, false);
-
-              reloadAllExpandedReplies();
-              return;
-            }
-
-            // Comment hidden (có con, không thể xóa hoàn toàn)
-            if (data.type === "comment_hidden" && data.comment) {
-              const hiddenComment = data.comment;
-
-              mutateRoot((current) => {
-                if (!current) return current;
-                const foundItem = current.items.find(
-                  (item) => item.id === hiddenComment.id
-                );
-                if (foundItem && foundItem.depth === 0) {
-                  return {
-                    ...current,
-                    items: applyCommentListEvent(current.items, {
-                      type: "comment_hidden",
-                      comment: hiddenComment,
-                    }),
-                  };
-                }
-                return current;
-              }, false);
-
-              reloadAllExpandedReplies();
-
-              if (editingComment === hiddenComment.id) {
-                setEditingComment(null);
-              }
-              setIsSubmitting(false);
-              setIsDeletingComment(null);
-              return;
-            }
-
-            // Comment deleted (không có con, xóa hoàn toàn)
-            if (data.type === "comment_deleted" && data.comment) {
-              const deletedCommentId = data.comment.id;
-
-              let isRootCommentDeleted = false;
-              mutateRoot((current) => {
-                if (!current) return current;
-                const foundItem = current.items.find(
-                  (item) => item.id === deletedCommentId
-                );
-                if (foundItem && foundItem.depth === 0) {
-                  isRootCommentDeleted = true;
-                }
-                return {
-                  ...current,
-                  items: applyCommentListEvent(current.items, {
-                    type: "comment_deleted",
-                    comment: { id: deletedCommentId },
-                  }),
-                };
-              }, false);
-
-              if (isRootCommentDeleted) {
-                if (editingComment === deletedCommentId) {
-                  setEditingComment(null);
-                }
-                if (replyingTo === deletedCommentId) {
-                  setReplyingTo(null);
-                }
-                setIsSubmitting(false);
-                setIsDeletingComment(null);
-                return;
-              }
-
-              reloadAllExpandedReplies();
-
-              if (editingComment === deletedCommentId) {
-                setEditingComment(null);
-              }
-              if (replyingTo === deletedCommentId) {
-                setReplyingTo(null);
-              }
-              setIsSubmitting(false);
-              setIsDeletingComment(null);
-              return;
-            }
-
-            // Comment created
-            if (data.type === "comment_created" && data.comment) {
-              const newComment = data.comment;
-              const commentItem: CommentItem = mapCreatedComment(newComment, {
-                currentUserId,
-                lessonAuthorId: lessonAuthorIdRef.current,
-              });
-
-              if (newComment.depth === 0) {
-                mutateRoot((current) => {
-                  if (!current) return current;
-                  return {
-                    ...current,
-                    items: applyCommentListEvent(current.items, {
-                      type: "comment_created",
-                      comment: commentItem,
-                    }),
-                  };
-                }, false);
-              } else {
-                const rootId = newComment.root_id;
-                if (rootId) {
-                  mutateRoot((current) => {
-                    if (!current) return current;
-                    return {
-                      ...current,
-                      items: applyCommentListEvent(current.items, {
-                        type: "comment_created",
-                        comment: commentItem,
-                      }),
-                    };
-                  }, false);
-
-                  if (newComment.depth === 1) {
-                    const isExpanded = expandedRepliesRef.current.has(rootId);
-
-                    if (!isExpanded) {
-                      setExpandedReplies((prev) => {
-                        const newSet = new Set(prev);
-                        newSet.add(rootId);
-                        return newSet;
-                      });
-                      setTimeout(() => {
-                        setReloadRepliesFor(rootId);
-                        setTimeout(() => setReloadRepliesFor(null), 100);
-                      }, 100);
-                    } else {
-                      const updateCallback =
-                        updateRepliesCallbacksRef.current.get(rootId);
-                      if (updateCallback) {
-                        updateCallback();
-                      } else {
-                        setReloadRepliesFor(rootId);
-                        setTimeout(() => setReloadRepliesFor(null), 100);
-                      }
-                    }
-                  } else if (newComment.depth === 2 && newComment.parent_id) {
-                    const depth1ReplyId = newComment.parent_id;
-                    const rootId = newComment.root_id;
-
-                    const isDepth1Expanded =
-                      expandedDepth1RepliesRef.current.has(depth1ReplyId);
-                    const isRootExpanded =
-                      rootId && expandedRepliesRef.current.has(rootId);
-
-                    if (rootId && !isRootExpanded) {
-                      setExpandedReplies((prev) => {
-                        const newSet = new Set(prev);
-                        newSet.add(rootId);
-                        return newSet;
-                      });
-                    }
-
-                    if (isDepth1Expanded) {
-                      const updateDepth2Callback =
-                        updateDepth2RepliesCallbacksRef.current.get(
-                          depth1ReplyId
-                        );
-                      if (updateDepth2Callback) {
-                        updateDepth2Callback();
-                      } else {
-                        setTimeout(() => {
-                          const callback =
-                            updateDepth2RepliesCallbacksRef.current.get(
-                              depth1ReplyId
-                            );
-                          if (callback) {
-                            callback();
-                          } else {
-                            setReloadRepliesFor(rootId);
-                            setTimeout(() => setReloadRepliesFor(null), 100);
-                          }
-                        }, 500);
-                      }
-                    } else {
-                      setExpandedDepth1Replies((prev) => {
-                        const newSet = new Set(prev);
-                        newSet.add(depth1ReplyId);
-                        return newSet;
-                      });
-                      setTimeout(() => {
-                        const callback =
-                          updateDepth2RepliesCallbacksRef.current.get(
-                            depth1ReplyId
-                          );
-                        if (callback) {
-                          callback();
-                        } else {
-                          if (rootId) {
-                            setReloadRepliesFor(rootId);
-                            setTimeout(() => setReloadRepliesFor(null), 100);
-                          }
-                        }
-                      }, 400);
-                    }
-                  }
-                }
-              }
-            }
-          }
+          null,
+          handleFrame,
         );
         if (!active) {
           ws.close(1000);
           return;
         }
-        wsRef.current = ws;
-        setWsStatus("connected");
-        reconnectAttemptsRef.current = 0;
-
-        ws.onclose = (closeEvent) => {
-          if (!active) return;
-          wsRef.current = null;
-          setIsSubmitting(false);
-          setIsCreatingComment(false);
-
-          if (closeEvent.code === 1000) return;
-
-          const delay = Math.min(
-            1000 * Math.pow(2, reconnectAttemptsRef.current),
-            30000
-          );
-          reconnectAttemptsRef.current += 1;
-
-          reconnectTimeoutRef.current = setTimeout(() => {
-            if (active) {
-              connect(true);
-            }
-          }, delay);
-        };
-
-        ws.onerror = () => {
-          if (active) {
-            setWsStatus("disconnected");
-          }
+        socketRef.current = ws;
+        setWsConnected(true);
+        attempts = 0;
+        ws.onclose = (ev) => {
+          socketRef.current = null;
+          setWsConnected(false);
+          if (!active || ev.code === 1000) return;
+          retryTimer = setTimeout(connect, Math.min(1000 * 2 ** attempts++, 10_000));
         };
       } catch {
-        if (!active) return;
-        wsRef.current = null;
-        setIsSubmitting(false);
-        setIsCreatingComment(false);
-
-        const delay = Math.min(
-          1000 * Math.pow(2, reconnectAttemptsRef.current),
-          30000
-        );
-        reconnectAttemptsRef.current += 1;
-
-        reconnectTimeoutRef.current = setTimeout(() => {
-          if (active) {
-            connect(true);
-          }
-        }, delay);
+        setWsConnected(false);
+        if (active) {
+          retryTimer = setTimeout(connect, Math.min(1000 * 2 ** attempts++, 10_000));
+        }
       }
     };
 
-    connect();
+    void connect();
     return () => {
       active = false;
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-        reconnectTimeoutRef.current = null;
-      }
-      if (wsRef.current) {
-        if (
-          wsRef.current.readyState === WebSocket.OPEN ||
-          wsRef.current.readyState === WebSocket.CONNECTING
-        ) {
-          try {
-            wsRef.current.close(1000);
-          } catch (error) {
-            // Ignore close errors
-          }
-        }
-        wsRef.current = null;
-      }
-      typingTimeoutRef.current.forEach((timeout) => clearTimeout(timeout));
-      typingTimeoutRef.current.clear();
+      clearTimeout(retryTimer);
+      socketRef.current?.close(1000);
+      socketRef.current = null;
     };
-  }, [
-    lessonId,
-    mutateRoot,
-    currentUserId,
-    updateRepliesCallbacksRef,
-    updateDepth2RepliesCallbacksRef,
-    reloadAllExpandedReplies,
-  ]);
+  }, [lessonId, user?.id, lessonAuthorId]);
 
-  // Sync expandedReplies với ref để tránh stale closure
+  // Tự xóa typing indicator sau 3s
   useEffect(() => {
-    expandedRepliesRef.current = expandedReplies;
-  }, [expandedReplies]);
-
-  // Sync expandedDepth1Replies với ref
-  useEffect(() => {
-    expandedDepth1RepliesRef.current = expandedDepth1Replies;
-  }, [expandedDepth1Replies]);
-
-  // Toggle replies
-  const toggleReplies = useCallback((rootId: string) => {
-    setExpandedReplies((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(rootId)) newSet.delete(rootId);
-      else newSet.add(rootId);
-      return newSet;
-    });
-  }, []);
-
-  // Toggle depth 1 replies
-  const toggleDepth1Reply = useCallback(
-    (replyId: string, rootId: string) => {
-      setExpandedDepth1Replies((prev) => {
-        const newSet = new Set(prev);
-        if (newSet.has(replyId)) {
-          newSet.delete(replyId);
-        } else {
-          newSet.add(replyId);
-          if (!depth2RepliesData[replyId]) {
-            fetchReplies(rootId, 2, null).then((depth2Data) => {
-              const filteredItems = depth2Data.items.filter(
-                (r) => r.parent_id === replyId
-              );
-              setDepth2RepliesData((prev) => {
-                return {
-                  ...prev,
-                  [replyId]: { ...depth2Data, items: filteredItems },
-                };
-              });
-            });
-          }
-        }
-        setTimeout(() => {
-          const element = document.getElementById(`reply-${replyId}`);
-          if (element)
-            element.scrollIntoView({
-              behavior: "smooth",
-              block: "nearest",
-            });
-        }, 100);
-        return newSet;
+    const interval = window.setInterval(() => {
+      const now = Date.now();
+      setTypingUsers((prev) => {
+        const entries = Object.entries(prev).filter(([, ts]) => now - ts < 3000);
+        return entries.length === Object.keys(prev).length ? prev : Object.fromEntries(entries);
       });
-    },
-    [depth2RepliesData, fetchReplies]
-  );
-
-  // Send WebSocket message
-  const sendWebSocketMessage = useCallback((message: any) => {
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-      return false;
-    }
-
-    try {
-      wsRef.current.send(JSON.stringify(message));
-      return true;
-    } catch {
-      return false;
-    }
+    }, 1000);
+    return () => window.clearInterval(interval);
   }, []);
 
-  // Send typing indicator
-  const sendTypingIndicator = useCallback(() => {
+  const notifyTyping = () => {
     const now = Date.now();
-    if (now - lastTypingSentRef.current < 2000) return;
+    if (now - lastTypingSentRef.current < 1800) return;
     lastTypingSentRef.current = now;
-    sendWebSocketMessage({ type: "typing" });
-  }, [sendWebSocketMessage]);
+    if (socketRef.current?.readyState === WebSocket.OPEN) {
+      socketRef.current.send(JSON.stringify({ type: "typing" }));
+    }
+  };
 
-  const createCommentOverHttp = useCallback(async (content: string, parentId?: string) => {
-    const { data } = await api.post<{ type?: string }>(
-      `/learning/${lessonId}/lesson_comments`,
-      { content, parent_id: parentId },
-    );
-    if (data?.type !== "comment_created") throw new Error("Không thể tạo bình luận.");
-    void mutateRoot().catch(() => undefined);
-    if (parentId) reloadAllExpandedReplies();
-  }, [lessonId, mutateRoot, reloadAllExpandedReplies]);
-
-  // Handlers
-  const handleCreateComment = useCallback(
-    async (content: string) => {
-      if (!content.trim() || isCreatingComment) return;
-      setIsCreatingComment(true);
-      try {
-        if (!isDpopMode) {
-          await createCommentOverHttp(content.trim());
-        } else if (!sendWebSocketMessage({
-          type: "create",
-          create: { content: content.trim() },
-        })) {
-          throw new Error("WebSocket chưa kết nối.");
-        }
-      } catch {
-        showToast.error("Không thể tạo bình luận. Vui lòng thử lại.");
-      } finally {
-        setIsCreatingComment(false);
-      }
-    },
-    [isCreatingComment, sendWebSocketMessage, createCommentOverHttp]
-  );
-
-  const handleCreateReply = useCallback(
-    async (parentId: string, content: string) => {
-      if (!content.trim() || isSubmitting) return;
-
-      const parentInRoot = rootCommentsData?.items.find(
-        (item) => item.id === parentId
-      );
-      let parentDepth = parentInRoot?.depth;
-      if (parentDepth == null) {
-        for (const bucket of Object.values(depth2RepliesData)) {
-          const nested = bucket.items.find((item) => item.id === parentId);
-          if (nested) {
-            parentDepth = nested.depth;
-            break;
-          }
-        }
-      }
-      if (parentDepth != null) {
-        const refusal = replyRefusalMessage(parentDepth);
-        if (refusal) {
-          showToast.error(refusal);
-          return;
-        }
-      }
-
-      setIsSubmitting(true);
-      try {
-        if (!isDpopMode) {
-          await createCommentOverHttp(content.trim(), parentId);
-          setReplyingTo(null);
-        } else if (
-          sendWebSocketMessage({
-            type: "create",
-            create: { content: content.trim(), parent_id: parentId },
-          })
-        ) {
-          setReplyingTo(null);
-        }
-      } catch {
-        showToast.error("Không thể tạo phản hồi. Vui lòng thử lại.");
-      } finally {
-        setIsSubmitting(false);
-      }
-    },
-    [isSubmitting, sendWebSocketMessage, rootCommentsData, depth2RepliesData, createCommentOverHttp]
-  );
-
-  const handleReaction = useCallback(async (commentId: string) => {
+  async function submitComment(content: string, parentId: string | null = null) {
+    const trimmed = content.trim();
+    if (!trimmed || sending) return;
+    setSending(true);
     try {
-      await api.post(`/learning/comments/${commentId}/reacts`);
-      if (!isDpopMode) {
-        void mutateRoot().catch(() => undefined);
-        reloadAllExpandedReplies();
+      if (socketRef.current?.readyState === WebSocket.OPEN) {
+        socketRef.current.send(
+          JSON.stringify({
+            type: "create",
+            content: trimmed,
+            parent_id: parentId,
+          }),
+        );
+      } else {
+        await api.post(`/learning/${lessonId}/lesson_comments`, {
+          content: trimmed,
+          parent_id: parentId,
+        });
+        await fetchRootComments();
+        if (parentId) await fetchReplies(parentId);
       }
-    } catch (err) {
-      console.error("Failed to toggle reaction:", err);
-      showToast.error("Không thể cập nhật reaction. Vui lòng thử lại.");
+      if (parentId) {
+        setReplyDraft("");
+        setReplyTargetId(null);
+      } else {
+        setDraft("");
+      }
+    } catch {
+      showToast.error("Không thể gửi nội dung lúc này.");
+    } finally {
+      setSending(false);
     }
-  }, [mutateRoot, reloadAllExpandedReplies]);
+  }
 
-  const handleEditComment = useCallback(
-    async (commentId: string, content: string) => {
-      if (!content.trim() || isSubmitting) return;
-      if (!isDpopMode) {
-        showToast.error("Chưa thể chỉnh sửa bình luận với phiên đăng nhập hiện tại.");
-        return;
+  async function handleToggleReact(commentId: string, rootId?: string) {
+    try {
+      const res = await api.post<{ total?: number; has_reacted?: boolean; reacted?: boolean }>(
+        `/learning/comments/${commentId}/reacts`,
+      );
+      const applyUpdate = (item: QAComment) => {
+        if (item.id !== commentId) return item;
+        const nextReacted =
+          res.data?.has_reacted ?? res.data?.reacted ?? !item.reactions.has_reacted;
+        const nextTotal =
+          typeof res.data?.total === "number"
+            ? res.data.total
+            : Math.max(0, item.reactions.total + (nextReacted ? 1 : -1));
+        return { ...item, reactions: { total: nextTotal, has_reacted: nextReacted } };
+      };
+      if (rootId) {
+        setRepliesByRoot((prev) => ({
+          ...prev,
+          [rootId]: (prev[rootId] ?? []).map(applyUpdate),
+        }));
+      } else {
+        setComments((prev) => prev.map(applyUpdate));
       }
-      setIsSubmitting(true);
-      try {
-        if (
-          sendWebSocketMessage({
-            type: "comment_update",
-            update: {
-              id: commentId,
-              content: content.trim(),
-            },
-          })
-        ) {
-          // Content will be updated via WebSocket event
-        } else {
-          showToast.error("WebSocket chưa kết nối. Vui lòng thử lại.");
-          setIsSubmitting(false);
-        }
-      } catch (err) {
-        showToast.error("Không thể chỉnh sửa bình luận. Vui lòng thử lại.");
-        setIsSubmitting(false);
-      }
-    },
-    [isSubmitting, sendWebSocketMessage]
-  );
-
-  const handleDeleteComment = useCallback(
-    async (commentId: string) => {
-      if (!isDpopMode) {
-        showToast.error("Chưa thể xóa bình luận với phiên đăng nhập hiện tại.");
-        return;
-      }
-      if (!confirm("Bạn có chắc chắn muốn xóa bình luận này?")) return;
-      if (isDeletingComment) return;
-      setIsDeletingComment(commentId);
-      try {
-        if (
-          sendWebSocketMessage({
-            type: "comment_delete",
-            id: commentId,
-          })
-        ) {
-          if (editingComment === commentId) {
-            setEditingComment(null);
-          }
-        } else {
-          showToast.error("WebSocket chưa kết nối. Vui lòng thử lại.");
-          setIsDeletingComment(null);
-        }
-      } catch (err) {
-        showToast.error("Không thể xóa bình luận. Vui lòng thử lại.");
-        setIsDeletingComment(null);
-      }
-    },
-    [isDeletingComment, sendWebSocketMessage, editingComment]
-  );
-
-  // Handlers for CommentWithReplies
-  const handleReply = useCallback((commentId: string) => {
-    setEditingComment(null);
-    setReplyingTo(commentId);
-  }, []);
-
-  const handleEdit = useCallback((commentId: string) => {
-    if (commentId === "") {
-      setEditingComment(null);
-      return;
+    } catch {
+      showToast.error("Không thể cập nhật lượt thích.");
     }
-    setReplyingTo(null);
-    setEditingComment(commentId);
-  }, []);
+  }
 
-  const handleToggleDepth1Reply = useCallback(
-    (replyId: string, rootId: string) => {
-      toggleDepth1Reply(replyId, rootId);
-    },
-    [toggleDepth1Reply]
-  );
+  function handleSaveEdit(commentId: string) {
+    const trimmed = editDraft.trim();
+    if (!trimmed) return;
+    if (socketRef.current?.readyState === WebSocket.OPEN) {
+      socketRef.current.send(
+        JSON.stringify({ type: "comment_update", id: commentId, content: trimmed }),
+      );
+      setEditingId(null);
+      setEditDraft("");
+    } else {
+      showToast.error("Mất kết nối realtime, thử lại sau giây lát.");
+    }
+  }
 
-  // Render
-  const content = (
-    <>
-      <div
-        className={
-          isModal
-            ? "flex items-center justify-between mb-4 pb-4 border-b border-border"
-            : "mb-4"
+  function handleDelete(commentId: string) {
+    if (socketRef.current?.readyState === WebSocket.OPEN) {
+      socketRef.current.send(JSON.stringify({ type: "comment_delete", id: commentId }));
+    } else {
+      showToast.error("Mất kết nối realtime, thử lại sau giây lát.");
+    }
+  }
+
+  function toggleReplies(rootId: string) {
+    setExpandedRoots((prev) => {
+      const next = new Set(prev);
+      if (next.has(rootId)) {
+        next.delete(rootId);
+      } else {
+        next.add(rootId);
+        if (!repliesByRoot[rootId]) {
+          void fetchReplies(rootId);
         }
-      >
-        <div>
-          <h2 className="text-2xl font-bold text-foreground mb-1 flex items-center gap-2">
-            <MessageCircle className="w-6 h-6 text-primary" />
-            Hỏi đáp
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Đặt câu hỏi hoặc thảo luận về bài học này
-          </p>
+      }
+      return next;
+    });
+  }
+
+  const visibleComments = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    let list = [...comments];
+    if (filter === "mine") {
+      list = list.filter((c) => c.user_id === user?.id || c.is_owner);
+    }
+    if (q) {
+      list = list.filter(
+        (c) =>
+          c.content.toLowerCase().includes(q) ||
+          (c.user_name ?? "").toLowerCase().includes(q),
+      );
+    }
+    if (filter === "popular") {
+      list.sort(
+        (a, b) =>
+          (b.reactions?.total ?? 0) + b.reply_count_all - ((a.reactions?.total ?? 0) + a.reply_count_all),
+      );
+    }
+    return list;
+  }, [comments, filter, search, user?.id]);
+
+  const someoneTyping = Object.keys(typingUsers).length > 0;
+
+  const contentBody = (
+    <div className="flex h-full flex-col overflow-hidden bg-background">
+      {/* ── HEADER SẢNH HỎI ĐÁP REALTIME ── */}
+      <div className="shrink-0 border-b border-primary-pastel/70 bg-gradient-to-r from-primary-light/80 via-surface to-secondary/35 px-5 py-4 sm:px-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="space-y-0.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-extrabold tracking-wider text-primary-foreground uppercase">
+                <MessageCircle className="size-3" animated={false} aria-hidden="true" />
+                Live Q&amp;A Lounge
+              </span>
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-bold",
+                  wsConnected
+                    ? "border-success-border bg-success-bg text-success-foreground"
+                    : "border-warning-border bg-warning-bg text-warning-foreground",
+                )}
+              >
+                {wsConnected ? (
+                  <>
+                    <Wifi className="size-3" animated={false} aria-hidden="true" />
+                    Trực tuyến realtime
+                  </>
+                ) : (
+                  <>
+                    <WifiOff className="size-3" animated={false} aria-hidden="true" />
+                    Đang kết nối lại…
+                  </>
+                )}
+              </span>
+            </div>
+            <h2 className="font-display text-xl font-bold text-foreground sm:text-2xl">
+              Hỏi đáp bài học ({comments.length})
+            </h2>
+          </div>
+
+          {isModal && onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Đóng hỏi đáp"
+              className="grid size-10 cursor-pointer place-items-center rounded-full border border-border bg-surface text-foreground transition-colors hover:border-primary-pastel hover:bg-primary-light hover:text-primary"
+            >
+              <X className="size-5" aria-hidden="true" />
+            </button>
+          )}
         </div>
-        {isModal && onClose && (
-          <button
-            onClick={onClose}
-            className="p-2 rounded-lg hover:bg-background text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-            aria-label="Đóng"
-          >
-            <X className="w-6 h-6" />
-          </button>
-        )}
+
+        {/* Thanh lọc & tìm kiếm */}
+        <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-1.5">
+            {(
+              [
+                { id: "latest", label: "Mới nhất" },
+                { id: "popular", label: "Nổi bật nhất" },
+                { id: "mine", label: "Câu hỏi của tôi" },
+              ] as const
+            ).map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setFilter(tab.id)}
+                className={cn(
+                  "rounded-full px-3 py-1.5 text-xs font-bold transition-colors cursor-pointer",
+                  filter === tab.id
+                    ? "bg-primary text-primary-foreground shadow-2xs"
+                    : "border border-border bg-surface text-foreground hover:border-primary-pastel hover:bg-primary-light",
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          <label className="relative block w-full sm:w-60">
+            <span className="sr-only">Tìm câu hỏi</span>
+            <Search
+              aria-hidden="true"
+              animated={false}
+              className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-primary"
+            />
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Tìm nhanh câu hỏi…"
+              className="h-9 w-full rounded-full border border-border bg-surface pr-3 pl-8 text-xs font-medium text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/40"
+            />
+          </label>
+        </div>
       </div>
 
-      <NewCommentForm
-        onSubmit={handleCreateComment}
-        isSubmitting={isCreatingComment}
-        onTyping={sendTypingIndicator}
-      />
-
-      <TypingIndicator typingUsers={typingUsers} />
-
-      {/* WebSocket connection status */}
-      {wsStatus === "reconnecting" && (
-        <div className="mb-4 px-4 py-2 bg-warning-bg border border-warning-border rounded-xl">
-          <div className="flex items-center gap-2 text-sm text-warning-foreground">
-            <div className="flex gap-1">
-              <div
-                className="w-2 h-2 bg-warning-foreground rounded-full animate-bounce"
-                style={{ animationDelay: "0ms" }}
+      {/* ── NỘI DUNG CUỘN ── */}
+      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain p-5 sm:p-6">
+        {/* COMPOSER ĐẶT CÂU HỎI MỚI */}
+        <div className="rounded-[24px] border border-primary-pastel/80 bg-surface p-4 shadow-xs sm:p-5">
+          <div className="mb-3 flex items-center gap-3">
+            <div className="relative shrink-0">
+              <FramedAvatar
+                src={user?.avatar ? getImageUrl(user.avatar) : null}
+                name={user?.fullname}
+                equipment={myEquipment}
+                className="size-11 text-xs"
               />
-              <div
-                className="w-2 h-2 bg-warning-foreground rounded-full animate-bounce"
-                style={{ animationDelay: "150ms" }}
-              />
-              <div
-                className="w-2 h-2 bg-warning-foreground rounded-full animate-bounce"
-                style={{ animationDelay: "300ms" }}
+              <EmblemIcon
+                item={myEquipment?.emblem}
+                decorative
+                className="absolute -right-0.5 -bottom-0.5 size-4.5 rounded-full ring-2 ring-surface"
               />
             </div>
-            <span className="font-medium">Đang kết nối lại...</span>
-          </div>
-        </div>
-      )}
-      {wsStatus === "connecting" && (
-        <div className="mb-4 px-4 py-2 bg-primary-pastel/50 border border-primary-light/50 rounded-xl">
-          <div className="flex items-center gap-2 text-sm text-primary">
-            <div className="flex gap-1">
-              <div
-                className="w-2 h-2 bg-primary rounded-full animate-bounce"
-                style={{ animationDelay: "0ms" }}
-              />
-              <div
-                className="w-2 h-2 bg-primary rounded-full animate-bounce"
-                style={{ animationDelay: "150ms" }}
-              />
-              <div
-                className="w-2 h-2 bg-primary rounded-full animate-bounce"
-                style={{ animationDelay: "300ms" }}
-              />
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-sm font-extrabold text-foreground">
+                  {user?.fullname || "Bạn"}
+                </span>
+                <TitleBadge item={myEquipment?.title} className="max-w-44 [&>span]:truncate" />
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Hỗ trợ đính kèm ảnh (tự nén nhẹ), dán Ctrl+V và chèn khối Code đa ngôn ngữ · Tự báo về thiết bị khi có phản hồi
+              </p>
             </div>
-            <span className="font-medium">Đang kết nối...</span>
           </div>
-        </div>
-      )}
 
-      <div className="bg-surface border border-border rounded-2xl">
-        {isLoadingRoot ? (
-          <div className="text-center py-8 text-sm text-muted-foreground">
-            Đang tải bình luận...
+          <QARichComposer
+            value={draft}
+            onChange={setDraft}
+            onTyping={notifyTyping}
+            onOpenImage={setLightboxImage}
+            onSubmit={(finalContent) => submitComment(finalContent, null)}
+            sending={sending}
+            submitLabel="Gửi câu hỏi"
+            quickPrompts={QUICK_PROMPTS}
+            placeholder="Bạn đang thắc mắc điều gì? Dán ảnh chụp màn hình (Ctrl+V), kéo-thả ảnh hoặc bấm Khối Code để chia sẻ đoạn mã..."
+          />
+        </div>
+
+        {/* TYPING INDICATOR REALTIME */}
+        {someoneTyping && (
+          <div className="inline-flex items-center gap-2 rounded-full border border-primary-pastel bg-primary-light/70 px-3.5 py-1.5 text-xs font-semibold text-primary">
+            <span className="size-2 animate-pulse rounded-full bg-primary" />
+            <span>Có học viên đang soạn tin nhắn realtime…</span>
           </div>
-        ) : rootError ? (
-          <div className="text-center py-8 text-sm text-destructive-foreground">
-            Không thể tải bình luận. Vui lòng thử lại sau.
+        )}
+
+        {/* DANH SÁCH CÂU HỎI */}
+        {loading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map((k) => (
+              <Skeleton key={k} className="h-32 rounded-[24px]" />
+            ))}
           </div>
-        ) : !rootCommentsData || rootCommentsData.items.length === 0 ? (
-          <div className="text-center py-8 text-sm text-muted-foreground">
-            Chưa có bình luận nào. Hãy là người đầu tiên đặt câu hỏi!
+        ) : visibleComments.length === 0 ? (
+          <div className="rounded-[24px] border border-dashed border-primary-pastel bg-surface/70 p-10 text-center">
+            <p className="font-display text-lg font-bold text-foreground">
+              {search ? `Không tìm thấy câu hỏi cho “${search}”` : "Chưa có câu hỏi nào trong bài học này"}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Hãy là người đầu tiên mở màn thảo luận cùng thầy cô và các bạn nhé!
+            </p>
           </div>
         ) : (
-          <>
-            <div className="divide-y divide-border">
-              {rootCommentsData.items.map((comment) => (
-                <CommentWithReplies
+          <div className="space-y-4">
+            {visibleComments.map((comment) => {
+              const isExpanded = expandedRoots.has(comment.id);
+              const replies = repliesByRoot[comment.id] ?? [];
+              const isMine = comment.user_id === user?.id || comment.is_owner;
+              const isInstructor =
+                comment.is_author || Boolean(lessonAuthorId && comment.user_id === lessonAuthorId);
+
+              return (
+                <article
                   key={comment.id}
-                  comment={comment}
-                  expandedReplies={expandedReplies}
-                  expandedDepth1Replies={expandedDepth1Replies}
-                  depth2RepliesData={depth2RepliesData}
-                  replyingTo={replyingTo}
-                  editingComment={editingComment}
-                  isDeletingComment={isDeletingComment}
-                  reloadRepliesFor={reloadRepliesFor}
-                  fetchReplies={fetchReplies}
-                  onToggleReplies={toggleReplies}
-                  onToggleDepth1Reply={handleToggleDepth1Reply}
-                  onReply={handleReply}
-                  onEdit={handleEdit}
-                  onDelete={handleDeleteComment}
-                  onReaction={handleReaction}
-                  onSubmitReply={handleCreateReply}
-                  onSubmitEdit={handleEditComment}
-                  onTyping={sendTypingIndicator}
-                  isSubmitting={isSubmitting}
-                  updateRepliesCallbacksRef={updateRepliesCallbacksRef}
-                  updateDepth2RepliesCallbacksRef={
-                    updateDepth2RepliesCallbacksRef
-                  }
-                  setExpandedDepth1Replies={setExpandedDepth1Replies}
-                  setDepth2RepliesData={setDepth2RepliesData}
-                />
-              ))}
-            </div>
-            {rootCommentsData.has_next && (
-              <div className="p-4 text-center border-t border-border">
-                <button
-                  onClick={loadMoreRoot}
-                  className="text-sm text-primary hover:text-primary-hover font-semibold transition-colors cursor-pointer"
+                  className={cn(
+                    "rounded-[24px] border bg-surface p-4 shadow-2xs transition-colors sm:p-5",
+                    isInstructor ? "border-accent-vanilla-border bg-accent-vanilla/20" : "border-border/80",
+                  )}
                 >
-                  Xem thêm bình luận
-                </button>
-              </div>
-            )}
-          </>
+                  <IdentityHeader
+                    name={comment.user_name}
+                    avatar={comment.user_avatar}
+                    gamification={comment.gamification}
+                    isAuthor={isInstructor}
+                    isOwner={isMine}
+                    createdAt={comment.created_at}
+                  />
+
+                  {/* Nội dung câu hỏi / Sửa inline */}
+                  <div className="mt-3 pl-0 sm:pl-15">
+                    {editingId === comment.id ? (
+                      <div className="space-y-2">
+                        <textarea
+                          rows={3}
+                          value={editDraft}
+                          onChange={(e) => setEditDraft(e.target.value)}
+                          className="w-full rounded-xl border border-primary bg-background p-2.5 text-sm text-foreground focus:outline-none"
+                        />
+                        <div className="flex items-center gap-2">
+                          <Button size="sm" onClick={() => handleSaveEdit(comment.id)} leftIcon={<Check className="size-3.5" />}>
+                            Lưu thay đổi
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
+                            Hủy
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <QAMarkdownContent
+                        content={comment.content}
+                        onOpenImage={setLightboxImage}
+                      />
+                    )}
+
+                    {/* Action Bar */}
+                    <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+                      <button
+                        type="button"
+                        onClick={() => void handleToggleReact(comment.id)}
+                        className={cn(
+                          "inline-flex h-8 items-center gap-1.5 rounded-full border px-3 font-bold transition-colors cursor-pointer",
+                          comment.reactions?.has_reacted
+                            ? "border-secondary-pastel bg-secondary text-secondary-foreground"
+                            : "border-border bg-background text-muted-foreground hover:border-secondary-pastel hover:text-secondary-foreground",
+                        )}
+                      >
+                        <Heart
+                          className="size-3.5"
+                          solid={comment.reactions?.has_reacted}
+                          animated={false}
+                          aria-hidden="true"
+                        />
+                        <span className="tabular-nums">{comment.reactions?.total ?? 0}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setReplyTargetId((cur) => (cur === comment.id ? null : comment.id));
+                          setReplyDraft("");
+                        }}
+                        className="inline-flex h-8 items-center gap-1.5 rounded-full border border-border bg-background px-3 font-bold text-foreground transition-colors hover:border-primary-pastel hover:bg-primary-light hover:text-primary cursor-pointer"
+                      >
+                        <MessageCircle className="size-3.5" animated={false} aria-hidden="true" />
+                        <span>Trả lời</span>
+                      </button>
+
+                      {(comment.reply_count_all > 0 || replies.length > 0) && (
+                        <button
+                          type="button"
+                          onClick={() => toggleReplies(comment.id)}
+                          className="inline-flex h-8 items-center gap-1 rounded-full bg-primary-light/70 px-3 font-bold text-primary hover:bg-primary-light cursor-pointer"
+                        >
+                          {isExpanded ? (
+                            <ChevronUp className="size-3.5" aria-hidden="true" />
+                          ) : (
+                            <ChevronDown className="size-3.5" aria-hidden="true" />
+                          )}
+                          <span>
+                            {isExpanded ? "Thu gọn" : `Xem ${Math.max(comment.reply_count_all, replies.length)} phản hồi`}
+                          </span>
+                        </button>
+                      )}
+
+                      {isMine && (
+                        <div className="ml-auto flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingId(comment.id);
+                              setEditDraft(comment.content);
+                            }}
+                            aria-label="Sửa câu hỏi"
+                            className="grid size-8 place-items-center rounded-full text-muted-foreground hover:bg-primary-light hover:text-primary cursor-pointer"
+                          >
+                            <Pencil className="size-3.5" animated={false} aria-hidden="true" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(comment.id)}
+                            aria-label="Xóa câu hỏi"
+                            className="grid size-8 place-items-center rounded-full text-muted-foreground hover:bg-destructive-bg hover:text-destructive-foreground cursor-pointer"
+                          >
+                            <Trash2 className="size-3.5" animated={false} aria-hidden="true" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Khung trả lời inline */}
+                    {replyTargetId === comment.id && (
+                      <div className="mt-3">
+                        <QARichComposer
+                          compact
+                          value={replyDraft}
+                          onChange={setReplyDraft}
+                          onTyping={notifyTyping}
+                          onOpenImage={setLightboxImage}
+                          onCancel={() => setReplyTargetId(null)}
+                          onSubmit={(finalContent) => submitComment(finalContent, comment.id)}
+                          sending={sending}
+                          submitLabel="Gửi phản hồi"
+                          placeholder={`Trả lời ${comment.user_name || "học viên"}… (hỗ trợ dán ảnh Ctrl+V và chèn Code)`}
+                        />
+                      </div>
+                    )}
+
+                    {/* Danh sách phản hồi */}
+                    {isExpanded && (
+                      <div className="mt-3.5 space-y-3 border-l-2 border-dashed border-primary-pastel pl-4">
+                        {loadingReplies[comment.id] ? (
+                          <Skeleton className="h-16 rounded-2xl" />
+                        ) : (
+                          replies.map((reply) => {
+                            const rMine = reply.user_id === user?.id || reply.is_owner;
+                            const rAuthor =
+                              reply.is_author || Boolean(lessonAuthorId && reply.user_id === lessonAuthorId);
+                            return (
+                              <div
+                                key={reply.id}
+                                className={cn(
+                                  "rounded-2xl border p-3.5",
+                                  rAuthor
+                                    ? "border-accent-vanilla-border bg-accent-vanilla/35"
+                                    : "border-border/70 bg-background/70",
+                                )}
+                              >
+                                <IdentityHeader
+                                  name={reply.user_name}
+                                  avatar={reply.user_avatar}
+                                  gamification={reply.gamification}
+                                  isAuthor={rAuthor}
+                                  isOwner={rMine}
+                                  createdAt={reply.created_at}
+                                  compact
+                                />
+                                <div className="mt-2 min-w-0 pl-0 sm:pl-13">
+                                  <QAMarkdownContent
+                                    content={reply.content}
+                                    onOpenImage={setLightboxImage}
+                                  />
+                                  <div className="mt-2 flex items-center gap-2 text-[11px]">
+                                    <button
+                                      type="button"
+                                      onClick={() => void handleToggleReact(reply.id, comment.id)}
+                                      className={cn(
+                                        "inline-flex h-7 items-center gap-1 rounded-full border px-2.5 font-bold cursor-pointer",
+                                        reply.reactions?.has_reacted
+                                          ? "border-secondary-pastel bg-secondary text-secondary-foreground"
+                                          : "border-border bg-surface text-muted-foreground hover:text-secondary-foreground",
+                                      )}
+                                    >
+                                      <Heart
+                                        className="size-3"
+                                        solid={reply.reactions?.has_reacted}
+                                        animated={false}
+                                        aria-hidden="true"
+                                      />
+                                      <span className="tabular-nums">{reply.reactions?.total ?? 0}</span>
+                                    </button>
+                                    {rMine && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDelete(reply.id)}
+                                        className="text-muted-foreground hover:text-destructive-foreground cursor-pointer"
+                                      >
+                                        Xóa
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
         )}
       </div>
-    </>
+    </div>
   );
 
   if (isModal) {
     return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <>
         <div
-          className="absolute inset-0 bg-foreground/40 backdrop-blur-xs"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Hỏi đáp bài học trực tuyến"
+          className="fixed inset-0 z-50 flex items-center justify-end bg-foreground/30 backdrop-blur-xs"
           onClick={onClose}
-        />
-        <div className="relative w-full max-w-6xl h-[90vh] bg-surface rounded-2xl shadow-xl border border-border flex flex-col overflow-hidden">
-          <div className="flex-1 overflow-y-auto px-6 py-6">{content}</div>
+        >
+          <div
+            className="h-dvh w-full max-w-3xl overflow-hidden border-l border-primary-pastel bg-background shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {contentBody}
+          </div>
         </div>
-      </div>
+        <QAImageLightbox image={lightboxImage} onClose={() => setLightboxImage(null)} />
+      </>
     );
   }
 
   return (
-    <div
-      className={
-        containerClassName || "max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6"
-      }
-    >
-      {content}
+    <div className={cn(containerClassName)}>
+      <div className="overflow-hidden rounded-[26px] border border-primary-pastel/70 shadow-xs">
+        {contentBody}
+      </div>
+      <QAImageLightbox image={lightboxImage} onClose={() => setLightboxImage(null)} />
     </div>
   );
 }

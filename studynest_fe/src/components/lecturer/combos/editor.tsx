@@ -1,4 +1,5 @@
 "use client";
+import { coinToVnd, DEFAULT_COIN_VND_RATE, vndToCoin } from "@/lib/learning-hub/coin-logic";
 
 import { useEffect, useRef, useState, useMemo, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
@@ -430,14 +431,22 @@ export default function ComboEditor({ versionId }: { versionId?: string }) {
           <Card className="min-w-0 space-y-4 xl:sticky xl:top-24">
             <h2 className="text-lg font-semibold">Giá và mở bán</h2>
             <Input
-              label="Giá combo (VND)"
+              label="Giá combo (Coin)"
               required
               type="number"
               min={0}
-              step="0.01"
-              value={amount}
-              onChange={(event) => setAmount(event.target.value)}
-              placeholder="VD: 799000"
+              step="1"
+              value={amount === "" ? "" : String(vndToCoin(amount))}
+              onChange={(event) => {
+                const raw = event.target.value;
+                if (raw === "") {
+                  setAmount("");
+                  return;
+                }
+                const coin = Math.max(0, Math.round(Number(raw) || 0));
+                setAmount(String(coinToVnd(coin, DEFAULT_COIN_VND_RATE)));
+              }}
+              placeholder="VD: 80"
             />
             {/* Bộ gợi ý giảm giá nhanh */}
             {totalOriginalPrice > 0 && (

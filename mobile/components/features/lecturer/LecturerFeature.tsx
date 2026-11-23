@@ -64,8 +64,10 @@ const quickNav: Array<{ screen: LecturerScreen; key: string; icon: IconComponent
   { screen: 'profile', key: 'profile', icon: User, route: '/(lecturer)/lecturer/profile' },
 ]
 
+import { formatVndAsCoin } from '@/src/utils/coin'
+
 function formatCurrency(value: number) {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(value)
+  return formatVndAsCoin(value)
 }
 
 function Panel({ children, className = '' }: { children: React.ReactNode; className?: string }) {

@@ -13,6 +13,7 @@ import { useEffect, useState } from "react";
 import { Bell, CircleAlert } from "pulsoicon-react";
 import { NotificationCard } from "./notification-card";
 import { NotificationsToolbar } from "./notifications-toolbar";
+import { DeviceNotificationBanner } from "./device-notification-banner";
 
 export default function Notifications() {
   const [search, setSearch] = useState("");
@@ -26,6 +27,13 @@ export default function Notifications() {
   const queryClient = useQueryClient();
   const markAllAsRead = useRealtimeNotiStore((s) => s.markAllRead);
   const hydrate = useRealtimeNotiStore((s) => s.hydrate);
+  const latestLive = useRealtimeNotiStore((s) => s.latestLiveNotification);
+
+  useEffect(() => {
+    if (latestLive?.notification?.id) {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    }
+  }, [latestLive, queryClient]);
 
   const params: NotificationsQueryParams = {
     page,
@@ -98,32 +106,32 @@ export default function Notifications() {
   useEffect(() => setPage(1), [search, type, read, sortBy, orderDir]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="mx-auto max-w-7xl px-4 py-8">
-        <header className="mb-8">
-          <div className="flex items-start justify-between gap-4">
+    <div className="min-h-screen bg-background">
+      <div className="mx-auto max-w-6xl space-y-6 px-4 py-8 sm:px-6">
+        <header>
+          <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Thông báo</h1>
-              <p className="text-sm text-gray-600 mt-2">
-                Xem và quản lý tất cả thông báo của bạn
+              <h1 className="font-display text-3xl font-bold text-foreground sm:text-4xl">Thông báo</h1>
+              <p className="mt-1.5 text-sm text-muted-foreground">
+                Theo dõi realtime mọi hoạt động học tập, hỏi đáp và ưu đãi của bạn
               </p>
             </div>
             {data?.unread && data.unread > 0 && (
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-50 border border-green-200">
-                  <Bell className="h-5 w-5 text-green-600" />
-                  <span className="text-sm font-semibold text-green-700">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <div className="flex items-center gap-2 rounded-full border border-primary-pastel bg-primary-light px-4 py-2">
+                  <Bell className="size-4 text-primary" />
+                  <span className="text-xs font-bold text-primary">
                     {data.unread} chưa đọc
                   </span>
                 </div>
                 <button
                   onClick={() => markAll.mutate()}
                   disabled={markAll.isPending}
-                  className="px-4 py-2 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="flex cursor-pointer items-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-extrabold text-primary-foreground transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {markAll.isPending ? (
                     <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <div className="size-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
                       <span>Đang xử lý...</span>
                     </>
                   ) : (
@@ -135,7 +143,9 @@ export default function Notifications() {
           </div>
         </header>
 
-        <div className="mb-6">
+        <DeviceNotificationBanner />
+
+        <div>
           <NotificationsToolbar
             searchQuery={search}
             onSearchChange={setSearch}

@@ -65,31 +65,53 @@ export function CoinChip() {
   const { xp } = useGamificationStats();
   const inventory = useShopInventory();
   const coins = useCoinBalances();
-  // Tổng Coin thật + thưởng; chưa tải được số dư Coin thật thì tạm hiện Coin thưởng như trước.
-  const balance = coins.data?.total ?? inventory.data?.balance ?? xp?.peak_balance;
-  const label = balance !== undefined ? formatCoin(balance) : undefined;
-  const detail = coins.data ? coinBalanceLabel(coins.data) : label ? `Số dư ${label}` : undefined;
+  const goldBalance = coins.data?.paid;
+  const whiteBalance = coins.data?.bonus ?? inventory.data?.balance ?? xp?.peak_balance;
+  const goldLabel = goldBalance !== undefined ? new Intl.NumberFormat("vi-VN").format(goldBalance) : "0";
+  const whiteLabel = whiteBalance !== undefined ? new Intl.NumberFormat("vi-VN").format(whiteBalance) : "0";
+  const detail = coins.data ? coinBalanceLabel(coins.data) : `${goldLabel} Coin vàng, ${whiteLabel} Coin trắng`;
 
   return (
-    <Link href="/shop" aria-label={detail ? `Cửa hàng Mây. ${detail}` : "Cửa hàng Mây"}
-      title={detail} className={cn(chipBase, "min-h-11 min-w-11 justify-center border-accent-vanilla-border bg-accent-vanilla px-2 text-accent-vanilla-foreground hover:bg-accent-vanilla-border/60 md:px-3")}>
-      <Coins aria-hidden="true" className="size-4 shrink-0" />
-      <span aria-hidden="true" className="hidden max-w-24 truncate 2xl:inline">{label ?? "Coin"}</span>
-    </Link>
+    <div className="inline-flex items-center gap-1.5" aria-label={detail}>
+      <Link
+        href="/wallets"
+        aria-label={`Coin vàng: ${goldLabel} Coin vàng (dùng mua khóa học)`}
+        title={`Coin vàng (thật): ${goldLabel} Coin vàng`}
+        className={cn(
+          chipBase,
+          "min-h-11 min-w-11 justify-center border-[#E2B545] bg-gradient-to-b from-[#FFF7DB] to-[#F7DE8C] px-2 text-[#784705] shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] hover:from-[#FFF1C2] hover:to-[#F3D272] md:px-3",
+        )}
+      >
+        <Coins aria-hidden="true" solid className="size-4 shrink-0 text-[#C47E0A]" />
+        <span className="max-w-20 truncate">{goldLabel}</span>
+      </Link>
+      <Link
+        href="/shop"
+        aria-label={`Đồng trắng: ${whiteLabel} (10 đồng trắng = 1 đồng vàng khi chiết khấu)`}
+        title={`Đồng trắng (ảo): ${whiteLabel} · 10:1 khi chiết khấu`}
+        className={cn(
+          chipBase,
+          "min-h-11 min-w-11 justify-center border-[#CBD5E1] bg-gradient-to-b from-[#FFFFFF] to-[#EDF2F7] px-2 text-[#334155] shadow-[inset_0_1px_0_rgba(255,255,255,0.95)] hover:from-[#F8FAFC] hover:to-[#E2E8F0] md:px-3",
+        )}
+      >
+        <Coins aria-hidden="true" className="size-4 shrink-0 text-[#64748B]" />
+        <span className="max-w-20 truncate">{whiteLabel}</span>
+      </Link>
+    </div>
   );
 }
 
 export function WalletChip({ onNavigate }: { onNavigate?: () => void }) {
   const { data, error, isLoading } = useWalletBalance();
   if (error && !data) return null;
-  // Học viên giờ dùng Coin; chỉ hiện chip VND khi ví còn tiền (thu nhập giảng viên hoặc phần dư nạp tiền).
+  // Học viên dùng Coin vàng; chỉ hiện chip phụ khi ví VND cũ còn tiền lẻ.
   if (data && !Number(data.balance)) return null;
   return (
     <Link
       href="/wallets"
       onClick={onNavigate}
-      aria-label={data ? `Ví của tôi, số dư ${formatMoney(data.balance)}` : "Ví của tôi"}
-      title={data ? formatMoney(data.balance) : "Ví của tôi"}
+      aria-label={data ? `Coin vàng, số dư VND còn lại ${formatMoney(data.balance)}` : "Coin vàng"}
+      title={data ? `Số dư VND còn lại: ${formatMoney(data.balance)}` : "Coin vàng"}
       className={cn(chipBase, "border-primary-pastel bg-primary-light text-primary hover:bg-primary-pastel/60")}
     >
       <Wallet aria-hidden="true" className="size-4 shrink-0" />
@@ -105,9 +127,10 @@ type Cell = { key: string; href: string; label: string; icon: ReactNode; value: 
  */
 export function LiveTicket({ onNavigate }: { onNavigate: () => void }) {
   const { xp, streak, overview, source } = useGamificationStats();
-  const wallet = useWalletBalance();
+  const coins = useCoinBalances();
   const inventory = useShopInventory();
-  const coinBalance = inventory.data?.balance ?? xp?.peak_balance;
+  const goldBalance = coins.data?.paid;
+  const whiteBalance = coins.data?.bonus ?? inventory.data?.balance ?? xp?.peak_balance;
 
   const cells: Cell[] = [];
 
@@ -130,21 +153,43 @@ export function LiveTicket({ onNavigate }: { onNavigate: () => void }) {
     });
   }
 
-  if (coinBalance !== undefined) {
-    const label = formatCoin(coinBalance);
-    cells.push({ key: "coin", href: "/shop", label: "Số dư Coin", icon: <Coins className="size-4" />, value: label, srValue: label });
+  if (goldBalance !== undefined) {
+    const formatted = new Intl.NumberFormat("vi-VN").format(goldBalance);
+    cells.push({
+      key: "wallet",
+      href: "/wallets",
+      label: "Số dư",
+      icon: <Coins solid className="size-4 text-[#C47E0A]" />,
+      value: <span className="font-bold text-[#784705]">{formatted}</span>,
+      srValue: `${formatted} đồng vàng`,
+    });
+  } else if (coins.isLoading) {
+    cells.push({
+      key: "wallet",
+      href: "/wallets",
+      label: "Số dư",
+      icon: <Coins solid className="size-4 text-[#C47E0A]" />,
+      value: <Skeleton className="w-16" />,
+      srValue: "Đang tải",
+    });
+  }
+
+  if (whiteBalance !== undefined) {
+    const formatted = new Intl.NumberFormat("vi-VN").format(whiteBalance);
+    cells.push({
+      key: "coin",
+      href: "/shop",
+      label: "Thưởng",
+      icon: <Coins className="size-4 text-[#64748B]" />,
+      value: <span className="font-bold text-[#334155]">{formatted}</span>,
+      srValue: `${formatted} đồng trắng`,
+    });
   }
 
   if (!streak.data && !streak.error) {
     cells.push({ key: "streak", href: "/missions", label: "Chuỗi ngày", icon: <Flame className="size-4" />, value: <Skeleton className="w-8" />, srValue: "Đang tải" });
   } else if (streak.data) {
     cells.push({ key: "streak", href: "/missions", label: "Chuỗi ngày", icon: <Flame className="size-4" />, value: <>{streak.data.current_streak} ngày</>, srValue: `${streak.data.current_streak} ngày liên tiếp` });
-  }
-
-  if (wallet.isLoading && !wallet.data) {
-    cells.push({ key: "wallet", href: "/wallets", label: "Số dư ví", icon: <Wallet className="size-4" />, value: <Skeleton className="w-16" />, srValue: "Đang tải" });
-  } else if (wallet.data) {
-    cells.push({ key: "wallet", href: "/wallets", label: "Số dư ví", icon: <Wallet className="size-4" />, value: <>{formatMoney(wallet.data.balance)}</>, srValue: formatMoney(wallet.data.balance) });
   }
 
   if (overview.data && !overview.error) {

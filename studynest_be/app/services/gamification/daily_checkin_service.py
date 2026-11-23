@@ -65,17 +65,30 @@ def _reward_to_dto(
     )
 
 
-def _compute_current_day_in_cycle(
-    total_checkins_so_far: int,
+def _resolve_calendar_window(
+    today: datetime.date,
     cycle_days: int,
-) -> int:
-    """Ngày trong chu kỳ SAU khi check-in (1-based).
+    event_start_date: Optional[datetime.date] = None,
+) -> tuple[datetime.date, int]:
+    """Xác định (ngày bắt đầu chu kỳ, chỉ số ngày hôm nay 1-based) theo lịch ngày thực tế.
 
-    Ví dụ: total_checkins_so_far = 7 (đã có 7 lần), cycle=7 → hôm nay là ngày 1 của chu kỳ mới.
+    - Chu kỳ 7 ngày (tuần): cố định Thứ 2 = ngày 1, Thứ 3 = ngày 2, ..., Chủ nhật = ngày 7.
+      Nếu Thứ 2 không điểm danh mà Thứ 3 mới điểm danh thì ô Thứ 2 bị bỏ lỡ,
+      chỉ tính và nhận thưởng đúng ô Thứ 3 (day_number=2).
+    - Chu kỳ khác 7 ngày: neo theo ngày bắt đầu sự kiện (hoặc ngày đầu tháng).
     """
-    # Trước khi check-in, tổng là total_checkins_so_far
-    # Ngày trong chu kỳ = (total % cycle_days) + 1
-    return (total_checkins_so_far % cycle_days) + 1
+    if cycle_days <= 0:
+        return today, 1
+    if cycle_days == 7:
+        week_start = today - datetime.timedelta(days=today.weekday())
+        return week_start, today.weekday() + 1
+    anchor = event_start_date or today.replace(day=1)
+    days_since = (today - anchor).days
+    if days_since < 0:
+        return anchor, 1
+    cycle_index = days_since // cycle_days
+    cycle_start = anchor + datetime.timedelta(days=cycle_index * cycle_days)
+    return cycle_start, (days_since % cycle_days) + 1
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -128,21 +141,19 @@ class DailyCheckinService:
         profile = await self.repo.get_or_create_gamification_profile(user.id)
         balance = await self.repo.get_or_create_peak_balance(user.id)
 
-        # 5. Lịch sử check-in để build calendar
+        # 5. Tính cửa sổ lịch theo ngày thực tế (T2=1 .. CN=7 với chu kỳ 7 ngày)
+        today = datetime.datetime.now(VIETNAM).date()
+        cycle_start, current_day = _resolve_calendar_window(
+            today=today,
+            cycle_days=event.cycle_days,
+            event_start_date=event.start_date,
+        )
+
+        # 6. Lịch sử check-in để build calendar (chỉ khớp đúng ngày dương lịch trong chu kỳ)
         history = await self.repo.get_checkin_history(
-            user.id, event.id, limit=event.cycle_days
+            user.id, event.id, limit=max(event.cycle_days * 2, 14)
         )
         history_dates: set[datetime.date] = {c.checkin_date for c in history}
-
-        # 6. Tính ngày trong chu kỳ hiện tại
-        total_checkins = len(await self.repo.get_checkin_history(user.id, event.id, limit=9999))
-        day_in_cycle = (total_checkins % event.cycle_days) if not checked_today else (
-            (total_checkins - 1) % event.cycle_days
-        )
-        # day_in_cycle là 0-indexed position đã hoàn thành → ngày hiện tại (1-based)
-        current_day = day_in_cycle + 1 if not checked_today else (
-            ((total_checkins - 1) % event.cycle_days) + 1
-        )
 
         # 7. Tải toàn bộ reward config
         all_rewards = await self.repo.get_all_rewards_for_event(event.id)
@@ -156,14 +167,12 @@ class DailyCheckinService:
         next_reward_cfg = reward_map.get(next_day)
 
         # 9. Build calendar cho chu kỳ hiện tại
-        cycle_start = await self.repo.get_current_cycle_start(
-            user.id, event.id, event.cycle_days
-        )
         calendar = self._build_calendar(
             cycle_days=event.cycle_days,
             cycle_start=cycle_start,
             history_dates=history_dates,
             reward_map=reward_map,
+            today=today,
         )
 
         return CheckinStatusResponse(
@@ -211,29 +220,6 @@ class DailyCheckinService:
         # ── IDEMPOTENT CHECK (trước transaction) ──────────────────────
         today_checkin = await self.repo.get_today_checkin(user.id, event.id)
         if today_checkin is not None:
-            # Đã check-in → trả về kết quả idempotent, không raise exception
-            profile = await self.repo.get_or_create_gamification_profile(user.id)
-            balance = await self.repo.get_or_create_peak_balance(user.id)
-            total_checkins = len(
-                await self.repo.get_checkin_history(user.id, event.id, limit=9999)
-            )
-            current_day = ((total_checkins - 1) % event.cycle_days) + 1
-            history = await self.repo.get_checkin_history(
-                user.id, event.id, limit=event.cycle_days
-            )
-            history_dates = {c.checkin_date for c in history}
-            all_rewards = await self.repo.get_all_rewards_for_event(event.id)
-            reward_map = {r.day_number: r for r in all_rewards}
-            cycle_start = await self.repo.get_current_cycle_start(
-                user.id, event.id, event.cycle_days
-            )
-            calendar = self._build_calendar(
-                cycle_days=event.cycle_days,
-                cycle_start=cycle_start,
-                history_dates=history_dates,
-                reward_map=reward_map,
-            )
-            reward_cfg = reward_map.get(current_day)
             raise HTTPException(
                 status_code=409,
                 detail={
@@ -244,23 +230,23 @@ class DailyCheckinService:
 
         # ── TRANSACTION ───────────────────────────────────────────────
         try:
-            async with self.db.begin_nested():
-                # a. Tính ngày trong chu kỳ TRƯỚC khi tạo bản ghi mới
-                history_before = await self.repo.get_checkin_history(
-                    user.id, event.id, limit=9999
-                )
-                total_before = len(history_before)
-                current_day = (total_before % event.cycle_days) + 1
+            today = datetime.datetime.now(VIETNAM).date()
+            cycle_start, current_day = _resolve_calendar_window(
+                today=today,
+                cycle_days=event.cycle_days,
+                event_start_date=event.start_date,
+            )
 
-                # b. Tính consecutive_day
+            async with self.db.begin_nested():
+                # a. Tính consecutive_day (chuỗi liên tiếp)
                 consecutive_day = await self.repo.get_consecutive_day(
                     user.id, event.id
                 )
 
-                # c. Lấy reward config cho ngày này
+                # b. Lấy reward config cho đúng ngày hôm nay trong tuần/chu kỳ
                 reward_cfg = await self.repo.get_reward_by_day(event.id, current_day)
 
-                # d. Validate reward (phải có cấu hình cho ngày này)
+                # c. Validate reward (phải có cấu hình cho ngày này)
                 if reward_cfg is None:
                     raise HTTPException(
                         status_code=422,
@@ -270,11 +256,11 @@ class DailyCheckinService:
                         },
                     )
 
-                # e. Tạo bản ghi Check-in
+                # d. Tạo bản ghi Check-in cho đúng ngày hôm nay
                 checkin = await self.repo.create_checkin(
                     user_id=user.id,
                     event_id=event.id,
-                    checkin_date=datetime.datetime.now(VIETNAM).date(),
+                    checkin_date=today,
                     consecutive_day=consecutive_day,
                 )
 
@@ -369,21 +355,20 @@ class DailyCheckinService:
                 except Exception as evt_err:
                     logger.warning(f"[EventBus] Failed to publish peak.earned: {evt_err}")
 
-            # l. Build calendar response
+            # l. Build calendar response (đảm bảo ngày hôm nay vừa điểm danh được đánh dấu)
             history = await self.repo.get_checkin_history(
-                user.id, event.id, limit=event.cycle_days
+                user.id, event.id, limit=max(event.cycle_days * 2, 14)
             )
             history_dates = {c.checkin_date for c in history}
+            history_dates.add(today)
             all_rewards = await self.repo.get_all_rewards_for_event(event.id)
             reward_map = {r.day_number: r for r in all_rewards}
-            cycle_start = await self.repo.get_current_cycle_start(
-                user.id, event.id, event.cycle_days
-            )
             calendar = self._build_calendar(
                 cycle_days=event.cycle_days,
                 cycle_start=cycle_start,
                 history_dates=history_dates,
                 reward_map=reward_map,
+                today=today,
             )
 
             logger.info(
@@ -468,19 +453,26 @@ class DailyCheckinService:
         cycle_start: datetime.date,
         history_dates: set[datetime.date],
         reward_map: dict[int, DailyCheckinRewardsConfig],
+        today: Optional[datetime.date] = None,
     ) -> list[CalendarDayDTO]:
-        """Xây dựng danh sách ngày trong chu kỳ hiện tại kèm trạng thái check-in."""
+        """Xây dựng danh sách ngày trong chu kỳ hiện tại kèm trạng thái check-in/bỏ lỡ."""
+        ref_today = today or datetime.datetime.now(VIETNAM).date()
         calendar: list[CalendarDayDTO] = []
         for i in range(cycle_days):
             day_num = i + 1
             day_date = cycle_start + datetime.timedelta(days=i)
             is_checked = day_date in history_dates
+            is_today = day_date == ref_today
+            is_missed = (day_date < ref_today) and (not is_checked)
             reward_cfg = reward_map.get(day_num)
             calendar.append(
                 CalendarDayDTO(
                     day_number=day_num,
+                    calendar_date=day_date,
                     checkin_date=day_date if is_checked else None,
                     is_checked=is_checked,
+                    is_today=is_today,
+                    is_missed=is_missed,
                     reward=_reward_to_dto(reward_cfg),
                 )
             )

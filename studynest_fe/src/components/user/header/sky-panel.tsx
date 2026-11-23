@@ -19,38 +19,46 @@ import Link from "next/link";
 import { useEffect, useRef, type FormEvent, type RefObject } from "react";
 import { LiveTicket } from "./live-stats";
 
-const TONES: Record<NavTone, { bubble: string; tag: string; card: string }> = {
+const TONES: Record<NavTone, { bubble: string; tag: string; card: string; panel: string }> = {
   blue: {
     bubble: "border-primary-pastel bg-primary-light text-primary",
     tag: "border-primary-pastel bg-primary-light text-primary",
     card: "hover:border-primary-pastel hover:bg-primary-light/60",
+    panel: "border-primary-pastel/50 bg-primary-light/20",
   },
   pink: {
     bubble: "border-secondary-pastel bg-secondary text-secondary-foreground",
     tag: "border-secondary-pastel bg-secondary text-secondary-foreground",
     card: "hover:border-secondary-pastel hover:bg-secondary/50",
+    panel: "border-secondary-pastel/50 bg-secondary/20",
   },
   lavender: {
     bubble: "border-accent-border bg-accent text-accent-foreground",
     tag: "border-accent-border bg-accent text-accent-foreground",
     card: "hover:border-accent-border hover:bg-accent/50",
+    panel: "border-accent-border/50 bg-accent/20",
   },
   vanilla: {
     bubble: "border-accent-vanilla-border bg-accent-vanilla text-accent-vanilla-foreground",
     tag: "border-accent-vanilla-border bg-accent-vanilla text-accent-vanilla-foreground",
     card: "hover:border-accent-vanilla-border hover:bg-accent-vanilla/50",
+    panel: "border-accent-vanilla-border/60 bg-accent-vanilla/20",
   },
 };
 
-/** Từng cột của lưới lệch: bảy–năm / năm–bảy. */
-const SPANS = ["md:col-span-7", "md:col-span-5 md:mt-6", "md:col-span-5", "md:col-span-7 md:mt-4"];
-
 const chipLink =
-  "inline-flex min-h-11 items-center rounded-full border border-border bg-surface px-3 text-xs font-medium text-foreground transition-colors hover:border-primary-pastel hover:bg-primary-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-[current=page]:border-primary aria-[current=page]:bg-primary-light aria-[current=page]:font-semibold md:min-h-9 motion-reduce:transition-none";
+  "inline-flex min-h-9 items-center rounded-full border border-border bg-surface px-3 text-xs font-medium text-foreground transition-colors hover:border-primary-pastel hover:bg-primary-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-[current=page]:border-primary aria-[current=page]:bg-primary-light aria-[current=page]:font-semibold motion-reduce:transition-none";
 
 function Tile({
-  item, tone, pathname, unread, onNavigate,
-}: { item: NavItem; tone: NavTone; pathname: string; unread: number; onNavigate: () => void }) {
+  item, tone, pathname, unread, onNavigate, singleColumnOnXl,
+}: {
+  item: NavItem;
+  tone: NavTone;
+  pathname: string;
+  unread: number;
+  onNavigate: () => void;
+  singleColumnOnXl: boolean;
+}) {
   const t = TONES[tone];
   const current = isCurrentPage(pathname, item.href);
   const inSection = !current && isInSection(pathname, item.href);
@@ -60,9 +68,14 @@ function Tile({
   return (
     <li
       className={cn(
-        "group relative flex flex-col justify-between gap-2 border bg-surface p-3 transition-colors motion-reduce:transition-none",
-        item.size === "wide" ? "col-span-2 rounded-[1.5rem_0.75rem_1.5rem_0.75rem] bg-linear-to-br from-surface to-background" : "rounded-2xl",
-        current ? "border-primary bg-primary-light/70" : "border-border",
+        "group relative flex flex-col justify-between gap-2 border bg-surface p-2.5 sm:p-3 transition-colors motion-reduce:transition-none",
+        item.size === "wide"
+          ? cn(
+              "col-span-2 rounded-[1.25rem_0.75rem_1.25rem_0.75rem] bg-linear-to-br from-surface to-background",
+              singleColumnOnXl && "xl:col-span-1",
+            )
+          : "rounded-2xl",
+        current ? "border-primary bg-primary-light/70" : "border-border/80",
         !current && t.card,
         inSection && "border-primary-pastel",
       )}
@@ -71,17 +84,17 @@ function Tile({
         href={item.href}
         onClick={onNavigate}
         aria-current={current ? "page" : undefined}
-        className="flex min-h-11 items-start gap-3 rounded-[inherit] focus-visible:outline-none after:absolute after:inset-0 after:rounded-[inherit] focus-visible:after:ring-2 focus-visible:after:ring-ring"
+        className="flex min-h-10 items-start gap-2.5 sm:gap-3 rounded-[inherit] focus-visible:outline-none after:absolute after:inset-0 after:rounded-[inherit] focus-visible:after:ring-2 focus-visible:after:ring-ring"
       >
         <span
           aria-hidden="true"
           className={cn(
-            "mt-0.5 grid size-11 shrink-0 place-items-center border transition-[border-radius,transform] duration-300 ease-out",
+            "mt-0.5 grid size-10 shrink-0 place-items-center border transition-[border-radius,transform] duration-300 ease-out",
             "rounded-[58%_42%_52%_48%/48%_56%_44%_52%] group-hover:-rotate-6 group-hover:rounded-full motion-reduce:transition-none motion-reduce:group-hover:rotate-0",
             t.bubble,
           )}
         >
-          <Icon className="size-5" />
+          <Icon className="size-4.5" />
         </span>
         <span className="min-w-0 flex-1">
           <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm font-semibold text-foreground">
@@ -93,7 +106,7 @@ function Tile({
         </span>
       </Link>
       {item.children && (
-        <ul className="relative z-10 flex flex-wrap gap-1.5 pl-14" aria-label={`Lối nhanh trong ${item.label}`}>
+        <ul className="relative z-10 flex flex-wrap gap-1.5 pl-12.5 sm:pl-13" aria-label={`Lối nhanh trong ${item.label}`}>
           {item.children.map((child) => (
             <li key={child.href}>
               <Link href={child.href} onClick={onNavigate} aria-current={isCurrentPage(pathname, child.href) ? "page" : undefined} className={chipLink}>
@@ -108,33 +121,42 @@ function Tile({
 }
 
 function Group({
-  group, className, pathname, unread, onNavigate, onLogout, signedIn,
+  group, pathname, unread, onNavigate, onLogout, signedIn, singleColumnOnXl,
 }: {
-  group: NavGroup; className: string; pathname: string; unread: number;
+  group: NavGroup; pathname: string; unread: number;
   onNavigate: () => void; onLogout: () => void; signedIn: boolean;
+  singleColumnOnXl: boolean;
 }) {
   const t = TONES[group.tone];
   const GroupIcon = group.icon;
   const headingId = `sky-group-${group.id}`;
   return (
-    <section aria-labelledby={headingId} className={className}>
-      <div className="mb-2.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+    <section aria-labelledby={headingId} className={cn("flex flex-col rounded-3xl border p-3.5 sm:p-4", t.panel)}>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <h3 id={headingId} className={cn("inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-semibold", t.tag)}>
           <GroupIcon aria-hidden="true" className="size-4" />
           {group.label}
         </h3>
         <p className="text-xs text-[color:var(--sn-neutral-600)]">{group.tagline}</p>
       </div>
-      <ul className="grid grid-cols-2 gap-2.5">
+      <ul className={cn("grid grid-cols-2 gap-2", singleColumnOnXl && "xl:grid-cols-1")}>
         {group.items.map((item) => (
-          <Tile key={item.id} item={item} tone={group.tone} pathname={pathname} unread={unread} onNavigate={onNavigate} />
+          <Tile
+            key={item.id}
+            item={item}
+            tone={group.tone}
+            pathname={pathname}
+            unread={unread}
+            onNavigate={onNavigate}
+            singleColumnOnXl={singleColumnOnXl}
+          />
         ))}
         {group.id === "account" && signedIn && (
-          <li className="col-span-2">
+          <li className={cn("col-span-2", singleColumnOnXl && "xl:col-span-1")}>
             <button
               type="button"
               onClick={onLogout}
-              className="flex min-h-11 w-full items-center gap-2 rounded-2xl border border-destructive-border bg-destructive-bg px-4 text-sm font-semibold text-destructive-foreground transition-colors hover:bg-destructive-border/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none"
+              className="flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl border border-destructive-border bg-destructive-bg px-4 text-sm font-semibold text-destructive-foreground transition-colors hover:bg-destructive-border/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none"
             >
               <LogOut aria-hidden="true" className="size-4" />
               Đăng xuất
@@ -176,6 +198,14 @@ export function SkyPanel({
     else panelRef.current?.focus();
   }, [focusSearch, panelRef]);
 
+  const singleColumnOnXl = groups.length >= 3;
+  const gridColsClass =
+    groups.length >= 4
+      ? "md:grid-cols-2 xl:grid-cols-4"
+      : groups.length === 3
+        ? "md:grid-cols-2 xl:grid-cols-3"
+        : "md:grid-cols-2";
+
   return (
     <div
       ref={panelRef}
@@ -183,7 +213,7 @@ export function SkyPanel({
       role="dialog"
       aria-label="Bản đồ bầu trời Mây Mây"
       tabIndex={-1}
-      className="relative min-h-0 overflow-y-auto overscroll-contain px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-1 outline-none max-md:flex-1 md:max-h-[calc(100dvh-5.75rem)] md:px-5 md:pb-5"
+      className="relative flex-1 min-h-0 overflow-y-auto overscroll-contain px-3 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-4 outline-none sm:px-5 lg:px-8 lg:pb-8"
     >
       <div className="flex flex-col gap-3 pb-4 md:flex-row md:items-center md:gap-5">
         <div className="flex items-center gap-3 md:w-72 md:shrink-0">
@@ -224,17 +254,17 @@ export function SkyPanel({
         </div>
       )}
 
-      <div className="grid gap-5 md:grid-cols-12 md:gap-x-6 md:gap-y-5">
-        {groups.map((group, index) => (
+      <div className={cn("grid items-start gap-4 lg:gap-5", gridColsClass)}>
+        {groups.map((group) => (
           <Group
             key={group.id}
             group={group}
-            className={SPANS[index] ?? "md:col-span-6"}
             pathname={pathname}
             unread={unread}
             onNavigate={onNavigate}
             onLogout={onLogout}
             signedIn={viewer.signedIn}
+            singleColumnOnXl={singleColumnOnXl}
           />
         ))}
       </div>

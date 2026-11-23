@@ -17,45 +17,150 @@ import type { getJourneyState } from "./journey-state";
 import { homeWidth, number, vietnamTimeZone } from "./section";
 import type { useDailyLearningState } from "./use-daily-learning-state";
 
-const hourFormat = new Intl.DateTimeFormat("vi-VN", { hour: "numeric", hourCycle: "h23", timeZone: vietnamTimeZone });
+const hourFormat = new Intl.DateTimeFormat("en-US", { hour: "numeric", hourCycle: "h23", timeZone: vietnamTimeZone });
 
-type Phase = "dawn" | "day" | "dusk" | "night";
+export type Phase = "morning" | "noon" | "afternoon" | "evening" | "night";
 type DailyLearningState = ReturnType<typeof useDailyLearningState>;
 
-const phaseOf = (hour: number): Phase => hour >= 5 && hour < 8 ? "dawn" : hour >= 8 && hour < 16 ? "day" : hour >= 16 && hour < 19 ? "dusk" : "night";
+/** Lấy giờ hiện tại theo múi giờ Việt Nam (0–23), tránh lỗi locale vi-VN trả về chuỗi "22 giờ". */
+export function getVietnamHour(timestamp: number): number {
+  const hourPart = hourFormat.formatToParts(timestamp).find((part) => part.type === "hour")?.value;
+  const parsed = hourPart !== undefined ? Number.parseInt(hourPart, 10) : Number.NaN;
+  if (Number.isFinite(parsed)) return ((parsed % 24) + 24) % 24;
+  return new Date(timestamp).getHours();
+}
 
-// Bầu trời đổi tông theo giờ nhưng chỉ dùng màu pastel của Cloudy Blue. Ban đêm dùng xanh đậm để chữ trắng đạt AA.
-const sky: Record<Phase, { background: string; dark: boolean }> = {
-  dawn: { background: "linear-gradient(180deg, var(--sn-lavender-100) 0%, var(--sn-pink-200) 58%, var(--sn-vanilla-100) 100%)", dark: false },
-  day: { background: "linear-gradient(180deg, var(--sn-blue-200) 0%, var(--sn-blue-100) 60%, var(--sn-blue-50) 100%)", dark: false },
-  dusk: { background: "linear-gradient(180deg, var(--sn-lavender-200) 0%, var(--sn-pink-200) 62%, var(--sn-vanilla-100) 100%)", dark: false },
-  night: { background: "linear-gradient(180deg, var(--sn-blue-900) 0%, var(--sn-blue-800) 58%, var(--sn-lavender-700) 100%)", dark: true },
+export function phaseOf(hour: number): Phase {
+  const normalized = Number.isFinite(hour) ? ((Math.floor(hour) % 24) + 24) % 24 : 9;
+  if (normalized >= 5 && normalized < 11) return "morning";
+  if (normalized >= 11 && normalized < 14) return "noon";
+  if (normalized >= 14 && normalized < 18) return "afternoon";
+  if (normalized >= 18 && normalized < 22) return "evening";
+  return "night";
+}
+
+// Bầu trời đổi tông theo 5 khung giờ (sáng / trưa / chiều / tối / đêm) bằng màu pastel Cloudy Blue.
+// Tối và đêm dùng nền xanh-tím đậm để chữ trắng đạt WCAG AA/AAA.
+export const sky: Record<Phase, {
+  background: string;
+  dark: boolean;
+  greeting: string;
+  mayLine: string;
+  cloudOpacity: string;
+}> = {
+  morning: {
+    background: "linear-gradient(180deg, var(--sn-blue-100) 0%, var(--sn-pink-100) 52%, var(--sn-vanilla-100) 100%)",
+    dark: false,
+    greeting: "Chào buổi sáng",
+    mayLine: "Sáng trong lành, học một bài nhé.",
+    cloudOpacity: "opacity-95",
+  },
+  noon: {
+    background: "linear-gradient(180deg, var(--sn-blue-300) 0%, var(--sn-blue-200) 48%, var(--sn-blue-50) 100%)",
+    dark: false,
+    greeting: "Chào buổi trưa",
+    mayLine: "Trưa rồi, học nhẹ rồi nghỉ nhé.",
+    cloudOpacity: "opacity-100",
+  },
+  afternoon: {
+    background: "linear-gradient(180deg, var(--sn-lavender-200) 0%, var(--sn-pink-200) 56%, var(--sn-vanilla-100) 100%)",
+    dark: false,
+    greeting: "Chào buổi chiều",
+    mayLine: "Chiều dịu rồi, tiến thêm chút nhé.",
+    cloudOpacity: "opacity-90",
+  },
+  evening: {
+    background: "linear-gradient(180deg, var(--sn-blue-800) 0%, var(--sn-lavender-700) 58%, var(--sn-pink-800) 100%)",
+    dark: true,
+    greeting: "Chào buổi tối",
+    mayLine: "Tối nay mình học cùng bạn nhé.",
+    cloudOpacity: "opacity-25",
+  },
+  night: {
+    background: "linear-gradient(180deg, var(--sn-blue-900) 0%, var(--sn-blue-800) 55%, var(--sn-lavender-800) 100%)",
+    dark: true,
+    greeting: "Đêm khuya rồi",
+    mayLine: "Xong bài này nhớ ngủ sớm nhé.",
+    cloudOpacity: "opacity-15",
+  },
 };
 
-const stars: [number, number, number][] = [[6, 14, 3], [14, 38, 2], [23, 10, 2], [31, 30, 3], [42, 8, 2], [55, 24, 2], [63, 12, 3], [72, 34, 2], [80, 8, 2], [90, 26, 3], [95, 12, 2], [48, 40, 2]];
+const eveningStars: [number, number, number][] = [
+  [12, 16, 2], [28, 12, 3], [44, 20, 2], [62, 10, 3], [74, 24, 2], [86, 14, 2], [93, 28, 3],
+];
+const nightStars: [number, number, number][] = [
+  [6, 14, 3], [14, 38, 2], [21, 10, 2], [31, 28, 3], [38, 14, 2], [48, 38, 2],
+  [55, 22, 2], [63, 12, 3], [71, 34, 2], [79, 8, 3], [86, 26, 2], [94, 14, 3],
+  [18, 24, 2], [42, 8, 3], [67, 20, 2], [90, 36, 2],
+];
+const shootingStars = [
+  { left: "78%", top: "14%", duration: "11s", delay: "1.5s" },
+  { left: "36%", top: "10%", duration: "15s", delay: "6.5s" },
+];
 const clouds = [
   { className: "top-[16%] -left-[6%] w-56 text-surface/80 lg:w-80", drift: "110s" },
   { className: "top-[48%] right-[2%] w-40 text-surface/70 lg:w-64", drift: "80s" },
   { className: "top-[6%] left-[40%] w-32 text-surface/60 lg:w-44", drift: "130s" },
 ];
 
+function CrescentMoon({ className }: { className?: string }) {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 64 64" className={className}>
+      <path
+        d="M42.5 8.5A24 24 0 1 0 55.5 44.5A20 20 0 0 1 42.5 8.5Z"
+        fill="var(--sn-vanilla-100)"
+      />
+    </svg>
+  );
+}
+
 function SkyScene({ phase }: { phase: Phase }) {
-  const night = phase === "night";
-  const body = {
-    dawn: "left-[6%] top-[42%] size-24 text-accent-vanilla bg-accent-vanilla",
-    day: "left-[46%] top-[6%] size-20 text-accent-vanilla bg-accent-vanilla",
-    dusk: "right-[14%] top-[38%] size-36 text-secondary-pastel bg-secondary-pastel",
-    night: "left-[46%] top-[6%] size-16 text-surface bg-surface shadow-[inset_-14px_-6px_0_0_var(--sn-blue-100)]",
-  }[phase];
+  const isEvening = phase === "evening";
+  const isNight = phase === "night";
+  const starsToRender = isNight ? nightStars : isEvening ? eveningStars : [];
+  const sunBody: Partial<Record<Phase, { className: string; glow: string }>> = {
+    morning: {
+      className: "left-[7%] top-[34%] size-24 text-accent-vanilla bg-accent-vanilla",
+      glow: "0 0 0 1.3rem color-mix(in srgb, currentColor 32%, transparent), 0 0 6.5rem 1.8rem color-mix(in srgb, currentColor 45%, transparent)",
+    },
+    noon: {
+      className: "left-[46%] top-[5%] size-20 text-accent-vanilla bg-accent-vanilla",
+      glow: "0 0 0 1.6rem color-mix(in srgb, currentColor 38%, transparent), 0 0 8rem 2.5rem color-mix(in srgb, currentColor 52%, transparent)",
+    },
+    afternoon: {
+      className: "right-[12%] top-[34%] size-32 text-secondary-pastel bg-secondary-pastel",
+      glow: "0 0 0 1.5rem color-mix(in srgb, currentColor 30%, transparent), 0 0 7.5rem 2.2rem color-mix(in srgb, currentColor 45%, transparent)",
+    },
+  };
+  const sun = sunBody[phase];
+
   return (
     <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-      <span className={cn("absolute rounded-full", body)} style={night ? undefined : { boxShadow: "0 0 0 1.4rem color-mix(in srgb, currentColor 30%, transparent), 0 0 7rem 2rem color-mix(in srgb, currentColor 45%, transparent)" }} />
-      {night && stars.map(([left, top, size], index) => (
-        <span key={index} className={cn("absolute rounded-full bg-surface", index % 3 === 0 && "sky-twinkle")}
-          style={{ left: `${left}%`, top: `${top}%`, width: size, height: size, animationDelay: `${index * 0.4}s` }} />
+      {sun && (
+        <span className={cn("absolute rounded-full", sun.className)} style={{ boxShadow: sun.glow }} />
+      )}
+      {isEvening && (
+        <CrescentMoon className="absolute top-[10%] right-[15%] size-14 drop-shadow-[0_0_18px_color-mix(in_srgb,var(--sn-vanilla-100)_45%,transparent)]" />
+      )}
+      {isNight && (
+        <span
+          className="absolute top-[7%] left-[46%] size-16 rounded-full bg-accent-vanilla text-accent-vanilla"
+          style={{ boxShadow: "0 0 0 0.9rem color-mix(in srgb, currentColor 16%, transparent), 0 0 4.5rem 1rem color-mix(in srgb, currentColor 28%, transparent)" }}
+        />
+      )}
+      {starsToRender.map(([left, top, size], index) => (
+        <span key={index} className={cn("absolute rounded-full bg-surface", index % 2 === 0 && "sky-twinkle")}
+          style={{ left: `${left}%`, top: `${top}%`, width: size, height: size, animationDelay: `${index * 0.35}s` }} />
+      ))}
+      {isNight && shootingStars.map((star) => (
+        <span
+          key={star.left}
+          className="sky-shoot absolute h-0.5 w-20 rounded-full bg-gradient-to-l from-transparent via-surface/70 to-surface opacity-0 motion-reduce:hidden"
+          style={{ left: star.left, top: star.top, animationDelay: star.delay, "--shoot-duration": star.duration } as CSSProperties}
+        />
       ))}
       {clouds.map(({ className, drift }) => (
-        <span key={className} className={cn("sky-drift absolute block", night ? "opacity-20" : "opacity-100", className)} style={{ "--drift": drift } as CSSProperties}>
+        <span key={className} className={cn("sky-drift absolute block", sky[phase].cloudOpacity, className)} style={{ "--drift": drift } as CSSProperties}>
           <CloudShape className="w-full" />
         </span>
       ))}
@@ -147,10 +252,9 @@ export function SkyHero({ daily, journey, action, actionDetail, current, chapter
   const avatar = useUserStore((state) => state.user?.avatar);
   const equipment = useLearnerEquipment();
   const { streak } = daily;
-  const hour = Number(hourFormat.format(daily.now));
+  const hour = getVietnamHour(daily.now);
   const phase = phaseOf(hour);
-  const { dark } = sky[phase];
-  const greeting = hour < 12 ? "Chào buổi sáng" : hour < 18 ? "Chào buổi chiều" : "Chào buổi tối";
+  const { dark, greeting, mayLine: phaseMayLine } = sky[phase];
   const { active, isNew, complete, hasError, loading, remaining, returning } = journey;
 
   let status: string;
@@ -168,15 +272,15 @@ export function SkyHero({ daily, journey, action, actionDetail, current, chapter
             : active === "missions" ? "Còn vài nhiệm vụ hôm nay"
               : active === "reward" ? "Có phần thưởng đang chờ"
                 : "Hành trình hôm nay";
-  const mayLine = returning ? "Bắt đầu nhẹ nhàng, 5 phút thôi." : isNew ? "Mình sẽ dẫn bạn chọn khóa nhé." : complete ? "Nghỉ ngơi một chút nhé." : "Mình đi cùng bạn.";
+  const mayLine = returning ? "Bắt đầu nhẹ nhàng, 5 phút thôi." : isNew ? "Mình sẽ dẫn bạn chọn khóa nhé." : complete ? "Nghỉ ngơi một chút nhé." : phaseMayLine;
   const days = streak.data?.current_streak ?? 0;
 
   return (
     <section aria-labelledby="learning-home-title" className="relative">
-      <div className={cn("relative isolate overflow-hidden pt-8 pb-28 sm:pt-12 lg:pb-36", dark ? "text-primary-foreground" : "text-foreground")} style={{ background: sky[phase].background }}>
+      <div data-sky-phase={phase} className={cn("relative isolate overflow-hidden pt-8 pb-28 sm:pt-12 lg:pb-36", dark ? "text-primary-foreground" : "text-foreground")} style={{ background: sky[phase].background }}>
         <SkyScene phase={phase} />
         {days > 0 && (
-          <span aria-hidden="true" className="pointer-events-none absolute -top-2 right-0 -z-10 text-[clamp(7rem,16vw,14rem)] leading-none font-extrabold tracking-tighter text-transparent select-none [-webkit-text-stroke:2px_var(--color-surface)] opacity-60 lg:right-[3%]">
+          <span aria-hidden="true" className={cn("pointer-events-none absolute -top-2 right-0 -z-10 text-[clamp(7rem,16vw,14rem)] leading-none font-extrabold tracking-tighter text-transparent select-none [-webkit-text-stroke:2px_var(--color-surface)] lg:right-[3%]", dark ? "opacity-35" : "opacity-60")}>
             {days}
           </span>
         )}
@@ -190,7 +294,7 @@ export function SkyHero({ daily, journey, action, actionDetail, current, chapter
               </div>
             </div>
             <h1 id="learning-home-title" className="mt-3 font-display text-[clamp(2.4rem,6.4vw,5rem)] leading-[1.04] font-bold tracking-tight text-balance">{headline}</h1>
-            <p id="journey-status" tabIndex={-1} role="status" className="mt-3 w-fit rounded-sm text-base leading-relaxed focus-visible:outline-2 focus-visible:outline-ring">{status}</p>
+            <p id="journey-status" tabIndex={-1} role="status" className={cn("mt-3 w-fit rounded-sm text-base leading-relaxed focus-visible:outline-2", dark ? "focus-visible:outline-surface" : "focus-visible:outline-ring")}>{status}</p>
             {action && (
               <div data-journey-action className="mt-6 min-w-0">
                 <div className="[&>a]:w-full [&>button]:w-full sm:[&>a]:w-auto sm:[&>button]:w-auto">{action}</div>
@@ -230,7 +334,7 @@ export function SkyHero({ daily, journey, action, actionDetail, current, chapter
 export function LearnerHomeSkeleton() {
   return (
     <section role="status" aria-label="Đang tải trang chủ" className="[&_.animate-pulse]:motion-reduce:animate-none">
-      <div className="overflow-hidden pt-10 pb-24" style={{ background: sky.day.background }}>
+      <div className="overflow-hidden pt-10 pb-24" style={{ background: sky.noon.background }}>
         <div className={cn(homeWidth, "grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,34rem)]")}>
           <div className="space-y-4">
             <Skeleton className="h-5 w-44 bg-surface/70" />

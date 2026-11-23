@@ -116,17 +116,11 @@ function SkyIsland({ pathname }: { pathname: string }) {
     };
     document.addEventListener("keydown", onKeyDown);
 
-    // Trên điện thoại bảng là tấm toàn màn hình: khóa cuộn nền.
-    const phone = window.matchMedia("(max-width: 47.99rem)");
+    // Khi bản đồ mở toàn màn hình: khóa cuộn nền trên mọi kích thước màn hình.
     const previous = document.body.style.overflow;
-    const sync = () => {
-      document.body.style.overflow = phone.matches ? "hidden" : previous;
-    };
-    sync();
-    phone.addEventListener("change", sync);
+    document.body.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", onKeyDown);
-      phone.removeEventListener("change", sync);
       document.body.style.overflow = previous;
     };
   }, [open, close]);
@@ -169,18 +163,27 @@ function SkyIsland({ pathname }: { pathname: string }) {
       <div
         ref={islandRef}
         className={cn(
-          "pointer-events-auto relative isolate mx-auto flex w-full flex-col rounded-[28px] border border-primary-pastel/70 bg-surface/85 transition-[max-width,box-shadow] duration-300 ease-out motion-reduce:transition-none",
-          open ? "max-w-6xl shadow-xl" : cn("max-w-[68rem] 2xl:max-w-[80rem]", scrolled ? "shadow-lg" : "shadow-md"),
-          open && "max-md:fixed max-md:inset-x-2 max-md:top-2 max-md:bottom-2 max-md:z-50 max-md:w-auto max-md:max-w-none max-md:bg-surface",
+          "pointer-events-auto isolate flex flex-col transition-[box-shadow,background-color] duration-300 ease-out motion-reduce:transition-none",
+          open
+            ? "fixed inset-0 z-50 h-dvh w-screen max-w-none rounded-none border-0 bg-surface/95 shadow-none"
+            : cn(
+                "relative mx-auto w-full max-w-[68rem] rounded-[28px] border border-primary-pastel/70 bg-surface/85 2xl:max-w-[80rem]",
+                scrolled ? "shadow-lg" : "shadow-md",
+              ),
         )}
       >
         <span aria-hidden="true" className="absolute inset-0 -z-10 rounded-[inherit] backdrop-blur-md" />
         <span aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 overflow-clip rounded-[inherit]">
-          <span className="absolute -top-8 left-10 size-24 rounded-full bg-primary-light/80 blur-2xl" />
-          <span className="absolute -right-6 -bottom-10 size-28 rounded-full bg-secondary/70 blur-2xl" />
+          <span className="absolute -top-8 left-10 size-40 rounded-full bg-primary-light/80 blur-3xl" />
+          <span className="absolute -right-6 -bottom-10 size-48 rounded-full bg-secondary/70 blur-3xl" />
         </span>
 
-        <div className="flex h-14 shrink-0 items-center gap-1 px-2 md:gap-1.5 md:px-3">
+        <div
+          className={cn(
+            "flex shrink-0 items-center gap-1 md:gap-1.5",
+            open ? "h-16 border-b border-border/70 px-3 sm:px-5 lg:px-8" : "h-14 px-2 md:px-3",
+          )}
+        >
           <Link
             href={HOME_HREF}
             aria-label="Mây Mây, về trang chủ"
@@ -300,10 +303,10 @@ function SkyIsland({ pathname }: { pathname: string }) {
           {open && !authPending && (
             <motion.div
               key="sky-panel"
-              className="flex min-h-0 flex-col max-md:flex-1"
-              initial={reduceMotion ? false : { clipPath: "inset(0px 0px 100% 0px round 28px)", opacity: 0.4 }}
-              animate={{ clipPath: "inset(0px 0px 0% 0px round 28px)", opacity: 1 }}
-              transition={{ duration: reduceMotion ? 0 : 0.34, ease: [0.22, 1, 0.36, 1] }}
+              className="flex min-h-0 flex-1 flex-col"
+              initial={reduceMotion ? false : { clipPath: "inset(0px 0px 100% 0px)", opacity: 0.5 }}
+              animate={{ clipPath: "inset(0px 0px 0% 0px)", opacity: 1 }}
+              transition={{ duration: reduceMotion ? 0 : 0.28, ease: [0.22, 1, 0.36, 1] }}
             >
               <SkyPanel
                 id={panelId}

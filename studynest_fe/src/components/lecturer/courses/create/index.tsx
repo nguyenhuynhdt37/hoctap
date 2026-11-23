@@ -1,4 +1,5 @@
 "use client";
+import { coinToVnd, DEFAULT_COIN_VND_RATE, formatCoursePriceCoin, vndToCoin } from "@/lib/learning-hub/coin-logic";
 
 import { prepareImageUpload } from "@/lib/prepare-image-upload";
 import { formatApiError } from "@/lib/utils";
@@ -1234,18 +1235,22 @@ const CreateCourse = () => {
                 <div>
                   <label className="flex items-center gap-1.5 text-sm font-semibold text-foreground mb-2">
                     <CircleDollarSign className="h-4 w-4 text-primary" />
-                    <span>Giá khóa học (VND)</span>
+                    <span>Giá khóa học (Coin)</span>
                   </label>
                   <div className="flex gap-3">
                     <input
                       type="number"
-                      value={formData.base_price}
+                      value={vndToCoin(formData.base_price)}
                       onChange={(e) => {
-                        const value = parseInt(e.target.value) || 0;
-                        setFormData((prev) => ({ ...prev, base_price: value }));
+                        const coin = Math.max(0, parseInt(e.target.value, 10) || 0);
+                        setFormData((prev) => ({
+                          ...prev,
+                          base_price: coinToVnd(coin, DEFAULT_COIN_VND_RATE),
+                          currency: "VND",
+                        }));
                       }}
                       min="0"
-                      step="1000"
+                      step="1"
                       placeholder="0"
                       className={`flex-1 px-4 py-3 bg-surface border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 transition-all ${
                         errors.base_price
@@ -1253,19 +1258,9 @@ const CreateCourse = () => {
                           : "border-border focus:ring-primary/25 focus:border-primary"
                       }`}
                     />
-                    <select
-                      value={formData.currency}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          currency: e.target.value,
-                        }))
-                      }
-                      className="px-4 py-3 bg-surface border border-border rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition-all"
-                    >
-                      <option value="VND">VND</option>
-                      <option value="USD">USD</option>
-                    </select>
+                    <span className="inline-flex items-center px-4 py-3 bg-surface-muted border border-border rounded-xl text-sm font-semibold text-foreground">
+                      Coin
+                    </span>
                   </div>
                   {errors.base_price && (
                     <p className="text-destructive-foreground text-sm mt-1">
@@ -1362,13 +1357,7 @@ const CreateCourse = () => {
                     <div className="flex justify-between gap-4">
                       <span className="text-muted-foreground">Giá:</span>
                       <span className="font-medium text-foreground text-right">
-                        {formData.base_price === 0
-                          ? "Miễn phí"
-                          : new Intl.NumberFormat("vi-VN", {
-                              style: "currency",
-                              currency: formData.currency,
-                              maximumFractionDigits: 0,
-                            }).format(formData.base_price)}
+                        {formatCoursePriceCoin(formData.base_price)}
                       </span>
                     </div>
                     <div className="flex justify-between gap-4">

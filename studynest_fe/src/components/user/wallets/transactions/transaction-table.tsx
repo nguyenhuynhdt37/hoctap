@@ -14,12 +14,9 @@ interface Props {
   onRetry?: (orderId?: string | null) => void;
 }
 
-const formatCurrency = (val?: number) =>
-  new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-    maximumFractionDigits: 0,
-  }).format(val ?? 0);
+import { formatVndAsCoin } from "@/lib/learning-hub/coin-logic";
+
+const formatCurrency = (val?: number) => formatVndAsCoin(val ?? 0);
 
 const formatDateTime = (val?: string | null) => {
   if (!val) return "—";

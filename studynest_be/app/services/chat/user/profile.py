@@ -1,7 +1,7 @@
 from fastapi import Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.llm import LLMService
+from app.core.llm import LLMService, get_llm_service
 from app.db.models.database import User
 from app.db.sesson import get_session
 from app.schemas.chat.user.profile import CreateBioSchema
@@ -11,7 +11,7 @@ class ProfileService:
     def __init__(
         self,
         db: AsyncSession = Depends(get_session),
-        llm_service: LLMService = Depends(LLMService),
+        llm_service: LLMService = Depends(get_llm_service),
     ) -> None:
         self.db = db
         self.llm_service = llm_service

@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
 import useSWR from "swr";
-import { Button, Skeleton } from "@/components/ui";
+import { Button, CoinPrice, Skeleton } from "@/components/ui";
+import { formatCoursePriceCoin, formatVndAsCoin } from "@/lib/learning-hub/coin-logic";
 import { cn } from "@/lib/utils";
 import type { CatalogCombo, CatalogCombosResponse, ComboLevel } from "@/types/catalog-combos";
 import { CloudBlob, GlassCard, IconBubble, Pill, Reveal, SectionHeader, SectionShell } from "./landing-ui";
@@ -21,7 +22,6 @@ const levelLabels: Record<ComboLevel, string> = {
 const levels = Object.keys(levelLabels) as ComboLevel[];
 const number = new Intl.NumberFormat("vi-VN");
 const hours = new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 1 });
-const money = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 2 });
 const focusRing = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 const action = cn("inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors motion-reduce:transition-none", focusRing);
 const button = "min-h-11 rounded-full motion-reduce:transition-none motion-reduce:active:translate-y-0";
@@ -167,15 +167,12 @@ function ComboCard({ combo, featured, only }: { combo: CatalogCombo; featured: b
           {number.format(combo.course_count)} khóa học · {number.format(combo.lesson_count)} bài học · {duration} giờ
         </p>
         <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-t border-border pt-3">
-          <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 tabular-nums">
-            <strong className={cn("wrap-anywhere text-info-foreground", featured ? "text-2xl" : "text-lg")}>
-              {Number(combo.price) === 0 ? "Miễn phí" : money.format(Number(combo.price))}
-            </strong>
-            {Number(combo.savings_amount) > 0 && (
-              <s className="wrap-anywhere text-xs text-muted-foreground sm:text-sm">
-                <span className="sr-only">Tổng giá lẻ </span>{money.format(Number(combo.standalone_total))}
-              </s>
-            )}
+          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+            <CoinPrice
+              priceVnd={combo.price}
+              originalPriceVnd={Number(combo.savings_amount) > 0 ? combo.standalone_total : undefined}
+              size={featured ? "lg" : "md"}
+            />
           </div>
           <Link
             href={`/combo/${encodeURIComponent(combo.slug)}`}
@@ -267,11 +264,15 @@ function CompactCombo({ combo, currentCourse }: { combo: CatalogCombo; currentCo
         {reason && <p className="mt-1 text-xs leading-snug wrap-anywhere text-info-foreground">{reason}</p>}
         <p className="mt-1 text-xs leading-snug wrap-anywhere">{combo.course_count} khóa · {combo.lesson_count} bài · {duration} giờ</p>
         <p className="mt-1 text-xs leading-snug wrap-anywhere">{combo.instructor.name}</p>
-        <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs">
-          <strong>{Number(combo.price) === 0 ? "Miễn phí" : money.format(Number(combo.price))}</strong>
-          {savings && <><s>{money.format(Number(combo.standalone_total))}</s><span className="font-semibold text-accent-foreground">
+        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+          <CoinPrice
+            priceVnd={combo.price}
+            originalPriceVnd={savings ? combo.standalone_total : undefined}
+            size="sm"
+          />
+          {savings && <span className="font-semibold text-accent-foreground">
             Tiết kiệm {combo.savings_percent > 0 ? `${number.format(combo.savings_percent)}%` : "< 1%"}
-          </span></>}
+          </span>}
           {combo.promotion && <span className="text-warning-foreground">Có ưu đãi khi dùng mã</span>}
         </div>
         <Link href={`/combo/${encodeURIComponent(combo.slug)}`} className={cn(action, "-ml-2 mt-1 min-h-9 px-2 py-1 text-xs text-info-foreground hover:bg-primary-light")}>

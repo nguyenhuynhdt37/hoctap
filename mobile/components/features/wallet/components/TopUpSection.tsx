@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { View, Pressable, TextInput, ActivityIndicator } from 'react-native'
 import { Feather, FontAwesome5 } from '@expo/vector-icons'
 import { Text } from '@/components/ui/Text'
-import { formatCurrency } from '@/src/utils/format'
+import { formatVnd } from '@/src/utils/format'
 import { cn } from '@/src/lib/utils'
 
 interface TopUpSectionProps {
@@ -56,7 +56,7 @@ export function TopUpSection({
                 "text-sm font-bold",
                 amount === val.toString() ? "text-white" : isDark ? "text-zinc-400" : "text-zinc-600"
               )}>
-                {formatCurrency(val)}
+                {formatVnd(val)}
               </Text>
             </Pressable>
           ))}

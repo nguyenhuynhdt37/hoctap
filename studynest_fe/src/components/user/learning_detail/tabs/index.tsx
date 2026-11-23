@@ -45,7 +45,7 @@ export default function LearningTabs(props: LearningTabsProps) {
   };
 
   return (
-    <div>
+    <div className="space-y-4">
       <TabButtons
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -53,7 +53,7 @@ export default function LearningTabs(props: LearningTabsProps) {
         onOpenQA={handleOpenQA}
       />
 
-      <div className="p-8">
+      <div className="rounded-[26px] border border-primary-pastel/60 bg-surface p-5 shadow-2xs sm:p-7">
         {activeTab === "overview" && (
           <OverviewTab title={title} course={course} instructor={instructor} />
         )}

@@ -1,4 +1,5 @@
 "use client";
+import { CoinBadge } from "@/components/ui";
 
 import { Alert, Badge, Card, EmptyState, Skeleton } from "@/components/ui";
 import { useCoinBalances } from "@/lib/learning-hub/shop-hooks";
@@ -252,26 +253,31 @@ function WalletSummaryCard({ wallet, walletStatus }: WalletSummaryCardProps) {
       <div className="pointer-events-none absolute -bottom-16 -left-10 h-40 w-40 rounded-full bg-white/5 blur-3xl" />
 
       <div className="relative flex items-start justify-between gap-4">
-        <div className="flex flex-col gap-2">
-          <span className="text-xs font-semibold uppercase tracking-wide text-white/75">
-            Số dư Coin
+        <div className="flex flex-col gap-3">
+          <span className="text-xs font-semibold uppercase tracking-wide text-[#FFE89E]">
+            Số dư Coin vàng
           </span>
-          <p className="mt-2 text-3xl font-semibold sm:text-4xl tracking-tight tabular-nums">
-            {coins ? formatCoin(coins.total) : "…"}
+          <p className="mt-1 text-3xl font-semibold sm:text-4xl tracking-tight text-[#FFE89E] tabular-nums">
+            {coins ? `${new Intl.NumberFormat("vi-VN").format(coins.paid)} Coin vàng` : "…"}
           </p>
           {coins && (
-            <p className="text-sm text-white/80">
-              {formatCoin(coins.paid)} thật · {formatCoin(coins.bonus)} thưởng
-              {Number(wallet?.balance) > 0 ? ` · ví VND còn ${formatCurrency(wallet?.balance)}` : ""}
-            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <CoinBadge kind="gold" amount={coins.paid} surface="dark" size="sm" />
+              <CoinBadge kind="white" amount={coins.bonus} surface="dark" size="sm" />
+              {Number(wallet?.balance) > 0 && (
+                <span className="text-xs text-white/75">
+                  · phần dư VND cũ {formatCurrency(wallet?.balance)}
+                </span>
+              )}
+            </div>
           )}
         </div>
         <div className="flex flex-col items-end gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 backdrop-blur border border-white/15">
-            <WalletIcon className="h-6 w-6 text-white/95" />
+            <WalletIcon className="h-6 w-6 text-[#FFD55A]" />
           </div>
-          <span className="rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide">
-            {wallet?.currency || "VND"}
+          <span className="rounded-full border border-[#F5C542]/50 bg-[#F5C542]/20 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#FFE89E]">
+            Coin vàng
           </span>
         </div>
       </div>

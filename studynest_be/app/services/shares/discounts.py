@@ -1,4 +1,5 @@
 import uuid
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from typing import List, Optional
 
@@ -6,6 +7,7 @@ from fastapi import Depends, HTTPException
 from sqlalchemy import delete, desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.auth_encryption import open_auth_payload
 from app.db.models.database import (
     Categories,
     Courses,
@@ -13,7 +15,10 @@ from app.db.models.database import (
     Discounts,
     DiscountTargets,
     PurchaseItems,
+    RewardInstances,
+    Rewards,
     User,
+    UserRewardInventory,
 )
 from app.db.sesson import get_session
 from app.libs.formats.datetime import now as get_now
@@ -1388,4 +1393,417 @@ class DiscountService:
             "limit": limit,
             "total": total,
             "items": items,
+        }
+
+    async def get_my_voucher_vault_async(self, user_id: uuid.UUID):
+        """Tổng hợp Kho mã giảm giá của học viên: mã thưởng cá nhân + mã ưu đãi công khai + thống kê."""
+        now_local = get_now()
+        now_utc = datetime.now(UTC)
+        soon_delta = timedelta(hours=72)
+
+        def _as_utc(dt: datetime | None) -> datetime | None:
+            if dt is None:
+                return None
+            return dt if dt.tzinfo is not None else dt.replace(tzinfo=UTC)
+
+        # 1) Mã thưởng cá nhân từ UserRewardInventory + RewardInstances
+        expiry_col = func.coalesce(UserRewardInventory.expires_at, RewardInstances.expires_at)
+        personal_rows = (
+            await self.db.execute(
+                select(
+                    RewardInstances.id,
+                    Rewards.title,
+                    RewardInstances.code_masked,
+                    RewardInstances.max_percent,
+                    expiry_col.label("expires_at"),
+                    UserRewardInventory.status.label("inv_status"),
+                    RewardInstances.status.label("inst_status"),
+                    UserRewardInventory.used_at,
+                    UserRewardInventory.created_at,
+                )
+                .select_from(UserRewardInventory)
+                .join(RewardInstances, RewardInstances.id == UserRewardInventory.reward_instance_id)
+                .join(Rewards, Rewards.id == RewardInstances.reward_id)
+                .where(
+                    UserRewardInventory.user_id == user_id,
+                    UserRewardInventory.reward_type == "coupon",
+                    RewardInstances.max_percent.is_not(None),
+                )
+                .order_by(desc(UserRewardInventory.created_at), RewardInstances.id)
+            )
+        ).all()
+
+        vault_items: list[dict] = []
+        for row in personal_rows:
+            exp_utc = _as_utc(row.expires_at)
+            statuses = {row.inv_status, row.inst_status}
+            if "revoked" in statuses:
+                status = "revoked"
+            elif row.used_at is not None or "used" in statuses:
+                status = "used"
+            elif "expired" in statuses or (exp_utc is not None and exp_utc <= now_utc):
+                status = "expired"
+            else:
+                status = "available"
+
+            expiring_soon = (
+                status == "available"
+                and exp_utc is not None
+                and (exp_utc - now_utc) <= soon_delta
+            )
+            vault_items.append(
+                {
+                    "id": str(row.id),
+                    "source": "personal",
+                    "title": row.title or "Mã thưởng Mây Mây",
+                    "description": "Mã thưởng riêng dành cho tài khoản của bạn, áp dụng giảm giá khóa học.",
+                    "code": None,
+                    "code_masked": row.code_masked or "MMR-••••",
+                    "can_reveal": status == "available",
+                    "discount_type": "percent",
+                    "percent_value": float(row.max_percent or 0),
+                    "fixed_value": None,
+                    "applies_to": "global",
+                    "target_names": [],
+                    "target_count": 0,
+                    "primary_course_slug": None,
+                    "status": status,
+                    "expiring_soon": expiring_soon,
+                    "expires_at": exp_utc.isoformat() if exp_utc else None,
+                    "used_at": _as_utc(row.used_at).isoformat() if row.used_at else None,
+                    "remaining_uses": 1 if status == "available" else 0,
+                    "per_user_limit": 1,
+                }
+            )
+
+        # 2) Mã ưu đãi công khai từ Discounts (is_active, ~is_hidden)
+        public_discounts = (
+            (
+                await self.db.execute(
+                    select(Discounts)
+                    .where(
+                        Discounts.is_active.is_(True),
+                        or_(Discounts.is_hidden.is_(False), Discounts.is_hidden.is_(None)),
+                    )
+                    .order_by(desc(Discounts.created_at))
+                    .limit(60)
+                )
+            )
+            .scalars()
+            .all()
+        )
+
+        discount_ids = [d.id for d in public_discounts]
+        usage_by_discount: dict[uuid.UUID, int] = {}
+        target_courses_map: dict[uuid.UUID, list[tuple[str, str]]] = {}
+        target_cats_map: dict[uuid.UUID, list[str]] = {}
+
+        if discount_ids:
+            used_rows = (
+                await self.db.execute(
+                    select(
+                        PurchaseItems.discount_id,
+                        func.count(func.distinct(PurchaseItems.transaction_id)),
+                    )
+                    .where(
+                        PurchaseItems.user_id == user_id,
+                        PurchaseItems.discount_id.in_(discount_ids),
+                    )
+                    .group_by(PurchaseItems.discount_id)
+                )
+            ).all()
+            usage_by_discount = {did: int(cnt or 0) for did, cnt in used_rows if did}
+
+            course_target_rows = (
+                await self.db.execute(
+                    select(DiscountTargets.discount_id, Courses.title, Courses.slug)
+                    .join(Courses, Courses.id == DiscountTargets.course_id)
+                    .where(DiscountTargets.discount_id.in_(discount_ids))
+                )
+            ).all()
+            for did, title, slug in course_target_rows:
+                target_courses_map.setdefault(did, []).append((title, slug))
+
+            cat_target_rows = (
+                await self.db.execute(
+                    select(DiscountTargets.discount_id, Categories.name)
+                    .join(Categories, Categories.id == DiscountTargets.category_id)
+                    .where(DiscountTargets.discount_id.in_(discount_ids))
+                )
+            ).all()
+            for did, name in cat_target_rows:
+                target_cats_map.setdefault(did, []).append(name)
+
+        for d in public_discounts:
+            if not d.discount_code or d.discount_code.startswith(REWARD_DIGEST_PREFIX):
+                continue
+            if d.start_at and d.start_at > now_local:
+                continue
+
+            used_cnt = usage_by_discount.get(d.id, 0)
+            limit_reached = bool(d.usage_limit and (d.usage_count or 0) >= d.usage_limit)
+            user_limit_reached = bool(d.per_user_limit and used_cnt >= d.per_user_limit)
+            is_expired = bool(d.end_at and d.end_at < now_local)
+
+            if user_limit_reached:
+                status = "used"
+            elif is_expired or limit_reached:
+                status = "expired"
+            else:
+                status = "available"
+
+            remaining_uses: int | None = None
+            if d.per_user_limit:
+                remaining_uses = max(0, d.per_user_limit - used_cnt)
+            elif d.usage_limit:
+                remaining_uses = max(0, d.usage_limit - (d.usage_count or 0))
+
+            expiring_soon = (
+                status == "available"
+                and d.end_at is not None
+                and (d.end_at - now_local) <= soon_delta
+            )
+
+            course_targets = target_courses_map.get(d.id, [])
+            cat_targets = target_cats_map.get(d.id, [])
+            all_names = [t[0] for t in course_targets] + cat_targets
+            primary_slug = course_targets[0][1] if len(course_targets) == 1 else None
+
+            vault_items.append(
+                {
+                    "id": str(d.id),
+                    "source": "public",
+                    "title": d.name,
+                    "description": d.description or "",
+                    "code": d.discount_code,
+                    "code_masked": d.discount_code,
+                    "can_reveal": False,
+                    "discount_type": d.discount_type,
+                    "percent_value": float(d.percent_value) if d.percent_value is not None else None,
+                    "fixed_value": float(d.fixed_value) if d.fixed_value is not None else None,
+                    "applies_to": d.applies_to,
+                    "target_names": all_names[:3],
+                    "target_count": len(all_names),
+                    "primary_course_slug": primary_slug,
+                    "status": status,
+                    "expiring_soon": expiring_soon,
+                    "expires_at": d.end_at.isoformat() if d.end_at else None,
+                    "used_at": None,
+                    "remaining_uses": remaining_uses,
+                    "per_user_limit": d.per_user_limit,
+                }
+            )
+
+        # 2b) Mã ưu đãi Combo từ bảng bundle_coupons
+        from app.db.models.learning_paths import (
+            BundleCoupon,
+            BundleOrder,
+            BundleVersion,
+            CourseBundle,
+        )
+
+        latest_bundle_ver = (
+            select(
+                BundleVersion.bundle_id,
+                func.max(BundleVersion.version).label("max_ver"),
+            )
+            .where(BundleVersion.status == "published")
+            .group_by(BundleVersion.bundle_id)
+            .subquery()
+        )
+        combo_coupon_rows = (
+            await self.db.execute(
+                select(
+                    BundleCoupon,
+                    CourseBundle.slug.label("bundle_slug"),
+                    BundleVersion.title.label("bundle_title"),
+                )
+                .join(CourseBundle, CourseBundle.id == BundleCoupon.bundle_id)
+                .join(latest_bundle_ver, latest_bundle_ver.c.bundle_id == CourseBundle.id)
+                .join(
+                    BundleVersion,
+                    (BundleVersion.bundle_id == latest_bundle_ver.c.bundle_id)
+                    & (BundleVersion.version == latest_bundle_ver.c.max_ver),
+                )
+                .where(
+                    BundleCoupon.is_active.is_(True),
+                    CourseBundle.is_active.is_(True),
+                    CourseBundle.deleted_at.is_(None),
+                    BundleCoupon.starts_at <= now_utc,
+                )
+                .order_by(desc(BundleCoupon.value), BundleCoupon.ends_at.asc())
+            )
+        ).all()
+
+        combo_coupon_ids = [r[0].id for r in combo_coupon_rows]
+        combo_total_used_map: dict[uuid.UUID, int] = {}
+        combo_user_used_map: dict[uuid.UUID, int] = {}
+        if combo_coupon_ids:
+            tot_rows = (
+                await self.db.execute(
+                    select(BundleOrder.coupon_id, func.count(BundleOrder.id))
+                    .where(BundleOrder.coupon_id.in_(combo_coupon_ids))
+                    .group_by(BundleOrder.coupon_id)
+                )
+            ).all()
+            combo_total_used_map = {cid: int(cnt) for cid, cnt in tot_rows if cid}
+            usr_rows = (
+                await self.db.execute(
+                    select(BundleOrder.coupon_id, func.count(BundleOrder.id))
+                    .where(
+                        BundleOrder.coupon_id.in_(combo_coupon_ids),
+                        BundleOrder.user_id == user_id,
+                    )
+                    .group_by(BundleOrder.coupon_id)
+                )
+            ).all()
+            combo_user_used_map = {cid: int(cnt) for cid, cnt in usr_rows if cid}
+
+        for cp, b_slug, b_title in combo_coupon_rows:
+            exp_utc = _as_utc(cp.ends_at)
+            used_by_me = combo_user_used_map.get(cp.id, 0)
+            used_total = combo_total_used_map.get(cp.id, 0)
+            limit_reached = bool(cp.max_uses and used_total >= cp.max_uses)
+            user_limit_reached = bool(cp.per_user_limit and used_by_me >= cp.per_user_limit)
+            is_expired = bool(exp_utc and exp_utc <= now_utc)
+
+            if user_limit_reached:
+                c_status = "used"
+            elif is_expired or limit_reached:
+                c_status = "expired"
+            else:
+                c_status = "available"
+
+            c_remaining: int | None = None
+            if cp.per_user_limit:
+                c_remaining = max(0, cp.per_user_limit - used_by_me)
+            elif cp.max_uses:
+                c_remaining = max(0, cp.max_uses - used_total)
+
+            c_expiring_soon = (
+                c_status == "available"
+                and exp_utc is not None
+                and (exp_utc - now_utc) <= soon_delta
+            )
+            clean_b_title = (b_title or "Combo học tập").replace("[QA] ", "").strip()
+            is_pct = cp.discount_type == "percent"
+            vault_items.append(
+                {
+                    "id": f"combo-{cp.id}",
+                    "source": "combo",
+                    "title": f"Ưu đãi Combo · {clean_b_title}",
+                    "description": f"Áp dụng riêng khi thanh toán gói combo {clean_b_title}.",
+                    "code": cp.code,
+                    "code_masked": cp.code,
+                    "can_reveal": False,
+                    "discount_type": cp.discount_type,
+                    "percent_value": float(cp.value) if is_pct else None,
+                    "fixed_value": float(cp.value) if not is_pct else None,
+                    "applies_to": "combo",
+                    "target_names": [clean_b_title],
+                    "target_count": 1,
+                    "primary_course_slug": None,
+                    "primary_bundle_slug": b_slug,
+                    "status": c_status,
+                    "expiring_soon": c_expiring_soon,
+                    "expires_at": exp_utc.isoformat() if exp_utc else None,
+                    "used_at": None,
+                    "remaining_uses": c_remaining,
+                    "per_user_limit": cp.per_user_limit,
+                }
+            )
+
+        # 3) Thống kê tổng tiết kiệm từ DiscountHistory + BundleOrder
+        saved_vnd = await self.db.scalar(
+            select(func.coalesce(func.sum(DiscountHistory.discounted_amount), 0)).where(
+                DiscountHistory.user_id == user_id
+            )
+        )
+        bundle_saved_vnd = await self.db.scalar(
+            select(func.coalesce(func.sum(BundleOrder.discount_amount), 0)).where(
+                BundleOrder.user_id == user_id
+            )
+        )
+        history_count = await self.db.scalar(
+            select(func.count(DiscountHistory.id)).where(DiscountHistory.user_id == user_id)
+        )
+        bundle_coupon_used_count = await self.db.scalar(
+            select(func.count(BundleOrder.id)).where(
+                BundleOrder.user_id == user_id,
+                BundleOrder.coupon_id.is_not(None),
+            )
+        )
+
+        available_items = [i for i in vault_items if i["status"] == "available"]
+        summary = {
+            "total_available": len(available_items),
+            "personal_available": sum(1 for i in available_items if i["source"] == "personal"),
+            "public_available": sum(1 for i in available_items if i["source"] == "public"),
+            "combo_available": sum(1 for i in available_items if i["source"] == "combo"),
+            "expiring_soon": sum(1 for i in available_items if i["expiring_soon"]),
+            "total_used": int(history_count or 0) + int(bundle_coupon_used_count or 0),
+            "total_saved_vnd": float(saved_vnd or 0) + float(bundle_saved_vnd or 0),
+        }
+
+        # Sắp xếp: khả dụng -> sắp hết hạn -> mã riêng trước -> phần trăm giảm cao trước
+        status_order = {"available": 0, "used": 1, "expired": 2, "revoked": 3}
+        vault_items.sort(
+            key=lambda x: (
+                status_order.get(x["status"], 9),
+                0 if x["expiring_soon"] else 1,
+                0 if x["source"] == "personal" else 1,
+                -(x["percent_value"] or 0),
+            )
+        )
+
+        return {"summary": summary, "items": vault_items}
+
+    async def reveal_personal_coupon_async(
+        self, user_id: uuid.UUID, instance_id: uuid.UUID
+    ) -> dict:
+        """Giải mã mã thưởng cá nhân cho đúng chủ sở hữu."""
+        row = (
+            await self.db.execute(
+                select(RewardInstances, UserRewardInventory)
+                .join(
+                    UserRewardInventory,
+                    UserRewardInventory.reward_instance_id == RewardInstances.id,
+                )
+                .where(
+                    RewardInstances.id == instance_id,
+                    UserRewardInventory.user_id == user_id,
+                    UserRewardInventory.reward_type == "coupon",
+                )
+            )
+        ).first()
+
+        if not row:
+            raise HTTPException(404, "Không tìm thấy mã thưởng trong kho của bạn.")
+
+        instance, inventory = row
+        now_utc = datetime.now(UTC)
+        exp = inventory.expires_at or instance.expires_at
+        if exp is not None and exp.tzinfo is None:
+            exp = exp.replace(tzinfo=UTC)
+
+        if (
+            instance.status != "available"
+            or inventory.status != "active"
+            or inventory.used_at is not None
+            or (exp is not None and exp <= now_utc)
+        ):
+            raise HTTPException(400, "Mã thưởng đã được sử dụng hoặc đã hết hạn.")
+
+        payload = open_auth_payload(
+            instance.code_encrypted, f"reward-coupon:{user_id}:{instance.id}"
+        )
+        code = payload.get("code") if isinstance(payload, dict) else None
+        if not code:
+            raise HTTPException(500, "Không thể giải mã mã thưởng lúc này.")
+
+        return {
+            "id": str(instance.id),
+            "code": code,
+            "code_masked": instance.code_masked,
+            "expires_at": exp.isoformat() if exp else None,
         }

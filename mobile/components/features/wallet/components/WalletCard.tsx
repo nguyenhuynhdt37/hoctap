@@ -39,7 +39,7 @@ export function WalletCard({ summary }: WalletCardProps) {
               <Text className="text-5xl font-black text-white tracking-tighter">
                 {formatCurrency(summary?.balance || 0).split(' ')[0]}
               </Text>
-              <Text className="text-xl font-bold text-emerald-100/40 ml-3">VND</Text>
+              <Text className="text-xl font-bold text-emerald-100/40 ml-3">Coin</Text>
             </View>
           </View>
 

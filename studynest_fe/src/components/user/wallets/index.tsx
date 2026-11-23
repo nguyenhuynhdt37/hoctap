@@ -1,6 +1,7 @@
 "use client";
 
 import { Alert } from "@/components/ui";
+import { useCoinBalances, useCoinRate } from "@/lib/learning-hub/shop-hooks";
 import api from "@/lib/utils/fetcher/client/axios";
 import {
   WalletSummary,
@@ -25,7 +26,7 @@ const TOP_TRANSACTIONS_ENDPOINT =
   "/user/transaction/top5?page=1&limit=5&order_by=created_at&order_dir=desc";
 
 export default function WalletPage({ wallet, transactions, error }: Props) {
-  const [amount, setAmount] = useState("");
+  const [amount, setAmount] = useState("500,000");
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
   const [loading, setLoading] = useState(false);
@@ -34,6 +35,10 @@ export default function WalletPage({ wallet, transactions, error }: Props) {
     text: string;
     variant: "destructive" | "success";
   } | null>(null);
+
+  const coins = useCoinBalances();
+  const publicRateVnd = useCoinRate();
+  const coinRateVnd = coins.data?.rateVnd ?? publicRateVnd;
 
   const { data: walletData, mutate: mutateWallet } = useSWR<WalletSummary>(
     WALLET_ENDPOINT,
@@ -94,7 +99,7 @@ export default function WalletPage({ wallet, transactions, error }: Props) {
       }
 
       setAmount("");
-      await Promise.allSettled([mutateWallet(), mutateTransactions()]);
+      await Promise.allSettled([mutateWallet(), mutateTransactions(), coins.mutate()]);
     } catch (err: any) {
       setErrorMsg(
         err?.response?.data?.detail || "Không thể tạo giao dịch nạp tiền lúc này"
@@ -146,8 +151,8 @@ export default function WalletPage({ wallet, transactions, error }: Props) {
   };
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8 px-4 py-8">
-      <WalletHeader />
+    <div className="mx-auto max-w-6xl space-y-7 px-4 py-8 sm:px-6">
+      <WalletHeader rateVnd={coinRateVnd} />
 
       {error && (
         <Alert variant="destructive">
@@ -155,17 +160,22 @@ export default function WalletPage({ wallet, transactions, error }: Props) {
         </Alert>
       )}
 
-      <div className="grid gap-6 md:grid-cols-[2fr,3fr]">
-        <WalletSummaryCard wallet={walletData ?? null} />
-        <WalletDepositCard
-          amount={amount}
-          loading={loading}
-          error={errorMsg}
-          success={successMsg}
-          onAmountChange={setAmount}
-          onDeposit={handleDeposit}
-        />
-      </div>
+      <WalletSummaryCard
+        wallet={walletData ?? null}
+        coins={coins.data}
+        rateVnd={coinRateVnd}
+      />
+
+      <WalletDepositCard
+        amount={amount}
+        loading={loading}
+        error={errorMsg}
+        success={successMsg}
+        coins={coins.data}
+        rateVnd={coinRateVnd}
+        onAmountChange={setAmount}
+        onDeposit={handleDeposit}
+      />
 
       <WalletTransactionsTable
         transactions={topTransactions?.transactions ?? []}

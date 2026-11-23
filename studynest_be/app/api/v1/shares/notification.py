@@ -7,7 +7,10 @@ from app.core.deps import AuthorizationService, receive_bounded_ws_text_async
 from app.core.settings import settings
 from app.core.ws_manager import ws_manager
 from app.db.models.database import User
-from app.schemas.shares.notification import PushTokenRegisterRequest
+from app.schemas.shares.notification import (
+    NotificationCreateSchema,
+    PushTokenRegisterRequest,
+)
 from app.schemas.shares.presence import (
     PresenceBulkRequest,
     PresenceBulkResponse,
@@ -240,3 +243,30 @@ async def register_push_token(
         user.id, body.token, body.device_type
     )
     return result
+
+
+@router.post("/test-device")
+async def send_test_device_notification(
+    service: NotificationService = Depends(NotificationService),
+    authorization_service: AuthorizationService = Depends(AuthorizationService),
+):
+    """Tạo và phát 1 thông báo thử nghiệm realtime qua WebSocket để kiểm chứng thông báo thiết bị."""
+    user = await authorization_service.get_current_user()
+    roles = await authorization_service.get_list_role_in_user(user)
+    target_role = "USER" if "USER" in roles else (roles[0] if roles else "USER")
+    notif = await service.create_notification_async(
+        NotificationCreateSchema(
+            user_id=user.id,
+            role_target=[target_role],
+            title="Thông báo thiết bị Mây Mây đã sẵn sàng!",
+            content="Hệ thống thông báo realtime và thông báo thiết bị của bạn đang hoạt động chuẩn xác.",
+            url="/notifications",
+            type="system",
+            action="test_device",
+        )
+    )
+    return {
+        "success": True,
+        "notification_id": str(notif.id),
+        "role_target": target_role,
+    }

@@ -29,8 +29,8 @@ from app.db.models.database import (
     WithdrawalRequests,
 )
 from app.services.billing_ledger import check_coupon_budget, hold_payment, lock_treasury, record_coupon_cost
-from app.services.coin_math import allocate, price_to_coin
-from app.services.coin_service import CoinService, PaymentSplit
+from app.services.coin_math import allocate, price_to_coin, purchase_cashback_bonus
+from app.services.coin_service import PURCHASE_CASHBACK_SOURCE, CoinService, PaymentSplit
 from app.services.coupon_settlement import billing_policy, earning_for_purchase, settle
 from app.services.gamification.coupon_rewards import consume_discount
 from app.services.catalog import public_course, require_real_course
@@ -429,6 +429,7 @@ class TransactionsService:
             now = get_now()
             transaction = None
             price_coin = 0
+            cashback_bonus = 0
             split = PaymentSplit(0, 0)
             if total_price:
                 wallet = await self.db.scalar(select(Wallets).where(Wallets.user_id == user.id)
@@ -440,17 +441,22 @@ class TransactionsService:
                     amount.discount for course_id, amount in amounts_by_course.items()
                     if items[course_id].get("sponsor") == "platform"
                 ))
-                # Thanh toán bằng Coin: tính trên số tiền sau giảm; trừ Coin thưởng trước, thiếu Coin thật thì từ chối.
+                # Thanh toán bằng Coin: tối đa 50% lượng Coin trắng (10 Coin trắng = 1 Coin vàng), còn lại trừ Coin vàng.
                 price_coin = price_to_coin(total_price, policy.coin_vnd_rate)
                 transaction_id = uuid.uuid4()
-                split = await CoinService(self.db).debit_for_purchase_async(
+                coin_service = CoinService(self.db)
+                split = await coin_service.debit_for_purchase_async(
                     user.id, price_coin, ref_id=transaction_id)
+                cashback_bonus = purchase_cashback_bonus(price_coin)
+                if cashback_bonus > 0:
+                    await coin_service.credit_bonus_async(
+                        user.id, cashback_bonus, source=PURCHASE_CASHBACK_SOURCE, ref_id=transaction_id)
                 transaction = Transactions(
                     id=transaction_id, user_id=user.id, amount=total_price, type="purchase",
                     currency="VND", direction="out", method="wallet", gateway="internal_wallet",
                     status="completed",
-                    description=(f"Mua {len(courses)} khóa học bằng {price_coin} Coin "
-                                 f"({split.bonus_use} thưởng + {split.paid_use} thật)"),
+                    description=(f"Mua {len(courses)} khóa học bằng {price_coin} Coin vàng "
+                                 f"({split.bonus_use} Coin trắng = {split.bonus_gold_discount} Coin vàng + {split.paid_use} Coin vàng)"),
                     created_at=now, confirmed_at=now,
                 )
                 self.db.add(transaction)
@@ -524,14 +530,14 @@ class TransactionsService:
                 notification_service = NotificationService(self.db)
                 roles = await AuthorizationService.get_list_role_in_user(user)
 
-                # Noti ví
+                # Noti thanh toán Coin vàng + hoàn 20% Coin trắng
                 if transaction is not None:
                     await notification_service.create_notification_async(
                         NotificationCreateSchema(
                             user_id=transaction.user_id,
                             roles=roles,
-                            title="Mua khóa học thành công 💰",
-                            content=f"Bạn đã mua khóa học với tổng {price_coin:,} Coin thành công.",
+                            title="Mua khóa học thành công",
+                            content=f"Bạn đã thanh toán {price_coin:,} Coin vàng thành công ({split.bonus_use:,} Coin trắng + {split.paid_use:,} Coin vàng).",
                             type="wallet",
                             role_target=["USER"],
                             metadata={"transaction_id": str(transaction.id)},
@@ -539,6 +545,23 @@ class TransactionsService:
                             action="open_url",
                         )
                     )
+                    if cashback_bonus > 0:
+                        await notification_service.create_notification_async(
+                            NotificationCreateSchema(
+                                user_id=transaction.user_id,
+                                roles=roles,
+                                title="Nhận hoàn 20% Coin trắng",
+                                content=f"Bạn được hoàn +{cashback_bonus:,} Coin trắng từ đơn mua khóa học để chiết khấu cho lần mua tiếp theo.",
+                                type="wallet",
+                                role_target=["USER"],
+                                metadata={
+                                    "transaction_id": str(transaction.id),
+                                    "cashback_bonus": cashback_bonus,
+                                },
+                                url="/shop",
+                                action="open_url",
+                            )
+                        )
 
                 # Noti enroll + giảng viên
                 for course in courses:
@@ -600,7 +623,9 @@ class TransactionsService:
                 "total_paid": str(total_price),
                 "total_coin": price_coin,
                 "coin_bonus_used": split.bonus_use,
+                "coin_bonus_gold_discount": split.bonus_gold_discount,
                 "coin_paid_used": split.paid_use,
+                "coin_cashback_bonus": cashback_bonus,
                 "items": [
                     {
                         "course_id": str(course_id),

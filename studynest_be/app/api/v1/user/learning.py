@@ -332,7 +332,9 @@ async def lesson_comment_ws(websocket: WebSocket, lesson_id: uuid.UUID):
     try:
         await websocket.accept()
 
-        user = await AuthorizationService.get_require_role_ws(websocket, ["USER"])
+        user = await AuthorizationService.get_require_role_ws(
+            websocket, ["USER", "LECTURER", "ADMIN"]
+        )
         if not user:
             return
 

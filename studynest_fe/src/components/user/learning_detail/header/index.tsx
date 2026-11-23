@@ -5,13 +5,16 @@ import GiftTransferDialog from "./gift-transfer-dialog";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {
-  MessageCircle,
+  AlignRight,
+  Bot,
+  Check,
   ChevronDown,
   ClipboardList,
   Clock,
-  Download,
-  AlignRight,
   Cloud,
+  Maximize2,
+  Minimize2,
+  Share2,
   Star,
 } from "pulsoicon-react";
 
@@ -21,6 +24,10 @@ interface LearningHeaderProps {
   onOpenProgress: () => void;
   chatOpen?: boolean;
   onToggleChat?: () => void;
+  completedLessons?: number;
+  totalLessons?: number;
+  focusMode?: boolean;
+  onToggleFocusMode?: () => void;
 }
 
 interface PlayerMenuState {
@@ -67,6 +74,10 @@ export default function LearningHeader({
   onOpenProgress,
   chatOpen,
   onToggleChat,
+  completedLessons = 0,
+  totalLessons = 0,
+  focusMode = false,
+  onToggleFocusMode,
 }: LearningHeaderProps) {
   const [showMoreOptions, setShowMoreOptions] = useState(false);
   const [menu, setMenu] = useState<PlayerMenuState>(optedInMenu);
@@ -75,9 +86,21 @@ export default function LearningHeader({
   const [actionError, setActionError] = useState<string | null>(null);
   const [giftOpen, setGiftOpen] = useState(false);
   const [stateReady, setStateReady] = useState(false);
+  const [copiedShare, setCopiedShare] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const writeGeneration = useRef(0);
   const router = useRouter();
+  const progressPct =
+    totalLessons > 0 ? Math.min(100, Math.round((completedLessons / totalLessons) * 100)) : 0;
+
+  const handleShare = () => {
+    if (typeof window === "undefined") return;
+    if (navigator.clipboard) {
+      void navigator.clipboard.writeText(window.location.href).catch(() => undefined);
+    }
+    setCopiedShare(true);
+    window.setTimeout(() => setCopiedShare(false), 2000);
+  };
 
   useEffect(() => {
     if (!courseId) return;
@@ -141,89 +164,126 @@ export default function LearningHeader({
     "w-full flex items-center space-x-3 px-4 py-2.5 text-left hover:bg-background transition-colors cursor-pointer disabled:opacity-60";
 
   return (
-    <header className="sticky top-0 z-30 h-16 shrink-0 border-b border-border bg-surface/95 shadow-xs backdrop-blur-md">
-      <div className="flex h-full items-center justify-between gap-2 px-2 sm:gap-4 sm:px-6">
-        <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-4">
-          <div className="flex shrink-0 items-center gap-2.5">
-              <div
-                onClick={() => router.push("/")}
-                className="w-9 cursor-pointer h-9 bg-primary-pastel/60 border border-primary-light/50 rounded-xl flex items-center justify-center transition-colors hover:bg-primary-pastel"
-              >
-                <img
-                  src="/logo/studynest-logo.svg"
-                  alt="Mây Mây"
-                  width={22}
-                  height={22}
-                  className="w-5 h-5"
-                />
-              </div>
-              <div className="hidden sm:flex flex-col">
-                <div className="flex items-center">
-                  <span className="text-lg font-bold text-foreground tracking-tight">
-                    Mây
-                  </span>
-                  <span className="text-lg font-bold text-primary ml-1">
-                    Mây
-                  </span>
-                </div>
-                <span className="text-[10px] font-medium text-subtle-foreground tracking-widest uppercase -mt-1">
-                  Học viện trên mây
+    <header className="sticky top-0 z-30 h-16 shrink-0 border-b border-primary-pastel/70 bg-surface/90 shadow-xs backdrop-blur-xl">
+      <div className="flex h-full items-center justify-between gap-2 px-3 sm:gap-4 sm:px-6">
+        <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3.5">
+          <button
+            type="button"
+            onClick={() => router.push("/my-learning")}
+            aria-label="Về khóa học của tôi"
+            className="flex shrink-0 items-center gap-2 rounded-full border border-primary-pastel/70 bg-primary-light/70 py-1.5 pr-3 pl-2 transition-colors hover:bg-primary-light cursor-pointer"
+          >
+            <img
+              src="/logo/studynest-logo.svg"
+              alt="Mây Mây"
+              width={22}
+              height={22}
+              className="size-5"
+            />
+            <span className="hidden text-sm font-extrabold tracking-tight text-primary sm:inline">
+              Mây Mây
+            </span>
+          </button>
+
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate font-display text-sm font-bold text-foreground sm:text-base">
+              {courseTitle}
+            </h1>
+            {menu.gifted_by_name && (
+              <p className="truncate text-[11px] leading-tight text-muted-foreground">
+                Tặng bởi{" "}
+                <span className="font-semibold text-primary">
+                  {menu.gifted_by_name}
                 </span>
-              </div>
-            </div>
-
-            <div className="hidden h-6 w-px shrink-0 bg-border min-[400px]:block"></div>
-
-            <div className="min-w-0">
-              <h1 className="truncate text-sm font-semibold text-foreground sm:text-base">
-                {courseTitle}
-              </h1>
-              {menu.gifted_by_name && (
-                <p className="truncate text-[11px] leading-tight text-muted-foreground">
-                  Tặng bởi{" "}
-                  <span className="font-semibold text-primary">
-                    {menu.gifted_by_name}
-                  </span>
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div className="flex shrink-0 items-center gap-1 sm:gap-2.5">
-            {onToggleChat && (
-              <button
-                onClick={onToggleChat}
-                aria-label={chatOpen ? "Đóng chat" : "Hỏi trợ giảng"}
-                title={chatOpen ? "Đóng chat" : "Hỏi trợ giảng"}
-                className={`flex min-h-10 min-w-10 cursor-pointer items-center justify-center gap-2 rounded-xl p-2 text-sm font-semibold transition-colors sm:px-3.5 sm:py-2 ${
-                  chatOpen
-                    ? "bg-primary text-primary-foreground shadow-xs"
-                    : "bg-primary-pastel/60 hover:bg-primary-pastel text-primary border border-primary-light/40"
-                }`}
-              >
-                <MessageCircle className="w-4 h-4" />
-                <span className="hidden md:inline">
-                  {chatOpen ? "Đóng chat" : "Hỏi trợ giảng"}
-                </span>
-              </button>
+              </p>
             )}
+          </div>
+        </div>
 
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+          {/* Pill tiến độ trực tiếp */}
+          <button
+            type="button"
+            onClick={onOpenProgress}
+            aria-label="Tiến độ học tập"
+            title="Xem chi tiết tiến độ"
+            className="flex min-h-10 cursor-pointer items-center gap-2 rounded-full border border-primary-pastel/80 bg-primary-light/55 px-3 text-xs font-bold text-foreground transition-colors hover:bg-primary-light"
+          >
+            <Clock className="size-4 text-primary" animated={false} aria-hidden="true" />
+            <span className="hidden sm:inline tabular-nums">
+              {totalLessons > 0 ? `${completedLessons}/${totalLessons} · ${progressPct}%` : "Tiến độ"}
+            </span>
+            {totalLessons > 0 && (
+              <span aria-hidden="true" className="hidden h-1.5 w-12 overflow-hidden rounded-full bg-surface md:inline-block">
+                <span
+                  className="block h-full rounded-full bg-primary transition-all duration-300"
+                  style={{ width: `${progressPct}%` }}
+                />
+              </span>
+            )}
+            <ChevronDown className="hidden size-3.5 text-muted-foreground sm:block" aria-hidden="true" />
+          </button>
+
+          {/* Nút Chế độ Tập trung (Focus Mode) */}
+          {onToggleFocusMode && (
             <button
               type="button"
-              onClick={onOpenProgress}
-              aria-label="Tiến độ của bạn"
-              title="Tiến độ của bạn"
-              className="flex min-h-10 min-w-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-border bg-background p-2 text-sm font-medium text-foreground transition-colors hover:bg-primary-pastel/40 sm:px-3.5 sm:py-2"
+              onClick={onToggleFocusMode}
+              aria-pressed={focusMode}
+              aria-label={focusMode ? "Thoát chế độ tập trung" : "Bật chế độ tập trung"}
+              title={focusMode ? "Thoát chế độ tập trung" : "Chế độ tập trung"}
+              className={`hidden min-h-10 cursor-pointer items-center gap-1.5 rounded-full border px-3.5 text-xs font-bold transition-colors md:inline-flex ${
+                focusMode
+                  ? "border-accent-vanilla-border bg-accent-vanilla text-accent-vanilla-foreground"
+                  : "border-border bg-surface text-foreground hover:border-primary-pastel hover:bg-primary-light hover:text-primary"
+              }`}
             >
-              <Clock className="h-4 w-4 text-primary" />
-              <span className="hidden sm:inline">Tiến độ của bạn</span>
-              <ChevronDown className="hidden h-4 w-4 text-muted-foreground sm:block" />
+              {focusMode ? (
+                <Minimize2 className="size-4" animated={false} aria-hidden="true" />
+              ) : (
+                <Maximize2 className="size-4" animated={false} aria-hidden="true" />
+              )}
+              <span className="hidden xl:inline">{focusMode ? "Thoát tập trung" : "Tập trung"}</span>
             </button>
+          )}
 
-            <button className="hidden lg:flex items-center space-x-2 px-3.5 py-2 bg-surface hover:bg-background border border-border text-foreground rounded-xl transition-colors cursor-pointer text-sm font-medium">
-              <Download className="w-4 h-4 text-primary" />
-              <span>Chia sẻ</span>
+          {/* Nút Hỏi Mây AI */}
+          {onToggleChat && (
+            <button
+              type="button"
+              onClick={onToggleChat}
+              aria-label={chatOpen ? "Đóng Mây AI" : "Hỏi Mây AI"}
+              title={chatOpen ? "Đóng Mây AI" : "Hỏi Mây AI"}
+              className={`flex min-h-10 min-w-10 cursor-pointer items-center justify-center gap-1.5 rounded-full px-3 text-xs font-extrabold transition-all sm:px-4 ${
+                chatOpen
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "border border-accent-border bg-accent/70 text-accent-foreground hover:bg-accent"
+              }`}
+            >
+              <Bot className="size-4" aria-hidden="true" />
+              <span className="hidden md:inline">
+                {chatOpen ? "Đóng Mây AI" : "Hỏi Mây AI"}
+              </span>
             </button>
+          )}
+
+          <button
+            type="button"
+            onClick={handleShare}
+            className="hidden min-h-10 cursor-pointer items-center gap-1.5 rounded-full border border-border bg-surface px-3.5 text-xs font-bold text-foreground transition-colors hover:border-primary-pastel hover:bg-primary-light hover:text-primary lg:inline-flex"
+          >
+            {copiedShare ? (
+              <>
+                <Check className="size-3.5 text-success-foreground" animated={false} aria-hidden="true" />
+                <span>Đã chép</span>
+              </>
+            ) : (
+              <>
+                <Share2 className="size-3.5 text-primary" animated={false} aria-hidden="true" />
+                <span>Chia sẻ</span>
+              </>
+            )}
+          </button>
 
             <div className="relative" ref={menuRef}>
               <button

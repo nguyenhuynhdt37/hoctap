@@ -24,7 +24,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import Depends
 from sqlalchemy import text
 
-from app.core.llm import LLMService
+from app.core.llm import LLMService, get_llm_service
 from app.core.settings import settings
 from app.db.sesson import AsyncSessionLocal
 
@@ -792,7 +792,7 @@ _text_to_sql_service: Optional[TextToSqlService] = None
 
 
 def get_text_to_sql_service(
-    llm_service: LLMService = Depends(LLMService),
+    llm_service: LLMService = Depends(get_llm_service),
 ) -> TextToSqlService:
     global _text_to_sql_service
     if _text_to_sql_service is None:

@@ -21,7 +21,7 @@ import { useTranslation } from 'react-i18next'
 import * as Haptics from 'expo-haptics'
 
 import { walletService } from '@/src/services/wallet.service'
-import { formatCurrency, formatDate } from '@/src/utils/format'
+import { formatCurrency, formatDate, formatVnd } from '@/src/utils/format'
 import type { WalletTransaction } from '@/src/types/wallet'
 
 const QUICK_AMOUNTS = [50000, 100000, 200000, 500000]
@@ -193,7 +193,7 @@ export default function WalletScreen() {
                   style={[styles.quickButton, selected && styles.quickButtonActive]}
                 >
                   <Text style={[styles.quickText, selected && styles.quickTextActive]}>
-                    {formatCurrency(value)}
+                    {formatVnd(value)}
                   </Text>
                 </TouchableOpacity>
               )
@@ -321,7 +321,7 @@ function TransactionRow({
       <View style={styles.txAmountWrap}>
         <Text style={[styles.txAmount, { color: isIn ? colors.primary : colors.text }]}>
           {isIn ? '+' : '-'}
-          {formatCurrency(tx.amount).replace(' VND', '')}
+          {formatCurrency(tx.amount)}
         </Text>
         <Text style={[styles.txStatus, { color: tx.status === 'completed' ? colors.primary : colors.warning }]}>
           {t(`wallet_screen.status.${tx.status}`, tx.status)}

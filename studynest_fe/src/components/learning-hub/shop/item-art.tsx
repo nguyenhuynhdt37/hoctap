@@ -150,6 +150,13 @@ function AvatarPhoto({ src, name, alt = "" }: { src?: string | null; name?: stri
   );
 }
 
+const frameAuraByRarity: Record<Rarity, string> = {
+  common: "drop-shadow-[0_2px_6px_rgba(53,111,167,0.18)]",
+  rare: "drop-shadow-[0_4px_10px_rgba(196,88,132,0.28)]",
+  epic: "drop-shadow-[0_4px_14px_rgba(124,77,204,0.38)]",
+  legendary: "drop-shadow-[0_4px_16px_rgba(217,153,24,0.45)]",
+};
+
 export function FramedAvatar({ equipment, src, name, alt, className }: {
   equipment?: Pick<Equipment, "avatar_frame"> | null;
   src?: string | null;
@@ -163,18 +170,50 @@ export function FramedAvatar({ equipment, src, name, alt, className }: {
   const rare = frame && frame.rarity !== "common";
   const ornate = frame?.rarity === "epic" || frame?.rarity === "legendary";
   return (
-    <span className={cn("relative isolate inline-grid size-11 shrink-0 place-items-center overflow-hidden align-middle", !frame && "rounded-full", className)}>
-      <span className={cn("relative grid aspect-square place-items-center overflow-hidden rounded-full bg-accent font-semibold text-accent-foreground", frame ? "w-[73%]" : "size-full border-2 border-surface")}>
+    <span
+      className={cn(
+        "relative isolate inline-grid size-11 shrink-0 place-items-center overflow-visible align-middle",
+        !frame && "overflow-hidden rounded-full",
+        frame && frameAuraByRarity[frame.rarity],
+        className,
+      )}
+    >
+      <span
+        className={cn(
+          "relative grid aspect-square place-items-center overflow-hidden rounded-full bg-accent font-semibold text-accent-foreground ring-1 ring-white/50",
+          frame ? "w-[72%]" : "size-full border-2 border-surface",
+        )}
+      >
         <AvatarPhoto key={src} src={src} name={name} alt={alt} />
       </span>
       {frame && (
-        <svg aria-hidden="true" viewBox="0 0 100 100" className="pointer-events-none absolute inset-0 size-full">
-          <defs><linearGradient id={id} x1="0%" y1="0%" x2="100%" y2="100%">
-            {design.colors.map((color, index) => <stop key={index} offset={index / (design.colors.length - 1)} stopColor={color} />)}
-          </linearGradient></defs>
-          <circle cx="50" cy="50" r="40" fill="none" stroke={`url(#${id})`} strokeWidth="9" />
-          {rare && <circle cx="50" cy="50" r="44.5" fill="none" stroke={design.colors[0]} strokeWidth="1.6" />}
-          {ornate && <circle cx="50" cy="50" r="46" fill="none" stroke={design.colors[1]} strokeWidth="1.6" strokeDasharray={frame.rarity === "legendary" ? "1.5 2.2" : "7 3"} />}
+        <svg aria-hidden="true" viewBox="0 0 100 100" className="pointer-events-none absolute inset-0 size-full overflow-visible">
+          <defs>
+            <linearGradient id={id} x1="0%" y1="0%" x2="100%" y2="100%">
+              {design.colors.map((color, index) => (
+                <stop key={index} offset={index / (design.colors.length - 1)} stopColor={color} />
+              ))}
+            </linearGradient>
+          </defs>
+          {/* Vòng chính ánh kim */}
+          <circle cx="50" cy="50" r="40" fill="none" stroke={`url(#${id})`} strokeWidth="8.5" />
+          {/* Đường bevel sáng bên trong */}
+          <circle cx="50" cy="50" r="36.2" fill="none" stroke="rgba(255,255,255,0.65)" strokeWidth="1.1" />
+          {rare && (
+            <circle cx="50" cy="50" r="44.8" fill="none" stroke={design.colors[0]} strokeWidth="1.5" opacity="0.9" />
+          )}
+          {ornate && (
+            <circle
+              cx="50"
+              cy="50"
+              r="47.2"
+              fill="none"
+              stroke={design.colors[1]}
+              strokeWidth="1.8"
+              strokeDasharray={frame.rarity === "legendary" ? "2 3" : "8 4"}
+              className="origin-center motion-safe:animate-[spin_22s_linear_infinite]"
+            />
+          )}
           {design.trim}
         </svg>
       )}
@@ -182,31 +221,128 @@ export function FramedAvatar({ equipment, src, name, alt, className }: {
   );
 }
 
+const titleCrestStyles: Record<Rarity, { pill: string; iconWrap: string; accent: string }> = {
+  common: {
+    pill: "border-[#A9CBEB] bg-gradient-to-r from-[#EEF6FD] via-[#F7FBFF] to-[#DFEEFA] text-[#1D4E7F] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_1px_3px_rgba(53,111,167,0.12)]",
+    iconWrap: "bg-[#D9EBFA] text-[#285C90]",
+    accent: "bg-[#356FA7]/50",
+  },
+  rare: {
+    pill: "border-[#E398B8] bg-gradient-to-r from-[#FFF0F6] via-[#FCE1EC] to-[#F6CBE0] text-[#7D2448] shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_2px_6px_rgba(176,68,112,0.16)]",
+    iconWrap: "bg-white/75 text-[#9C2F5B]",
+    accent: "bg-[#C94C7E]/65",
+  },
+  epic: {
+    pill: "border-[#C8B0F7] bg-gradient-to-r from-[#281948] via-[#452B7A] to-[#6544AE] text-[#F9F6FF] shadow-[inset_0_1px_0_rgba(255,255,255,0.28),0_4px_12px_rgba(88,52,163,0.32)]",
+    iconWrap: "bg-white/18 text-[#E5D8FF] ring-1 ring-white/25",
+    accent: "bg-[#D9C7FF]",
+  },
+  legendary: {
+    pill: "border-[#F5C542] bg-gradient-to-r from-[#241607] via-[#4C310D] to-[#7C5214] text-[#FFEBA8] shadow-[inset_0_1px_0_rgba(255,236,168,0.4),0_4px_14px_rgba(196,126,10,0.38)]",
+    iconWrap: "bg-[#F5C542]/25 text-[#FFD966] ring-1 ring-[#F5C542]/55",
+    accent: "bg-[#FFD966]",
+  },
+};
+
 export function TitleBadge({ item, className }: { item?: ShopItem | null; className?: string }) {
   if (!item) return null;
   const icon = resolveTitleArt(item.asset.key, item.unlock_level);
+  const style = titleCrestStyles[item.rarity];
+  const highTier = item.rarity === "epic" || item.rarity === "legendary";
+
   return (
-    <Badge variant={rarityStyles[item.rarity].variant} className={cn("max-w-full min-w-0 gap-1 rounded-md border px-2 leading-snug", item.rarity === "legendary" && "border-double border-3", item.rarity === "epic" && "border-dashed", className)}>
-      <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.2" className="size-3.5 shrink-0"><path d={icon} strokeLinejoin="round" strokeLinecap="round" /></svg>
+    <span
+      className={cn(
+        "relative inline-flex max-w-full min-w-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold tracking-[0.01em] leading-snug",
+        style.pill,
+        className,
+      )}
+    >
+      {highTier && (
+        <span aria-hidden="true" className={cn("h-2.5 w-0.5 shrink-0 rounded-full", style.accent)} />
+      )}
+      <span className={cn("flex size-5 shrink-0 items-center justify-center rounded-full", style.iconWrap)}>
+        <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.35" className="size-3">
+          <path d={icon} strokeLinejoin="round" strokeLinecap="round" />
+        </svg>
+      </span>
       <span className="min-w-0 wrap-anywhere">{coinCopy(item.name)}</span>
-    </Badge>
+      {highTier && (
+        <span aria-hidden="true" className={cn("h-2.5 w-0.5 shrink-0 rounded-full", style.accent)} />
+      )}
+    </span>
   );
 }
 
+const hexPath = "M32 3 L56 16.5 Q59 18.2 59 21.8 L59 42.2 Q59 45.8 56 47.5 L32 61 L8 47.5 Q5 45.8 5 42.2 L5 21.8 Q5 18.2 8 16.5 Z";
+const octagonPath = "M22 4 L42 4 L58 18 L58 46 L42 60 L22 60 L6 46 L6 18 Z";
+
 export function EmblemIcon({ item, className, decorative = false }: { item?: ShopItem | null; className?: string; decorative?: boolean }) {
+  const gradId = useId();
   if (!item) return null;
   const { fill, stroke, shape } = resolveEmblemArt(item.asset.key, item.unlock_level);
+  const isEpic = item.rarity === "epic";
+  const isLegendary = item.rarity === "legendary";
+
   return (
     <svg
-      viewBox="0 0 64 64" role={decorative ? undefined : "img"} aria-hidden={decorative || undefined}
-      aria-label={decorative ? undefined : coinCopy(item.name)} className={cn("size-7 shrink-0", className)}
-    >
-      <circle cx="32" cy="32" r="30" fill={fill} stroke={stroke} strokeWidth="2" />
-      {item.rarity !== "common" && <circle cx="32" cy="32" r="27" fill="none" stroke={stroke} strokeWidth="1" strokeDasharray={item.rarity === "legendary" ? "2 2" : undefined} />}
-      {(item.rarity === "epic" || item.rarity === "legendary") && (
-        <path d="M8 32h4m40 0h4M32 8v4m0 40v4" fill="none" stroke={stroke} strokeWidth="2" strokeLinecap="round" />
+      viewBox="0 0 64 64"
+      role={decorative ? undefined : "img"}
+      aria-hidden={decorative || undefined}
+      aria-label={decorative ? undefined : coinCopy(item.name)}
+      className={cn(
+        "size-7 shrink-0",
+        isLegendary
+          ? "drop-shadow-[0_4px_10px_rgba(217,153,24,0.42)]"
+          : isEpic
+            ? "drop-shadow-[0_3px_8px_rgba(124,77,204,0.34)]"
+            : "drop-shadow-[0_2px_4px_rgba(53,111,167,0.18)]",
+        className,
       )}
-      <g fill={white} stroke={stroke} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round">{shape}</g>
+    >
+      <defs>
+        <radialGradient id={gradId} cx="35%" cy="25%" r="75%">
+          <stop offset="0%" stopColor={white} stopOpacity="0.95" />
+          <stop offset="48%" stopColor={fill} stopOpacity="1" />
+          <stop offset="100%" stopColor={stroke} stopOpacity="0.35" />
+        </radialGradient>
+      </defs>
+
+      {/* Hình dáng huy hiệu phân cấp theo độ hiếm */}
+      {isLegendary ? (
+        <>
+          <path d={octagonPath} fill={`url(#${gradId})`} stroke={stroke} strokeWidth="2.4" strokeLinejoin="round" />
+          <circle cx="32" cy="32" r="24" fill="none" stroke={stroke} strokeWidth="1.2" strokeDasharray="2.5 2.5" opacity="0.85" />
+          <path d="M8 32h4m40 0h4M32 8v4m0 40v4" fill="none" stroke={stroke} strokeWidth="2" strokeLinecap="round" />
+        </>
+      ) : isEpic ? (
+        <>
+          <path d={hexPath} fill={`url(#${gradId})`} stroke={stroke} strokeWidth="2.3" strokeLinejoin="round" />
+          <path d={hexPath} transform="translate(32 32) scale(0.86) translate(-32 -32)" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="1.2" />
+          <path d="M9 32h3.5m39 0H55M32 9v3.5m0 39V55" fill="none" stroke={stroke} strokeWidth="1.8" strokeLinecap="round" />
+        </>
+      ) : (
+        <>
+          <circle cx="32" cy="32" r="29" fill={`url(#${gradId})`} stroke={stroke} strokeWidth="2.2" />
+          <circle cx="32" cy="32" r="25.5" fill="none" stroke="rgba(255,255,255,0.75)" strokeWidth="1.2" />
+          {item.rarity === "rare" && (
+            <>
+              <circle cx="32" cy="32" r="26.8" fill="none" stroke={stroke} strokeWidth="1" opacity="0.6" />
+              <circle cx="32" cy="7" r="1.8" fill={stroke} />
+              <circle cx="32" cy="57" r="1.8" fill={stroke} />
+              <circle cx="7" cy="32" r="1.8" fill={stroke} />
+              <circle cx="57" cy="32" r="1.8" fill={stroke} />
+            </>
+          )}
+        </>
+      )}
+
+      {/* Cung phản chiếu ánh sáng phía trên tạo cảm giác nổi 3D */}
+      <path d="M18 19a19 19 0 0 1 28 0" fill="none" stroke="rgba(255,255,255,0.65)" strokeWidth="2" strokeLinecap="round" />
+
+      <g fill={white} stroke={stroke} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round">
+        {shape}
+      </g>
     </svg>
   );
 }
@@ -214,7 +350,7 @@ export function EmblemIcon({ item, className, decorative = false }: { item?: Sho
 export function EquippedMarks({ equipment, className }: { equipment?: Equipment | null; className?: string }) {
   if (!equipment?.title && !equipment?.emblem) return null;
   return (
-    <span className={cn("inline-flex min-w-0 max-w-full flex-wrap items-center gap-1", className)}>
+    <span className={cn("inline-flex min-w-0 max-w-full flex-wrap items-center gap-1.5", className)}>
       <TitleBadge item={equipment.title} />
       <EmblemIcon item={equipment.emblem} />
     </span>

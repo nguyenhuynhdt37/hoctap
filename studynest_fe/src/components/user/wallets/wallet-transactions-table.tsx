@@ -9,12 +9,9 @@ interface Props {
   onRetry?: (orderId?: string | null) => void;
 }
 
-const formatCurrency = (val?: number) =>
-  new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-    maximumFractionDigits: 0,
-  }).format(val ?? 0);
+import { formatVndAsCoin } from "@/lib/learning-hub/coin-logic";
+
+const formatCurrency = (val?: number) => formatVndAsCoin(val ?? 0);
 
 const formatDateTime = (val?: string | null) => {
   if (!val) return "Đang cập nhật";
@@ -31,10 +28,10 @@ const formatDateTime = (val?: string | null) => {
 
 const getTypeLabel = (type: string) => {
   const labels: Record<string, string> = {
-    deposit: "Nạp tiền vào ví",
+    deposit: "Nạp Coin vàng",
     purchase: "Thanh toán khóa học",
-    withdraw: "Rút tiền về tài khoản",
-    refund: "Hoàn tiền học phí",
+    withdraw: "Rút Coin về ngân hàng",
+    refund: "Hoàn Coin học phí",
     income: "Thu nhập giảng dạy",
   };
   return labels[type] || type;
@@ -108,7 +105,7 @@ export function WalletTransactionsTable({
                 Loại giao dịch
               </th>
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Số tiền
+                Số lượng (Coin)
               </th>
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Trạng thái

@@ -1,12 +1,11 @@
+import { formatVndAsCoin } from "@/lib/learning-hub/coin-logic";
 import { formatDate } from "@/lib/utils/helpers/date";
 import { getImageUrl } from "@/lib/utils/helpers/image";
 import type { PlatformWalletHistoryDetail } from "@/types/admin/platform-wallet";
 
-const currency = new Intl.NumberFormat("vi-VN", {
-  style: "currency",
-  currency: "VND",
-  maximumFractionDigits: 0,
-});
+const currency = {
+  format: (value: number) => formatVndAsCoin(value),
+};
 
 export default function WalletTxnDetail({
   data,

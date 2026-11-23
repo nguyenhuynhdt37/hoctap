@@ -1,6 +1,7 @@
 "use client";
 
 import { IconBubble, Pill } from "@/components/user/home/landing-ui";
+import { DeviceNotificationBanner } from "@/components/user/notifications/device-notification-banner";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import api from "@/lib/utils/fetcher/client/axios";
@@ -150,6 +151,10 @@ export function NotificationButton({ role }: { role: string }) {
             {unread > 0 && (
               <Pill className="shrink-0 rotate-2">{unread} mới</Pill>
             )}
+          </div>
+
+          <div className="pt-2">
+            <DeviceNotificationBanner compact />
           </div>
 
           <div className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain">

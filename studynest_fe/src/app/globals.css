@@ -618,6 +618,7 @@ textarea {
   .may-bob { animation: may-bob 5.5s ease-in-out infinite; }
   .sky-drift { animation: sky-drift var(--drift, 90s) ease-in-out infinite alternate; }
   .sky-twinkle { animation: sky-twinkle 4.5s ease-in-out infinite; }
+  .sky-shoot { animation: sky-shoot var(--shoot-duration, 9s) ease-out infinite; }
   .stamp-down { animation: stamp-down 460ms cubic-bezier(0.2, 1.5, 0.4, 1) both; }
 }
 
@@ -634,6 +635,12 @@ textarea {
 @keyframes sky-twinkle {
   0%, 100% { opacity: 0.9; }
   50% { opacity: 0.35; }
+}
+
+@keyframes sky-shoot {
+  0%, 76% { opacity: 0; transform: translate3d(0, 0, 0) rotate(-28deg) scaleX(0.4); }
+  80% { opacity: 0.85; }
+  92%, 100% { opacity: 0; transform: translate3d(-11rem, 5.5rem, 0) rotate(-28deg) scaleX(1.1); }
 }
 
 @keyframes stamp-down {

@@ -2,14 +2,11 @@
 import axios from "axios";
 import api from "@/lib/utils/fetcher/client/axios";
 import { Button } from "@/components/ui";
+import { formatVndAsCoin } from "@/lib/learning-hub/coin-logic";
 export const fetchLearning = <T,>(url: string) =>
   api.get<T>(url, { timeout: 15000 }).then((r) => r.data);
-export const price = (amount: number | string, currency = "VND") =>
-  new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: currency === "USD" ? "USD" : "VND",
-    maximumFractionDigits: 2,
-  }).format(Number(amount));
+export const price = (amount: number | string, _currency?: string) =>
+  formatVndAsCoin(amount);
 export const control =
   "w-full rounded-xl border border-border bg-surface px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring";
 export function message(error: unknown) {

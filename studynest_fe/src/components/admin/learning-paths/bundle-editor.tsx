@@ -1,4 +1,5 @@
 "use client";
+import { coinToVnd, DEFAULT_COIN_VND_RATE, vndToCoin } from "@/lib/learning-hub/coin-logic";
 import { useEffect, useState, type FormEvent } from "react";
 import useSWR from "swr";
 import api from "@/lib/utils/fetcher/client/axios";
@@ -92,13 +93,19 @@ export default function BundleEditor({
               onChange={(e) => setDraft({ ...draft, title: e.target.value })}
             />
             <Input
-              label="Giá trọn gói · VND"
+              label="Giá trọn gói · Coin"
               required
               type="number"
               min={0}
-              step="0.01"
-              value={draft.price}
-              onChange={(e) => setDraft({ ...draft, price: e.target.value })}
+              step="1"
+              value={draft.price === "" ? "" : String(vndToCoin(draft.price))}
+              onChange={(e) => {
+                const raw = e.target.value;
+                setDraft({
+                  ...draft,
+                  price: raw === "" ? "" : String(coinToVnd(Math.max(0, Math.round(Number(raw) || 0)), DEFAULT_COIN_VND_RATE)),
+                });
+              }}
             />
             <div className="sm:col-span-2">
               <SlugField

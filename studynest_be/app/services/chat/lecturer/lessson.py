@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.core.llm import LLMService
+from app.core.llm import LLMService, get_llm_service
 from app.db.models.database import (
     Courses,
     CourseSections,
@@ -27,7 +27,7 @@ from app.schemas.chat.lecturer.lesson import (
 class LessonService:
     def __init__(
         self,
-        llm_service: LLMService = Depends(LLMService),
+        llm_service: LLMService = Depends(get_llm_service),
         db: AsyncSession = Depends(get_session),
     ) -> None:
         self.llm_service = llm_service

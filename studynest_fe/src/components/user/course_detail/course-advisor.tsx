@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { coinToVnd } from '@/lib/learning-hub/coin-logic';
+import { useCoinRate } from '@/lib/learning-hub/shop-hooks';
 import api from '@/lib/utils/fetcher/client/axios';
 import MarkdownRenderer from '@/components/shared/markdown-renderer';
 import { Button } from '@/components/ui/button';
@@ -16,6 +18,7 @@ interface AdvisorResponse {
   comparison?: Array<{ id: string; title: string; subject: string | null; requirements: string[]; outcomes: string[]; price: string; currency: string; delivery_type: string }>;
 }
 export default function CourseAdvisor({ courseId, courseTitle }: { courseId: string; courseTitle: string }) {
+  const coinRateVnd = useCoinRate();
   const [opened, setOpened] = useState(false);
   const [question, setQuestion] = useState('Khóa học này phù hợp với ai và mình cần cân nhắc điều gì?');
   const [goals, setGoals] = useState('');
@@ -36,7 +39,7 @@ export default function CourseAdvisor({ courseId, courseTitle }: { courseId: str
     setLoading(true); setError('');
     try {
       const response = await api.post<AdvisorResponse>('/agent/advisor', { course_id: courseId, question: nextQuestion.trim(),
-        ...(goals.trim() ? { goals: goals.trim() } : {}), ...(compareIds.length ? { compare_course_ids: compareIds } : {}), ...(grade ? { grade: Number(grade) } : {}), ...(budget ? { budget: Number(budget) } : {}),
+        ...(goals.trim() ? { goals: goals.trim() } : {}), ...(compareIds.length ? { compare_course_ids: compareIds } : {}), ...(grade ? { grade: Number(grade) } : {}), ...(budget ? { budget: coinToVnd(Number(budget), coinRateVnd) } : {}),
       }, { signal: abort.signal });
       setResult(response.data); setQuestion(nextQuestion);
     } catch (e) { if (!abort.signal.aborted) setError('Chưa phân tích được khóa học. Bạn có thể thử lại; Mây Mây chưa đưa ra kết luận.'); }
@@ -57,7 +60,7 @@ export default function CourseAdvisor({ courseId, courseTitle }: { courseId: str
     {!opened ? <Button className="mt-4" variant="pastel" onClick={() => setOpened(true)}>Trò chuyện với Mây Mây</Button> : <div className="mt-5 space-y-4">
       <div className="grid gap-3 sm:grid-cols-2">
         <Select label="Lớp đang học (tùy chọn)" value={grade} onChange={e => setGrade(e.target.value)}><option value="">Chưa cung cấp</option>{Array.from({ length: 12 }, (_, index) => <option key={index} value={index + 1}>Lớp {index + 1}</option>)}</Select>
-        <Input label="Ngân sách VND (tùy chọn)" type="number" min={0} value={budget} onChange={e => setBudget(e.target.value)} />
+        <Input label="Ngân sách Coin (tùy chọn)" type="number" min={0} value={budget} onChange={e => setBudget(e.target.value)} />
       </div>
       <Input label="Mục tiêu học tập trong phiên này (tùy chọn)" maxLength={800} value={goals} onChange={e => setGoals(e.target.value)} placeholder="Ví dụ: ôn kiến thức nền trước khi học lập trình web" />
       {alternatives.length > 0 && <Select label="Đối chiếu với khóa học khác (tùy chọn)" value={compareIds[0] || ""} onChange={event => setCompareIds(event.target.value ? [event.target.value] : [])}><option value="">Chưa chọn khóa thay thế</option>{alternatives.map(item => <option key={item.id} value={item.id}>{item.title}</option>)}</Select>}

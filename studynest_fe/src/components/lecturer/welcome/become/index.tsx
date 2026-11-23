@@ -1,4 +1,5 @@
 "use client";
+import { formatVndAsCoin } from "@/lib/learning-hub/coin-logic";
 
 import { Button, Card, Modal } from "@/components/ui";
 import {
@@ -19,12 +20,7 @@ export const BecomeLecturerAction = () => {
     }
   };
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(price);
-  };
+  const formatPrice = (price: number) => formatVndAsCoin(price);
 
   return (
     <>
@@ -92,7 +88,7 @@ export const BecomeLecturerAction = () => {
               </span>
             </div>
             <p className="text-xs text-subtle-foreground text-center">
-              Phí sẽ được trừ trực tiếp vào ví của bạn
+              Phí sẽ được trừ trực tiếp vào số dư Coin vàng của bạn
             </p>
           </Card>
 

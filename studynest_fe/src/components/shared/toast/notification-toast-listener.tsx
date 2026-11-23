@@ -1,78 +1,89 @@
 "use client";
 
 import { useRealtimeNotiStore } from "@/stores/notifications";
+import { showDeviceNotification } from "@/lib/notifications/device-notifications";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 import toast from "react-hot-toast";
-import { Bell } from "pulsoicon-react";
+import { Bell, X } from "pulsoicon-react";
 
 export function NotificationToastListener() {
+  const router = useRouter();
   const live = useRealtimeNotiStore((s) => s.latestLiveNotification);
-  const activeRole = useRealtimeNotiStore((s) => s.activeRole);
-  const previousLiveId = useRef<string | null>(null);
+  const seenIds = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    if (!live || previousLiveId.current === live.notification.id) return;
-    previousLiveId.current = live.notification.id;
-    if (live.role !== activeRole) return;
-    // Toast only WebSocket events. Hydrating notification history must not
-    // replay old notifications or swallow the first event in an empty inbox.
+    if (!live?.notification?.id) return;
     const noti = live.notification;
+    if (seenIds.current.has(noti.id)) return;
+    seenIds.current.add(noti.id);
+    if (seenIds.current.size > 150) {
+      const oldest = seenIds.current.values().next().value;
+      if (oldest) seenIds.current.delete(oldest);
+    }
 
+    // 1. Phát thông báo gốc ra thiết bị (OS Notification Center / Desktop) nếu đã bật quyền
+    void showDeviceNotification({
+      id: noti.id,
+      title: noti.title,
+      body: noti.content,
+      url: noti.url,
+    });
+
+    // 2. Hiển thị Toast nổi chuẩn Cloudy Blue trong trang web (bấm vào điều hướng tới link)
     toast(
       (t) => (
         <div className="flex items-start gap-3">
-          <div className="flex-shrink-0 mt-0.5">
-            <div className="w-8 h-8 rounded-full bg-primary-light flex items-center justify-center">
-              <Bell className="w-4 h-4 text-primary" aria-hidden="true" />
-            </div>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold text-foreground text-sm mb-1">
-              {noti.title}
-            </p>
-            <p className="text-muted-foreground text-sm line-clamp-2">
-              {noti.content}
-            </p>
+          <div className="mt-0.5 shrink-0">
+            <img
+              src="/logo/maymay-app-icon-1024.png"
+              alt="Mây Mây"
+              className="size-10 rounded-2xl border border-primary-pastel/80 object-cover shadow-2xs"
+            />
           </div>
           <button
             type="button"
+            onClick={() => {
+              toast.dismiss(t.id);
+              if (noti.url && noti.url.startsWith("/")) {
+                router.push(noti.url);
+              }
+            }}
+            className="min-w-0 flex-1 text-left cursor-pointer focus-visible:outline-none"
+          >
+            <p className="mb-0.5 text-sm font-bold text-foreground">
+              {noti.title}
+            </p>
+            <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+              {noti.content}
+            </p>
+          </button>
+          <button
+            type="button"
             onClick={() => toast.dismiss(t.id)}
-            className="flex-shrink-0 rounded-md p-0.5 text-subtle-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors cursor-pointer"
+            className="shrink-0 rounded-full p-1 text-subtle-foreground transition-colors hover:bg-background hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
             aria-label="Đóng thông báo"
           >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+            <X className="size-4" animated={false} aria-hidden="true" />
           </button>
         </div>
       ),
       {
-        duration: 5000,
+        duration: 5500,
         style: {
           background: "var(--color-surface)",
           color: "var(--color-foreground)",
-          borderRadius: "1rem",
-          padding: "1rem",
+          borderRadius: "1.25rem",
+          padding: "0.9rem 1rem",
           boxShadow: "var(--shadow-ambient-md)",
-          border: "1px solid var(--color-border)",
+          border: "1px solid var(--color-primary-pastel)",
           borderLeft: "4px solid var(--color-primary)",
           maxWidth: "420px",
           fontSize: "0.875rem",
         },
       },
     );
-  }, [live, activeRole]);
+  }, [live, router]);
 
   return null;
 }

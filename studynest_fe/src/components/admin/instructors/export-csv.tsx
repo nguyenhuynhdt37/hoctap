@@ -152,7 +152,7 @@ export default function ExportInstructorCSV() {
           <li>• Số khóa học</li>
           <li>• Số học viên</li>
           <li>• Đánh giá</li>
-          <li>• Tổng doanh thu (VND)</li>
+          <li>• Tổng doanh thu (Coin)</li>
         </ul>
       </div>
     </div>

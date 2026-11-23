@@ -32,11 +32,16 @@ class RewardDTO(BaseModel):
 class CalendarDayDTO(BaseModel):
     """Thông tin một ngày trong lịch check-in."""
 
-    day_number: int = Field(..., description="Ngày trong chu kỳ (1-based)")
+    day_number: int = Field(..., description="Ngày trong chu kỳ (1-based; 1=Thứ 2 .. 7=Chủ nhật)")
+    calendar_date: Optional[datetime.date] = Field(
+        None, description="Ngày dương lịch thực tế của ô này"
+    )
     checkin_date: Optional[datetime.date] = Field(
         None, description="Ngày đã check-in (None nếu chưa)"
     )
     is_checked: bool = Field(False, description="Đã check-in ngày này chưa")
+    is_today: bool = Field(False, description="Có phải ngày hôm nay không")
+    is_missed: bool = Field(False, description="Đã qua ngày nhưng chưa điểm danh")
     reward: Optional[RewardDTO] = Field(None, description="Phần thưởng của ngày này")
 
 

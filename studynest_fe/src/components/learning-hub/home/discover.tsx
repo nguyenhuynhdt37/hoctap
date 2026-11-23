@@ -1,6 +1,6 @@
 "use client";
 
-import { Skeleton } from "@/components/ui";
+import { CoinPrice, Skeleton } from "@/components/ui";
 import { mayPortrait, pathCover, StudyImage } from "@/components/user/home/study-image";
 import { useAuthedSWR } from "@/hooks/auth/useAuthedSWR";
 import api from "@/lib/utils/fetcher/client/axios";
@@ -13,9 +13,9 @@ import { useState, type MouseEvent } from "react";
 import useSWR from "swr";
 import { HubLoadError } from "../hub-page-state";
 import { stretchedLink, TicketCard } from "./home-ui";
+import { formatCoursePriceCoin, formatVndAsCoin } from "@/lib/learning-hub/coin-logic";
 import { HomeLink } from "./section";
 
-const money = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 2 });
 const widths = ["w-[17.5rem] sm:w-[20rem]", "w-[15rem] sm:w-[17rem]", "w-[16.5rem] sm:w-[18.5rem]"];
 const tilts = ["rotate-1", "-rotate-1", "rotate-[0.5deg]"];
 
@@ -80,10 +80,13 @@ function ComboTile({ combo, index }: { combo: CatalogCombo; index: number }) {
           <Link href={`/combo/${encodeURIComponent(combo.slug)}`} className={stretchedLink}>{combo.title}<span className="sr-only"> — xem combo</span></Link>
         </h3>
         <p className="truncate text-sm">{combo.instructor.name} · {combo.course_count} khóa · {combo.lesson_count} bài</p>
-        <p className="text-xl font-extrabold tabular-nums">
-          {Number(combo.price) === 0 ? "Miễn phí" : money.format(Number(combo.price))}
-          {savings && <s className="ml-2 text-sm font-medium"><span className="sr-only">Giá lẻ </span>{money.format(Number(combo.standalone_total))}</s>}
-        </p>
+        <div className="pt-1">
+          <CoinPrice
+            priceVnd={combo.price}
+            originalPriceVnd={savings ? combo.standalone_total : undefined}
+            size="md"
+          />
+        </div>
       </TicketCard>
     </li>
   );

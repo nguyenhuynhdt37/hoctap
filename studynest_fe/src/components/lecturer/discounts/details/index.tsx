@@ -21,12 +21,9 @@ import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 import useSWR from "swr";
 
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-    maximumFractionDigits: 0,
-  }).format(value);
+import { formatVndAsCoin } from "@/lib/learning-hub/coin-logic";
+
+const formatCurrency = (value: number) => formatVndAsCoin(value);
 
 const formatDateTime = (value: string) => {
   try {

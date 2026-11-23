@@ -15,6 +15,11 @@ from app.core.settings import settings
 logger = logging.getLogger(__name__)
 
 
+def get_llm_service() -> "LLMService":
+    """FastAPI dependency provider cho LLMService (tránh lộ tham số __init__ thành HTTP params)."""
+    return LLMService()
+
+
 class LLMService:
     """Chat service with selectable Gemini and 9Router providers."""
 

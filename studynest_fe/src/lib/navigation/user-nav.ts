@@ -11,6 +11,7 @@ import {
   BookOpen,
   Bot,
   CircleHelp,
+  Crown,
   Flag,
   Trophy,
   Gift,
@@ -26,6 +27,7 @@ import {
   ShoppingBag,
   SlidersHorizontal,
   Target,
+  Ticket,
   Undo2,
   UserPlus,
   UserRound,
@@ -94,6 +96,7 @@ export const USER_NAV: NavGroup[] = [
       { id: "goals", href: "/goals", label: "Mục tiêu", description: "Đặt đích đến cho tuần này", icon: Target, audience: "member" },
       { id: "missions", href: "/missions", label: "Nhiệm vụ", description: "Làm xong để nhận thưởng", icon: Flag, audience: "member", badge: "missions" },
       { id: "levels", href: "/levels", label: "Cấp độ & phần thưởng", description: "Xem các cấp đã đạt và quà ở mỗi chặng", icon: Trophy, audience: "member" },
+      { id: "leaderboard", href: "/leaderboard", label: "Bảng xếp hạng", description: "Tranh tài theo XP, chuỗi ngày, Coin và bài học", icon: Crown, audience: "member" },
       { id: "ai", href: "/chat-sql", label: "Hỏi Mây AI", description: "Hỏi bài, Mây giải thích từng bước", icon: Bot, audience: "member" },
     ],
   },
@@ -131,7 +134,8 @@ export const USER_NAV: NavGroup[] = [
     tone: "vanilla",
     icon: Wallet,
     items: [
-      { id: "wallet", href: "/wallets", label: "Ví của tôi", description: "Số dư và nạp tiền", icon: Wallet, audience: "member", size: "wide", badge: "balance" },
+      { id: "wallet", href: "/wallets", label: "Coin vàng", description: "Số dư Coin vàng và nạp Coin", icon: Wallet, audience: "member", size: "wide", badge: "balance" },
+      { id: "vouchers", href: "/vouchers", label: "Kho mã giảm giá", description: "Mã thưởng riêng và ưu đãi đang có", icon: Ticket, audience: "member" },
       { id: "transactions", href: "/wallets/transactions", label: "Lịch sử giao dịch", description: "Mọi khoản vào ra của ví", icon: Receipt, audience: "member" },
       {
         // `/refunds/my_refund` hiển thị cùng một màn hình với trang này (xem ngoại lệ trong script kiểm tra).

@@ -1,6 +1,7 @@
 "use client";
 
-import { Progress, Skeleton } from "@/components/ui";
+import { CoinPrice, Progress, Skeleton } from "@/components/ui";
+import { formatCoursePriceCoin, formatVndAsCoin } from "@/lib/learning-hub/coin-logic";
 import { cn } from "@/lib/utils";
 import type { CoursesMeItem } from "@/types/user/courses-me";
 import type { CatalogCourseCard } from "@/types/catalog";
@@ -12,7 +13,6 @@ import { mayPortrait, StudyImage } from "../study-image";
 
 export const courseNumber = new Intl.NumberFormat("vi-VN");
 const score = new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 1, minimumFractionDigits: 1 });
-const money = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" });
 
 export const courseActionClass =
   "min-h-11 rounded-full px-4 motion-reduce:transition-none motion-reduce:active:translate-y-0";
@@ -124,15 +124,22 @@ function CoursePrice({ course }: { course: CatalogCourseCard }) {
   const price = discountPrice ?? originalPrice;
   return (
     <div className="min-w-0">
-      <p className="wrap-anywhere text-base font-semibold tabular-nums text-info-foreground sm:text-lg">
-        {isFree ? "Miễn phí" : price === null ? "Chưa có giá" : money.format(price)}
-      </p>
-      {discountPrice !== null && originalPrice !== null && (
-        <p className="flex flex-wrap items-baseline gap-x-2 text-xs font-medium text-foreground">
-          <del><span className="sr-only">Giá niêm yết </span>{money.format(originalPrice)}</del>
-          <span className="text-accent-foreground">Khi áp mã</span>
-        </p>
-      )}
+      <div className="min-w-0">
+        {price === null && !isFree ? (
+          <p className="text-sm font-semibold text-muted-foreground">Chưa có giá</p>
+        ) : (
+          <CoinPrice
+            priceVnd={isFree ? 0 : price}
+            originalPriceVnd={discountPrice !== null ? originalPrice : undefined}
+            size="md"
+          />
+        )}
+        {discountPrice !== null && originalPrice !== null && (
+          <p className="mt-1 text-[11px] font-semibold text-accent-foreground">
+            Đã áp mã ưu đãi tốt nhất
+          </p>
+        )}
+      </div>
     </div>
   );
 }

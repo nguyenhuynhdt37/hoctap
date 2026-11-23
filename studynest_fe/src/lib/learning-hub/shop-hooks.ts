@@ -6,7 +6,12 @@ import { useState } from "react";
 import useSWR, { useSWRConfig } from "swr";
 import { getHubDataSource } from "./data-source";
 import { useHubAuthStatus } from "./hooks";
-import { parseCoinBalances, type CoinBalancesResponse } from "./coin-logic";
+import {
+  DEFAULT_COIN_VND_RATE,
+  parseCoinBalances,
+  type CoinBalancesResponse,
+  type CoinRateResponse,
+} from "./coin-logic";
 import { hubEndpoints } from "./endpoints";
 import { apiShopClient } from "./shop-api";
 import { coinBalancesKey, shopCatalogKeys, shopInventoryKey, shopItemsKey } from "./shop-keys";
@@ -39,6 +44,15 @@ export function useCoinBalances() {
   const id = useShopUserId();
   return useSWR(id ? coinBalancesKey(id) : null, async () =>
     parseCoinBalances((await api.get<CoinBalancesResponse>(hubEndpoints.coins)).data), queryOptions);
+}
+
+export function useCoinRate(): number {
+  const { data } = useSWR<CoinRateResponse>(
+    hubEndpoints.coinRate,
+    async (url: string) => (await api.get<CoinRateResponse>(url)).data,
+    { ...queryOptions, dedupingInterval: 300_000, revalidateOnFocus: false },
+  );
+  return data?.rate_vnd && data.rate_vnd > 0 ? data.rate_vnd : DEFAULT_COIN_VND_RATE;
 }
 
 export function useShopItems(kind?: ItemKind) {

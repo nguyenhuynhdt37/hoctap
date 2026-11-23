@@ -330,3 +330,20 @@ class BundleOrderLine(Identity, Base):
     earning_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("public.instructor_earnings.id"), unique=True
     )
+
+
+class UserBundleBookmark(Base):
+    __tablename__ = "user_bundle_bookmarks"
+    __table_args__ = (
+        Index("ix_user_bundle_bookmarks_bundle", "bundle_id"),
+        {"schema": "public"},
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("public.user.id", ondelete="CASCADE"), primary_key=True
+    )
+    bundle_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("public.course_bundles.id", ondelete="CASCADE"), primary_key=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )

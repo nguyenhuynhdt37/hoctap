@@ -12,12 +12,9 @@ interface Props {
   transactionId: string;
 }
 
-const formatCurrency = (val: number) =>
-  new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-    maximumFractionDigits: 0,
-  }).format(val);
+import { formatVndAsCoin } from "@/lib/learning-hub/coin-logic";
+
+const formatCurrency = (val: number) => formatVndAsCoin(val);
 
 const formatDateTime = (val?: string | null) => {
   if (!val) return "—";
@@ -196,7 +193,7 @@ export default function UserTransactionDetail({ transactionId }: Props) {
             </div>
             <div className="mt-3 sm:mt-0">
               <span className="inline-block rounded-full border border-primary-pastel bg-surface px-3 py-1 font-mono text-xs text-muted-foreground">
-                {data.currency || "VND"}
+                Coin
               </span>
             </div>
           </div>

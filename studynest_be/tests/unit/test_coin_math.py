@@ -1,6 +1,13 @@
 from decimal import Decimal
 
-from app.services.coin_math import allocate, price_to_coin, split_payment, topup_to_coin
+from app.services.coin_math import (
+    allocate,
+    gold_to_white_exchange,
+    price_to_coin,
+    purchase_cashback_bonus,
+    split_payment,
+    topup_to_coin,
+)
 
 
 def test_price_to_coin_rounds_up():
@@ -14,10 +21,30 @@ def test_topup_keeps_remainder():
     assert topup_to_coin(Decimal(9_999), 10000) == (0, Decimal(9999))
 
 
-def test_split_respects_cap_and_balance():
-    assert split_payment(100, 500, Decimal("0.30")) == (30, 70)
-    assert split_payment(100, 10, Decimal("0.30")) == (10, 90)
-    assert split_payment(100, 0, Decimal("0.30")) == (0, 100)
+def test_split_respects_50_percent_cap_and_10_to_1_ratio():
+    # 100 Coin vàng -> tối đa 50 Coin trắng (= 5 Coin vàng) + 95 Coin vàng
+    assert split_payment(100, 500) == (50, 95)
+    assert split_payment(100, 50) == (50, 95)
+    # Có 37 Coin trắng -> chỉ trừ chẵn 30 Coin trắng (= 3 Coin vàng) + 97 Coin vàng
+    assert split_payment(100, 37) == (30, 97)
+    # Dưới 10 Coin trắng -> không trừ lẻ
+    assert split_payment(100, 9) == (0, 100)
+    assert split_payment(100, 0) == (0, 100)
+    # Khóa 50 Coin vàng -> tối đa 25 Coin trắng -> chẵn 20 Coin trắng (= 2 Coin vàng) + 48 Coin vàng
+    assert split_payment(50, 100) == (20, 48)
+
+
+def test_purchase_cashback_bonus_returns_20_percent():
+    assert purchase_cashback_bonus(100) == 20
+    assert purchase_cashback_bonus(50) == 10
+    assert purchase_cashback_bonus(0) == 0
+
+
+def test_gold_to_white_exchange_is_5_to_1():
+    assert gold_to_white_exchange(1) == 5
+    assert gold_to_white_exchange(10) == 50
+    assert gold_to_white_exchange(0) == 0
+    assert gold_to_white_exchange(-5) == 0
 
 
 def test_allocate_sums_to_total_with_remainder_last():
