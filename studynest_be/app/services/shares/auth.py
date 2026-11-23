@@ -38,6 +38,7 @@ from app.schemas.auth.user import (
     VerifyOtp,
 )
 from app.schemas.shares.notification import NotificationCreateSchema
+from app.services.gamification.shop_service import ShopService
 from app.services.shares.mailer import MailerService
 from app.services.shares.otp import LOGIN, OTP_TTL, VERIFY_EMAIL, limit_attempt_async, limit_issue_async
 from app.services.shares.notification import NotificationService
@@ -518,6 +519,9 @@ class AuthService:
     async def me_async(self, user: User) -> dict[str, Any]:
         # Tự động tạo ví nếu chưa có (Self-healing)
         await self.wallet_service.get_or_create_wallet_async(user.id)
+        shop = ShopService(self.db)
+        await shop.profiles.backfill_levels(user.id)
+        equipment = await shop.equipment(user.id)
         await self.db.commit()
 
         roles = [ur.role.role_name for ur in user.user_roles if ur.role]
@@ -531,6 +535,7 @@ class AuthService:
             "fullname": user.fullname,
             "email": user.email,
             "avatar": user.avatar,
+            "equipment": equipment,
             "bio": user.bio,
             "facebook_url": user.facebook_url,
             # ====== Info cơ bản ======

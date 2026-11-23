@@ -13,6 +13,8 @@ class UpdateSettingsSchema(BaseModel):
     allow_wallet_topup: Optional[bool] = None
     allow_auto_withdraw: Optional[bool] = None
     max_discounts_per_course: Optional[int] = Field(None, ge=0, le=20)
+    refund_max_courses_per_month: Optional[int] = Field(None, ge=0)
+    monthly_platform_coupon_budget: Optional[decimal.Decimal] = Field(None, ge=0, max_digits=14, decimal_places=2)
     discount_max_percent: Optional[int] = Field(None, ge=0, le=100)
     discount_min_price: Optional[decimal.Decimal] = Field(None, ge=0)
     course_min_price: Optional[decimal.Decimal] = Field(None, ge=0)

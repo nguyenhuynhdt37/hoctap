@@ -3,7 +3,7 @@
 import hashlib
 import json
 from datetime import UTC, datetime, timedelta
-from decimal import ROUND_DOWN, ROUND_HALF_UP, Decimal
+from decimal import ROUND_DOWN, Decimal
 from uuid import UUID, uuid4
 
 from fastapi import HTTPException
@@ -12,10 +12,10 @@ from sqlalchemy import delete, func, literal_column, select, text, update
 from app.db.models.database import (
     CourseEnrollments,
     Courses,
+    DiscountHistory,
+    Discounts,
     InstructorEarnings,
-    PlatformSettings,
-    PlatformWalletHistory,
-    PlatformWallets,
+    RewardInstances,
     PurchaseItems,
     Transactions,
     User,
@@ -35,11 +35,14 @@ from app.db.models.learning_paths import (
 from app.libs.formats.datetime import VIETNAM_TIMEZONE
 from app.libs.formats.datetime import now as legacy_now
 from app.schemas.learning_paths import BUNDLE_PRESENTATION_FIELDS
+from app.services.billing_ledger import check_coupon_budget, hold_payment, lock_treasury, record_coupon_cost
 from app.services.bundle_coupons import BundleCouponService
+from app.services.coupon_settlement import CENT, billing_policy, coupon_cap, money, settle
+from app.services.gamification.coupon_rewards import (
+    REWARD_CODE_PREFIX, consume_discount, find_discount, reward_inventory_entry,
+)
 from app.services.catalog import public_course, record, require_real_course
 from app.services.catalog_slugs import create_slugged
-
-CENT = Decimal("0.01")
 
 
 def allocate_price(total, weights):
@@ -61,6 +64,20 @@ def allocate_price(total, weights):
     ]:
         result[i] += CENT
     return result
+
+
+def allocate_coupon(prices, fee, sponsor, value, *, fixed=False, maximum=None, instructor_max=Decimal(90)):
+    caps = [coupon_cap(price, fee, sponsor, instructor_max) for price in prices]
+    if fixed:
+        if value > sum(caps):
+            raise HTTPException(422, "Mã giảm giá cố định vượt mức giảm cho phép.")
+        total, weights = value, caps
+    else:
+        weights = [min(cap, money(price * value / 100)) for price, cap in zip(prices, caps)]
+        total = sum(weights)
+    if maximum is not None:
+        total = min(total, maximum)
+    return allocate_price(total, weights)
 
 
 async def lock_purchase_user(db, user_id):
@@ -516,6 +533,7 @@ class BundleService:
             raise HTTPException(
                 409, "Một khóa trong combo đang ngừng bán; chưa thể thanh toán"
             )
+        owner_id = None
         if lecturer_sale:
             from app.services.bundle_ownership import BundleOwnershipPolicy
 
@@ -542,31 +560,44 @@ class BundleService:
             }
             for i, c in rows
         ]
-        subtotal = sum(Decimal(i["payable"]) for i in items)
-        coupon = await BundleCouponService(self.db).resolve(
-            root.id, coupon_code, subtotal, user_id, lock
-        )
-        discount = Decimal("0.00")
-        if coupon:
-            discount = (
-                subtotal * coupon.value / 100
-                if coupon.discount_type == "percent"
-                else coupon.value
+        prices = [Decimal(item["payable"]) for item in items]
+        subtotal = sum(prices)
+        policy = await billing_policy(self.db, lock=lock)
+        fee = policy.platform_fee
+        coupon, reward, reward_instance = None, None, None
+        sponsor, value, fixed, maximum = None, None, False, None
+        if coupon_code and coupon_code.strip().upper().startswith(REWARD_CODE_PREFIX):
+            reward = await find_discount(self.db, coupon_code, lock=lock, reward_only=True)
+            owned_reward = await reward_inventory_entry(self.db, reward.id, user_id) if reward and user_id else None
+            if not owned_reward or not reward.is_active or (reward.usage_count or 0) >= 1:
+                raise HTTPException(422, "Mã thưởng không còn hiệu lực hoặc không thuộc về bạn.")
+            reward_instance = await self.db.get(RewardInstances, owned_reward.reward_instance_id)
+            sponsor, value = "platform", reward.percent_value
+        else:
+            coupon = await BundleCouponService(self.db).resolve(
+                root.id, coupon_code, subtotal, user_id, lock,
             )
-            if coupon.max_discount is not None:
-                discount = min(discount, coupon.max_discount)
-            discount = min(subtotal, discount).quantize(CENT, rounding=ROUND_HALF_UP)
-        total = subtotal - discount
-        payables = allocate_price(total, [Decimal(i["payable"]) for i in items])
-        for item, payable in zip(items, payables):
-            item["coupon_discount"] = str(Decimal(item["payable"]) - payable)
-            item["payable"] = str(payable)
-        policy = await self.db.scalar(select(PlatformSettings).limit(1))
-        refund_days = (
-            int(policy.hold_days) if policy and policy.hold_days is not None else 7
-        )
-        if refund_days < 1:
+            if coupon:
+                sponsor, value = BundleCouponService.sponsor(coupon, owner_id), coupon.value
+                fixed, maximum = coupon.discount_type == "fixed", coupon.max_discount
+
+        discounts = [Decimal("0.00")] * len(prices)
+        if sponsor:
+            discounts = allocate_coupon(
+                prices, fee, sponsor, value, fixed=fixed, maximum=maximum,
+                instructor_max=Decimal(policy.discount_max_percent),
+            )
+            if not sum(discounts):
+                raise HTTPException(422, "Mã không giảm được giá khóa học trong combo này.")
+
+        for item, price, reduction in zip(items, prices, discounts):
+            item["coupon_discount"] = str(reduction)
+            item["payable"] = str(price - reduction)
+        refund_days = int(policy.hold_days)
+        if refund_days < 0:
             raise HTTPException(503, "Chính sách hoàn tiền chưa được cấu hình hợp lệ")
+        discount = sum(discounts)
+        total = subtotal - discount
         canonical = {
             "version_id": str(version.id),
             "user_id": str(user_id) if user_id else None,
@@ -575,7 +606,10 @@ class BundleService:
             "subtotal": str(subtotal),
             "discount_amount": str(discount),
             "coupon_id": str(coupon.id) if coupon else None,
-            "coupon_code": coupon.code if coupon else None,
+            "coupon_code": coupon.code if coupon else (reward_instance.code_masked if reward_instance else None),
+            "reward_discount_id": str(reward.id) if reward else None,
+            "coupon_sponsor": sponsor,
+            "platform_fee": str(fee),
             "currency": "VND",
             "refund_days": refund_days,
         }
@@ -588,7 +622,7 @@ class BundleService:
             "title": version.title,
             "full_price": str(version.price),
             "owned_credit": str(version.price - subtotal),
-            "policy": "Trừ phần đã sở hữu trước, sau đó áp dụng tối đa một mã ưu đãi riêng của combo. Hoàn tiền theo số thực trả của từng khóa.",
+            "policy": "Trừ phần đã sở hữu trước, sau đó áp dụng tối đa một mã ưu đãi của combo hoặc mã thưởng cá nhân. Hoàn tiền theo số thực trả của từng khóa.",
         }
 
     async def receipt(self, order_id, user_id):
@@ -667,28 +701,15 @@ class BundleService:
                 raise HTTPException(409, "Ví đang khóa hoặc không dùng VND")
             if total and (not wallet or Decimal(wallet.balance or 0) < total):
                 raise HTTPException(402, "Số dư ví không đủ để mua combo")
-            platform = await self.db.scalar(select(PlatformSettings).limit(1))
-            if not platform:
-                raise HTTPException(503, "Chưa có cấu hình phí nền tảng")
-            fee = (
-                Decimal(platform.platform_fee)
-                if platform.platform_fee is not None
-                else Decimal("0.3")
-            )
+            fee = Decimal(quote["platform_fee"])
             hold_days = quote["refund_days"]
-            if not 0 <= fee <= 1 or hold_days < 1:
-                raise HTTPException(
-                    503, "Cấu hình phí hoặc thời hạn hoàn tiền không hợp lệ"
-                )
-            treasury = await self.db.scalar(
-                select(PlatformWallets)
-                .where(PlatformWallets.currency == "VND")
-                .order_by(PlatformWallets.id)
-                .limit(1)
-                .with_for_update()
-            )
-            if not treasury:
-                raise HTTPException(503, "Chưa có ví đối soát nền tảng")
+            sponsor = quote["coupon_sponsor"]
+            policy = await billing_policy(self.db, lock=True)
+            treasury = await lock_treasury(self.db) if total else None
+            discount_amount = Decimal(quote["discount_amount"])
+            if sponsor == "platform":
+                await check_coupon_budget(self.db, policy, discount_amount)
+            reward_id = UUID(quote["reward_discount_id"]) if quote["reward_discount_id"] else None
             active_teachers = set(
                 (
                     await self.db.scalars(
@@ -718,21 +739,14 @@ class BundleService:
                 total_paid=total,
                 coupon_id=UUID(quote["coupon_id"]) if quote["coupon_id"] else None,
                 coupon_code=quote["coupon_code"],
-                discount_amount=Decimal(quote["discount_amount"]),
+                reward_discount_id=reward_id,
+                discount_amount=discount_amount,
                 currency="VND",
             )
             self.db.add(order)
             await self.db.flush()
             if total:
-                treasury.holding_amount = Decimal(treasury.holding_amount or 0) + total
-                self.db.add(
-                    PlatformWalletHistory(
-                        wallet_id=treasury.id,
-                        amount=total,
-                        type="hold",
-                        note=f"Combo order {order.id}: giữ chờ đối soát",
-                    )
-                )
+                hold_payment(self.db, treasury, total, note=f"Combo {order.id}: giữ chờ đối soát")
                 wallet.balance -= total
                 wallet.total_out = Decimal(wallet.total_out or 0) + total
                 wallet.last_transaction_at = now
@@ -756,7 +770,10 @@ class BundleService:
                         409,
                         "Giảng viên không mua khóa do chính mình cung cấp trong combo",
                     )
-                paid = Decimal(item["payable"])
+                base = Decimal(item["allocated_price"])
+                reduction = Decimal(item["coupon_discount"])
+                amounts = settle(base, fee, sponsor, reduction, instructor_max=Decimal(policy.discount_max_percent))
+                paid = amounts.paid
                 if paid > 0:
                     tx = Transactions(
                         id=uuid4(),
@@ -784,6 +801,10 @@ class BundleService:
                         original_price=Decimal(item["list_price"]),
                         discounted_price=paid,
                         discount_amount=Decimal(item["list_price"]) - paid,
+                        discount_id=reward_id if reduction else None,
+                        settlement_base_price=base,
+                        settlement_platform_fee=fee,
+                        coupon_sponsor=sponsor if reduction else None,
                         status="completed",
                         course_snapshot={
                             "title": course.title,
@@ -800,13 +821,19 @@ class BundleService:
                     self.db.add(pi)
                     await self.db.flush()
                     line.purchase_item_id = pi.id
-                    platform_share = (paid * fee).quantize(CENT, rounding=ROUND_HALF_UP)
+                    record_coupon_cost(self.db, pi, reduction, bundle_coupon_id=order.coupon_id)
+                    if reward_id and reduction:
+                        self.db.add(DiscountHistory(
+                            user_id=user_id, purchase_item_id=pi.id, discount_id=reward_id,
+                            discounted_amount=reduction, created_at=now,
+                        ))
                     earning = InstructorEarnings(
                         id=uuid4(),
                         transaction_id=tx.id,
                         instructor_id=course.instructor_id,
-                        amount_platform=platform_share,
-                        amount_instructor=paid - platform_share,
+                        purchase_item_id=pi.id,
+                        amount_platform=amounts.platform,
+                        amount_instructor=amounts.instructor,
                         status="holding",
                         hold_until=now + timedelta(days=hold_days),
                         purchase_snapshot={
@@ -848,6 +875,8 @@ class BundleService:
                     .where(Courses.id == course.id)
                     .values(total_enrolls=func.coalesce(Courses.total_enrolls, 0) + 1)
                 )
+            if reward_id:
+                await consume_discount(self.db, await self.db.get(Discounts, reward_id), user_id)
             if new_teachers:
                 await self.db.execute(
                     update(User)

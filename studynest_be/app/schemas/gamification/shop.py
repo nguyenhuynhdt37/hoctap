@@ -3,6 +3,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, StringConstraints
 
+from app.schemas.gamification.profile import XpState
+
 ItemKind = Literal["avatar_frame", "title", "emblem"]
 Rarity = Literal["common", "rare", "epic", "legendary"]
 Milestone = Literal["none", "five", "ten"]
@@ -76,3 +78,9 @@ class LevelReward(LevelRewardGrant):
     coupon: LevelCoupon | None
     reached: bool
     granted: bool
+
+
+class LevelsOverview(BaseModel):
+    current: XpState
+    max_level: None = None
+    rewards: list[LevelReward]

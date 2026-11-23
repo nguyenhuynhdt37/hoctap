@@ -60,6 +60,7 @@ from app.api.v1.gamification import badges as gamification_badges
 from app.api.v1.gamification import daily_checkin as gamification_checkin
 from app.api.v1.gamification import missions as gamification_missions
 from app.api.v1.gamification import profile as gamification_profile
+from app.api.v1.gamification import shop as gamification_shop
 from app.api.v1.gamification import streak as gamification_streak
 from app.api.v1.gamification import websocket as gamification_ws
 from app.core.scheduler import scheduler, start_scheduler
@@ -215,6 +216,7 @@ app.include_router(gamification_badges.router, prefix=prefix)
 app.include_router(gamification_checkin.router, prefix=prefix)
 app.include_router(gamification_profile.router, prefix=prefix)
 app.include_router(gamification_missions.router, prefix=prefix)
+app.include_router(gamification_shop.router, prefix=prefix)
 app.include_router(gamification_streak.router, prefix=prefix)
 app.include_router(gamification_ws.router, prefix=f"{prefix}/gamification")
 

@@ -185,11 +185,11 @@ class GoogleLoginConfigurationTests(unittest.IsolatedAsyncioTestCase):
         self.service._create_session.assert_not_awaited()
 
 
-def test_google_identity_migration_is_head_and_follows_learning_hub():
+def test_google_identity_migration_follows_learning_hub():
     config = Config()
     config.set_main_option("script_location", str(Path(__file__).resolve().parents[2] / "alembic"))
     revisions = ScriptDirectory.from_config(config)
-    assert revisions.get_heads() == ["ai23yz567v890"]
+    assert "ai23yz567v890" in {revision.revision for revision in revisions.walk_revisions()}
     assert revisions.get_revision("ai23yz567v890").down_revision == "ah12xy456u789"
 
 

@@ -280,11 +280,23 @@ async def test_concurrent_claim_credits_each_ledger_once_and_replays_snapshot(as
         assert first.level_up.from_level == 1
         assert first.level_up.to >= 4
         assert first.level_up.peak_bonus == expected_bonus
+        assert [(reward.level, reward.coins) for reward in first.level_up.rewards] == [
+            (level, levels[level].rewards_config["reward_peak"]) for level in (2, 3, 4)
+        ]
         assert first.xp.peak_balance == 19 + expected_bonus
         async with sessions() as db:
-            grants = dict((await db.execute(select(RewardGrants.reward_kind, RewardGrants.amount)
-                                            .where(RewardGrants.user_id == user_id))).all())
-            assert grants == {"xp": award, "peak": 19, **({"level_up_peak": expected_bonus} if expected_bonus else {})}
+            grants = dict((await db.execute(
+                select(RewardGrants.reward_kind, RewardGrants.amount).where(
+                    RewardGrants.user_id == user_id, RewardGrants.mission_id == mission_id,
+                )
+            )).all())
+            assert grants == {"xp": award, "peak": 19}
+            level_grants = dict((await db.execute(
+                select(RewardGrants.level, RewardGrants.amount).where(
+                    RewardGrants.user_id == user_id, RewardGrants.reward_kind == "level",
+                )
+            )).all())
+            assert level_grants == {reward.level: reward.coins for reward in first.level_up.rewards}
             assert await db.scalar(select(func.count()).select_from(XpTransactions).where(
                 XpTransactions.user_id == user_id,
             )) == 1

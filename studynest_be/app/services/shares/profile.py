@@ -1,12 +1,14 @@
 import uuid
 
 from fastapi import Depends, HTTPException, UploadFile
+from loguru import logger
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models.database import User
 from app.db.sesson import get_session
 from app.schemas.user.profile import ProfileUpdate
+from app.services.gamification.shop_service import ShopService
 from app.services.shares.file_storage import (
     FileStorageService,
     get_file_storage_service,
@@ -54,10 +56,13 @@ class ProfileService:
             if not user:
                 raise HTTPException(status_code=404, detail="Không tìm thấy người dùng")
 
-            return user
-        except Exception as e:
-
-            raise HTTPException(status_code=500, detail=f"error {e}")
+            equipment = await ShopService(self.db).equipment(user_id)
+            return {**user, "equipment": equipment}
+        except HTTPException:
+            raise
+        except Exception as exc:
+            logger.error("Không đọc được hồ sơ người dùng ({})", type(exc).__name__)
+            raise HTTPException(status_code=500, detail="Không thể tải hồ sơ người dùng.") from None
 
     async def upload_avatar_async(self, user_id: uuid.UUID, file: UploadFile):
         # Implementation to get user profile by user_id

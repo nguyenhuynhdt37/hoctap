@@ -28,6 +28,9 @@ from app.db.models.database import (
     Wallets,
     WithdrawalRequests,
 )
+from app.services.billing_ledger import check_coupon_budget, hold_payment, lock_treasury, record_coupon_cost
+from app.services.coupon_settlement import billing_policy, earning_for_purchase, settle
+from app.services.gamification.coupon_rewards import consume_discount
 from app.services.catalog import public_course, require_real_course
 from app.db.sesson import get_session
 from app.libs.formats.datetime import now as get_now
@@ -38,6 +41,7 @@ from app.services.shares.notification import NotificationService
 from app.services.shares.wallets import WalletsService
 from app.services.user.learning_menu import (
     complete_paid_gift,
+    enroll_learner_if_absent,
     load_gift_for_checkout,
     notify_gift_recipient,
 )
@@ -381,435 +385,122 @@ class TransactionsService:
                     self.db, gift_id, user.id, course_ids
                 )
 
-            # ============================
-            # 0) VALIDATE COURSE
-            # ============================
-            courses = (
-                (
-                    await self.db.execute(
-                        select(Courses).where(Courses.id.in_(course_ids), public_course())
-                    )
-                )
-                .scalars()
-                .all()
-            )
-
-            if not courses:
-                raise HTTPException(400, "Không tìm thấy khóa học nào.")
-
-            if len(courses) != len(course_ids):
+            courses = (await self.db.scalars(
+                select(Courses).where(Courses.id.in_(course_ids), public_course())
+                .order_by(Courses.id).with_for_update(key_share=True)
+                .execution_options(populate_existing=True)
+            )).all()
+            if not courses or len(courses) != len(course_ids):
                 raise HTTPException(400, "Một hoặc nhiều khóa học không tồn tại.")
+            for course in courses:
+                require_real_course(course)
+                if course.instructor_id == user.id:
+                    raise HTTPException(409, "Bạn không thể mua khóa học do mình cung cấp.")
+                if not course.base_price or course.base_price <= 0:
+                    raise HTTPException(400, f"Khóa học '{course.title}' có giá 0đ — không thể thanh toán.")
 
-            for c in courses:
-                require_real_course(c)
-                price = Decimal(str(c.base_price or 0))
-                if price <= 0:
-                    raise HTTPException(
-                        400,
-                        f"Khóa học '{c.title}' có giá 0đ — không thể thanh toán.",
-                    )
+            if gift is None and await self.db.scalar(select(CourseEnrollments.id).where(
+                CourseEnrollments.user_id == user.id,
+                CourseEnrollments.course_id.in_(course_ids),
+                CourseEnrollments.status == "active",
+            ).limit(1)):
+                raise HTTPException(409, "Bạn đã sở hữu một hoặc nhiều khóa học trong đơn.")
 
-            # ============================
-            # 1) TÍNH DISCOUNT
-            # ============================
+            policy = await billing_policy(self.db, lock=True)
             discount_result = await discount_service.calculate_discount_apply(
-                user_id=user.id,
-                course_ids=course_ids,
-                discount_input=discount_code or "",
+                user_id=user.id, course_ids=course_ids, discount_input=discount_code or "",
+                policy=policy, checkout=True,
             )
+            items = {item["course_id"]: item for item in discount_result["items"]}
+            amounts_by_course = {
+                course.id: items[course.id].get("settlement") or settle(course.base_price, policy.platform_fee)
+                for course in courses
+            }
+            discount_id = discount_result["discount_id"] if any(
+                amount.discount for amount in amounts_by_course.values()
+            ) else None
+            if discount_code and discount_code.strip() and discount_id is None:
+                reason = next((item.get("reason") for item in items.values() if item.get("reason")), None)
+                raise HTTPException(422, reason or "Mã không giảm được giá khóa học trong đơn này.")
 
-            # ÉP ÂM THÀNH 0
-            for item in discount_result["items"]:
-                base = Decimal(str(item["base_price"]))
-                final = Decimal(str(item["final_price"]))
-
-                if final < 0:
-                    item["final_price"] = "0"
-                    item["discounted_amount"] = str(base)
-
-            total_price = sum(
-                Decimal(str(item["final_price"])) for item in discount_result["items"]
-            )
-            if total_price < 0:
-                total_price = Decimal("0")
-
+            total_price = sum(amount.paid for amount in amounts_by_course.values())
             now = get_now()
-            purchase_items: list[PurchaseItems] = []
-            transaction: Transactions | None = None
-
-            # ==================================================
-            # CASE 1: FREE CHECKOUT (total_price == 0)
-            # → Không transaction, không earnings, không platform_wallet
-            # ==================================================
-            if total_price == 0:
-                async with self.db.begin_nested():
-                    # PURCHASE_ITEMS giá 0
-                    for item in discount_result["items"]:
-                        base_price = Decimal(str(item["base_price"]))
-
-                        pi = PurchaseItems(
-                            id=uuid.uuid4(),
-                            transaction_id=None,
-                            user_id=user.id,
-                            course_id=item["course_id"],
-                            original_price=base_price,
-                            discounted_price=Decimal("0"),
-                            discount_amount=None,
-                            discount_id=None,
-                            status="completed",
-                            course_snapshot={
-                                "title": item["course_title"],
-                                "base_price": float(base_price),
-                                "final_price": float(0),
-                            },
-                            created_at=now,
-                        )
-                        self.db.add(pi)
-                        purchase_items.append(pi)
-
-                    # DiscountHistory vẫn có thể log nếu muốn theo dõi marketing
-                    if discount_result["discount_id"]:
-                        for item, pi in zip(discount_result["items"], purchase_items):
-                            if item.get("applied"):
-                                dh = DiscountHistory(
-                                    id=uuid.uuid4(),
-                                    user_id=user.id,
-                                    purchase_item_id=pi.id,
-                                    discount_id=discount_result["discount_id"],
-                                    discounted_amount=pi.original_price,
-                                    created_at=now,
-                                )
-                                self.db.add(dh)
-
-                    # ENROLL + CẬP NHẬT THỐNG KÊ
-                    for pi in purchase_items:
-                        if gift is not None and pi.course_id == gift.course_id:
-                            await complete_paid_gift(self.db, gift, now)
-                            continue
-                        existed = await self.db.scalar(
-                            select(CourseEnrollments).where(
-                                CourseEnrollments.user_id == user.id,
-                                CourseEnrollments.course_id == pi.course_id,
-                            )
-                        )
-                        if not existed:
-                            enroll = CourseEnrollments(
-                                id=uuid.uuid4(),
-                                user_id=user.id,
-                                course_id=pi.course_id,
-                                enrolled_at=now,
-                                progress=Decimal("0"),
-                            )
-                            self.db.add(enroll)
-
-                            # ✅ CẬP NHẬT COURSES.TOTAL_ENROLLS
-                            course_to_update = await self.db.scalar(
-                                select(Courses).where(Courses.id == pi.course_id)
-                            )
-                            if course_to_update:
-                                course_to_update.total_enrolls = (
-                                    course_to_update.total_enrolls or 0
-                                ) + 1
-
-                                # ✅ CẬP NHẬT USER.STUDENT_COUNT CHO INSTRUCTOR
-                                # Chỉ tăng nếu user này chưa từng đăng ký bất kỳ khóa học nào của instructor
-                                instructor = await self.db.scalar(
-                                    select(User).where(User.id == course_to_update.instructor_id)
-                                )
-                                if instructor:
-                                    # Kiểm tra xem user đã là học viên của instructor này chưa
-                                    existing_enrollment_count = await self.db.scalar(
-                                        select(func.count())
-                                        .select_from(CourseEnrollments)
-                                        .join(Courses, Courses.id == CourseEnrollments.course_id)
-                                        .where(
-                                            CourseEnrollments.user_id == user.id,
-                                            Courses.instructor_id == instructor.id,
-                                        )
-                                    )
-                                    # Nếu đây là lần đầu (count = 0), tăng student_count
-                                    if existing_enrollment_count == 0:
-                                        instructor.student_count = (
-                                            instructor.student_count or 0
-                                        ) + 1
-
-                if gift is not None:
-                    await self.db.commit()
-
-                # NOTI (chỉ enroll, không ví)
-                try:
-                    notification_service = NotificationService(self.db)
-                    roles = await AuthorizationService.get_list_role_in_user(user)
-
-                    for course in courses:
-                        await notification_service.create_notification_async(
-                            NotificationCreateSchema(
-                                user_id=user.id,
-                                roles=roles,
-                                title="Đăng ký khóa học thành công 🎉",
-                                content=f"Bạn đã đăng ký khóa học '{course.title}' thành công.",
-                                url=f"/course/{course.slug}",
-                                type="course",
-                                role_target=["USER"],
-                                metadata={"course_id": str(course.id)},
-                                action="open_url",
-                            )
-                        )
-
-                        await notification_service.create_notification_async(
-                            NotificationCreateSchema(
-                                user_id=course.instructor_id,
-                                roles=["LECTURER"],
-                                title=f"Học viên mới đăng ký khóa học '{course.title}' 🎉",
-                                content=f"Người dùng {user.fullname} ({user.email}) vừa đăng ký khóa học của bạn.",
-                                url=f"/lecturer/courses/{course.id}",
-                                type="course",
-                                role_target=["LECTURER"],
-                                metadata={
-                                    "course_id": str(course.id),
-                                    "student_id": str(user.id),
-                                },
-                                action="open_url",
-                            )
-                        )
-                except Exception as noti_err:
-                    logger.exception(
-                        f"[CHECKOUT FREE][NOTI] Lỗi gửi thông báo: {noti_err}"
-                    )
-
-                # 🔔 Publish course.purchased events (free checkout)
-                for course in courses:
-                    try:
-                        await event_bus.publish(
-                            BaseEvent(
-                                event_name="course.purchased",
-                                user_id=user.id,
-                                source_type="course",
-                                source_id=course.id,
-                                payload={"is_free": True, "course_title": course.title},
-                            )
-                        )
-                    except Exception as evt_err:
-                        logger.warning(f"[EventBus] Failed to publish course.purchased: {evt_err}")
-
-                if gift is not None:
-                    await self.db.commit()
-                    await notify_gift_recipient(self.db, gift)
-
-                return {
-                    "message": "Đăng ký khóa học thành công 🎉",
-                    "is_free": True,
-                    "transaction_id": None,
-                    "total_paid": "0",
-                    "items": [
-                        {
-                            "course_id": str(pi.course_id),
-                            "price": "0",
-                            "discount_amount": "0",
-                            "applied_discount": False,
-                        }
-                        for pi in purchase_items
-                    ],
-                }
-
-            # ==================================================
-            # CASE 2: PAID CHECKOUT (total_price > 0)
-            # ==================================================
-
-            # 2) CHECK VÍ
-            await wallets_service.ensure_wallet_balance(
-                user.id, Decimal(str(total_price))
-            )
-
-            # 3) LẤY VÍ USER
-            wallet = await self.db.scalar(
-                select(Wallets).where(Wallets.user_id == user.id).with_for_update()
-            )
-            if wallet is None:
-                raise HTTPException(404, "Ví không tồn tại.")
-
-            # 4) PLATFORM SETTINGS
-            settings = await self.db.scalar(select(PlatformSettings))
-            platform_fee = Decimal(str(settings.platform_fee or 0.3))
-            hold_days = int(settings.hold_days or 7)
-
-            async with self.db.begin_nested():
-
-                # 5.1 TRỪ VÍ + TRANSACTION
+            transaction = None
+            if total_price:
+                wallet = await self.db.scalar(select(Wallets).where(Wallets.user_id == user.id)
+                    .with_for_update().execution_options(populate_existing=True))
+                if wallet is None or wallet.is_locked or wallet.currency != "VND":
+                    raise HTTPException(400, "Ví không tồn tại, đang khóa hoặc không dùng VND.")
+                await wallets_service.ensure_wallet_balance(user.id, total_price)
+                treasury = await lock_treasury(self.db)
+                await check_coupon_budget(self.db, policy, sum(
+                    amount.discount for course_id, amount in amounts_by_course.items()
+                    if items[course_id].get("sponsor") == "platform"
+                ))
                 wallet.balance -= total_price
-                wallet.total_out = (wallet.total_out or Decimal("0")) + total_price
+                wallet.total_out = (wallet.total_out or Decimal(0)) + total_price
                 wallet.last_transaction_at = now
-
                 transaction = Transactions(
-                    id=uuid.uuid4(),
-                    user_id=user.id,
-                    amount=total_price,
-                    type="purchase",
-                    currency="VND",
-                    direction="out",
-                    method="wallet",
-                    gateway="internal_wallet",
-                    status="completed",
-                    description=f"Mua {len(course_ids)} khóa học bằng ví nội bộ",
-                    created_at=now,
-                    confirmed_at=now,
+                    id=uuid.uuid4(), user_id=user.id, amount=total_price, type="purchase",
+                    currency="VND", direction="out", method="wallet", gateway="internal_wallet",
+                    status="completed", description=f"Mua {len(courses)} khóa học bằng ví nội bộ",
+                    created_at=now, confirmed_at=now,
                 )
                 self.db.add(transaction)
                 await self.db.flush()
+                hold_payment(self.db, treasury, total_price, transaction_id=transaction.id)
 
-                # 5.3 PURCHASE ITEMS
-                for item in discount_result["items"]:
-                    base_price = Decimal(str(item["base_price"]))
-                    final_price = Decimal(str(item["final_price"]))
-                    applied = item.get("applied", False)
-                    discount_amount = (
-                        Decimal(str(item["discounted_amount"]))
-                        if applied
-                        else Decimal("0")
-                    )
-
+            for course in courses:
+                amounts = amounts_by_course[course.id]
+                if transaction is not None:
                     pi = PurchaseItems(
-                        id=uuid.uuid4(),
-                        transaction_id=transaction.id,
-                        user_id=user.id,
-                        course_id=item["course_id"],
-                        original_price=base_price,
-                        discounted_price=final_price,
-                        discount_amount=(
-                            discount_amount if discount_amount > 0 else None
-                        ),
-                        discount_id=(
-                            discount_result["discount_id"] if applied else None
-                        ),
-                        status="completed",
+                        id=uuid.uuid4(), transaction_id=transaction.id, user_id=user.id,
+                        course_id=course.id, original_price=amounts.base, discounted_price=amounts.paid,
+                        settlement_base_price=amounts.base, settlement_platform_fee=policy.platform_fee,
+                        discount_amount=amounts.discount or None,
+                        discount_id=discount_id if amounts.discount else None,
+                        coupon_sponsor=items[course.id].get("sponsor"),
+                        status="completed", created_at=now,
                         course_snapshot={
-                            "title": item["course_title"],
-                            "base_price": float(base_price),
-                            "final_price": float(final_price),
+                            "title": course.title, "base_price": float(amounts.base),
+                            "final_price": float(amounts.paid),
                         },
-                        created_at=now,
                     )
                     self.db.add(pi)
-                    purchase_items.append(pi)
+                    await self.db.flush()
+                    if amounts.discount:
+                        self.db.add(DiscountHistory(
+                            user_id=user.id, purchase_item_id=pi.id, discount_id=discount_id,
+                            discounted_amount=amounts.discount, created_at=now,
+                        ))
+                    record_coupon_cost(self.db, pi, amounts.discount)
+                    if amounts.has_revenue:
+                        self.db.add(InstructorEarnings(
+                            purchase_item_id=pi.id,
+                            transaction_id=transaction.id, instructor_id=course.instructor_id,
+                            amount_instructor=amounts.instructor, amount_platform=amounts.platform,
+                            status="holding", hold_until=now + timedelta(days=policy.hold_days),
+                            purchase_snapshot={
+                                "course_title": course.title, "purchase_item_id": str(pi.id),
+                                "price_paid": float(amounts.paid),
+                            },
+                            created_at=now,
+                        ))
+                if gift is not None:
+                    await complete_paid_gift(self.db, gift, now)
+                else:
+                    enrollment = await self.db.scalar(select(CourseEnrollments).where(
+                        CourseEnrollments.user_id == user.id, CourseEnrollments.course_id == course.id,
+                    ).order_by(CourseEnrollments.enrolled_at.desc()).limit(1))
+                    if enrollment is None:
+                        await enroll_learner_if_absent(self.db, user.id, course.id, now)
+                    else:
+                        enrollment.status = "active"
 
-                # 5.4 DISCOUNT HISTORY + USAGE COUNT
-                if discount_result["discount_id"]:
-                    discount_used = False
-
-                    for item, pi in zip(discount_result["items"], purchase_items):
-                        if item.get("applied") and pi.discount_amount:
-                            discount_used = True
-                            dh = DiscountHistory(
-                                id=uuid.uuid4(),
-                                user_id=user.id,
-                                purchase_item_id=pi.id,
-                                discount_id=discount_result["discount_id"],
-                                discounted_amount=pi.discount_amount,
-                                created_at=now,
-                            )
-                            self.db.add(dh)
-
-                    if discount_used:
-                        discount_obj = await self.db.scalar(
-                            select(Discounts).where(
-                                Discounts.id == discount_result["discount_id"]
-                            )
-                        )
-                        if discount_obj:
-                            discount_obj.usage_count = (
-                                discount_obj.usage_count or 0
-                            ) + 1
-                            discount_obj.updated_at = now
-                            self.db.add(discount_obj)
-
-                # 5.5 ENROLL + CẬP NHẬT THỐNG KÊ
-                for pi in purchase_items:
-                    if gift is not None and pi.course_id == gift.course_id:
-                        await complete_paid_gift(self.db, gift, now)
-                        continue
-                    existed = await self.db.scalar(
-                        select(CourseEnrollments).where(
-                            CourseEnrollments.user_id == user.id,
-                            CourseEnrollments.course_id == pi.course_id,
-                        )
-                    )
-                    if not existed:
-                        enroll = CourseEnrollments(
-                            id=uuid.uuid4(),
-                            user_id=user.id,
-                            course_id=pi.course_id,
-                            enrolled_at=now,
-                            progress=Decimal("0"),
-                        )
-                        self.db.add(enroll)
-
-                        # ✅ CẬP NHẬT COURSES.TOTAL_ENROLLS
-                        course_to_update = await self.db.scalar(
-                            select(Courses).where(Courses.id == pi.course_id)
-                        )
-                        if course_to_update:
-                            course_to_update.total_enrolls = (
-                                course_to_update.total_enrolls or 0
-                            ) + 1
-
-                            # ✅ CẬP NHẬT USER.STUDENT_COUNT CHO INSTRUCTOR
-                            # Chỉ tăng nếu user này chưa từng đăng ký bất kỳ khóa học nào của instructor
-                            instructor = await self.db.scalar(
-                                select(User).where(User.id == course_to_update.instructor_id)
-                            )
-                            if instructor:
-                                # Kiểm tra xem user đã là học viên của instructor này chưa
-                                existing_enrollment_count = await self.db.scalar(
-                                    select(func.count())
-                                    .select_from(CourseEnrollments)
-                                    .join(Courses, Courses.id == CourseEnrollments.course_id)
-                                    .where(
-                                        CourseEnrollments.user_id == user.id,
-                                        Courses.instructor_id == instructor.id,
-                                    )
-                                )
-                                # Nếu đây là lần đầu (count = 0), tăng student_count
-                                if existing_enrollment_count == 0:
-                                    instructor.student_count = (
-                                        instructor.student_count or 0
-                                    ) + 1
-
-                # 5.6 EARNINGS + PLATFORM WALLET (chỉ với khóa có tiền > 0)
-                for pi in purchase_items:
-                    if pi.discounted_price <= 0:
-                        continue  # khóa này không sinh doanh thu
-
-                    course = await self.db.scalar(
-                        select(Courses).where(Courses.id == pi.course_id)
-                    )
-                    if not course:
-                        continue
-
-                    instructor_id = course.instructor_id
-                    instructor_share = pi.discounted_price * (
-                        Decimal("1") - platform_fee
-                    )
-                    platform_share = pi.discounted_price * platform_fee
-
-                    # Instructor earnings (holding)
-                    earning = InstructorEarnings(
-                        id=uuid.uuid4(),
-                        transaction_id=transaction.id,
-                        instructor_id=instructor_id,
-                        amount_instructor=instructor_share,
-                        amount_platform=platform_share,
-                        status="holding",
-                        hold_until=now + timedelta(days=hold_days),
-                        purchase_snapshot={
-                            "course_title": course.title,
-                            "price_paid": float(pi.discounted_price),
-                        },
-                        created_at=now,
-                    )
-                    self.db.add(earning)
-
-            if gift is not None:
-                await self.db.commit()
+            if discount_id is not None:
+                discount = await self.db.get(Discounts, discount_id)
+                await consume_discount(self.db, discount, user.id)
+            await self.db.commit()
 
             # ============================
             # 6) NOTIFICATIONS
@@ -878,37 +569,33 @@ class TransactionsService:
                             user_id=user.id,
                             source_type="course",
                             source_id=course.id,
-                            payload={"is_free": False, "course_title": course.title},
+                            payload={"is_free": not amounts_by_course[course.id].paid, "course_title": course.title},
                         )
                     )
                 except Exception as evt_err:
                     logger.warning(f"[EventBus] Failed to publish course.purchased: {evt_err}")
 
-            # ============================
-            # 7) RETURN
-            # ============================
             if gift is not None:
-                await self.db.commit()
                 await notify_gift_recipient(self.db, gift)
 
             return {
-                "message": "Thanh toán thành công 🎉",
-                "is_free": False,
-                "transaction_id": (str(transaction.id) if transaction else None),
+                "message": "Thanh toán thành công 🎉" if total_price else "Đăng ký khóa học thành công 🎉",
+                "is_free": not total_price,
+                "transaction_id": str(transaction.id) if transaction else None,
                 "total_paid": str(total_price),
                 "items": [
                     {
-                        "course_id": str(pi.course_id),
-                        "price": str(pi.discounted_price),
-                        "discount_amount": str(pi.discount_amount or 0),
-                        "applied_discount": bool(pi.discount_amount),
+                        "course_id": str(course_id),
+                        "price": str(amounts.paid),
+                        "discount_amount": str(amounts.discount),
+                        "applied_discount": bool(amounts.discount),
                     }
-                    for pi in purchase_items
+                    for course_id, amounts in amounts_by_course.items()
                 ],
             }
 
         except HTTPException:
-            # cho HTTPException đi thẳng ra ngoài
+            await self.db.rollback()
             raise
 
         except Exception as e:
@@ -1604,8 +1291,7 @@ class TransactionsService:
                     )
                     .join(
                         PurchaseItems,
-                        PurchaseItems.transaction_id
-                        == InstructorEarnings.transaction_id,
+                        earning_for_purchase(),
                     )
                     .join(Courses, Courses.id == PurchaseItems.course_id)
                     .join(User, User.id == PurchaseItems.user_id)
@@ -1627,8 +1313,7 @@ class TransactionsService:
                     )
                     .join(
                         PurchaseItems,
-                        PurchaseItems.transaction_id
-                        == InstructorEarnings.transaction_id,
+                        earning_for_purchase(),
                     )
                     .join(Courses, Courses.id == PurchaseItems.course_id)
                     .join(User, User.id == PurchaseItems.user_id)
@@ -1685,7 +1370,7 @@ class TransactionsService:
                 .select_from(InstructorEarnings)
                 .join(
                     PurchaseItems,
-                    PurchaseItems.transaction_id == InstructorEarnings.transaction_id,
+                    earning_for_purchase(),
                 )
                 .join(Courses, Courses.id == PurchaseItems.course_id)
                 .join(User, User.id == PurchaseItems.user_id)

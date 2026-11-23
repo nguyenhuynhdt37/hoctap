@@ -84,6 +84,8 @@ async def test_xp_award_crosses_configured_and_fallback_levels():
     from uuid import uuid4
 
     from app.db.models.database import LevelsConfig, UserGamificationProfiles
+    from app.schemas.gamification.shop import LevelRewardGrant
+    from app.services.gamification.level_rewards import level_reward
     from app.services.gamification.profile_service import GamificationProfileService
 
     user_id, mission_id = uuid4(), uuid4()
@@ -94,8 +96,18 @@ async def test_xp_award_crosses_configured_and_fallback_levels():
     db.add = Mock()
 
     amount = 1700 + 1750 + 1800 + 1
-    updated, level_up = await GamificationProfileService(db).award_xp(user_id, mission_id, amount)
+    service = GamificationProfileService(db)
+
+    async def grant_levels(user_id, levels, configs, *, mission_id):
+        return [LevelRewardGrant(level=level, coins=level_reward(level, configs.get(level)).coins, items=[])
+                for level in levels]
+
+    service._grant_levels = grant_levels
+    updated, level_up = await service.award_xp(user_id, mission_id, amount)
     assert (updated.level, updated.current_xp, updated.total_xp) == (22, 1, 9000 + amount)
-    assert level_up.model_dump(by_alias=True) == {"from": 19, "to": 22, "peak_bonus": 40}
+    assert level_up.peak_bonus == 1040
+    assert [(reward.level, reward.coins) for reward in level_up.rewards] == [
+        (20, 40), (21, 500), (22, 500),
+    ]
     transaction = db.add.call_args.args[0]
     assert (transaction.event_id, transaction.before_xp, transaction.after_xp) == (mission_id, 9000, 9000 + amount)

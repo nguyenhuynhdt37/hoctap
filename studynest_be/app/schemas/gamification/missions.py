@@ -4,6 +4,9 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.schemas.gamification.profile import XpState
+from app.schemas.gamification.shop import LevelRewardGrant
+
 MissionScope = Literal["daily", "course"]
 MissionTemplate = Literal[
     "lesson.completed", "quiz.completed", "code.completed", "daily_checkin.completed",
@@ -37,7 +40,7 @@ class CouponOffer(BaseModel):
 
 class MissionReward(BaseModel):
     xp: int
-    peak: int
+    peak: int = Field(description="Thưởng nhiệm vụ bằng Coin")
     coupon: CouponOffer | None
 
 
@@ -56,14 +59,6 @@ class Mission(BaseModel):
     completed_at: datetime | None
     claimed_at: datetime | None
     href: str | None
-
-
-class XpState(BaseModel):
-    level: int
-    current_xp: int
-    required_xp: int
-    total_xp: int
-    peak_balance: int
 
 
 class CourseMissions(BaseModel):
@@ -87,14 +82,16 @@ class GrantedCoupon(BaseModel):
 
 class GrantedRewards(BaseModel):
     xp: int
-    peak: int
+    peak: int = Field(description="Thưởng nhiệm vụ bằng Coin")
     coupon: GrantedCoupon | None
 
 
 class LevelUp(BaseModel):
     from_level: int = Field(serialization_alias="from", validation_alias="from")
     to: int
-    peak_bonus: int
+    peak_bonus: int = Field(description="Tổng Coin nhận được khi lên cấp")
+    # Cached claims from before per-level rewards continue to replay.
+    rewards: list[LevelRewardGrant] = Field(default_factory=list)
 
 
 class ClaimResult(BaseModel):
@@ -111,5 +108,5 @@ class InventoryCoupon(GrantedCoupon):
 
 
 class RewardInventory(BaseModel):
-    peak_balance: int
+    peak_balance: int = Field(description="Số dư Coin hiện tại")
     coupons: list[InventoryCoupon]

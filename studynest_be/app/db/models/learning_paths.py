@@ -251,6 +251,9 @@ class BundleOrder(Identity, Base):
     coupon_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("public.bundle_coupons.id")
     )
+    reward_discount_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("public.discounts.id", name="fk_bundle_orders_reward_discount")
+    )
     coupon_code: Mapped[str | None] = mapped_column(String(40))
     discount_amount: Mapped[Decimal] = mapped_column(
         Numeric(12, 2), server_default="0", default=0
@@ -285,6 +288,7 @@ class BundleCoupon(Identity, Base):
     bundle_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("public.course_bundles.id"), index=True
     )
+    sponsor: Mapped[str | None] = mapped_column(String(10))
     code: Mapped[str] = mapped_column(String(40), unique=True)
     discount_type: Mapped[str] = mapped_column(String(10))
     value: Mapped[Decimal] = mapped_column(Numeric(12, 2))

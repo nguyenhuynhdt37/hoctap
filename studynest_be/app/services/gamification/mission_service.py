@@ -227,8 +227,9 @@ class MissionService:
                 progress_percent=progress_percent,
                 missions=[serialize_mission(row, course, evidence) for row in state.long_term[course_id]],
             ))
+        profile = await self.profiles.backfill_levels(user_id)
         response = MissionsOverview(
-            xp=await self.profiles.xp_state(user_id), daily=[serialize_mission(row) for row in state.daily],
+            xp=await self.profiles.xp_state(user_id, profile=profile), daily=[serialize_mission(row) for row in state.daily],
             daily_resets_at=state.resets_at,
             long_term=groups,
         )
@@ -292,13 +293,11 @@ class MissionService:
         profile, level_up = None, None
         if row.reward_xp:
             profile, level_up = await self.profiles.award_xp(user_id, row.id, row.reward_xp)
-        bonus = level_up.peak_bonus if level_up else 0
-        for kind, amount in (("xp", row.reward_xp), ("peak", row.reward_peak_wallet), ("level_up_peak", bonus)):
+        for kind, amount in (("xp", row.reward_xp), ("peak", row.reward_peak_wallet)):
             if amount:
                 self.db.add(RewardGrants(user_id=user_id, mission_id=row.id, reward_kind=kind, amount=amount))
-            if kind != "xp" and amount:
-                source = "level_up" if kind == "level_up_peak" else "mission"
-                await self.profiles.award_peak(user_id, row.id, amount, source=source)
+        if row.reward_peak_wallet:
+            await self.profiles.award_peak(user_id, row.id, row.reward_peak_wallet)
         row.status = "claimed"
         row.claimed_at = now
         row.version += 1
@@ -332,6 +331,7 @@ class MissionService:
             ))
 
     async def inventory(self, user_id: UUID) -> RewardInventory:
+        await self.profiles.backfill_levels(user_id)
         expiry = func.coalesce(UserRewardInventory.expires_at, RewardInstances.expires_at)
         rows = await self.db.execute(
             select(RewardInstances.id, Rewards.title, RewardInstances.code_masked, RewardInstances.max_percent,
@@ -359,4 +359,6 @@ class MissionService:
                 id=coupon_id, title=title, code_masked=masked or "••••", max_percent=max_percent,
                 expires_at=expires_at, status=status,
             ))
-        return RewardInventory(peak_balance=await self.profiles.peak_balance(user_id), coupons=coupons)
+        result = RewardInventory(peak_balance=await self.profiles.peak_balance(user_id), coupons=coupons)
+        await self.db.commit()
+        return result

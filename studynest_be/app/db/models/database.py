@@ -665,6 +665,8 @@ class PlatformSettings(Base):
     allow_wallet_topup: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('true'))
     allow_auto_withdraw: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
     max_discounts_per_course: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('2'))
+    refund_max_courses_per_month: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('3'))
+    monthly_platform_coupon_budget: Mapped[Optional[decimal.Decimal]] = mapped_column(Numeric(14, 2))
     discount_max_percent: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('90'))
     discount_min_price: Mapped[decimal.Decimal] = mapped_column(Numeric(12, 2), nullable=False, server_default=text('1000'))
     course_min_price: Mapped[decimal.Decimal] = mapped_column(Numeric(12, 2), nullable=False, server_default=text('10000'))
@@ -857,6 +859,7 @@ class UserGamificationProfiles(Base):
 
     user_id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
     level: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('1'))
+    levels_rewarded_through: Mapped[int] = mapped_column(Integer, server_default=text('1'))
     current_xp: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('0'))
     total_xp: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('0'))
     total_peak_score: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('0'))
@@ -1125,6 +1128,8 @@ class RewardInstances(Base):
     ForeignKeyConstraint(['reward_id'], ['public.rewards.id'], ondelete='CASCADE', name='fk_reward_instances_reward_id'),
         PrimaryKeyConstraint('id', name='reward_instances_pkey'),
         Index('idx_reward_instances_lookup', 'reward_id', 'status'),
+        Index('uq_reward_instances_discount', 'discount_id', unique=True,
+              postgresql_where=text('discount_id IS NOT NULL')),
         Index('ix_reward_instances_source_mission', 'source_mission_id',
               postgresql_where=text("source_mission_id IS NOT NULL")),
         {'schema': 'public'}
@@ -1138,6 +1143,12 @@ class RewardInstances(Base):
     assigned_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
     expires_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
 
+    discount_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        ForeignKey('public.discounts.id', name='fk_reward_instances_discount')
+    )
+    source_course_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        ForeignKey('public.courses.id', ondelete='SET NULL', name='fk_reward_instances_source_course')
+    )
     code_masked: Mapped[Optional[str]] = mapped_column(String(80))
     max_percent: Mapped[Optional[int]] = mapped_column(Integer)
     source_mission_id: Mapped[Optional[uuid.UUID]] = mapped_column(
@@ -1287,15 +1298,22 @@ class RewardGrants(Base):
     __tablename__ = 'reward_grants'
     __table_args__ = (
         UniqueConstraint('user_id', 'mission_id', 'reward_kind', name='uq_reward_grants_mission_kind'),
-        CheckConstraint("reward_kind IN ('xp', 'peak', 'level_up_peak', 'coupon') AND amount > 0",
-                        name='chk_reward_grants_kind_amount'),
+        CheckConstraint(
+            "(level IS NULL AND mission_id IS NOT NULL AND "
+            "reward_kind IN ('xp', 'peak', 'level_up_peak', 'coupon') AND amount > 0) OR "
+            "(level IS NOT NULL AND level >= 2 AND mission_id IS NULL AND reward_kind = 'level' AND amount >= 0)",
+            name='chk_reward_grants_level_or_mission',
+        ),
+        Index('uq_reward_grants_user_level_kind', 'user_id', 'level', 'reward_kind',
+              unique=True, postgresql_where=text('level IS NOT NULL')),
         Index('ix_reward_grants_mission', 'mission_id'),
         {'schema': 'public'},
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey('public.user.id', ondelete='CASCADE'))
-    mission_id: Mapped[uuid.UUID] = mapped_column(ForeignKey('public.user_missions.id', ondelete='CASCADE'))
+    mission_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey('public.user_missions.id', ondelete='CASCADE'))
+    level: Mapped[Optional[int]] = mapped_column(Integer)
     reward_kind: Mapped[str] = mapped_column(String(20))
     amount: Mapped[int] = mapped_column(Integer)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), server_default=text('now()'))
@@ -1582,12 +1600,17 @@ class InstructorEarnings(Base):
         CheckConstraint("status::text = ANY (ARRAY['holding'::character varying::text, 'pending'::character varying::text, 'paid'::character varying::text, 'refunded'::character varying::text])", name='instructor_earnings_status_check'),
     ForeignKeyConstraint(['instructor_id'], ['public.user.id'], ondelete='CASCADE', name='instructor_earnings_instructor_id_fkey'),
     ForeignKeyConstraint(['transaction_id'], ['public.transactions.id'], ondelete='CASCADE', name='instructor_earnings_transaction_id_fkey'),
+        Index('uq_instructor_earnings_purchase_item', 'purchase_item_id', unique=True,
+              postgresql_where=text('purchase_item_id IS NOT NULL')),
         PrimaryKeyConstraint('id', name='instructor_earnings_pkey'),
         {'schema': 'public'}
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
     transaction_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    purchase_item_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        ForeignKey('public.purchase_items.id', ondelete='CASCADE', name='fk_instructor_earnings_purchase_item')
+    )
     instructor_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
     amount_instructor: Mapped[decimal.Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     amount_platform: Mapped[decimal.Decimal] = mapped_column(Numeric(12, 2), nullable=False)
@@ -1666,6 +1689,9 @@ class PurchaseItems(Base):
     discounted_price: Mapped[decimal.Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     status: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'completed'::text"))
     discount_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    settlement_base_price: Mapped[Optional[decimal.Decimal]] = mapped_column(Numeric(12, 2))
+    settlement_platform_fee: Mapped[Optional[decimal.Decimal]] = mapped_column(Numeric(5, 4))
+    coupon_sponsor: Mapped[Optional[str]] = mapped_column(String(10))
     discount_amount: Mapped[Optional[decimal.Decimal]] = mapped_column(Numeric(12, 2))
     course_snapshot: Mapped[Optional[dict]] = mapped_column(JSONB)
     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, server_default=text('now()'))

@@ -75,7 +75,7 @@ def level_reward(
             MilestoneItem(level, "title", f"Danh hiệu {theme}", description, rarity, "milestone-title"),
             MilestoneItem(level, "emblem", f"Biểu tượng {theme}", description, rarity, "milestone-emblem"),
         )
-        if platform_fee is not None and (max_percent := int(platform_fee * 50)) > 0:
+        if platform_fee is not None and 0 < platform_fee <= 1 and (max_percent := int(platform_fee * 50)):
             coupon = LevelCoupon(max_percent=max_percent, valid_days=30)
     elif level % 5 == 0:
         milestone = "five"

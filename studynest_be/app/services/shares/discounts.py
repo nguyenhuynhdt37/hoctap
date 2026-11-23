@@ -1,4 +1,5 @@
 import uuid
+from decimal import Decimal
 from typing import List, Optional
 
 from fastapi import Depends, HTTPException
@@ -18,6 +19,12 @@ from app.db.sesson import get_session
 from app.libs.formats.datetime import now as get_now
 from app.libs.formats.datetime import to_utc_naive
 from app.schemas.shares.discounts import DiscountCreateSchema, DiscountTargetItem
+
+
+from app.services.coupon_settlement import billing_policy, instructor_max_percent, settle
+from app.services.gamification.coupon_rewards import (
+    REWARD_CODE_PREFIX, REWARD_DIGEST_PREFIX, find_discount, reward_inventory_entry,
+)
 
 
 class DiscountService:
@@ -71,6 +78,13 @@ class DiscountService:
                 raise HTTPException(
                     400, f"Mã giảm giá '{schema.discount_code}' đã tồn tại."
                 )
+
+            if schema.discount_code.upper().startswith(REWARD_CODE_PREFIX) or schema.discount_code.lower().startswith(REWARD_DIGEST_PREFIX):
+                raise HTTPException(400, "Tiền tố này dành riêng cho mã thưởng.")
+            if created_role == "LECTURER" and schema.discount_type == "percent":
+                policy = await billing_policy(self.db)
+                if schema.percent_value > instructor_max_percent(policy):
+                    raise HTTPException(422, "Mức giảm vượt giới hạn dành cho giảng viên.")
 
             is_admin = created_role == "ADMIN"
 
@@ -593,6 +607,9 @@ class DiscountService:
         user_id: uuid.UUID,
         course_ids: List[uuid.UUID],
         discount_input: str,
+        *,
+        policy=None,
+        checkout: bool = False,
     ):
         # 0. Lấy danh sách khóa học trước (dù mã có hợp lệ hay không)
         courses = (
@@ -678,27 +695,7 @@ class DiscountService:
                 "total_price_after": total_price_after,
             }
 
-        # 1. Tìm discount theo id hoặc theo code
-        discount_obj = None
-
-        # detect UUID
-        try:
-            parsed = uuid.UUID(discount_input)
-            discount_obj = await self.db.scalar(
-                select(Discounts).where(Discounts.id == parsed)
-            )
-        except Exception:
-            pass
-
-        # detect code
-        if not discount_obj:
-            discount_obj = await self.db.scalar(
-                select(Discounts).where(
-                    func.lower(Discounts.discount_code) == discount_input.lower()
-                )
-            )
-
-        # Không tìm thấy mã → trả nhưng vẫn đúng format
+        discount_obj = await find_discount(self.db, discount_input, lock=checkout)
         if not discount_obj:
             return build_no_discount_response("Mã giảm giá không tồn tại")
 
@@ -713,14 +710,18 @@ class DiscountService:
                 "Mã giảm giá chưa đến thời gian sử dụng", discount
             )
 
-        if discount.end_at and discount.end_at < now:
+        if discount.end_at and discount.end_at <= now:
             return build_no_discount_response("Mã giảm giá đã hết hạn", discount)
 
         if not discount.is_active:
             return build_no_discount_response("Mã giảm giá không hợp lệ", discount)
 
-        if discount.usage_limit and discount.usage_count >= discount.usage_limit:
+        if discount.usage_limit and (discount.usage_count or 0) >= discount.usage_limit:
             return build_no_discount_response("Mã giảm giá đã hết lượt dùng", discount)
+
+        reward_code = (discount.discount_code or "").startswith(REWARD_DIGEST_PREFIX)
+        if reward_code and not await reward_inventory_entry(self.db, discount.id, user_id):
+            return build_no_discount_response("Mã thưởng không còn hiệu lực hoặc không thuộc về bạn")
 
         # per-user-limit theo GIAO DỊCH, không theo số khóa
         used_transactions = (
@@ -753,59 +754,46 @@ class DiscountService:
         target_course_ids = {t.course_id for t in target_rows if t.course_id}
         target_category_ids = {t.category_id for t in target_rows if t.category_id}
 
+        policy = policy if policy is not None else await billing_policy(self.db)
+        sponsor = "platform" if discount.created_role == "ADMIN" else "instructor"
         results = []
-        total_discount = 0.0
-        total_price_after = 0.0
-
+        total_discount = Decimal(0)
+        total_price_after = Decimal(0)
+        eligible = [
+            c for c in courses if (
+                (sponsor == "platform" or c.instructor_id == discount.created_by)
+                and (not target_course_ids and not target_category_ids
+                     or c.id in target_course_ids or c.category_id in target_category_ids)
+            )
+        ]
+        eligible_ids = {c.id for c in eligible}
         for c in courses:
-            price = float(c.base_price or 0)
-
-            can_apply = (
-                (not target_course_ids and not target_category_ids)
-                # nếu không có target cụ thể → hiểu là áp cho tất cả (tuỳ rule business)
-                or c.id in target_course_ids
-                or c.category_id in target_category_ids
-            )
-
-            # Không áp dụng cho khóa này
-            if not can_apply:
-                results.append(
-                    {
-                        "course_id": c.id,
-                        "course_title": c.title,
-                        "base_price": price,
-                        "discounted_amount": 0.0,
-                        "final_price": price,
-                        "applied": False,
-                        "reason": "Mã không áp dụng cho khóa học này",
-                    }
+            price = Decimal(c.base_price or 0)
+            applied = c.id in eligible_ids
+            reason = None if applied else "Mã không áp dụng cho khóa học này"
+            fixed = discount.discount_type == "fixed"
+            requested = (
+                Decimal(discount.fixed_value or 0) if fixed
+                else price * Decimal(discount.percent_value or 0) / 100
+            ) if applied else Decimal(0)
+            try:
+                amounts = settle(
+                    price, policy.platform_fee, sponsor if applied else None, requested,
+                    fixed=fixed, instructor_max=Decimal(policy.discount_max_percent),
                 )
-                total_price_after += price
-                continue
-
-            # 4. Tính giảm
-            if discount.discount_type == "percent":
-                percent_value = float(discount.percent_value or 0)
-                discount_amount = price * (percent_value / 100.0)
-            else:
-                discount_amount = float(discount.fixed_value or 0)
-
-            discount_amount = min(discount_amount, price)
-            final_price = price - discount_amount
-
-            results.append(
-                {
-                    "course_id": c.id,
-                    "course_title": c.title,
-                    "base_price": price,
-                    "discounted_amount": discount_amount,
-                    "final_price": final_price,
-                    "applied": True,
-                }
-            )
-
-            total_discount += discount_amount
-            total_price_after += final_price
+            except HTTPException as error:
+                if checkout:
+                    raise
+                applied, reason = False, error.detail
+                amounts = settle(price, policy.platform_fee)
+            results.append({
+                "course_id": c.id, "course_title": c.title, "base_price": float(amounts.base),
+                "discounted_amount": float(amounts.discount), "final_price": float(amounts.paid),
+                "applied": applied and amounts.discount > 0, "reason": reason,
+                **({"settlement": amounts, "sponsor": sponsor if amounts.discount else None} if checkout else {}),
+            })
+            total_discount += amounts.discount
+            total_price_after += amounts.paid
 
         # thông tin per-user
         per_user_limit = discount.per_user_limit
@@ -817,7 +805,7 @@ class DiscountService:
 
         return {
             "discount_id": discount_id,
-            "discount_code": discount.discount_code,
+            "discount_code": discount_input if reward_code else discount.discount_code,
             "discount_name": discount.name,
             "discount_description": discount.description,
             "discount_applies_to": discount.applies_to,
@@ -834,8 +822,8 @@ class DiscountService:
             "user_used_transactions": used_transactions,
             "user_remaining_uses": remaining_uses,
             "items": results,
-            "total_discount": total_discount,
-            "total_price_after": total_price_after,
+            "total_discount": float(total_discount),
+            "total_price_after": float(total_price_after),
         }
 
     async def toggle_discount_active_async(
@@ -856,6 +844,8 @@ class DiscountService:
         )
         if not discount:
             raise HTTPException(404, "Không tìm thấy mã giảm giá.")
+        if (discount.discount_code or "").startswith(REWARD_DIGEST_PREFIX):
+            raise HTTPException(403, "Mã thưởng do hệ thống quản lý.")
 
         # Quyền
         if role == "LECTURER" and discount.created_by != user.id:
@@ -899,6 +889,8 @@ class DiscountService:
         )
         if not discount:
             raise HTTPException(404, "Không tìm thấy mã giảm giá.")
+        if (discount.discount_code or "").startswith(REWARD_DIGEST_PREFIX):
+            raise HTTPException(403, "Mã thưởng do hệ thống quản lý.")
 
         # Quyền
         if role == "LECTURER" and discount.created_by != user.id:

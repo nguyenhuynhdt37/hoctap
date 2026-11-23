@@ -289,12 +289,14 @@ class DailyCheckinRepository:
         event_id: Optional[uuid.UUID] = None,
         event_type: Optional[str] = None,
         metadata: Optional[dict] = None,
+        *,
+        transaction_type: str = "credit",
     ) -> PeakTransactions:
-        """Ghi bản ghi Peak Transaction (ledger)."""
+        """Ghi giao dịch vào sổ cái Coin."""
         tx = PeakTransactions(
             user_id=user_id,
             amount=amount,
-            type="credit",
+            type=transaction_type,
             before_balance=before_balance,
             after_balance=after_balance,
             source=source,
