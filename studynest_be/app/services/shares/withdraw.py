@@ -417,6 +417,7 @@ class WithdrawService:
                         "avatar": avatar,
                         "reason": wr.reason,
                         "amount": wr.amount,
+                        "coin_amount": wr.coin_amount,
                         "currency": wr.currency,
                         "status": wr.status,
                         "requested_at": wr.requested_at,

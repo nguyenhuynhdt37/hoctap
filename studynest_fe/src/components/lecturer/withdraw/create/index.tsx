@@ -1,6 +1,7 @@
 "use client";
 
 import { Alert, Button, Card } from "@/components/ui";
+import { formatVnd, withdrawQuote } from "@/lib/learning-hub/coin-logic";
 import api from "@/lib/utils/fetcher/client/axios";
 import { User } from "@/types/user/user";
 import { Send } from "pulsoicon-react";
@@ -14,15 +15,10 @@ interface CheckResponse {
   can_withdraw: boolean;
   reason: string | null;
   balance?: number;
-  min_balance?: number;
+  paid_balance?: number;
+  min_coin?: number;
+  rate_vnd?: number;
 }
-
-const formatCurrency = (val: number) =>
-  new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-    maximumFractionDigits: 0,
-  }).format(val);
 
 export default function CreateWithdrawPage() {
   const router = useRouter();
@@ -76,25 +72,10 @@ export default function CreateWithdrawPage() {
     setError("");
     setSuccess("");
 
-    const cleanAmount = amount.replace(/[^\d]/g, "");
-    const numAmount = Number(cleanAmount);
-
-    if (!numAmount || numAmount <= 0) {
-      setError("Số tiền không hợp lệ");
-      return;
-    }
-
-    if (
-      checkData &&
-      checkData.min_balance &&
-      numAmount < checkData.min_balance
-    ) {
-      setError(`Số tiền tối thiểu là ${formatCurrency(checkData.min_balance)}`);
-      return;
-    }
-
-    if (checkData && checkData.balance && numAmount > checkData.balance) {
-      setError("Số tiền vượt quá số dư ví");
+    const coinAmount = Number(amount.replace(/[^\d]/g, ""));
+    const quote = withdrawQuote(coinAmount, checkData?.balance ?? 0, checkData?.rate_vnd ?? 10000, checkData?.min_coin ?? 1);
+    if (!quote.valid) {
+      setError(quote.reason ?? "Số Coin rút không hợp lệ.");
       return;
     }
 
@@ -102,7 +83,7 @@ export default function CreateWithdrawPage() {
 
     try {
       const res = await api.post(
-        `/lecturer/withdraw/request?amount=${numAmount}`
+        `/lecturer/withdraw/request?coin_amount=${coinAmount}`
       );
 
       setSuccess("Yêu cầu rút tiền đã được tạo thành công");
@@ -119,15 +100,11 @@ export default function CreateWithdrawPage() {
     }
   };
 
-  const quickAmounts = checkData?.balance
-    ? [
-        checkData.min_balance || 100000,
-        Math.floor((checkData.balance * 0.25) / 1000) * 1000,
-        Math.floor((checkData.balance * 0.5) / 1000) * 1000,
-        Math.floor((checkData.balance * 0.75) / 1000) * 1000,
-        checkData.balance,
-      ].filter((val) => val >= (checkData.min_balance || 0))
-    : [];
+  const withdrawable = checkData?.balance ?? 0;
+  const minCoin = checkData?.min_coin ?? 1;
+  const quickAmounts = Array.from(new Set([minCoin, Math.floor(withdrawable * 0.25), Math.floor(withdrawable * 0.5),
+    Math.floor(withdrawable * 0.75), withdrawable])).filter((value) => value >= minCoin && value <= withdrawable);
+  const preview = withdrawQuote(Number(amount.replace(/[^\d]/g, "")), withdrawable, checkData?.rate_vnd ?? 10000, minCoin);
 
   if (!hasPayPalInfo) {
     return (
@@ -139,7 +116,7 @@ export default function CreateWithdrawPage() {
                 Tạo yêu cầu rút tiền
               </h1>
               <p className="text-sm text-muted-foreground mt-1.5">
-                Yêu cầu rút tiền từ ví giảng viên của bạn
+                Rút Coin từ thu nhập giảng dạy, nhận tiền qua PayPal
               </p>
             </div>
 
@@ -170,7 +147,7 @@ export default function CreateWithdrawPage() {
               Tạo yêu cầu rút tiền
             </h1>
             <p className="text-sm text-muted-foreground mt-1.5">
-              Yêu cầu rút tiền từ ví giảng viên của bạn
+              Rút Coin từ thu nhập giảng dạy, nhận tiền qua PayPal
             </p>
           </div>
 
@@ -179,21 +156,26 @@ export default function CreateWithdrawPage() {
               {checkData.balance !== undefined && (
                 <div className="p-4 bg-primary-light/60 border border-primary-pastel rounded-2xl">
                   <div className="text-sm font-medium text-muted-foreground mb-1">
-                    Số dư ví
+                    Coin rút được (từ thu nhập)
                   </div>
                   <div className="text-2xl font-bold text-primary tabular-nums">
-                    {formatCurrency(checkData.balance)}
+                    {checkData.balance} Coin
                   </div>
+                  {checkData.rate_vnd && (
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      1 Coin = {formatVnd(checkData.rate_vnd)}. Coin nạp bằng tiền chỉ dùng để mua, không rút được.
+                    </div>
+                  )}
                 </div>
               )}
 
-              {checkData.min_balance !== undefined && (
+              {checkData.min_coin !== undefined && (
                 <div className="p-4 bg-background border border-border rounded-2xl">
                   <div className="text-sm font-medium text-muted-foreground mb-1">
-                    Số tiền rút tối thiểu
+                    Số Coin rút tối thiểu
                   </div>
                   <div className="text-lg font-semibold text-foreground tabular-nums">
-                    {formatCurrency(checkData.min_balance)}
+                    {checkData.min_coin} Coin
                   </div>
                 </div>
               )}
@@ -207,22 +189,20 @@ export default function CreateWithdrawPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-semibold text-foreground mb-2">
-                Số tiền cần rút (VND)
+                Số Coin cần rút
               </label>
               <input
                 type="text"
                 inputMode="numeric"
                 value={amount}
                 onChange={handleAmountChange}
-                placeholder="Ví dụ: 500,000"
+                placeholder="Ví dụ: 50"
                 disabled={!checkData?.can_withdraw || loading}
                 className="w-full px-4 py-2.5 text-sm border border-border bg-surface text-foreground placeholder:text-muted-foreground rounded-xl focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:bg-background disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
               />
-              {checkData?.min_balance && (
-                <p className="mt-1.5 text-xs text-muted-foreground">
-                  Tối thiểu: {formatCurrency(checkData.min_balance)}
-                </p>
-              )}
+              <p className={`mt-1.5 text-xs ${amount && !preview.valid ? "text-destructive-foreground" : "text-muted-foreground"}`} role={amount && !preview.valid ? "alert" : undefined}>
+                {amount ? (preview.valid ? `Bạn sẽ nhận ${formatVnd(preview.vnd)} qua PayPal.` : preview.reason) : `Tối thiểu: ${minCoin} Coin`}
+              </p>
             </div>
 
             {quickAmounts.length > 0 && (
@@ -230,22 +210,17 @@ export default function CreateWithdrawPage() {
                 <span className="text-xs font-medium text-muted-foreground self-center">
                   Gợi ý:
                 </span>
-                {quickAmounts.map((val) => {
-                  const formatted = val
-                    .toString()
-                    .replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-                  return (
-                    <button
-                      key={val}
-                      type="button"
-                      onClick={() => setAmount(formatted)}
-                      disabled={!checkData?.can_withdraw || loading}
-                      className="px-3 py-1.5 text-xs font-semibold text-primary bg-primary-light/50 border border-primary-pastel rounded-xl hover:bg-primary-light disabled:opacity-50 transition-colors"
-                    >
-                      {formatted} ₫
-                    </button>
-                  );
-                })}
+                {quickAmounts.map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setAmount(String(value))}
+                    disabled={!checkData?.can_withdraw || loading}
+                    className="px-3 py-1.5 text-xs font-semibold text-primary bg-primary-light/50 border border-primary-pastel rounded-xl hover:bg-primary-light disabled:opacity-50 transition-colors"
+                  >
+                    {value} Coin
+                  </button>
+                ))}
               </div>
             )}
 

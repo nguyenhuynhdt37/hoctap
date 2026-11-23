@@ -17,6 +17,7 @@ interface WithdrawItem {
   email: string;
   avatar: string | null;
   amount: number;
+  coin_amount?: number | null;
   currency: string;
   status: string;
   requested_at: string;
@@ -243,8 +244,13 @@ export default function WithdrawPage() {
                         </td>
                         <td className="px-4 py-4">
                           <div className="text-base font-bold text-foreground tabular-nums">
-                            {formatCurrency(item.amount)}
+                            {item.coin_amount ? `${item.coin_amount} Coin` : formatCurrency(item.amount)}
                           </div>
+                          {item.coin_amount ? (
+                            <div className="text-xs text-muted-foreground tabular-nums">
+                              {formatCurrency(item.amount)}
+                            </div>
+                          ) : null}
                         </td>
                         <td className="px-4 py-4">
                           <Badge

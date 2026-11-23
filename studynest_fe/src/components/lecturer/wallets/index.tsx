@@ -1,6 +1,8 @@
 "use client";
 
 import { Alert, Badge, Card, EmptyState, Skeleton } from "@/components/ui";
+import { useCoinBalances } from "@/lib/learning-hub/shop-hooks";
+import { formatCoin } from "@/lib/learning-hub/shop-logic";
 import api from "@/lib/utils/fetcher/client/axios";
 import {
   LecturerTransactionsResponse,
@@ -238,6 +240,7 @@ interface WalletSummaryCardProps {
 }
 
 function WalletSummaryCard({ wallet, walletStatus }: WalletSummaryCardProps) {
+  const coins = useCoinBalances().data;
   const isLocked = Boolean(wallet?.is_locked);
   const statusStyles = isLocked
     ? "bg-destructive-bg text-destructive-foreground border-destructive-border"
@@ -251,11 +254,17 @@ function WalletSummaryCard({ wallet, walletStatus }: WalletSummaryCardProps) {
       <div className="relative flex items-start justify-between gap-4">
         <div className="flex flex-col gap-2">
           <span className="text-xs font-semibold uppercase tracking-wide text-white/75">
-            Số dư ví
+            Số dư Coin
           </span>
-          <p className="mt-2 text-3xl font-semibold sm:text-4xl tracking-tight">
-            {formatCurrency(wallet?.balance)}
+          <p className="mt-2 text-3xl font-semibold sm:text-4xl tracking-tight tabular-nums">
+            {coins ? formatCoin(coins.total) : "…"}
           </p>
+          {coins && (
+            <p className="text-sm text-white/80">
+              {formatCoin(coins.paid)} thật · {formatCoin(coins.bonus)} thưởng
+              {Number(wallet?.balance) > 0 ? ` · ví VND còn ${formatCurrency(wallet?.balance)}` : ""}
+            </p>
+          )}
         </div>
         <div className="flex flex-col items-end gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 backdrop-blur border border-white/15">

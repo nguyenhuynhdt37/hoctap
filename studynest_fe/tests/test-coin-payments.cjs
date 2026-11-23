@@ -59,3 +59,15 @@ test("ánh xạ phản hồi API và nhãn truy cập nêu cả hai loại Coin"
   assert.equal(coin.coinBalanceLabel(balances), "Số dư 150 Coin: 100 Coin thật, 50 Coin thưởng");
   assert.doesNotMatch(coin.coinBalanceLabel(balances), /peak/i);
 });
+
+test("báo giá rút Coin: tối thiểu, tối đa theo Coin rút được, và số VND nhận về", () => {
+  assert.deepEqual(coin.withdrawQuote(10, 100, 10000, 10), { coin: 10, vnd: 100_000, valid: true, reason: null });
+  const low = coin.withdrawQuote(9, 100, 10000, 10);
+  assert.equal(low.valid, false);
+  assert.match(low.reason, /10 Coin/);
+  const high = coin.withdrawQuote(500, 100, 10000, 10);
+  assert.equal(high.valid, false);
+  assert.match(high.reason, /100 Coin/);
+  assert.equal(coin.withdrawQuote(0, 100, 10000, 10).valid, false);
+  assert.equal(coin.withdrawQuote(10.5, 100, 10000, 10).valid, false);
+});

@@ -60,3 +60,12 @@ export function parseCoinBalances(response: CoinBalancesResponse): CoinBalances 
 export function coinBalanceLabel(balances: Pick<CoinBalances, "bonus" | "paid" | "total">) {
   return `Số dư ${balances.total} Coin: ${balances.paid} Coin thật, ${balances.bonus} Coin thưởng`;
 }
+
+/** Giảng viên rút theo số Coin; `withdrawable` là Coin có nguồn từ thu nhập (backend `check-can-request.balance`). */
+export function withdrawQuote(coin: number, withdrawable: number, rateVnd: number, minCoin: number) {
+  const vnd = coinToVnd(coin, rateVnd);
+  if (!Number.isInteger(coin) || coin <= 0) return { coin, vnd, valid: false, reason: "Số Coin rút không hợp lệ." };
+  if (coin < minCoin) return { coin, vnd, valid: false, reason: `Rút tối thiểu ${minCoin} Coin mỗi lần.` };
+  if (coin > withdrawable) return { coin, vnd, valid: false, reason: `Bạn chỉ rút được tối đa ${withdrawable} Coin từ thu nhập giảng dạy.` };
+  return { coin, vnd, valid: true, reason: null };
+}
