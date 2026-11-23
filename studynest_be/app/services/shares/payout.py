@@ -1,3 +1,4 @@
+from decimal import Decimal
 import base64
 
 from fastapi import Depends
@@ -19,6 +20,7 @@ from app.db.models.database import (
 from app.db.sesson import get_session
 from app.libs.formats.datetime import now as get_now
 from app.schemas.shares.notification import NotificationCreateSchema
+from app.services.instructor_coin import credit_instructor_earning_async
 from app.services.shares.notification import NotificationService
 from app.services.shares.paypal_service import PayPalService
 
@@ -130,8 +132,9 @@ class PayoutService:
             # ----------------------------------------------------
             # Cộng tiền giảng viên
             # ----------------------------------------------------
-            lecturer_wallet.balance += amount
-            lecturer_wallet.total_in += amount
+            # Thu nhập ghi bằng Coin thật; phần dư dưới 1 Coin ở lại ví VND và cộng dồn.
+            await credit_instructor_earning_async(
+                self.db, lecturer_wallet, Decimal(amount), earning_id=earning.id)
             lecturer_wallet.updated_at = now
 
             # ----------------------------------------------------

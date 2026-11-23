@@ -15,6 +15,7 @@ from app.db.models.database import (
     Wallets,
 )
 from app.libs.formats.datetime import now
+from app.services.instructor_coin import credit_instructor_earning_async
 from app.services.coin_service import CoinService
 from app.services.bundles import lock_purchase_user
 from fastapi import HTTPException
@@ -310,8 +311,8 @@ class BundleSettlement:
         )
         self.db.add(tx)
         await self.db.flush()
-        wallet.balance = Decimal(wallet.balance or 0) + earning.amount_instructor
-        wallet.total_in = Decimal(wallet.total_in or 0) + earning.amount_instructor
+        await credit_instructor_earning_async(
+            self.db, wallet, Decimal(earning.amount_instructor), earning_id=earning.id)
         treasury.holding_amount -= line.paid
         treasury.platform_fee_total += earning.amount_platform
         self.db.add(

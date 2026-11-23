@@ -272,10 +272,14 @@ async def test_release_no_double_credit(fixture):
     wallet = await db.scalar(
         select(Wallets).where(Wallets.user_id == line.instructor_id)
     )
-    before = wallet.balance
+    coin_before = await coin(db, line.instructor_id) or 0
+    vnd_before = wallet.balance
     assert await BundleSettlement(db).release(line)
-    assert wallet.balance == before + earning.amount_instructor
+    # Thu nhập thành Coin thật; phần dư dưới 1 Coin ở lại ví VND, tổng giá trị được bảo toàn.
+    gained = ((await coin(db, line.instructor_id)) or 0) - coin_before
+    assert gained * 10000 + (wallet.balance - vnd_before) == earning.amount_instructor
     assert not await BundleSettlement(db).release(line)
+    assert ((await coin(db, line.instructor_id)) or 0) - coin_before == gained
 
 
 async def test_idor_and_snapshot_immutable(fixture):

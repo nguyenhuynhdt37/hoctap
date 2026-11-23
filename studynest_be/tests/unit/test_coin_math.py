@@ -30,3 +30,11 @@ def test_allocate_sums_to_total_with_remainder_last():
 def test_allocate_remainder_goes_to_last_positive_weight():
     assert allocate(7, [Decimal(1), Decimal(1), Decimal(0)]) == [3, 4, 0]
     assert allocate(5, [Decimal(0), Decimal(2)]) == [0, 5]
+
+
+def test_split_earning_carries_the_remainder_between_earnings():
+    from app.services.coin_math import split_earning
+
+    assert split_earning(Decimal(9300), Decimal(150700), 10000) == (16, Decimal(0))
+    assert split_earning(Decimal(0), Decimal(139300), 10000) == (13, Decimal(9300))
+    assert split_earning(Decimal(0), Decimal(9999), 10000) == (0, Decimal(9999))

@@ -39,3 +39,8 @@ def allocate(total: int, weights: list[Decimal]) -> list[int]:
     ]
     shares[last] = total - sum(shares)
     return shares
+
+
+def split_earning(balance_vnd: Decimal, amount_vnd: Decimal, rate: int) -> tuple[int, Decimal]:
+    """Gộp phần dư VND đang giữ với khoản thu nhập mới, đổi `floor` ra Coin; trả (Coin, phần dư mới)."""
+    return topup_to_coin(Decimal(balance_vnd) + Decimal(amount_vnd), rate)

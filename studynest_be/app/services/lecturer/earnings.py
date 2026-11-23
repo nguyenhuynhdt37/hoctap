@@ -9,6 +9,7 @@ from app.db.models.database import InstructorEarnings, Transactions, User, Walle
 from app.db.sesson import get_session
 from app.libs.formats.datetime import now as get_now
 from app.schemas.shares.notification import NotificationCreateSchema
+from app.services.instructor_coin import credit_instructor_earning_async
 from app.services.shares.notification import NotificationService
 
 
@@ -76,8 +77,7 @@ class EarningsService:
                     await self.db.flush()
 
                 # 2.2 Cộng tiền vào ví giảng viên
-                wallet.balance = (wallet.balance or Decimal("0")) + amount
-                wallet.total_in = (wallet.total_in or Decimal("0")) + amount
+                await credit_instructor_earning_async(self.db, wallet, amount, earning_id=earn.id)
                 wallet.last_transaction_at = now
                 wallet.updated_at = now
 
