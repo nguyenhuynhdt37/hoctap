@@ -1,7 +1,10 @@
 "use client";
 
+import { paymentCheck, vndToCoinCeil } from "@/lib/learning-hub/coin-logic";
+import { useCoinBalances } from "@/lib/learning-hub/shop-hooks";
 import { getImageUrl } from "@/lib/utils/helpers/image";
 import { Course } from "@/types/user/course_detail";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { GraduationCap, CircleCheck, Clock } from "pulsoicon-react";
 
@@ -39,6 +42,12 @@ export default function EnrollmentModal({
   discountName,
 }: EnrollmentModalProps) {
   const router = useRouter();
+  const coins = useCoinBalances();
+  const priceVnd = finalPrice ?? course.base_price;
+  const priceCoin = coins.data && priceVnd > 0 ? vndToCoinCeil(priceVnd, coins.data.rateVnd) : 0;
+  const payment = coins.data && priceCoin > 0 ? paymentCheck(priceCoin, coins.data) : null;
+  // Chưa biết số dư thì không chặn (backend vẫn kiểm tra); biết là thiếu Coin thật thì khóa nút.
+  const lacksCoin = payment ? !payment.ok : false;
 
   if (!isOpen) return null;
 
@@ -149,6 +158,24 @@ export default function EnrollmentModal({
                 </ul>
               </div>
 
+              {payment && coins.data && (
+                <div className="mb-6 rounded-2xl border border-accent-vanilla-border bg-accent-vanilla p-4 text-sm text-accent-vanilla-foreground">
+                  <p className="font-bold">Thanh toán {priceCoin} Coin</p>
+                  <p className="mt-1">
+                    Dùng {payment.bonusUse} Coin thưởng + {payment.paidUse} Coin thật.
+                  </p>
+                  <p className="mt-1 text-xs">
+                    Số dư của bạn: {coins.data.paid} Coin thật, {coins.data.bonus} Coin thưởng.
+                  </p>
+                  {lacksCoin && (
+                    <p role="alert" className="mt-2 font-semibold text-destructive-foreground">
+                      Bạn cần thêm {payment.missingPaid} Coin thật.{" "}
+                      <Link href="/shop" className="underline underline-offset-4">Mua Coin</Link>
+                    </p>
+                  )}
+                </div>
+              )}
+
               <div className="flex gap-3">
                 <button
                   type="button"
@@ -161,7 +188,7 @@ export default function EnrollmentModal({
                 <button
                   type="button"
                   onClick={onEnroll}
-                  disabled={isEnrolling || !courseSlug}
+                  disabled={isEnrolling || !courseSlug || lacksCoin}
                   className="flex-1 py-3 px-4 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-sm font-semibold transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                   {isEnrolling ? (

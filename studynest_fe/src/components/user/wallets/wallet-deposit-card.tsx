@@ -43,8 +43,8 @@ export function WalletDepositCard({
             Nạp tiền qua PayPal
           </h2>
           <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-            Thanh toán quốc tế an toàn và tức thì. Số dư sẽ được cộng vào ví ngay khi
-            giao dịch PayPal hoàn tất.
+            Thanh toán quốc tế an toàn và tức thì. Số tiền nạp được quy đổi thành Coin theo
+            tỷ giá hiện hành của nền tảng ngay khi giao dịch PayPal hoàn tất.
           </p>
         </div>
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-primary-pastel/80 bg-primary-light text-primary shadow-2xs">
