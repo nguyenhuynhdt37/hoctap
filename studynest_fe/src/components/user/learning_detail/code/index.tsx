@@ -7,11 +7,10 @@ import { ActiveLessonResponse } from "@/types/user/activeLesson";
 import { CodeExercise, TestResult } from "@/types/user/learning";
 import confetti from "canvas-confetti";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { MessageSquareText } from "pulsoicon-react";
 import CodeEditorPanel from "./code-editor-panel";
 import ExerciseTabs from "./exercise-tabs";
-import InfoPanel from "./info-panel";
-import TestResults from "./test-results";
+import InfoPanel, { type CodeInfoTab } from "./info-panel";
+import QASection from "../qa";
 import { useLearningAgent, useAgentAction, useAgentSnapshot } from "../agent/agent-context";
 import { applyEditorPatches, numberArg, stringArg } from "../agent/action-registry";
 
@@ -62,11 +61,15 @@ export default function CodeLesson({
     Record<string, Record<string, string>>
   >({});
   const [isRunning, setIsRunning] = useState(false);
+  const [runningMode, setRunningMode] = useState<"sample" | "full" | null>(null);
+  const [focusMode, setFocusMode] = useState(false);
   const [testResult, setTestResult] = useState<TestResult | null>(null);
   const [hasCompletedLesson, setHasCompletedLesson] = useState(false);
-  const [infoTab, setInfoTab] = useState<"info" | "qa">("info");
+  const [infoTab, setInfoTab] = useState<CodeInfoTab>("info");
+  const [qaOpen, setQaOpen] = useState(false);
   const prevFileIdRef = useRef<string | null>(null);
   const isSavingRef = useRef<boolean>(false);
+  const savingPromiseRef = useRef<Promise<void> | null>(null);
   const hasCalledCompleteRef = useRef<boolean>(false);
   const [exercisePassStatus, setExercisePassStatus] = useState<
     Record<string, boolean>
@@ -259,9 +262,16 @@ export default function CodeLesson({
     runningRef.current = true;
     const testedRevision = editorRevision.current;
     setIsRunning(true);
+    setRunningMode(sampleOnly ? "sample" : "full");
+    setSaveError("");
     setTestResult(null);
 
     try {
+      // Chờ thao tác tự động lưu từ onBlur (nếu đang chạy) hoàn tất để tránh xung đột hash 409
+      if (savingPromiseRef.current) {
+        await savingPromiseRef.current.catch(() => undefined);
+      }
+
       if (!sampleOnly) {
         const exerciseId = currentExercise.id;
         for (const f of currentUserFiles) {
@@ -271,25 +281,30 @@ export default function CodeLesson({
             savedRef.current[exerciseId]?.[f.id] ?? f.content ?? "";
           if (currentContent !== prevSaved) {
             isSavingRef.current = true;
-            try {
-              await api.post(`/learning/code/${exerciseId}/save`, {
-                filename: f.filename,
-                content: currentContent,
-                is_main: f.is_main,
-                expected_content_hash: await sha256(prevSaved),
-              });
-              savedRef.current = {
-                ...savedRef.current,
-                [exerciseId]: {
-                  ...savedRef.current[exerciseId],
-                  [f.id]: currentContent,
-                },
-              };
-              setSavedFileContents(savedRef.current);
-              setSaveError("");
-            } finally {
-              isSavingRef.current = false;
-            }
+            const saveOp = (async () => {
+              try {
+                await api.post(`/learning/code/${exerciseId}/save`, {
+                  filename: f.filename,
+                  content: currentContent,
+                  is_main: f.is_main,
+                  expected_content_hash: await sha256(prevSaved),
+                });
+                savedRef.current = {
+                  ...savedRef.current,
+                  [exerciseId]: {
+                    ...savedRef.current[exerciseId],
+                    [f.id]: currentContent,
+                  },
+                };
+                setSavedFileContents(savedRef.current);
+                setSaveError("");
+              } finally {
+                isSavingRef.current = false;
+                savingPromiseRef.current = null;
+              }
+            })();
+            savingPromiseRef.current = saveOp;
+            await saveOp;
           }
         }
       }
@@ -313,6 +328,8 @@ export default function CodeLesson({
 
       if (editorRevision.current !== testedRevision) throw new Error("Code đã thay đổi trong khi chạy test. Hãy chạy lại bản mới.");
       setTestResult(response.data);
+      setInfoTab("tests");
+      setFocusMode(false);
 
       const passPercentage =
         response.data.total > 0
@@ -330,6 +347,7 @@ export default function CodeLesson({
     } finally {
       runningRef.current = false;
       setIsRunning(false);
+      setRunningMode(null);
     }
   };
 
@@ -344,6 +362,7 @@ export default function CodeLesson({
     bufferRef.current = { ...bufferRef.current, [exerciseId]: resetFiles };
     setUserFiles(bufferRef.current); editorRevision.current += 1; agent?.changed();
     setTestResult(null);
+    setSaveError("");
   };
 
   const updateFileContent = (fileId: string, content: string) => {
@@ -402,7 +421,7 @@ export default function CodeLesson({
 
     if (currentContent !== savedContent) {
       isSavingRef.current = true;
-      saveFile(exerciseId, file.filename, currentContent, file.is_main)
+      const saveOp = saveFile(exerciseId, file.filename, currentContent, file.is_main)
         .then(() => {
           setSavedFileContents((prev) => ({
             ...prev,
@@ -415,7 +434,9 @@ export default function CodeLesson({
         .catch(() => undefined)
         .finally(() => {
           isSavingRef.current = false;
+          savingPromiseRef.current = null;
         });
+      savingPromiseRef.current = saveOp;
     }
   }, [
     activeFileId,
@@ -474,6 +495,7 @@ export default function CodeLesson({
     saveCurrentFileIfChanged();
     setCurrentExerciseIndex(index);
     setTestResult(null);
+    setSaveError("");
   };
 
   const dirty = () => currentUserFiles.some(file => (bufferRef.current[currentExercise?.id]?.[file.id] ?? file.content) !== (savedFileContents[currentExercise?.id]?.[file.id] ?? file.content));
@@ -535,6 +557,26 @@ export default function CodeLesson({
   }, verify: result => Boolean((result as { undone?: boolean }).undone) });
   useAgentAction("code.run_sample_tests", { timeout: 120000, execute: async (args, signal) => { assertExercise(args); return runCodeTests(true, signal); }, verify: result => Boolean((result as { attempt_id?: string }).attempt_id) });
 
+  useEffect(() => {
+    if (!qaOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setQaOpen(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [qaOpen]);
+
+  const dirtyFileIds = useMemo(() => {
+    const set = new Set<string>();
+    if (!currentExercise) return set;
+    for (const file of currentUserFiles) {
+      const currentVal = userFiles[currentExercise.id]?.[file.id] ?? file.content;
+      const savedVal = savedFileContents[currentExercise.id]?.[file.id] ?? file.content;
+      if (currentVal !== savedVal) set.add(file.id);
+    }
+    return set;
+  }, [currentExercise, currentUserFiles, userFiles, savedFileContents]);
+
   if (exercisesWithPassStatus.length === 0) {
     return (
       <div className="w-full h-full bg-surface border border-border rounded-2xl shadow-xs p-8 flex items-center justify-center">
@@ -546,72 +588,104 @@ export default function CodeLesson({
   }
 
   return (
-    <div className="h-full min-w-0 overflow-x-hidden overflow-y-auto bg-background">
-      <div className="flex min-h-full min-w-0 flex-col gap-4 p-3 sm:p-6">
-        {saveError && <p role="alert" className="rounded-xl border border-warning-border bg-warning-bg p-3 text-sm text-warning-foreground">{saveError}</p>}
-        <ExerciseTabs
-          exercises={exercisesWithPassStatus}
-          currentIndex={currentExerciseIndex}
-          onSelectExercise={handleSelectExercise}
-        />
+    <div className="h-full min-w-0 overflow-x-hidden overflow-y-auto bg-background lg:overflow-hidden">
+      <div className="flex min-h-full min-w-0 flex-col gap-3 p-3 pb-20 sm:p-4 sm:pb-20 lg:h-full lg:min-h-0 lg:pb-[4.75rem]">
+        {saveError && (
+          <p
+            role="alert"
+            className="shrink-0 rounded-2xl border border-warning-border bg-warning-bg px-4 py-2.5 text-xs font-semibold text-warning-foreground"
+          >
+            {saveError}
+          </p>
+        )}
 
-        <div className="grid min-h-0 min-w-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-6">
-          {/* Cột trái: Thông tin */}
-          <div data-learning-info className="flex min-h-[220px] min-w-0 flex-col lg:col-span-1 lg:min-h-0">
+        <div className="shrink-0">
+          <ExerciseTabs
+            exercises={exercisesWithPassStatus}
+            currentIndex={currentExerciseIndex}
+            onSelectExercise={handleSelectExercise}
+            focusMode={focusMode}
+            onToggleFocusMode={() => setFocusMode((prev) => !prev)}
+            onOpenQa={() => setQaOpen(true)}
+          />
+        </div>
+
+        <div
+          className={`grid min-h-0 min-w-0 flex-1 grid-cols-1 gap-4 ${
+            focusMode ? "lg:grid-cols-1" : "lg:grid-cols-12"
+          }`}
+        >
+          {/* Cột trái: Đề bài | Test Bench (giữ nguyên data-learning-info) */}
+          <div
+            data-learning-info
+            className={`min-h-[340px] min-w-0 flex-col lg:h-full lg:min-h-0 ${
+              focusMode ? "hidden" : "flex lg:col-span-5 xl:col-span-4"
+            }`}
+          >
             <InfoPanel
               lesson={lesson}
               infoTab={infoTab}
               setInfoTab={setInfoTab}
+              onOpenQa={() => setQaOpen(true)}
               currentExercise={currentExercise}
               testResult={testResult}
               lessonAuthorId={lessonAuthorId}
             />
           </div>
 
-          {/* Cột phải: Code Editor */}
-          <div className="flex min-h-[360px] min-w-0 flex-col lg:col-span-2 lg:min-h-0">
+          {/* Cột phải: Code Editor Studio full chiều cao */}
+          <div
+            className={`flex min-h-[420px] min-w-0 flex-col lg:h-full lg:min-h-0 ${
+              focusMode ? "lg:col-span-1" : "lg:col-span-7 xl:col-span-8"
+            }`}
+          >
             <CodeEditorPanel
               currentExercise={currentExercise}
               files={currentUserFiles}
               activeFileId={activeFileId}
+              dirtyFileIds={dirtyFileIds}
               language={language}
               isRunning={isRunning}
+              runningMode={runningMode}
               onSelectFile={setActiveFileId}
               onUpdateFileContent={updateFileContent}
-              onTestCode={() => void runCodeTests().catch(() => setSaveError("Không chạy được test. Code chưa được xác nhận PASS."))}
+              onRunSample={() =>
+                void runCodeTests(true).catch(() =>
+                  setSaveError("Không chạy thử được test mẫu. Bạn thử lại nhé."),
+                )
+              }
+              onTestCode={() =>
+                void runCodeTests(false).catch(() =>
+                  setSaveError("Không chạy được test. Code chưa được xác nhận PASS."),
+                )
+              }
               onResetCode={handleResetCode}
               onSaveFile={saveCurrentFileIfChanged}
-              onSelectionChange={(value) => { if (selection.current.start !== value.start || selection.current.end !== value.end) { selection.current = value; agent?.changed(); } }}
+              onSelectionChange={(value) => {
+                if (
+                  selection.current.start !== value.start ||
+                  selection.current.end !== value.end
+                ) {
+                  selection.current = value;
+                  agent?.changed();
+                }
+              }}
             />
-
-            {/* Test Cases */}
-            {currentExercise &&
-              currentExercise.testcases &&
-              currentExercise.testcases.length > 0 && (
-                <TestResults
-                  testcases={currentExercise.testcases}
-                  testResult={testResult}
-                />
-              )}
           </div>
         </div>
       </div>
 
-      <div className="fixed bottom-[4.75rem] left-3 z-30 sm:left-6">
-        <button
-          type="button"
-          onClick={() => setInfoTab("qa")}
-          disabled={infoTab === "qa"}
-          className={`flex min-h-11 items-center gap-2 rounded-full px-4 py-2 shadow-lg transition-colors ${
-            infoTab === "qa"
-              ? "cursor-default bg-border text-muted-foreground"
-              : "bg-primary text-white hover:bg-primary-hover"
-          }`}
-        >
-          <MessageSquareText className="w-5 h-5" />
-          <span>Hỏi đáp</span>
-        </button>
-      </div>
+      {/* Phòng Hỏi đáp Full màn hình 100vw × 100dvh */}
+      {qaOpen && (
+        <QASection
+          lessonId={lesson.id}
+          lessonTitle={lesson.title}
+          lessonAuthorId={lessonAuthorId}
+          isModal
+          fullScreen
+          onClose={() => setQaOpen(false)}
+        />
+      )}
     </div>
   );
 }

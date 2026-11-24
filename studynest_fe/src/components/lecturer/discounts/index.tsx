@@ -1,43 +1,58 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Cloud,
+  Layers,
+  Plus,
+  Tag,
+  Ticket,
+  TrendingUp,
+  Users,
+} from "pulsoicon-react";
+import useSWR from "swr";
 import Pagination from "@/components/shared/pagination";
 import { Button } from "@/components/ui";
 import api from "@/lib/utils/fetcher/client/axios";
 import { showToast } from "@/lib/utils/helpers/toast";
-import {
+import type {
   DiscountsQueryParams,
   DiscountsResponse,
 } from "@/types/lecturer/discount";
-import { Plus } from "pulsoicon-react";
-import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import useSWR from "swr";
+import { cn } from "@/lib/utils";
+import {
+  ComboCouponsPanel,
+  type LecturerBundleItem,
+} from "./combo-coupons-panel";
 import { DiscountsEmpty } from "./discounts-empty";
 import { DiscountsFilters } from "./discounts-filters";
 import { DiscountsSkeleton } from "./discounts-skeleton";
 import { DiscountsTable } from "./discounts-table";
+import { VoucherCardGrid } from "./voucher-card-grid";
 
 const DEFAULT_LIMIT = 10;
 
+type DiscountSpaceTab = "courses" | "combos";
+
 export default function DiscountsManagement() {
   const router = useRouter();
+  const [spaceTab, setSpaceTab] = useState<DiscountSpaceTab>("courses");
+  const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
+  const [comboCreateSignal, setComboCreateSignal] = useState(0);
+
   const [pagination, setPagination] = useState({
     page: 1,
     limit: DEFAULT_LIMIT,
   });
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [discountType, setDiscountType] = useState<"percent" | "fixed" | "">(
-    ""
-  );
+  const [discountType, setDiscountType] = useState<"percent" | "fixed" | "">("");
   const [isActive, setIsActive] = useState<boolean | null>(null);
-  const [validity, setValidity] = useState<
-    "expired" | "running" | "upcoming" | ""
-  >("");
+  const [validity, setValidity] = useState<"expired" | "running" | "upcoming" | "">("");
   const [sortBy, setSortBy] = useState("created_at");
   const [orderDir, setOrderDir] = useState<"asc" | "desc">("desc");
 
-  // Debounce search
   useEffect(() => {
     const timeout = setTimeout(() => {
       setDebouncedSearch(search);
@@ -46,12 +61,10 @@ export default function DiscountsManagement() {
     return () => clearTimeout(timeout);
   }, [search]);
 
-  // Reset page when filters change
   useEffect(() => {
     setPagination((prev) => ({ ...prev, page: 1 }));
   }, [discountType, isActive, validity, sortBy, orderDir]);
 
-  // Build query parameters
   const buildQueryParams = useCallback((): DiscountsQueryParams => {
     const params: DiscountsQueryParams = {
       page: pagination.page,
@@ -60,21 +73,10 @@ export default function DiscountsManagement() {
       order_dir: orderDir,
     };
 
-    if (debouncedSearch.trim()) {
-      params.search = debouncedSearch.trim();
-    }
-
-    if (discountType) {
-      params.discount_type = discountType;
-    }
-
-    if (isActive !== null) {
-      params.is_active = isActive;
-    }
-
-    if (validity) {
-      params.validity = validity as "expired" | "running" | "upcoming";
-    }
+    if (debouncedSearch.trim()) params.search = debouncedSearch.trim();
+    if (discountType) params.discount_type = discountType;
+    if (isActive !== null) params.is_active = isActive;
+    if (validity) params.validity = validity;
 
     return params;
   }, [
@@ -88,8 +90,7 @@ export default function DiscountsManagement() {
     orderDir,
   ]);
 
-  // Fetch discounts data
-  const { data, error, isLoading, mutate } = useSWR<DiscountsResponse>(
+  const { data, isLoading, mutate } = useSWR<DiscountsResponse>(
     ["/lecturer/discounts", buildQueryParams()],
     async ([url, params]: [string, DiscountsQueryParams]) => {
       const response = await api.get(url, { params });
@@ -101,39 +102,50 @@ export default function DiscountsManagement() {
       dedupingInterval: 2000,
       keepPreviousData: true,
       revalidateIfStale: false,
-    }
+    },
+  );
+
+  // Tải danh sách Combo của giảng viên để quản lý mã giảm giá Combo trực tiếp
+  const { data: bundlesData, isLoading: bundlesLoading } = useSWR<{
+    items: LecturerBundleItem[];
+    total: number;
+  }>(
+    "/lecturer/bundles?limit=50",
+    async (url: string) => {
+      const res = await api.get(url);
+      return res.data;
+    },
+    { revalidateOnFocus: false },
   );
 
   const handleDelete = async (id: string) => {
     try {
       await api.delete(`/lecturer/discounts/${id}`);
       showToast.success("Đã xóa mã giảm giá thành công!");
-      mutate();
-    } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.detail ||
-        error.response?.data?.message ||
-        "Không thể xóa mã giảm giá. Vui lòng thử lại.";
-      showToast.error(errorMessage);
+      void mutate();
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { detail?: string; message?: string } } };
+      showToast.error(
+        err.response?.data?.detail ||
+          err.response?.data?.message ||
+          "Không thể xóa mã giảm giá. Vui lòng thử lại.",
+      );
     }
   };
 
   const handleToggleActive = async (id: string, currentStatus: boolean) => {
     try {
       const newStatus = !currentStatus;
-      await api.patch(
-        `/lecturer/discounts/${id}/toggle?is_active=${newStatus}`
+      await api.patch(`/lecturer/discounts/${id}/toggle?is_active=${newStatus}`);
+      showToast.success(`Đã ${newStatus ? "bật" : "tắt"} mã giảm giá thành công!`);
+      void mutate();
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { detail?: string; message?: string } } };
+      showToast.error(
+        err.response?.data?.detail ||
+          err.response?.data?.message ||
+          "Không thể thay đổi trạng thái. Vui lòng thử lại.",
       );
-      showToast.success(
-        `Đã ${newStatus ? "bật" : "tắt"} mã giảm giá thành công!`
-      );
-      mutate();
-    } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.detail ||
-        error.response?.data?.message ||
-        "Không thể thay đổi trạng thái. Vui lòng thử lại.";
-      showToast.error(errorMessage);
     }
   };
 
@@ -165,88 +177,291 @@ export default function DiscountsManagement() {
     setPagination({ page: 1, limit: DEFAULT_LIMIT });
   };
 
+  const items = data?.items ?? [];
+  const bundles = bundlesData?.items ?? [];
   const totalPages = useMemo(() => {
     if (!data) return 0;
     return Math.ceil(data.total / pagination.limit);
   }, [data, pagination.limit]);
 
+  const activeCourseDiscounts = items.filter((d) => d.is_active).length;
+  const totalUsageOnPage = items.reduce((sum, d) => sum + (d.usage_count || 0), 0);
+
   const isInitialLoading = isLoading && !data;
-  const isEmpty = !isInitialLoading && data && data.items.length === 0;
+  const isEmpty = !isInitialLoading && data && items.length === 0;
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        {/* Page Header */}
-        <div className="mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h1 className="font-display text-2xl sm:text-3xl font-semibold text-foreground tracking-tight mb-1.5">
-                Quản lý mã giảm giá
+    <main className="relative isolate min-h-screen overflow-clip bg-background pb-20 pt-6">
+      {/* Dải nền pastel sáng loang nhẹ */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-x-0 top-0 -z-10 h-[30rem] bg-gradient-to-b from-primary-light/55 via-surface-muted/40 to-transparent"
+      />
+
+      <div className="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
+        {/* ── 1. HERO XƯỞNG ƯU ĐÃI GIẢNG VIÊN (PROMOTION ATELIER) ── */}
+        <section
+          aria-label="Tổng quan xưởng ưu đãi giảng viên"
+          className="relative isolate overflow-hidden rounded-[2rem] border border-primary-pastel/90 bg-gradient-to-br from-primary-light/85 via-surface to-accent-vanilla/50 p-6 shadow-[0_24px_48px_-12px_rgba(53,111,167,0.13)] sm:p-8"
+        >
+          <div
+            aria-hidden="true"
+            className="sky-drift pointer-events-none absolute -top-20 -left-16 -z-10 h-60 w-80 rounded-full bg-surface/85 blur-3xl"
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -right-20 -bottom-24 -z-10 h-72 w-96 rounded-full bg-primary-pastel/45 blur-3xl"
+          />
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 760 220"
+            fill="none"
+            preserveAspectRatio="none"
+            className="pointer-events-none absolute inset-0 -z-10 h-full w-full opacity-55"
+          >
+            <path
+              d="M-20 185 C 140 115, 280 220, 440 135 C 570 70, 670 135, 780 48"
+              stroke="var(--color-primary-pastel)"
+              strokeWidth="1.6"
+            />
+            <path
+              d="M-20 202 C 150 132, 290 232, 455 150 C 585 88, 680 150, 780 68"
+              stroke="var(--color-accent-vanilla-border)"
+              strokeWidth="1.2"
+              strokeDasharray="4 6"
+            />
+          </svg>
+          <Cloud
+            aria-hidden="true"
+            animated={false}
+            strokeWidth={0.65}
+            className="pointer-events-none absolute -right-8 -bottom-12 -z-10 size-52 -rotate-6 text-surface/75"
+          />
+
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+            <div className="max-w-2xl space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-primary-pastel bg-primary-light px-3 py-1 text-[11px] font-bold tracking-[0.12em] text-primary uppercase">
+                  <Tag aria-hidden="true" animated={false} className="size-3.5" />
+                  <span>Promotion Atelier · Giảng viên</span>
+                </span>
+                <span
+                  aria-hidden="true"
+                  className="stamp-down hidden items-center gap-1 rounded-full border-2 border-dashed border-accent-vanilla-foreground/40 bg-surface/85 px-3 py-0.5 text-[10px] font-extrabold tracking-[0.14em] text-accent-vanilla-foreground uppercase sm:inline-flex"
+                >
+                  KHÓA LẺ + COMBO
+                </span>
+              </div>
+
+              <h1 className="font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+                Xưởng Mã Giảm Giá &amp; Ưu Đãi Combo
               </h1>
-              <p className="text-sm text-muted-foreground">
-                Tạo và quản lý các mã giảm giá để thu hút học viên
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                Phát hành chiến dịch giảm giá cho từng khóa học lẻ và các gói Combo lộ trình để bứt phá doanh thu giảng dạy.
               </p>
             </div>
-            <Button
-              type="button"
-              variant="primary"
-              size="md"
-              onClick={() => router.push("/lecturer/discounts/create")}
-              leftIcon={<Plus className="h-4 w-4" />}
-              className="self-start sm:self-auto"
-            >
-              Tạo mã giảm giá
-            </Button>
+
+            <div className="flex flex-wrap items-center gap-2.5">
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                onClick={() => router.push("/lecturer/discounts/create")}
+                className="min-h-11 rounded-full px-5 font-bold shadow-sm"
+              >
+                <Plus aria-hidden="true" className="size-4" />
+                <span>Tạo mã Khóa học</span>
+              </Button>
+              <Button
+                type="button"
+                variant="pastel"
+                size="sm"
+                onClick={() => {
+                  setSpaceTab("combos");
+                  setComboCreateSignal((prev) => prev + 1);
+                }}
+                className="min-h-11 rounded-full border border-accent-vanilla-border bg-accent-vanilla/85 px-5 font-bold text-accent-vanilla-foreground hover:bg-accent-vanilla"
+              >
+                <Layers aria-hidden="true" className="size-4" />
+                <span>Tạo mã Combo</span>
+              </Button>
+            </div>
           </div>
+
+          {/* Lưới 4 chỉ số Bento sống */}
+          <div className="mt-6 grid grid-cols-2 gap-3 border-t border-border/70 pt-5 lg:grid-cols-4">
+            <div className="rounded-2xl border border-border/80 bg-surface/90 p-3.5 backdrop-blur-sm">
+              <p className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
+                Tổng mã khóa học
+              </p>
+              <p className="mt-1 inline-flex items-center gap-1.5 font-display text-2xl font-bold text-foreground tabular-nums">
+                <Ticket aria-hidden="true" animated={false} className="size-5 text-primary" />
+                <span>{data?.total ?? 0}</span>
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-success-border/80 bg-success-bg/55 p-3.5 backdrop-blur-sm">
+              <p className="text-[11px] font-bold tracking-wider text-success-foreground uppercase">
+                Đang kích hoạt
+              </p>
+              <p className="mt-1 inline-flex items-center gap-1.5 font-display text-2xl font-bold text-success-foreground tabular-nums">
+                <TrendingUp aria-hidden="true" animated={false} className="size-5" />
+                <span>{activeCourseDiscounts}</span>
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-primary-pastel/75 bg-primary-light/55 p-3.5 backdrop-blur-sm">
+              <p className="text-[11px] font-bold tracking-wider text-primary uppercase">
+                Lượt dùng (trang này)
+              </p>
+              <p className="mt-1 inline-flex items-center gap-1.5 font-display text-2xl font-bold text-primary tabular-nums">
+                <Users aria-hidden="true" animated={false} className="size-5" />
+                <span>{totalUsageOnPage}</span>
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-accent-vanilla-border/80 bg-accent-vanilla/55 p-3.5 backdrop-blur-sm">
+              <p className="text-[11px] font-bold tracking-wider text-accent-vanilla-foreground uppercase">
+                Combo của bạn
+              </p>
+              <p className="mt-1 inline-flex items-center gap-1.5 font-display text-2xl font-bold text-foreground tabular-nums">
+                <Layers
+                  aria-hidden="true"
+                  animated={false}
+                  className="size-5 text-accent-vanilla-foreground"
+                />
+                <span>{bundlesData?.total ?? bundles.length}</span>
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* ── 2. THANH CHUYỂN KHÔNG GIAN: MÃ KHÓA HỌC ↔ MÃ COMBO ── */}
+        <div
+          role="tablist"
+          aria-label="Không gian quản lý ưu đãi"
+          className="inline-flex flex-wrap items-center gap-1.5 rounded-full border border-primary-pastel/80 bg-surface/95 p-1.5 shadow-xs"
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={spaceTab === "courses"}
+            onClick={() => setSpaceTab("courses")}
+            className={cn(
+              "inline-flex min-h-10 items-center gap-2 rounded-full px-5 text-xs font-bold transition-all cursor-pointer",
+              spaceTab === "courses"
+                ? "bg-primary text-primary-foreground shadow-xs"
+                : "text-muted-foreground hover:bg-primary-light/60 hover:text-primary",
+            )}
+          >
+            <Ticket aria-hidden="true" animated={false} className="size-4" />
+            <span>Mã giảm giá Khóa học</span>
+            <span
+              className={cn(
+                "rounded-full px-2 py-0.5 text-[10px] font-extrabold tabular-nums",
+                spaceTab === "courses"
+                  ? "bg-primary-foreground/20 text-primary-foreground"
+                  : "bg-primary-light text-primary",
+              )}
+            >
+              {data?.total ?? 0}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            role="tab"
+            aria-selected={spaceTab === "combos"}
+            onClick={() => setSpaceTab("combos")}
+            className={cn(
+              "inline-flex min-h-10 items-center gap-2 rounded-full px-5 text-xs font-bold transition-all cursor-pointer",
+              spaceTab === "combos"
+                ? "bg-primary text-primary-foreground shadow-xs"
+                : "text-muted-foreground hover:bg-primary-light/60 hover:text-primary",
+            )}
+          >
+            <Layers aria-hidden="true" animated={false} className="size-4" />
+            <span>Mã giảm giá Combo</span>
+            <span
+              className={cn(
+                "rounded-full px-2 py-0.5 text-[10px] font-extrabold tabular-nums",
+                spaceTab === "combos"
+                  ? "bg-primary-foreground/20 text-primary-foreground"
+                  : "bg-accent-vanilla text-accent-vanilla-foreground",
+              )}
+            >
+              {bundlesData?.total ?? bundles.length}
+            </span>
+          </button>
         </div>
 
-        {/* Filters */}
-        <DiscountsFilters
-          search={search}
-          onSearchChange={setSearch}
-          discountType={discountType}
-          onDiscountTypeChange={setDiscountType}
-          isActive={isActive}
-          onIsActiveChange={setIsActive}
-          validity={validity}
-          onValidityChange={setValidity}
-          sortBy={sortBy}
-          onSortByChange={setSortBy}
-          orderDir={orderDir}
-          onOrderDirChange={setOrderDir}
-          onReset={handleResetFilters}
-        />
-
-        {/* Content */}
-        {isInitialLoading ? (
-          <DiscountsSkeleton />
-        ) : isEmpty ? (
-          <DiscountsEmpty />
-        ) : (
-          <>
-            <DiscountsTable
-              data={data?.items || []}
+        {/* ── 3. NỘI DUNG TỪNG KHÔNG GIAN ── */}
+        {spaceTab === "courses" ? (
+          <div className="space-y-5">
+            <DiscountsFilters
+              search={search}
+              onSearchChange={setSearch}
+              discountType={discountType}
+              onDiscountTypeChange={setDiscountType}
+              isActive={isActive}
+              onIsActiveChange={setIsActive}
+              validity={validity}
+              onValidityChange={setValidity}
               sortBy={sortBy}
+              onSortByChange={setSortBy}
               orderDir={orderDir}
-              onSort={handleSort}
-              onDelete={handleDelete}
-              onToggleActive={handleToggleActive}
+              onOrderDirChange={setOrderDir}
+              onReset={handleResetFilters}
+              viewMode={viewMode}
+              onViewModeChange={setViewMode}
             />
-            {data && data.total > 0 && (
-              <Pagination
-                currentPage={pagination.page}
-                totalPages={totalPages}
-                totalItems={data.total}
-                pageSize={pagination.limit}
-                onPageChange={handlePageChange}
-                onPageSizeChange={handleLimitChange}
-                showPageSizeSelector={true}
-                pageSizeOptions={[5, 10, 20, 50]}
-              />
+
+            {isInitialLoading ? (
+              <DiscountsSkeleton />
+            ) : isEmpty ? (
+              <DiscountsEmpty />
+            ) : (
+              <>
+                {viewMode === "cards" ? (
+                  <VoucherCardGrid
+                    data={items}
+                    onDelete={handleDelete}
+                    onToggleActive={handleToggleActive}
+                  />
+                ) : (
+                  <DiscountsTable
+                    data={items}
+                    sortBy={sortBy}
+                    orderDir={orderDir}
+                    onSort={handleSort}
+                    onDelete={handleDelete}
+                    onToggleActive={handleToggleActive}
+                  />
+                )}
+
+                {data && data.total > 0 && (
+                  <Pagination
+                    currentPage={pagination.page}
+                    totalPages={totalPages}
+                    totalItems={data.total}
+                    pageSize={pagination.limit}
+                    onPageChange={handlePageChange}
+                    onPageSizeChange={handleLimitChange}
+                    showPageSizeSelector={true}
+                    pageSizeOptions={[5, 10, 20, 50]}
+                  />
+                )}
+              </>
             )}
-          </>
+          </div>
+        ) : (
+          <ComboCouponsPanel
+            bundles={bundles}
+            bundlesLoading={bundlesLoading}
+            openCreateSignal={comboCreateSignal}
+          />
         )}
       </div>
-    </div>
+    </main>
   );
 }

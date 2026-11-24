@@ -1,9 +1,18 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
-import { ArrowDown, ArrowUp, BookOpen, Check, Trash2 } from "pulsoicon-react";
-import { Badge, Button, Input } from "@/components/ui";
+import {
+  ArrowDown,
+  ArrowUp,
+  BookOpen,
+  Check,
+  Coins,
+  Layers,
+  Search,
+  Trash2,
+} from "pulsoicon-react";
+import { Badge, Button } from "@/components/ui";
 import {
   fetchLearning,
   LoadError,
@@ -54,7 +63,9 @@ export default function LecturerCoursePicker({
 }) {
   const [input, setInput] = useState("");
   const [keyword, setKeyword] = useState("");
-  const [knownCourses, setKnownCourses] = useState<Record<string, CourseInfo>>({});
+  const [knownCourses, setKnownCourses] = useState<Record<string, CourseInfo>>(
+    {},
+  );
 
   useEffect(() => {
     const timer = setTimeout(() => setKeyword(input), 300);
@@ -66,7 +77,6 @@ export default function LecturerCoursePicker({
     fetchLearning,
   );
 
-  // Cập nhật bộ nhớ đệm knownCourses từ dữ liệu API và selectedCourses (chỉ update local state)
   useEffect(() => {
     const updated: Record<string, CourseInfo> = {};
 
@@ -142,7 +152,6 @@ export default function LecturerCoursePicker({
     }
   }
 
-  // Danh sách các khóa học đã chọn được ánh xạ thông tin
   const selectedList = useMemo(() => {
     return value.map((id) => {
       const info = coursesInfo[id] || knownCourses[id];
@@ -156,42 +165,69 @@ export default function LecturerCoursePicker({
     });
   }, [value, knownCourses, coursesInfo, selectedCourses]);
 
+  const totalRetail = useMemo(
+    () => selectedList.reduce((sum, item) => sum + (item.price || 0), 0),
+    [selectedList],
+  );
+
   return (
-    <fieldset disabled={disabled} className="min-w-0 space-y-4">
-      <div>
-        <Input
-          label="Tìm và thêm khóa học của bạn"
-          value={input}
-          onChange={(event) => setInput(event.target.value)}
-          placeholder="Nhập tên khóa học để tìm kiếm…"
-        />
-        <div className="mt-1.5 flex items-center justify-between text-xs text-muted-foreground">
-          <span>
-            Đã chọn: <strong className="text-foreground">{value.length}</strong> / 60 khóa học
+    <fieldset disabled={disabled} className="min-w-0 space-y-5">
+      {/* Ô tìm kiếm kho khóa học */}
+      <div className="space-y-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <label
+            htmlFor="combo-course-search"
+            className="text-sm font-semibold text-foreground"
+          >
+            Kho khóa học của bạn
+          </label>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-primary-pastel bg-primary-light/60 px-3 py-0.5 text-xs font-semibold text-primary">
+            <Layers animated={false} className="h-3.5 w-3.5" aria-hidden="true" />
+            Đã chọn {value.length} / 60 khóa
           </span>
-          <span>Chọn tối thiểu 2 khóa để tạo lộ trình combo</span>
         </div>
+
+        <div className="relative">
+          <Search
+            animated={false}
+            className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden="true"
+          />
+          <input
+            id="combo-course-search"
+            type="text"
+            value={input}
+            onChange={(event) => setInput(event.target.value)}
+            placeholder="Nhập tên khóa học để tìm và thêm vào lộ trình..."
+            className="w-full rounded-full border border-border bg-background py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors"
+          />
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Chọn tối thiểu 2 khóa học. Nhấn vào từng thẻ để thêm hoặc bỏ khỏi combo.
+        </p>
       </div>
 
       {error && <LoadError error={error} retry={() => mutate()} />}
       {!data && !error && (
-        <p role="status" className="text-sm text-muted-foreground">
-          Đang tải danh sách khóa học…
-        </p>
+        <div role="status" className="grid gap-2.5 sm:grid-cols-2">
+          {[1, 2, 3, 4].map((i) => (
+            <div
+              key={i}
+              className="h-16 animate-pulse rounded-2xl border border-border bg-surface-muted"
+            />
+          ))}
+        </div>
       )}
       {data?.items.length === 0 && (
-        <p className="rounded-xl border border-dashed border-border p-4 text-center text-sm text-muted-foreground">
-          Không tìm thấy khóa học nào phù hợp.
-        </p>
+        <div className="rounded-2xl border border-dashed border-border bg-background/60 p-6 text-center text-sm text-muted-foreground">
+          Không tìm thấy khóa học nào phù hợp với từ khóa hiện tại.
+        </div>
       )}
 
-      {/* Danh sách các khóa học tìm kiếm được */}
+      {/* Danh sách khóa học sẵn sàng thêm */}
       {data && data.items.length > 0 && (
-        <div className="space-y-1.5">
-          <p className="text-xs font-medium text-muted-foreground">
-            Khóa học sẵn sàng thêm vào combo (nhấp để chọn hoặc bỏ chọn):
-          </p>
-          <ul className="max-h-64 space-y-2 overflow-y-auto pr-1">
+        <div className="space-y-2">
+          <ul className="grid max-h-72 grid-cols-1 gap-2.5 overflow-y-auto pr-1 sm:grid-cols-2">
             {data.items.map((course) => {
               const selected = value.includes(course.id);
               return (
@@ -200,15 +236,14 @@ export default function LecturerCoursePicker({
                     type="button"
                     aria-pressed={selected}
                     onClick={() => toggle(course)}
-                    className={`flex w-full items-center justify-between gap-3 rounded-xl border p-2.5 text-left transition-all ${
+                    className={`flex w-full items-center justify-between gap-3 rounded-2xl border p-2.5 text-left transition-all cursor-pointer ${
                       selected
-                        ? "border-primary bg-primary-light/80 shadow-2xs ring-1 ring-primary/20"
-                        : "border-border bg-surface hover:border-primary-pastel hover:bg-surface-muted"
+                        ? "border-primary bg-primary-light/75 shadow-2xs ring-1 ring-primary/20"
+                        : "border-border bg-surface hover:border-primary-pastel hover:bg-primary-light/25"
                     }`}
                   >
                     <div className="flex min-w-0 items-center gap-3">
-                      {/* Thumbnail nhỏ 16:9 */}
-                      <div className="relative h-11 w-18 shrink-0 overflow-hidden rounded-lg bg-primary-light flex items-center justify-center">
+                      <div className="relative h-12 w-18 shrink-0 overflow-hidden rounded-xl border border-border/60 bg-primary-light flex items-center justify-center">
                         {course.thumbnail_url ? (
                           <img
                             src={course.thumbnail_url}
@@ -216,30 +251,36 @@ export default function LecturerCoursePicker({
                             className="h-full w-full object-cover"
                           />
                         ) : (
-                          <BookOpen className="h-4 w-4 text-primary" />
+                          <BookOpen
+                            animated={false}
+                            className="h-4 w-4 text-primary"
+                            aria-hidden="true"
+                          />
                         )}
                         {selected && (
-                          <div className="absolute inset-0 bg-primary/40 flex items-center justify-center">
+                          <div className="absolute inset-0 flex items-center justify-center bg-primary/50">
                             <Check className="h-4 w-4 text-white" />
                           </div>
                         )}
                       </div>
 
-                      {/* Tiêu đề & giá */}
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-foreground line-clamp-1">
+                        <p className="text-sm font-semibold text-foreground line-clamp-1">
                           {course.title}
                         </p>
-                        <p className="text-xs text-muted-foreground">
-                          Giá bán lẻ:{" "}
-                          <span className="font-semibold text-primary">
+                        <p className="mt-0.5 inline-flex items-center gap-1 text-xs text-muted-foreground">
+                          <Coins
+                            animated={false}
+                            className="h-3.5 w-3.5 text-primary"
+                            aria-hidden="true"
+                          />
+                          <span className="font-semibold text-primary tabular-nums">
                             {price(course.base_price, course.currency)}
                           </span>
                         </p>
                       </div>
                     </div>
 
-                    {/* Badge trạng thái */}
                     <div className="shrink-0">
                       {selected ? (
                         <Badge variant="primary" size="sm">
@@ -259,91 +300,121 @@ export default function LecturerCoursePicker({
         </div>
       )}
 
-      {/* Danh sách khóa học đã chọn theo lộ trình thứ tự học */}
+      {/* Bản đồ lộ trình tuần tự (Visual Roadmap Timeline) */}
       {selectedList.length > 0 && (
-        <div className="space-y-3 pt-2 border-t border-border">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-foreground">
-              Thứ tự lộ trình học ({selectedList.length} khóa)
-            </h3>
-            <span className="text-xs text-muted-foreground">
-              Học viên sẽ được hướng dẫn học tuần tự theo thứ tự này
-            </span>
+        <div className="space-y-3.5 rounded-2xl border border-primary-pastel/70 bg-gradient-to-br from-primary-light/35 via-surface to-secondary-light/25 p-4 sm:p-5">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/70 pb-3">
+            <div>
+              <h3 className="font-display text-base font-semibold text-foreground">
+                Bản đồ lộ trình tuần tự ({selectedList.length} chặng)
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                Sắp xếp thứ tự học viên nên hoàn thành từ cơ bản đến nâng cao.
+              </p>
+            </div>
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1 text-xs font-medium text-muted-foreground">
+              <span>Tổng giá lẻ:</span>
+              <strong className="inline-flex items-center gap-1 text-primary tabular-nums">
+                <Coins animated={false} className="h-3.5 w-3.5" aria-hidden="true" />
+                {price(totalRetail)}
+              </strong>
+            </div>
           </div>
 
-          <ol aria-label="Thứ tự khóa học trong combo" className="space-y-2">
-            {selectedList.map((item, index) => (
-              <li
-                key={item.id}
-                className="flex items-center justify-between gap-3 rounded-xl border border-border bg-surface p-2.5 shadow-2xs"
-              >
-                <div className="flex min-w-0 items-center gap-3">
-                  {/* Badge số thứ tự Bước */}
-                  <Badge variant="neutral" size="sm" className="font-semibold shrink-0">
-                    Bước {index + 1}
-                  </Badge>
-
-                  {/* Thumbnail */}
-                  <div className="h-10 w-16 shrink-0 overflow-hidden rounded-md bg-primary-light flex items-center justify-center">
-                    {item.thumbnail ? (
-                      <img
-                        src={item.thumbnail}
-                        alt={item.title}
-                        className="h-full w-full object-cover"
+          <ol
+            aria-label="Thứ tự khóa học trong combo"
+            className="relative space-y-2.5"
+          >
+            {selectedList.map((item, index) => {
+              const isLast = index === selectedList.length - 1;
+              return (
+                <li key={item.id} className="relative flex gap-3">
+                  {/* Đường dẫn dọc Timeline */}
+                  <div className="flex flex-col items-center pt-1">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-primary-pastel bg-surface text-xs font-bold tabular-nums text-primary shadow-2xs">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                    {!isLast && (
+                      <span
+                        aria-hidden="true"
+                        className="mt-1 w-0.5 flex-1 rounded-full bg-primary-pastel/80"
                       />
-                    ) : (
-                      <BookOpen animated={false} className="h-4 w-4 text-primary" />
                     )}
                   </div>
 
-                  {/* Tên khóa & giá */}
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-foreground line-clamp-1">
-                      {item.title}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Giá lẻ: <span className="font-medium text-foreground">{price(item.price)}</span>
-                    </p>
-                  </div>
-                </div>
+                  {/* Thẻ chặng khóa học */}
+                  <div className="flex min-w-0 flex-1 items-center justify-between gap-3 rounded-2xl border border-border bg-surface p-2.5 shadow-2xs transition-colors hover:border-primary-pastel">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="flex h-11 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border/60 bg-primary-light">
+                        {item.thumbnail ? (
+                          <img
+                            src={item.thumbnail}
+                            alt={item.title}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <BookOpen
+                            animated={false}
+                            className="h-4 w-4 text-primary"
+                            aria-hidden="true"
+                          />
+                        )}
+                      </div>
 
-                {/* Các nút điều hướng vị trí */}
-                <div className="flex shrink-0 items-center gap-1">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    disabled={index === 0}
-                    aria-label={`Đưa khóa ${index + 1} lên trước`}
-                    onClick={() => move(index, -1)}
-                    className="h-8 w-8 p-0"
-                  >
-                    <ArrowUp className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    disabled={index === selectedList.length - 1}
-                    aria-label={`Đưa khóa ${index + 1} xuống sau`}
-                    onClick={() => move(index, 1)}
-                    className="h-8 w-8 p-0"
-                  >
-                    <ArrowDown className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    aria-label={`Bỏ khóa ${item.title}`}
-                    onClick={() => onChange(value.filter((id) => id !== item.id))}
-                    className="h-8 w-8 p-0 text-destructive-foreground hover:bg-destructive-bg"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </li>
-            ))}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-foreground line-clamp-1">
+                          {item.title}
+                        </p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          Chặng {index + 1} · Giá lẻ:{" "}
+                          <span className="font-semibold text-foreground tabular-nums">
+                            {price(item.price)}
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Nút di chuyển thứ tự & xóa */}
+                    <div className="flex shrink-0 items-center gap-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        disabled={index === 0}
+                        aria-label={`Đưa khóa ${index + 1} lên trước`}
+                        onClick={() => move(index, -1)}
+                        className="h-8 w-8 rounded-full p-0"
+                      >
+                        <ArrowUp className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        disabled={isLast}
+                        aria-label={`Đưa khóa ${index + 1} xuống sau`}
+                        onClick={() => move(index, 1)}
+                        className="h-8 w-8 rounded-full p-0"
+                      >
+                        <ArrowDown className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        aria-label={`Bỏ khóa ${item.title}`}
+                        onClick={() =>
+                          onChange(value.filter((id) => id !== item.id))
+                        }
+                        className="h-8 w-8 rounded-full p-0 text-destructive-foreground hover:bg-destructive-bg"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
           </ol>
         </div>
       )}

@@ -7,28 +7,31 @@ import {
   ArrowUp,
   BookOpen,
   Calendar,
+  LayoutGrid,
+  List,
   Search,
   SlidersHorizontal,
-  Tag,
   User,
   X,
 } from "pulsoicon-react";
+import { useState } from "react";
 import { CourseSelector } from "./course-selector";
 import { StudentSelector } from "./student-selector";
 
-const STATUS_OPTIONS = [
-  { value: "", label: "Tất cả" },
-  { value: "holding", label: "Đang chờ trả" },
-  { value: "freeze", label: "Đang đóng băng" },
-];
+const STATUS_OPTIONS: Array<{ value: "holding" | "freeze" | ""; label: string }> =
+  [
+    { value: "", label: "Tất cả" },
+    { value: "holding", label: "Đang chờ trả" },
+    { value: "freeze", label: "Đang đóng băng" },
+  ];
 
 const SORT_BY_OPTIONS: Array<{
   value: HoldEarningsQuery["order_by"];
   label: string;
 }> = [
+  { value: "hold_until", label: "Hạn giải ngân" },
   { value: "created_at", label: "Ngày tạo" },
-  { value: "hold_until", label: "Hạn hold" },
-  { value: "amount_instructor", label: "Số tiền" },
+  { value: "amount_instructor", label: "Số Coin" },
   { value: "status", label: "Trạng thái" },
 ];
 
@@ -49,6 +52,8 @@ interface HoldEarningsFiltersProps {
   onSortByChange: (value: HoldEarningsQuery["order_by"]) => void;
   orderDir: "asc" | "desc";
   onOrderDirChange: (value: "asc" | "desc") => void;
+  viewMode: "grid" | "table";
+  onViewModeChange: (mode: "grid" | "table") => void;
   onReset: () => void;
 }
 
@@ -69,68 +74,168 @@ export function HoldEarningsFilters({
   onSortByChange,
   orderDir,
   onOrderDirChange,
+  viewMode,
+  onViewModeChange,
   onReset,
 }: HoldEarningsFiltersProps) {
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
+  const advancedCount = [
+    courseId !== "",
+    studentId !== "",
+    dateFrom !== "",
+    dateTo !== "",
+    sortBy !== "hold_until" || orderDir !== "asc",
+  ].filter(Boolean).length;
+
   const hasActiveFilters =
-    search.trim() !== "" ||
-    status !== "" ||
-    courseId !== "" ||
-    studentId !== "" ||
-    dateFrom !== "" ||
-    dateTo !== "" ||
-    sortBy !== "hold_until" ||
-    orderDir !== "asc";
+    search.trim() !== "" || status !== "" || advancedCount > 0;
 
   return (
-    <Card variant="surface" className="overflow-hidden mb-6">
-      {/* Header */}
-      <div className="bg-primary-light/50 border-b border-border px-6 py-4">
-        <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
-          <SlidersHorizontal className="w-4 h-4 text-primary" />
-          <span>Tìm kiếm &amp; Sắp xếp</span>
-        </h3>
-      </div>
+    <Card
+      variant="surface"
+      density="none"
+      className="mb-6 overflow-hidden rounded-[22px] border border-border/90 bg-surface/95 shadow-2xs backdrop-blur-xs"
+    >
+      {/* Tầng 1: Thanh lọc chính */}
+      <div className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center lg:justify-between">
+        {/* Segmented Status Pills */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          {STATUS_OPTIONS.map((opt) => {
+            const active = status === opt.value;
+            return (
+              <button
+                key={opt.value || "all"}
+                type="button"
+                onClick={() => onStatusChange(opt.value)}
+                className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
+                  active
+                    ? "bg-primary text-primary-foreground shadow-xs"
+                    : "bg-background text-muted-foreground hover:bg-primary-light/60 hover:text-primary"
+                }`}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
 
-      {/* Content */}
-      <div className="p-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Search Section */}
-          <div>
-            <label className="flex items-center gap-1.5 text-sm font-semibold text-foreground mb-2.5">
-              <Search className="w-4 h-4 text-muted-foreground" />
-              <span>Tìm kiếm</span>
-            </label>
-            <div className="relative">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 pointer-events-none" />
-              <input
-                type="text"
-                placeholder="Tìm theo tên khóa học hoặc học viên..."
-                value={search}
-                onChange={(e) => onSearchChange(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 text-sm bg-surface border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
-              />
-            </div>
+        {/* Search + Advanced Toggle + View Toggle */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="relative flex-1 sm:w-64 sm:flex-initial">
+            <Search
+              animated={false}
+              className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+              aria-hidden="true"
+            />
+            <input
+              type="text"
+              placeholder="Tìm khóa học hoặc học viên..."
+              value={search}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="w-full rounded-full border border-border bg-background py-2 pl-9 pr-8 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:border-primary focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/20"
+            />
+            {search && (
+              <button
+                type="button"
+                aria-label="Xóa từ khóa"
+                onClick={() => onSearchChange("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground hover:bg-surface-muted hover:text-foreground"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
 
-          {/* Sort Section */}
-          <div>
-            <label className="block text-sm font-semibold text-foreground mb-2.5">
-              Sắp xếp dữ liệu
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              {/* Sort Field */}
-              <div>
-                <label className="block text-xs font-medium text-muted-foreground mb-1.5">
-                  Trường sắp xếp
-                </label>
+          <button
+            type="button"
+            onClick={() => setShowAdvanced((v) => !v)}
+            className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-semibold transition-colors cursor-pointer ${
+              showAdvanced || advancedCount > 0
+                ? "border-primary-pastel bg-primary-light/70 text-primary"
+                : "border-border bg-background text-foreground hover:border-primary-pastel hover:text-primary"
+            }`}
+          >
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+            <span>Bộ lọc nâng cao</span>
+            {advancedCount > 0 && (
+              <span className="rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-primary-foreground tabular-nums">
+                {advancedCount}
+              </span>
+            )}
+          </button>
+
+          {/* View Mode Toggle */}
+          <div
+            className="inline-flex items-center rounded-full border border-border bg-background p-1"
+            role="group"
+            aria-label="Chế độ hiển thị"
+          >
+            <button
+              type="button"
+              onClick={() => onViewModeChange("grid")}
+              aria-label="Xem dạng thẻ"
+              aria-pressed={viewMode === "grid"}
+              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
+                viewMode === "grid"
+                  ? "bg-surface text-primary shadow-2xs"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <LayoutGrid className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Thẻ</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onViewModeChange("table")}
+              aria-label="Xem dạng bảng"
+              aria-pressed={viewMode === "table"}
+              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
+                viewMode === "table"
+                  ? "bg-surface text-primary shadow-2xs"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <List className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Bảng</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Tầng 2: Bộ lọc nâng cao mở rộng */}
+      {showAdvanced && (
+        <div className="border-t border-border bg-background/50 p-5">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div>
+              <label className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                <BookOpen className="h-3.5 w-3.5 text-primary" />
+                <span>Khóa học</span>
+              </label>
+              <CourseSelector value={courseId} onChange={onCourseIdChange} />
+            </div>
+
+            <div>
+              <label className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                <User className="h-3.5 w-3.5 text-primary" />
+                <span>Học viên</span>
+              </label>
+              <StudentSelector value={studentId} onChange={onStudentIdChange} />
+            </div>
+
+            <div>
+              <label className="mb-2 block text-xs font-semibold text-foreground">
+                Sắp xếp dữ liệu
+              </label>
+              <div className="grid grid-cols-2 gap-2">
                 <select
                   value={sortBy}
                   onChange={(e) =>
                     onSortByChange(
-                      e.target.value as HoldEarningsQuery["order_by"]
+                      e.target.value as HoldEarningsQuery["order_by"],
                     )
                   }
-                  className="w-full px-3.5 py-2.5 text-sm bg-surface border border-border rounded-xl text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
+                  className="w-full rounded-xl border border-border bg-surface px-3 py-2.5 text-xs text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                 >
                   {SORT_BY_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -138,74 +243,22 @@ export function HoldEarningsFilters({
                     </option>
                   ))}
                 </select>
-              </div>
-
-              {/* Sort Order */}
-              <div>
-                <label className="block text-xs font-medium text-muted-foreground mb-1.5">
-                  Thứ tự
-                </label>
                 <select
                   value={orderDir}
                   onChange={(e) =>
                     onOrderDirChange(e.target.value as "asc" | "desc")
                   }
-                  className="w-full px-3.5 py-2.5 text-sm bg-surface border border-border rounded-xl text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
+                  className="w-full rounded-xl border border-border bg-surface px-3 py-2.5 text-xs text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                 >
                   <option value="asc">Tăng dần ↑</option>
                   <option value="desc">Giảm dần ↓</option>
                 </select>
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* Advanced Filters */}
-        <div className="mt-6 pt-6 border-t border-border">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Status Filter */}
             <div>
-              <label className="flex items-center gap-1.5 text-sm font-semibold text-foreground mb-2.5">
-                <Tag className="w-4 h-4 text-muted-foreground" />
-                <span>Trạng thái</span>
-              </label>
-              <select
-                value={status}
-                onChange={(e) =>
-                  onStatusChange(e.target.value as "holding" | "freeze" | "")
-                }
-                className="w-full px-3.5 py-2.5 text-sm bg-surface border border-border rounded-xl text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
-              >
-                {STATUS_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Course ID Filter */}
-            <div>
-              <label className="flex items-center gap-1.5 text-sm font-semibold text-foreground mb-2.5">
-                <BookOpen className="w-4 h-4 text-muted-foreground" />
-                <span>Khóa học</span>
-              </label>
-              <CourseSelector value={courseId} onChange={onCourseIdChange} />
-            </div>
-
-            {/* Student ID Filter */}
-            <div>
-              <label className="flex items-center gap-1.5 text-sm font-semibold text-foreground mb-2.5">
-                <User className="w-4 h-4 text-muted-foreground" />
-                <span>Học viên</span>
-              </label>
-              <StudentSelector value={studentId} onChange={onStudentIdChange} />
-            </div>
-
-            {/* Date From */}
-            <div>
-              <label className="flex items-center gap-1.5 text-sm font-semibold text-foreground mb-2.5">
-                <Calendar className="w-4 h-4 text-muted-foreground" />
+              <label className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                <Calendar className="h-3.5 w-3.5 text-primary" />
                 <span>Từ ngày</span>
               </label>
               <input
@@ -214,25 +267,16 @@ export function HoldEarningsFilters({
                 max={dateTo || undefined}
                 onChange={(e) => {
                   const newValue = e.target.value;
-                  // Nếu dateTo đã có và newValue > dateTo, không cho phép
-                  if (dateTo && newValue && newValue > dateTo) {
-                    return;
-                  }
+                  if (dateTo && newValue && newValue > dateTo) return;
                   onDateFromChange(newValue);
                 }}
-                className="w-full px-3.5 py-2.5 text-sm bg-surface border border-border rounded-xl text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
+                className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
-              {dateFrom && dateTo && dateFrom > dateTo && (
-                <p className="mt-1 text-xs text-destructive-foreground">
-                  Ngày bắt đầu phải nhỏ hơn ngày kết thúc
-                </p>
-              )}
             </div>
 
-            {/* Date To */}
             <div>
-              <label className="flex items-center gap-1.5 text-sm font-semibold text-foreground mb-2.5">
-                <Calendar className="w-4 h-4 text-muted-foreground" />
+              <label className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                <Calendar className="h-3.5 w-3.5 text-primary" />
                 <span>Đến ngày</span>
               </label>
               <input
@@ -241,102 +285,79 @@ export function HoldEarningsFilters({
                 min={dateFrom || undefined}
                 onChange={(e) => {
                   const newValue = e.target.value;
-                  // Nếu dateFrom đã có và newValue < dateFrom, không cho phép
-                  if (dateFrom && newValue && newValue < dateFrom) {
-                    return;
-                  }
+                  if (dateFrom && newValue && newValue < dateFrom) return;
                   onDateToChange(newValue);
                 }}
-                className="w-full px-3.5 py-2.5 text-sm bg-surface border border-border rounded-xl text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
+                className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
-              {dateFrom && dateTo && dateTo < dateFrom && (
-                <p className="mt-1 text-xs text-destructive-foreground">
-                  Ngày kết thúc phải lớn hơn ngày bắt đầu
-                </p>
-              )}
             </div>
           </div>
         </div>
+      )}
 
-        {/* Status Bar */}
-        <div className="mt-6 pt-4 border-t border-border">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            {/* Status Indicators */}
-            <div className="flex flex-wrap items-center gap-2.5">
-              {/* Sort Status */}
-              <Badge variant="default" size="md" dot className="px-3 py-1.5">
-                <span>
-                  Sắp xếp:{" "}
-                  <strong>
-                    {SORT_BY_OPTIONS.find((opt) => opt.value === sortBy)
-                      ?.label || sortBy}
-                  </strong>
-                </span>
-                {orderDir === "asc" ? (
-                  <ArrowUp className="w-3.5 h-3.5 ml-1" />
-                ) : (
-                  <ArrowDown className="w-3.5 h-3.5 ml-1" />
-                )}
+      {/* Dải Active Filter Chips */}
+      {hasActiveFilters && (
+        <div className="flex flex-wrap items-center justify-between gap-2.5 border-t border-border/80 bg-primary-light/20 px-4 py-2.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="default" size="sm" dot>
+              <span>
+                Sắp xếp:{" "}
+                <strong>
+                  {SORT_BY_OPTIONS.find((opt) => opt.value === sortBy)?.label ||
+                    sortBy}
+                </strong>
+              </span>
+              {orderDir === "asc" ? (
+                <ArrowUp className="ml-1 h-3 w-3" />
+              ) : (
+                <ArrowDown className="ml-1 h-3 w-3" />
+              )}
+            </Badge>
+
+            {search && (
+              <Badge variant="info" size="sm" className="gap-1">
+                <span>Tìm: &ldquo;{search}&rdquo;</span>
+                <button
+                  type="button"
+                  aria-label="Xóa tìm kiếm"
+                  onClick={() => onSearchChange("")}
+                  className="hover:opacity-75 cursor-pointer"
+                >
+                  <X className="h-3 w-3" />
+                </button>
               </Badge>
+            )}
 
-              {/* Search Status */}
-              {search && (
-                <Badge variant="info" size="md" className="px-3 py-1.5 gap-1.5">
-                  <span>
-                    Tìm: <strong>&ldquo;{search}&rdquo;</strong>
-                  </span>
-                  <button
-                    aria-label="Xóa tìm kiếm"
-                    type="button"
-                    onClick={() => onSearchChange("")}
-                    className="hover:opacity-75 transition-opacity"
-                    title="Xóa tìm kiếm"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </Badge>
-              )}
-
-              {/* Status Filter Status */}
-              {status && (
-                <Badge variant="info" size="md" className="px-3 py-1.5 gap-1.5">
-                  <span>
-                    Trạng thái:{" "}
-                    <strong>
-                      {
-                        STATUS_OPTIONS.find((opt) => opt.value === status)
-                          ?.label
-                      }
-                    </strong>
-                  </span>
-                  <button
-                    aria-label="Xóa lọc"
-                    type="button"
-                    onClick={() => onStatusChange("")}
-                    className="hover:opacity-75 transition-opacity"
-                    title="Xóa lọc"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </Badge>
-              )}
-            </div>
-
-            {/* Reset Button */}
-            {hasActiveFilters && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={onReset}
-                leftIcon={<X className="w-4 h-4" />}
-              >
-                Xóa tất cả bộ lọc
-              </Button>
+            {status && (
+              <Badge variant="info" size="sm" className="gap-1">
+                <span>
+                  Trạng thái:{" "}
+                  {STATUS_OPTIONS.find((o) => o.value === status)?.label}
+                </span>
+                <button
+                  type="button"
+                  aria-label="Xóa lọc trạng thái"
+                  onClick={() => onStatusChange("")}
+                  className="hover:opacity-75 cursor-pointer"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
             )}
           </div>
+
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="rounded-full text-xs"
+            onClick={onReset}
+            leftIcon={<X className="h-3.5 w-3.5" />}
+          >
+            Xóa tất cả bộ lọc
+          </Button>
         </div>
-      </div>
+      )}
     </Card>
   );
 }

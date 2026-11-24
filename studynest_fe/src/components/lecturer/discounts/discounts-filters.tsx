@@ -1,45 +1,14 @@
 "use client";
 
-import { Badge, Button, Card } from "@/components/ui";
-import { DiscountsFiltersProps } from "@/types/lecturer/discount";
-import {
-  ArrowDown,
-  ArrowUp,
-  BadgePercent,
-  Clock,
-  Search,
-  SlidersHorizontal,
-  Tag,
-  X,
-} from "pulsoicon-react";
+import { LayoutGrid, List, RotateCcw, Search } from "pulsoicon-react";
+import { Button } from "@/components/ui";
+import type { DiscountsFiltersProps } from "@/types/lecturer/discount";
+import { cn } from "@/lib/utils";
 
-const DISCOUNT_TYPE_OPTIONS = [
-  { value: "", label: "Tất cả" },
-  { value: "percent", label: "Phần trăm" },
-  { value: "fixed", label: "Giá cố định" },
-];
-
-const STATUS_OPTIONS = [
-  { value: "", label: "Tất cả" },
-  { value: "active", label: "Đang hoạt động" },
-  { value: "expired", label: "Hết hạn" },
-  { value: "hidden", label: "Ẩn" },
-];
-
-const VALIDITY_OPTIONS = [
-  { value: "", label: "Tất cả" },
-  { value: "expired", label: "Đã hết hạn" },
-  { value: "running", label: "Đang diễn ra" },
-  { value: "upcoming", label: "Sắp diễn ra" },
-];
-
-const SORT_BY_OPTIONS = [
-  { value: "name", label: "Tên" },
-  { value: "created_at", label: "Ngày tạo" },
-  { value: "start_at", label: "Ngày bắt đầu" },
-  { value: "end_at", label: "Ngày kết thúc" },
-  { value: "usage_count", label: "Số lượt sử dụng" },
-];
+interface ExtendedFiltersProps extends DiscountsFiltersProps {
+  viewMode?: "cards" | "table";
+  onViewModeChange?: (mode: "cards" | "table") => void;
+}
 
 export function DiscountsFilters({
   search,
@@ -55,303 +24,143 @@ export function DiscountsFilters({
   orderDir,
   onOrderDirChange,
   onReset,
-}: DiscountsFiltersProps) {
-  const handleStatusChange = (value: string) => {
-    if (value === "") {
-      onIsActiveChange(null);
-    } else if (value === "active") {
-      onIsActiveChange(true);
-    } else if (value === "expired") {
-      onIsActiveChange(false);
-    } else if (value === "hidden") {
-      onIsActiveChange(false);
-    }
-  };
-
-  const statusValue =
-    isActive === null ? "" : isActive === true ? "active" : "expired";
-
-  const hasActiveFilters =
-    search.trim() !== "" ||
-    discountType !== "" ||
-    isActive !== null ||
-    validity !== "" ||
-    sortBy !== "created_at" ||
-    orderDir !== "desc";
+  viewMode = "cards",
+  onViewModeChange,
+}: ExtendedFiltersProps) {
+  const hasFilters = Boolean(
+    search || discountType || isActive !== null || validity || sortBy !== "created_at",
+  );
 
   return (
-    <Card variant="surface" className="overflow-hidden mb-6">
-      {/* Header */}
-      <div className="bg-primary-light/50 border-b border-border px-6 py-4">
-        <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
-          <SlidersHorizontal className="w-4 h-4 text-primary" />
-          <span>Tìm kiếm &amp; Sắp xếp</span>
-        </h3>
-      </div>
-
-      {/* Content */}
-      <div className="p-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Search Section */}
-          <div>
-            <label className="flex items-center gap-1.5 text-sm font-semibold text-foreground mb-2.5">
-              <Search className="w-4 h-4 text-muted-foreground" />
-              <span>Tìm kiếm mã giảm giá</span>
-            </label>
-            <div className="relative">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 pointer-events-none" />
-              <input
-                type="text"
-                placeholder="Nhập tên hoặc mã giảm giá..."
-                value={search}
-                onChange={(e) => onSearchChange(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 text-sm bg-surface border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
-              />
-            </div>
-          </div>
-
-          {/* Sort Section */}
-          <div>
-            <label className="block text-sm font-semibold text-foreground mb-2.5">
-              Sắp xếp dữ liệu
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              {/* Sort Field */}
-              <div>
-                <label className="block text-xs font-medium text-muted-foreground mb-1.5">
-                  Trường sắp xếp
-                </label>
-                <select
-                  value={sortBy}
-                  onChange={(e) => onSortByChange(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-sm bg-surface border border-border rounded-xl text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
-                >
-                  {SORT_BY_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Sort Order */}
-              <div>
-                <label className="block text-xs font-medium text-muted-foreground mb-1.5">
-                  Thứ tự
-                </label>
-                <select
-                  value={orderDir}
-                  onChange={(e) =>
-                    onOrderDirChange(e.target.value as "asc" | "desc")
-                  }
-                  className="w-full px-3.5 py-2.5 text-sm bg-surface border border-border rounded-xl text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
-                >
-                  <option value="desc">Giảm dần ↓</option>
-                  <option value="asc">Tăng dần ↑</option>
-                </select>
-              </div>
-            </div>
-          </div>
+    <section
+      aria-label="Bộ lọc mã giảm giá khóa học"
+      className="space-y-3 rounded-[24px] border border-border bg-surface/92 p-4 shadow-xs backdrop-blur-md"
+    >
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        {/* Ô tìm kiếm */}
+        <div className="relative flex-1">
+          <Search
+            aria-hidden="true"
+            animated={false}
+            className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-primary"
+          />
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
+            placeholder="Tìm theo tên chương trình hoặc mã code…"
+            className="h-10 w-full rounded-full border border-border bg-background pr-4 pl-10 text-xs font-medium text-foreground outline-none transition-colors placeholder:text-subtle-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
+          />
         </div>
 
-        {/* Advanced Filters */}
-        <div className="mt-6 pt-6 border-t border-border">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Discount Type Filter */}
-            <div>
-              <label className="flex items-center gap-1.5 text-sm font-semibold text-foreground mb-2.5">
-                <BadgePercent className="w-4 h-4 text-muted-foreground" />
-                <span>Loại giảm giá</span>
-              </label>
-              <select
-                value={discountType}
-                onChange={(e) =>
-                  onDiscountTypeChange(
-                    e.target.value as "percent" | "fixed" | ""
-                  )
-                }
-                className="w-full px-3.5 py-2.5 text-sm bg-surface border border-border rounded-xl text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
-              >
-                {DISCOUNT_TYPE_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+        {/* Bộ lọc chọn nhanh & chuyển chế độ xem */}
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            aria-label="Loại giảm giá"
+            value={discountType}
+            onChange={(e) => onDiscountTypeChange(e.target.value as "percent" | "fixed" | "")}
+            className="h-10 rounded-full border border-border bg-background px-3.5 text-xs font-bold text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+          >
+            <option value="">Mọi hình thức</option>
+            <option value="percent">Giảm phần trăm (%)</option>
+            <option value="fixed">Giảm cố định (Coin)</option>
+          </select>
 
-            {/* Status Filter */}
-            <div>
-              <label className="flex items-center gap-1.5 text-sm font-semibold text-foreground mb-2.5">
-                <Tag className="w-4 h-4 text-muted-foreground" />
-                <span>Trạng thái</span>
-              </label>
-              <select
-                value={statusValue}
-                onChange={(e) => handleStatusChange(e.target.value)}
-                className="w-full px-3.5 py-2.5 text-sm bg-surface border border-border rounded-xl text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
-              >
-                {STATUS_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <select
+            aria-label="Hiệu lực"
+            value={validity}
+            onChange={(e) =>
+              onValidityChange(e.target.value as "expired" | "running" | "upcoming" | "")
+            }
+            className="h-10 rounded-full border border-border bg-background px-3.5 text-xs font-bold text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+          >
+            <option value="">Mọi thời hạn</option>
+            <option value="running">Đang chạy</option>
+            <option value="upcoming">Sắp diễn ra</option>
+            <option value="expired">Đã hết hạn</option>
+          </select>
 
-            {/* Validity Filter */}
-            <div>
-              <label className="flex items-center gap-1.5 text-sm font-semibold text-foreground mb-2.5">
-                <Clock className="w-4 h-4 text-muted-foreground" />
-                <span>Thời gian hiệu lực</span>
-              </label>
-              <select
-                value={validity}
-                onChange={(e) =>
-                  onValidityChange(
-                    e.target.value as "expired" | "running" | "upcoming" | ""
-                  )
-                }
-                className="w-full px-3.5 py-2.5 text-sm bg-surface border border-border rounded-xl text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
-              >
-                {VALIDITY_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
+          <select
+            aria-label="Trạng thái kích hoạt"
+            value={isActive === null ? "" : isActive ? "true" : "false"}
+            onChange={(e) => {
+              const v = e.target.value;
+              onIsActiveChange(v === "" ? null : v === "true");
+            }}
+            className="h-10 rounded-full border border-border bg-background px-3.5 text-xs font-bold text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+          >
+            <option value="">Tất cả bật/tắt</option>
+            <option value="true">Đang bật</option>
+            <option value="false">Đang tắt</option>
+          </select>
 
-        {/* Status Bar */}
-        <div className="mt-6 pt-4 border-t border-border">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            {/* Status Indicators */}
-            <div className="flex flex-wrap items-center gap-2.5">
-              {/* Sort Status */}
-              <Badge variant="default" size="md" dot className="px-3 py-1.5">
-                <span>
-                  Sắp xếp:{" "}
-                  <strong>
-                    {SORT_BY_OPTIONS.find((opt) => opt.value === sortBy)
-                      ?.label || sortBy}
-                  </strong>
-                </span>
-                {orderDir === "asc" ? (
-                  <ArrowUp className="w-3.5 h-3.5 ml-1" />
-                ) : (
-                  <ArrowDown className="w-3.5 h-3.5 ml-1" />
-                )}
-              </Badge>
+          <select
+            aria-label="Sắp xếp"
+            value={`${sortBy}:${orderDir}`}
+            onChange={(e) => {
+              const [sb, od] = e.target.value.split(":");
+              onSortByChange(sb);
+              onOrderDirChange(od as "asc" | "desc");
+            }}
+            className="h-10 rounded-full border border-border bg-background px-3.5 text-xs font-bold text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+          >
+            <option value="created_at:desc">Mới nhất</option>
+            <option value="created_at:asc">Cũ nhất</option>
+            <option value="usage_count:desc">Dùng nhiều nhất</option>
+            <option value="end_at:asc">Sắp hết hạn</option>
+          </select>
 
-              {/* Search Status */}
-              {search && (
-                <Badge variant="info" size="md" className="px-3 py-1.5 gap-1.5">
-                  <span>
-                    Tìm: <strong>&ldquo;{search}&rdquo;</strong>
-                  </span>
-                  <button
-                    aria-label="Xóa tìm kiếm"
-                    type="button"
-                    onClick={() => onSearchChange("")}
-                    className="hover:opacity-75 transition-opacity"
-                    title="Xóa tìm kiếm"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </Badge>
-              )}
+          {hasFilters && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onReset}
+              className="min-h-10 rounded-full px-3.5 text-xs font-bold"
+            >
+              <RotateCcw aria-hidden="true" className="size-3.5" />
+              <span>Đặt lại</span>
+            </Button>
+          )}
 
-              {/* Discount Type Status */}
-              {discountType && (
-                <Badge variant="info" size="md" className="px-3 py-1.5 gap-1.5">
-                  <span>
-                    Loại:{" "}
-                    <strong>
-                      {
-                        DISCOUNT_TYPE_OPTIONS.find(
-                          (opt) => opt.value === discountType
-                        )?.label
-                      }
-                    </strong>
-                  </span>
-                  <button
-                    aria-label="Xóa lọc"
-                    type="button"
-                    onClick={() => onDiscountTypeChange("")}
-                    className="hover:opacity-75 transition-opacity"
-                    title="Xóa lọc"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </Badge>
-              )}
-
-              {/* Status Filter Status */}
-              {isActive !== null && (
-                <Badge variant="info" size="md" className="px-3 py-1.5 gap-1.5">
-                  <span>
-                    Trạng thái:{" "}
-                    <strong>
-                      {
-                        STATUS_OPTIONS.find((opt) => opt.value === statusValue)
-                          ?.label
-                      }
-                    </strong>
-                  </span>
-                  <button
-                    aria-label="Xóa lọc"
-                    type="button"
-                    onClick={() => onIsActiveChange(null)}
-                    className="hover:opacity-75 transition-opacity"
-                    title="Xóa lọc"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </Badge>
-              )}
-
-              {/* Validity Filter Status */}
-              {validity && (
-                <Badge variant="info" size="md" className="px-3 py-1.5 gap-1.5">
-                  <span>
-                    Thời gian:{" "}
-                    <strong>
-                      {
-                        VALIDITY_OPTIONS.find((opt) => opt.value === validity)
-                          ?.label
-                      }
-                    </strong>
-                  </span>
-                  <button
-                    aria-label="Xóa lọc"
-                    type="button"
-                    onClick={() => onValidityChange("")}
-                    className="hover:opacity-75 transition-opacity"
-                    title="Xóa lọc"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </Badge>
-              )}
-            </div>
-
-            {/* Reset Button */}
-            {hasActiveFilters && (
-              <Button
+          {onViewModeChange && (
+            <div
+              role="group"
+              aria-label="Chế độ hiển thị"
+              className="inline-flex items-center rounded-full border border-border bg-background p-1"
+            >
+              <button
                 type="button"
-                variant="outline"
-                size="sm"
-                onClick={onReset}
-                leftIcon={<X className="w-4 h-4" />}
+                aria-pressed={viewMode === "cards"}
+                onClick={() => onViewModeChange("cards")}
+                className={cn(
+                  "inline-flex min-h-8 items-center gap-1.5 rounded-full px-3 text-xs font-bold transition-all cursor-pointer",
+                  viewMode === "cards"
+                    ? "bg-primary text-primary-foreground shadow-2xs"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
               >
-                Xóa tất cả bộ lọc
-              </Button>
-            )}
-          </div>
+                <LayoutGrid aria-hidden="true" animated={false} className="size-3.5" />
+                <span>Thẻ vé</span>
+              </button>
+              <button
+                type="button"
+                aria-pressed={viewMode === "table"}
+                onClick={() => onViewModeChange("table")}
+                className={cn(
+                  "inline-flex min-h-8 items-center gap-1.5 rounded-full px-3 text-xs font-bold transition-all cursor-pointer",
+                  viewMode === "table"
+                    ? "bg-primary text-primary-foreground shadow-2xs"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <List aria-hidden="true" animated={false} className="size-3.5" />
+                <span>Bảng</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
-    </Card>
+    </section>
   );
 }

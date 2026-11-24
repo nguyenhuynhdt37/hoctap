@@ -6,7 +6,16 @@ import { ActiveLessonResponse } from "@/types/user/activeLesson";
 import { QuizQuestion } from "@/types/user/learning";
 import confetti from "canvas-confetti";
 import { useEffect, useRef, useState } from "react";
-import { MessageSquareText } from "pulsoicon-react";
+import {
+  CheckCircle2,
+  CircleX,
+  HelpCircle,
+  Maximize2,
+  MessageCircle,
+  Minimize2,
+} from "pulsoicon-react";
+import { cn } from "@/lib/utils";
+import QASection from "../qa";
 import InfoPanel from "./info-panel";
 import QuestionDisplay from "./question-display";
 import QuizNavigation from "./quiz-navigation";
@@ -46,7 +55,8 @@ export default function QuizLesson({
   const [answeredQuestions, setAnsweredQuestions] = useState<Set<string>>(
     new Set()
   );
-  const [infoTab, setInfoTab] = useState<"info" | "qa">("info");
+  const [qaOpen, setQaOpen] = useState(false);
+  const [focusMode, setFocusMode] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [hasCompletedQuiz, setHasCompletedQuiz] = useState(false);
 
@@ -199,7 +209,7 @@ export default function QuizLesson({
     const isCompletedFromSet = completedLessons?.has(lesson.id) || false;
     const isCompleted = isCompletedFromAPI || isCompletedFromSet;
 
-    if (scorePercentage >= 80) {
+    if (scorePercentage >= 60) {
       setHasCompletedQuiz(true);
       playSuccessSound();
       triggerCelebration(3, 2);
@@ -285,92 +295,245 @@ export default function QuizLesson({
     setShowResults(false);
   };
 
+  // Phím tắt 1-4 chọn đáp án và Enter chuyển câu kế tiếp
+  useEffect(() => {
+    if (qaOpen || showResults || submitting || !currentQuestion) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+      if (!isAnswered && ["1", "2", "3", "4"].includes(event.key)) {
+        const idx = Number(event.key) - 1;
+        if (idx >= 0 && idx < currentQuestion.options.length) {
+          event.preventDefault();
+          handleAnswerSelect(currentQuestion.id, idx);
+        }
+      } else if (isAnswered && event.key === "Enter") {
+        event.preventDefault();
+        handleNextQuestion();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  });
+
   if (quizQuestions.length === 0) {
     return (
-      <div className="w-full h-full bg-surface border border-border rounded-2xl shadow-xs p-8 text-center flex items-center justify-center">
-        <div className="text-muted-foreground">
-          <p>Không có câu hỏi nào trong bài học này</p>
-        </div>
+      <div className="flex h-full w-full items-center justify-center rounded-2xl border border-border bg-surface p-8 text-center shadow-xs">
+        <p className="text-sm text-muted-foreground">
+          Không có câu hỏi nào trong bài học này
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="h-full min-w-0 overflow-x-hidden overflow-y-auto bg-gradient-to-br from-background to-primary-pastel/30">
-      <div className="flex min-h-full min-w-0 flex-col gap-4 p-3 sm:p-6">
-        {attemptError && <p role="alert" className="rounded-xl border border-warning-border bg-warning-bg p-3 text-sm text-warning-foreground">{attemptError}</p>}
-        {submitting && <p role="status" className="text-sm text-primary">Đang lưu và kiểm tra bài làm…</p>}
-        <div className="grid min-h-0 min-w-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6">
-          {/* Cột trái: Thông tin bài học */}
-          <div data-learning-info className="flex min-h-[220px] min-w-0 flex-col lg:min-h-0">
+    <div className="h-full min-w-0 overflow-x-hidden overflow-y-auto bg-background lg:overflow-hidden">
+      <div className="flex min-h-full min-w-0 flex-col gap-3 p-3 pb-20 sm:p-4 sm:pb-20 lg:h-full lg:min-h-0 lg:pb-[4.75rem]">
+        {attemptError && (
+          <p
+            role="alert"
+            className="shrink-0 rounded-2xl border border-warning-border bg-warning-bg px-4 py-2.5 text-xs font-semibold text-warning-foreground"
+          >
+            {attemptError}
+          </p>
+        )}
+
+        {/* Thanh Quiz Cockpit Bar đồng bộ với Cloud Code Atelier */}
+        <div className="shrink-0 rounded-[22px] border border-primary-pastel/75 bg-gradient-to-r from-surface via-surface to-primary-light/45 p-2.5 shadow-xs sm:px-3.5">
+          <div className="flex flex-wrap items-center justify-between gap-2.5">
+            {/* Dải chọn nhanh câu hỏi 1..N */}
+            <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto pb-0.5 sm:pb-0">
+              <span className="mr-1 hidden items-center gap-1.5 rounded-full border border-primary-pastel bg-primary-light px-2.5 py-1 text-[11px] font-bold text-primary md:inline-flex">
+                <HelpCircle aria-hidden="true" animated={false} className="size-3.5" />
+                <span>Luyện tập</span>
+              </span>
+
+              {quizQuestions.map((q, idx) => {
+                const ans = selectedAnswers[q.id];
+                const answered = ans !== undefined;
+                const correct = answered && Number(ans) === Number(q.correct_answer);
+                const active = !showResults && idx === currentQuestionIndex;
+                const canJump =
+                  answered || idx <= currentQuestionIndex || answeredQuestions.has(q.id);
+
+                return (
+                  <button
+                    key={q.id}
+                    type="button"
+                    disabled={!canJump && !showResults}
+                    onClick={() => {
+                      if (showResults) setShowResults(false);
+                      if (canJump || showResults) setCurrentQuestionIndex(idx);
+                    }}
+                    aria-current={active ? "step" : undefined}
+                    className={cn(
+                      "inline-flex size-8 shrink-0 items-center justify-center rounded-full border text-xs font-bold tabular-nums transition-all",
+                      active
+                        ? "border-primary bg-primary text-primary-foreground shadow-xs"
+                        : answered
+                          ? correct
+                            ? "border-success-border bg-success-bg/85 text-success-foreground hover:bg-success-bg cursor-pointer"
+                            : "border-destructive-border bg-destructive-bg/85 text-destructive-foreground hover:bg-destructive-bg cursor-pointer"
+                          : canJump
+                            ? "border-border bg-background text-foreground hover:border-primary-pastel hover:bg-primary-light cursor-pointer"
+                            : "cursor-not-allowed border-border/60 bg-background/60 text-muted-foreground/50",
+                    )}
+                  >
+                    {idx + 1}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Chỉ số đúng/sai + Hỏi đáp toàn màn hình + Tập trung */}
+            <div className="flex shrink-0 items-center gap-2">
+              <div className="hidden items-center gap-2 rounded-full border border-border bg-surface/90 px-3 py-1.5 text-[11px] font-bold sm:flex">
+                <span className="inline-flex items-center gap-1 text-success-foreground tabular-nums">
+                  <CheckCircle2 aria-hidden="true" animated={false} className="size-3.5" />
+                  {correctCount}
+                </span>
+                <span className="text-border">|</span>
+                <span className="inline-flex items-center gap-1 text-destructive-foreground tabular-nums">
+                  <CircleX aria-hidden="true" animated={false} className="size-3.5" />
+                  {Math.max(0, answeredCount - correctCount)}
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setQaOpen(true)}
+                title="Mở phòng Hỏi đáp toàn màn hình"
+                className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-primary-pastel bg-primary-light/80 px-3.5 text-xs font-bold text-primary transition-colors hover:bg-primary-light cursor-pointer"
+              >
+                <MessageCircle aria-hidden="true" animated={false} className="size-3.5" />
+                <span>Hỏi đáp</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setFocusMode((prev) => !prev)}
+                aria-pressed={focusMode}
+                title={focusMode ? "Hiện lại tài liệu ôn tập" : "Tập trung làm bài"}
+                className={cn(
+                  "hidden min-h-9 items-center gap-1.5 rounded-full border px-3 text-xs font-bold transition-colors cursor-pointer lg:inline-flex",
+                  focusMode
+                    ? "border-primary bg-primary-light text-primary"
+                    : "border-border bg-surface text-muted-foreground hover:border-primary-pastel hover:bg-primary-light/60 hover:text-primary",
+                )}
+              >
+                {focusMode ? (
+                  <>
+                    <Minimize2 aria-hidden="true" animated={false} className="size-3.5" />
+                    <span>Hiện lý thuyết</span>
+                  </>
+                ) : (
+                  <>
+                    <Maximize2 aria-hidden="true" animated={false} className="size-3.5" />
+                    <span>Tập trung</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Lưới 2 cột Fit 100% chiều cao */}
+        <div
+          className={`grid min-h-0 min-w-0 flex-1 grid-cols-1 gap-4 ${
+            focusMode ? "lg:grid-cols-1" : "lg:grid-cols-12"
+          }`}
+        >
+          {/* Cột trái: Tài liệu ôn tập (giữ nguyên data-learning-info) */}
+          <div
+            data-learning-info
+            className={`min-h-[280px] min-w-0 flex-col lg:h-full lg:min-h-0 ${
+              focusMode ? "hidden" : "flex lg:col-span-5"
+            }`}
+          >
             <InfoPanel
               lesson={lesson}
-              infoTab={infoTab}
-              setInfoTab={setInfoTab}
               quizQuestionsCount={quizQuestions.length}
-              selectedAnswersCount={Object.keys(selectedAnswers).length}
+              selectedAnswersCount={answeredCount}
               correctCount={correctCount}
-              lessonAuthorId={lessonAuthorId}
+              onOpenQa={() => setQaOpen(true)}
             />
           </div>
 
-          {/* Cột phải: Quiz Questions */}
-          <div data-learning-quiz-questions className="flex min-h-[320px] min-w-0 flex-1 flex-col overflow-y-auto rounded-2xl border border-border bg-surface p-4 shadow-sm sm:p-6 lg:min-h-0 lg:p-8">
+          {/* Cột phải: Khung câu hỏi trắc nghiệm (giữ nguyên data-learning-quiz-questions) */}
+          <div
+            data-learning-quiz-questions
+            className={`flex min-h-[380px] min-w-0 flex-col overflow-hidden rounded-[24px] border border-border bg-surface shadow-xs lg:h-full lg:min-h-0 ${
+              focusMode ? "mx-auto w-full max-w-4xl lg:col-span-1" : "lg:col-span-7"
+            }`}
+          >
             {showResults ? (
-              <QuizResults
-                scorePercentage={scorePercentage}
-                correctCount={correctCount}
-                totalQuestions={quizQuestions.length}
-                answeredCount={answeredCount}
-                allQuestionsAnswered={allQuestionsAnswered}
-                onRetry={handleRetryQuiz}
-                onComplete={handleComplete}
-              />
+              <div className="min-h-0 flex-1 overflow-y-auto">
+                <QuizResults
+                  scorePercentage={scorePercentage}
+                  correctCount={correctCount}
+                  totalQuestions={quizQuestions.length}
+                  answeredCount={answeredCount}
+                  allQuestionsAnswered={allQuestionsAnswered}
+                  onRetry={handleRetryQuiz}
+                  onComplete={handleComplete}
+                />
+              </div>
             ) : (
               <>
-                {/* Quiz Header */}
-                <div className="mb-6 flex-shrink-0">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-2xl font-black text-foreground">
-                      Luyện tập
-                    </h2>
-                    <span className="text-sm text-primary bg-primary-pastel/60 px-3 py-1 rounded-full border border-primary-light/50 font-medium">
-                      Câu {currentQuestionIndex + 1}/{quizQuestions.length}
-                    </span>
+                {/* Header Câu hỏi cố định */}
+                <div className="shrink-0 border-b border-border bg-gradient-to-r from-primary-light/60 via-surface to-accent-vanilla/35 px-4 py-3 sm:px-6">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-full bg-primary px-3 py-1 text-xs font-extrabold text-primary-foreground tabular-nums">
+                        Câu {currentQuestionIndex + 1} / {quizQuestions.length}
+                      </span>
+                      <span className="text-xs font-semibold text-muted-foreground tabular-nums">
+                        Đã đúng {correctCount}/{quizQuestions.length}
+                      </span>
+                    </div>
+                    {submitting && (
+                      <span role="status" className="text-xs font-bold text-primary">
+                        Đang lưu kết quả…
+                      </span>
+                    )}
                   </div>
-                  <div className="w-full bg-border rounded-full h-2">
+                  <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-primary-light">
                     <div
-                      className="bg-primary h-2 rounded-full transition-all duration-300"
+                      className="h-full rounded-full bg-primary transition-all duration-300"
                       style={{
-                        width: `${
-                          ((currentQuestionIndex + 1) / quizQuestions.length) *
-                          100
-                        }%`,
+                        width: `${((currentQuestionIndex + 1) / quizQuestions.length) * 100}%`,
                       }}
                     />
                   </div>
-                  <div className="mt-2 text-sm text-muted-foreground">
-                    Đã trả lời đúng: {correctCount}/{quizQuestions.length}
-                  </div>
                 </div>
 
-                {/* Question Display */}
-                {currentQuestion && (
-                  <QuestionDisplay
-                    question={currentQuestion}
-                    selectedAnswer={currentAnswer}
-                    isAnswered={isAnswered}
-                    onSelectAnswer={(index) =>
-                      handleAnswerSelect(currentQuestion.id, index)
-                    }
-                  />
-                )}
+                {/* Vùng câu hỏi cuộn độc lập */}
+                <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
+                  {currentQuestion && (
+                    <QuestionDisplay
+                      question={currentQuestion}
+                      selectedAnswer={currentAnswer}
+                      isAnswered={isAnswered}
+                      onSelectAnswer={(index) =>
+                        handleAnswerSelect(currentQuestion.id, index)
+                      }
+                    />
+                  )}
+                </div>
 
-                {/* Navigation */}
+                {/* Thanh điều hướng ghim sát đáy */}
                 <QuizNavigation
                   isFirstQuestion={isFirstQuestion}
                   isLastQuestion={isLastQuestion}
                   isAnswered={isAnswered}
+                  submitting={submitting}
                   onPrev={handlePrevQuestion}
                   onNext={handleNextQuestion}
                 />
@@ -380,21 +543,17 @@ export default function QuizLesson({
         </div>
       </div>
 
-      <div className="fixed bottom-[4.75rem] left-3 z-30 sm:left-6">
-        <button
-          type="button"
-          onClick={() => setInfoTab("qa")}
-          disabled={infoTab === "qa"}
-          className={`flex min-h-11 items-center gap-2 rounded-full px-4 py-2 shadow-lg transition-colors ${
-            infoTab === "qa"
-              ? "cursor-default bg-border text-muted-foreground"
-              : "bg-primary text-white hover:bg-primary-hover"
-          }`}
-        >
-          <MessageSquareText className="w-5 h-5" />
-          <span>Hỏi đáp</span>
-        </button>
-      </div>
+      {/* Phòng Hỏi đáp Full màn hình 100vw × 100dvh */}
+      {qaOpen && (
+        <QASection
+          lessonId={lesson.id}
+          lessonTitle={lesson.title}
+          lessonAuthorId={lessonAuthorId}
+          isModal
+          fullScreen
+          onClose={() => setQaOpen(false)}
+        />
+      )}
     </div>
   );
 }
