@@ -2,14 +2,15 @@
 
 import { safeUUID } from "@/lib/utils/uuid";
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import api, { authedFetch } from '@/lib/utils/fetcher/client/axios';
 import { activityEvent } from './activity';
 import type { UploadedImage, MessageResponse } from '@/types/user/tutor-chat';
 import { ActionRegistry, waitForState } from './action-registry';
-import { registerBrowserWorkspace } from './browser-workspace';
+import { emitTelekinesis, registerBrowserWorkspace } from './browser-workspace';
 import { consumeAgentEvents } from './agent-client';
-import type { ActionRequest, AgentApproval, AgentEvent, ScreenActionResult, ScreenContextSnapshot } from './contracts';
+import { TelekinesisOverlay } from './telekinesis-overlay';
+import type { ActionRequest, AgentApproval, AgentEvent, PermissionMode, ScreenActionResult, ScreenContextSnapshot, XRayTarget } from './contracts';
 
 export class AgentUnavailableError extends Error {}
 export type SnapshotReader = () => Partial<ScreenContextSnapshot>;
@@ -30,6 +31,17 @@ interface AgentContextValue {
   lastScreenAction: ScreenActionResult | null;
   contextSources: string[];
   sessionId?: string;
+  permissionMode: PermissionMode;
+  setPermissionMode: React.Dispatch<React.SetStateAction<PermissionMode>>;
+  cyclePermissionMode: () => void;
+  detailedTranscript: boolean;
+  setDetailedTranscript: React.Dispatch<React.SetStateAction<boolean>>;
+  xrayActive: boolean;
+  setXrayActive: React.Dispatch<React.SetStateAction<boolean>>;
+  pinnedTarget: XRayTarget | null;
+  setPinnedTarget: React.Dispatch<React.SetStateAction<XRayTarget | null>>;
+  promptHistory: string[];
+  recordPrompt: (prompt: string) => void;
   prepareSession: () => Promise<string>;
   handleEvent: (event: AgentEvent, signal?: AbortSignal) => Promise<void>;
 }
@@ -38,6 +50,9 @@ export function useLearningAgent() { return useContext(Context); }
 
 export function LearningAgentProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const routerRef = useRef(router);
+  routerRef.current = router;
   const pageId = useRef('');
   const revision = useRef(0);
   const knownLesson = useRef<string | undefined>(undefined);
@@ -51,6 +66,32 @@ export function LearningAgentProvider({ children }: { children: React.ReactNode 
   const seenEvents = useRef(new Set<string>());
   const [approval, setApproval] = useState<AgentApproval | null>(null);
   const [sessionId, setSessionId] = useState<string>();
+  const [permissionMode, setPermissionMode] = useState<PermissionMode>('autoPilot');
+  const [detailedTranscript, setDetailedTranscript] = useState(false);
+  const [xrayActive, setXrayActive] = useState(false);
+  const [pinnedTarget, setPinnedTarget] = useState<XRayTarget | null>(null);
+  const [promptHistory, setPromptHistory] = useState<string[]>([]);
+  const recordPrompt = useCallback((text: string) => {
+    const clean = text.trim();
+    if (!clean) return;
+    setPromptHistory(prev => [clean, ...prev.filter(item => item !== clean)].slice(0, 30));
+  }, []);
+  const cyclePermissionMode = useCallback(() => {
+    setPermissionMode(current => (current === 'autoPilot' ? 'default' : current === 'default' ? 'plan' : 'autoPilot'));
+  }, []);
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.shiftKey && event.key === 'Tab') {
+        event.preventDefault();
+        cyclePermissionMode();
+      } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'o') {
+        event.preventDefault();
+        setDetailedTranscript(value => !value);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [cyclePermissionMode]);
   const session = useRef<string | undefined>(undefined);
   const sessionPromise = useRef<Promise<string> | null>(null);
   const run = useRef<string | undefined>(undefined);
@@ -68,7 +109,7 @@ export function LearningAgentProvider({ children }: { children: React.ReactNode 
   const registryRef = useRef<ActionRegistry | null>(null);
   if (!registryRef.current) registryRef.current = new ActionRegistry(snapshot);
   const registry = registryRef.current;
-  useEffect(() => registerBrowserWorkspace(registry), [registry]);
+  useEffect(() => registerBrowserWorkspace(registry, (path: string) => routerRef.current.push(path)), [registry]);
   const flushContext = useCallback(() => {
     if (syncTimer.current) { clearTimeout(syncTimer.current); syncTimer.current = null; }
     if (!session.current) return Promise.resolve();
@@ -141,6 +182,15 @@ export function LearningAgentProvider({ children }: { children: React.ReactNode 
     if (event.type === 'tool.awaiting_approval') { setApproval(payload as unknown as AgentApproval); setStatus('Đang chờ bạn xác nhận bản sửa.'); }
     if (event.type === 'ui.action_requested') {
       const request = payload as unknown as ActionRequest;
+      if (request.name.startsWith('video.')) {
+        emitTelekinesis({ kind: 'video', label: request.name === 'video.seek' ? `Tua video tới ${request.arguments?.seconds ?? ''}s` : request.name === 'video.play' ? 'Phát video bài giảng' : request.name === 'video.pause' ? 'Tạm dừng video' : 'Điều chỉnh tốc độ video' });
+      } else if (request.name.startsWith('ui.')) {
+        emitTelekinesis({ kind: 'tab', label: `Điều khiển giao diện: ${String(request.arguments?.tab || request.arguments?.panel || request.name)}` });
+      } else if (request.name.startsWith('quiz.')) {
+        emitTelekinesis({ kind: 'quiz', label: request.name === 'quiz.select_option' ? `Chọn phương án ${Number(request.arguments?.option_index ?? 0) + 1}` : 'Đọc câu hỏi trắc nghiệm' });
+      } else if (request.name.startsWith('editor.') || request.name.startsWith('code.')) {
+        emitTelekinesis({ kind: 'editor', label: `Thao tác Code Editor (${request.name.replace(/^(?:editor|code)\./, '')})` });
+      }
       const receipt = await registry.dispatch(request, signal);
       if (syncTimer.current) await flushContext(); else await contextSync.current.catch(() => undefined);
       await api.post(`/agent/runs/${event.run_id}/actions/${request.action_id}/receipt`, receipt, { signal });
@@ -187,7 +237,11 @@ export function LearningAgentProvider({ children }: { children: React.ReactNode 
         await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
       }
       const id = await prepareSession();
-      const response = await api.post<{ id: string }>('/agent/runs', { session_id: id, thread_id: threadId, message, images: images?.map(({url,file_size,mime_type,ocr_text})=>({url,file_size,mime_type,ocr_text})), idempotency_key: safeUUID() }, { signal: abort.signal });
+      const outgoingMessage =
+        permissionMode === 'plan'
+          ? `[Chế độ Plan - Chỉ đọc & Lập kế hoạch, không sửa dữ liệu]: ${message}`
+          : message;
+      const response = await api.post<{ id: string }>('/agent/runs', { session_id: id, thread_id: threadId, message: outgoingMessage, images: images?.map(({url,file_size,mime_type,ocr_text})=>({url,file_size,mime_type,ocr_text})), idempotency_key: safeUUID() }, { signal: abort.signal });
       run.current = response.data.id;
       await consumeAgentEvents(response.data.id, async event => {
         const payload = event.payload;
@@ -221,7 +275,7 @@ export function LearningAgentProvider({ children }: { children: React.ReactNode 
       }
       throw error;
     } finally { run.current = undefined; controller.current = null; setBusy(false); setApproval(null); }
-  }, [prepareSession, handleEvent, registry, snapshot]);
+  }, [prepareSession, handleEvent, registry, snapshot, permissionMode]);
   const approve = useCallback(async (approved: boolean) => {
     if (!approval || !run.current) return;
     const screen = snapshot();
@@ -230,7 +284,28 @@ export function LearningAgentProvider({ children }: { children: React.ReactNode 
     });
     setApproval(null); setStatus(approved ? 'Đã xác nhận. Đang kiểm tra phiên bản code…' : 'Đã từ chối bản sửa.');
   }, [approval, snapshot]);
-  return <Context.Provider value={{ registry, registerSnapshot, changed, snapshot, send, stop, approve, approval, status, busy, plan, completedActions, lastScreenAction, contextSources, sessionId, prepareSession, handleEvent }}>{children}</Context.Provider>;
+  return (
+    <Context.Provider value={{ registry, registerSnapshot, changed, snapshot, send, stop, approve, approval, status, busy, plan, completedActions, lastScreenAction, contextSources, sessionId, permissionMode, setPermissionMode, cyclePermissionMode, detailedTranscript, setDetailedTranscript, xrayActive, setXrayActive, pinnedTarget, setPinnedTarget, promptHistory, recordPrompt, prepareSession, handleEvent }}>
+      {children}
+      <TelekinesisOverlay
+        busy={busy}
+        status={status}
+        permissionMode={permissionMode}
+        xrayActive={xrayActive}
+        onToggleXray={() => setXrayActive(v => !v)}
+        onPickXrayTarget={target => {
+          setPinnedTarget(target);
+          setXrayActive(false);
+          window.dispatchEvent(new CustomEvent('maymay:open-assistant', { detail: { target } }));
+        }}
+        onQuickPrompt={prompt => {
+          window.dispatchEvent(new CustomEvent('maymay:quick-prompt', { detail: { prompt } }));
+        }}
+        onCycleMode={cyclePermissionMode}
+        onStop={() => void stop()}
+      />
+    </Context.Provider>
+  );
 }
 
 /** Handlers read current refs so registration never captures an obsolete editor buffer. */

@@ -51,8 +51,8 @@ def route_request(message, *, has_images=False, previous_route=None):
         return RequestRoute('lesson', lesson_demand, True)
     if re.search(r'\b(?:bash|shell|terminal)\b|chạy lệnh|xử lý tệp', text):
         return RequestRoute('workspace')
-    if re.search(r'màn hình|trên trang|trang này|nút (?:nào|này|đó)|đọc giao diện', text):
-        return RequestRoute('browser')
+    if re.search(r'màn hình|trên trang|trang này|nút (?:nào|này|đó)|đọc giao diện|cuộn|kéo (?:lên|xuống)|chỉ (?:vào|điểm|chỗ)|khoanh vùng|highlight|spotlight|bấm|nhấn|click', text):
+        return RequestRoute('browser', False, True)
     if re.search(r'\b(?:github|repo(?:sitory|sitories)?|commit|pull request|mcp|tìm trên web|tra web|search the web)\b', text):
         return RequestRoute('integration')
     if re.search(r'\b(?:memory|bộ nhớ|ghi nhớ|nhớ gì về|đã lưu gì|quên thông tin)\b', text):

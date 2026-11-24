@@ -20,6 +20,10 @@ from app.schemas.learning_paths import (
 )
 from app.services.bundles import BundleService
 from app.services.learning_paths import LearningPathService
+from app.services.personalized_roadmap import (
+    LearningPreferencesInput,
+    PersonalizedRoadmapService,
+)
 
 router = APIRouter(tags=["Learning paths & bundles"])
 SESSION = Depends(get_session)
@@ -135,6 +139,28 @@ async def my_paths(db=SESSION, auth: AuthorizationService = AUTH):
         .all()
     )
     return {"items": [dict(row) for row in rows]}
+
+
+@router.get("/learning-paths/my/blueprint")
+async def my_roadmap_blueprint(
+    grade: int | None = Query(None, ge=1, le=12),
+    db=SESSION,
+    auth: AuthorizationService = AUTH,
+):
+    user = await auth.get_current_user()
+    return await PersonalizedRoadmapService(db).get_blueprint(
+        user, preview_grade=grade
+    )
+
+
+@router.put("/learning-paths/my/preferences")
+async def update_my_roadmap_preferences(
+    payload: LearningPreferencesInput,
+    db=SESSION,
+    auth: AuthorizationService = AUTH,
+):
+    user = await auth.get_current_user()
+    return await PersonalizedRoadmapService(db).update_preferences(user, payload)
 
 
 @router.get("/learning-paths/versions/{version_id}")

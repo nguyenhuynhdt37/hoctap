@@ -1,37 +1,58 @@
 "use client";
 
 import Pagination from "@/components/shared/pagination";
+import { Alert } from "@/components/ui";
+import { cn } from "@/lib/utils";
 import api from "@/lib/utils/fetcher/client/axios";
 import { showToast } from "@/lib/utils/helpers/toast";
 import { useRealtimeNotiStore } from "@/stores/notifications";
-import {
+import type {
+  Notification,
   NotificationsQueryParams,
   NotificationsResponse,
 } from "@/types/user/notification";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
-import { Bell, CircleAlert } from "pulsoicon-react";
-import { NotificationCard } from "./notification-card";
-import { NotificationsToolbar } from "./notifications-toolbar";
+import { useEffect, useMemo, useState } from "react";
+import {
+  BellRing,
+  CheckCheck,
+  Inbox,
+  Radio,
+  RefreshCw,
+  Trash2,
+} from "pulsoicon-react";
 import { DeviceNotificationBanner } from "./device-notification-banner";
+import { NotificationCard } from "./notification-card";
+import {
+  formatNotificationDayHeader,
+  getNotificationDayKey,
+  NOTIFICATION_CHANNELS,
+  type NotificationChannelKey,
+} from "./notification-meta";
+import { NotificationsToolbar } from "./notifications-toolbar";
 
 export default function Notifications() {
   const [search, setSearch] = useState("");
-  const [type, setType] = useState("");
+  const [type, setType] = useState<NotificationChannelKey>("");
   const [read, setRead] = useState("");
   const [sortBy, setSortBy] = useState("created_at");
   const [orderDir, setOrderDir] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
+  const [confirmClearRead, setConfirmClearRead] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   const queryClient = useQueryClient();
+  const markStoreRead = useRealtimeNotiStore((s) => s.markAsRead);
+  const markStoreUnread = useRealtimeNotiStore((s) => s.markAsUnread);
+  const removeFromStore = useRealtimeNotiStore((s) => s.remove);
   const markAllAsRead = useRealtimeNotiStore((s) => s.markAllRead);
   const hydrate = useRealtimeNotiStore((s) => s.hydrate);
   const latestLive = useRealtimeNotiStore((s) => s.latestLiveNotification);
 
   useEffect(() => {
     if (latestLive?.notification?.id) {
-      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      void queryClient.invalidateQueries({ queryKey: ["notifications"] });
     }
   }, [latestLive, queryClient]);
 
@@ -58,28 +79,49 @@ export default function Notifications() {
   }, [data, page, search, type, read, hydrate]);
 
   const markAsRead = useMutation({
-    mutationFn: (id: string) =>
-      api.post(`/notifications/read/${id}`).then((r) => r.data),
-    onSuccess: (_, id) => {
-      queryClient.setQueriesData<NotificationsResponse>(
-        { queryKey: ["notifications"] },
-        (old) => {
-          if (!old) return old;
-          const notification = old.items.find((item) => item.id === id);
-          if (!notification || notification.is_read) return old;
-
-          const updatedItems = old.items.map((item) =>
-            item.id === id ? { ...item, is_read: true } : item
-          );
-          return {
-            ...old,
-            unread: Math.max(0, old.unread - 1),
-            items: updatedItems,
-          };
-        }
-      );
-      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    mutationFn: (id: string) => {
+      setBusyId(id);
+      return api.post(`/notifications/read/${id}`).then((r) => r.data);
     },
+    onSuccess: (_, id) => {
+      markStoreRead("USER", id);
+      void queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+    onError: () => {
+      showToast.error("Không thể đánh dấu đã đọc.");
+    },
+    onSettled: () => setBusyId(null),
+  });
+
+  const markAsUnread = useMutation({
+    mutationFn: (id: string) => {
+      setBusyId(id);
+      return api.post(`/notifications/unread/${id}`).then((r) => r.data);
+    },
+    onSuccess: (_, id) => {
+      markStoreUnread("USER", id);
+      void queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+    onError: () => {
+      showToast.error("Không thể đánh dấu chưa đọc.");
+    },
+    onSettled: () => setBusyId(null),
+  });
+
+  const deleteSingle = useMutation({
+    mutationFn: (id: string) => {
+      setBusyId(id);
+      return api.delete(`/notifications/${id}`).then((r) => r.data);
+    },
+    onSuccess: (_, id) => {
+      removeFromStore("USER", id);
+      void queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      showToast.success("Đã xóa thông báo.");
+    },
+    onError: () => {
+      showToast.error("Không thể xóa thông báo lúc này.");
+    },
+    onSettled: () => setBusyId(null),
   });
 
   const markAll = useMutation({
@@ -87,139 +129,444 @@ export default function Notifications() {
       api.post("/notifications/read-all/user").then((r) => r.data),
     onSuccess: () => {
       markAllAsRead("USER");
-      queryClient.setQueriesData<NotificationsResponse>(
-        { queryKey: ["notifications"] },
-        (old) =>
-          old
-            ? {
-                ...old,
-                unread: 0,
-                items: old.items.map((item) => ({ ...item, is_read: true })),
-              }
-            : old
+      void queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      showToast.success("Đã đánh dấu tất cả thông báo là đã đọc.");
+    },
+    onError: () => {
+      showToast.error("Không thể xử lý yêu cầu lúc này.");
+    },
+  });
+
+  const clearRead = useMutation({
+    mutationFn: () =>
+      api.delete<{ deleted_count?: number }>("/notifications/read/user").then((r) => r.data),
+    onSuccess: (res) => {
+      setConfirmClearRead(false);
+      void queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      const count = res?.deleted_count ?? 0;
+      showToast.success(
+        count > 0
+          ? `Đã dọn sạch ${count} thông báo đã đọc.`
+          : "Không có thông báo đã đọc nào để dọn.",
       );
-      queryClient.invalidateQueries({ queryKey: ["notifications"] });
-      showToast.success("Đã đánh dấu tất cả thông báo là đã đọc");
+    },
+    onError: () => {
+      showToast.error("Không thể dọn thông báo đã đọc.");
     },
   });
 
   useEffect(() => setPage(1), [search, type, read, sortBy, orderDir]);
 
+  const categoryCounts = data?.category_counts ?? {};
+  const allTotal = categoryCounts.all?.total ?? data?.total ?? 0;
+  const unreadTotal = data?.unread ?? categoryCounts.all?.unread ?? 0;
+  const readTotal = Math.max(0, allTotal - unreadTotal);
+  const processedPercent =
+    allTotal > 0 ? Math.round((readTotal / allTotal) * 100) : 100;
+
+  const groupedByDay = useMemo(() => {
+    const items = data?.items ?? [];
+    const groups: Array<{
+      key: string;
+      label: string;
+      items: Notification[];
+    }> = [];
+    const map = new Map<string, (typeof groups)[number]>();
+
+    for (const item of items) {
+      const key = getNotificationDayKey(item.created_at);
+      let g = map.get(key);
+      if (!g) {
+        g = {
+          key,
+          label: formatNotificationDayHeader(item.created_at),
+          items: [],
+        };
+        map.set(key, g);
+        groups.push(g);
+      }
+      g.items.push(item);
+    }
+    return groups;
+  }, [data?.items]);
+
+  const hasActiveFilters = Boolean(search.trim() || type || read !== "");
+
+  const resetFilters = () => {
+    setSearch("");
+    setType("");
+    setRead("");
+    setSortBy("created_at");
+    setOrderDir("desc");
+    setPage(1);
+  };
+
+  const activeChannel =
+    NOTIFICATION_CHANNELS.find((c) => c.key === type) ??
+    NOTIFICATION_CHANNELS[0];
+
   return (
     <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-6xl space-y-6 px-4 py-8 sm:px-6">
-        <header>
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <h1 className="font-display text-3xl font-bold text-foreground sm:text-4xl">Thông báo</h1>
-              <p className="mt-1.5 text-sm text-muted-foreground">
-                Theo dõi realtime mọi hoạt động học tập, hỏi đáp và ưu đãi của bạn
-              </p>
-            </div>
-            {data?.unread && data.unread > 0 && (
-              <div className="flex flex-wrap items-center gap-2.5">
-                <div className="flex items-center gap-2 rounded-full border border-primary-pastel bg-primary-light px-4 py-2">
-                  <Bell className="size-4 text-primary" />
-                  <span className="text-xs font-bold text-primary">
-                    {data.unread} chưa đọc
-                  </span>
+      <div className="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6">
+        {/* TẦNG 1: Hero Radar Tín Hiệu (2 cột bất đối xứng) */}
+        <div className="grid gap-5 lg:grid-cols-[1.35fr_1fr]">
+          {/* Trái: Thẻ Tổng Quan Cloudy Blue Pastel */}
+          <section
+            aria-label="Tổng quan trung tâm thông báo"
+            className="relative isolate flex flex-col justify-between overflow-hidden rounded-[30px] border border-primary-pastel bg-gradient-to-br from-primary-light/85 via-surface to-accent/40 p-6 text-foreground shadow-[0_20px_44px_-16px_rgba(53,111,167,0.16)] sm:p-7"
+          >
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -right-14 -top-14 -z-10 h-56 w-56 rounded-full bg-white/75 blur-3xl"
+            />
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -bottom-16 -left-10 -z-10 h-48 w-48 rounded-full bg-secondary-light/60 blur-3xl"
+            />
+
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-primary-pastel bg-surface/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
+                  <Radio
+                    aria-hidden="true"
+                    animated={false}
+                    className="size-3.5 text-success-foreground"
+                  />
+                  <span>Trực tuyến · Cloudy Signal Hub</span>
                 </div>
-                <button
-                  onClick={() => markAll.mutate()}
-                  disabled={markAll.isPending}
-                  className="flex cursor-pointer items-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-extrabold text-primary-foreground transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {markAll.isPending ? (
-                    <>
-                      <div className="size-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                      <span>Đang xử lý...</span>
-                    </>
-                  ) : (
-                    <span>Đánh dấu đã đọc tất cả</span>
-                  )}
-                </button>
-              </div>
-            )}
-          </div>
-        </header>
-
-        <DeviceNotificationBanner />
-
-        <div>
-          <NotificationsToolbar
-            searchQuery={search}
-            onSearchChange={setSearch}
-            typeFilter={type}
-            onTypeFilterChange={setType}
-            readFilter={read}
-            onReadFilterChange={setRead}
-            sortBy={sortBy}
-            onSortByChange={setSortBy}
-            orderDir={orderDir}
-            onOrderDirChange={setOrderDir}
-          />
-        </div>
-
-        {isLoading && (
-          <div className="space-y-4">
-            {[...Array(5)].map((_, i) => (
-              <div
-                key={i}
-                className="h-24 animate-pulse rounded-xl bg-gray-200 border border-gray-200"
-              />
-            ))}
-          </div>
-        )}
-
-        {error && (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 mb-6">
-            Có lỗi xảy ra khi tải thông báo. Vui lòng thử lại sau.
-          </div>
-        )}
-
-        {data && (
-          <>
-            {data.items.length === 0 ? (
-              <div className="rounded-xl border border-green-200 bg-white p-12 text-center shadow-sm">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
-                  <CircleAlert solid className="h-8 w-8 text-gray-400" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  Không có thông báo nào
-                </h3>
-                <p className="text-gray-600">
-                  Hiện tại bạn chưa có thông báo nào.
+                <h1 className="mt-2.5 font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+                  Trung tâm thông báo
+                </h1>
+                <p className="mt-1.5 max-w-xl text-xs leading-relaxed text-muted-foreground sm:text-sm">
+                  Theo dõi tức thì mọi phản hồi hỏi đáp, quà tặng khóa học, biến động ví Coin và cảnh báo bảo mật tài khoản.
                 </p>
               </div>
-            ) : (
-              <>
-                <div className="space-y-3">
-                  {data.items.map((notification) => (
-                    <NotificationCard
-                      key={notification.id}
-                      notification={notification}
-                      onMarkAsRead={(id) => markAsRead.mutate(id)}
-                    />
-                  ))}
+
+              <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-primary-pastel bg-surface text-primary shadow-2xs">
+                <BellRing
+                  aria-hidden="true"
+                  animated={false}
+                  className="size-6"
+                />
+              </span>
+            </div>
+
+            {/* Chỉ số & Tiến độ xử lý */}
+            <div className="mt-6 space-y-4">
+              <div className="grid grid-cols-3 gap-3 rounded-2xl border border-border bg-surface/90 p-3.5 shadow-2xs backdrop-blur-sm">
+                <div>
+                  <p className="text-[11px] font-medium text-muted-foreground">
+                    Tổng tín hiệu
+                  </p>
+                  <p className="mt-0.5 text-xl font-bold text-foreground tabular-nums">
+                    {allTotal}
+                  </p>
                 </div>
-                {data.total > 0 && (
-                  <div className="mt-8">
-                    <Pagination
-                      currentPage={page}
-                      totalPages={Math.ceil(data.total / limit)}
-                      totalItems={data.total}
-                      pageSize={limit}
-                      onPageChange={setPage}
-                      onPageSizeChange={setLimit}
-                      showPageSizeSelector={true}
-                      pageSizeOptions={[10, 20, 50]}
-                    />
+                <div>
+                  <p className="text-[11px] font-medium text-muted-foreground">
+                    Chưa đọc
+                  </p>
+                  <p className="mt-0.5 text-xl font-bold text-primary tabular-nums">
+                    {unreadTotal}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[11px] font-medium text-muted-foreground">
+                    Đã xử lý
+                  </p>
+                  <p className="mt-0.5 text-xl font-bold text-success-foreground tabular-nums">
+                    {processedPercent}%
+                  </p>
+                </div>
+              </div>
+
+              {/* Cụm nút hành động */}
+              <div className="flex flex-wrap items-center gap-2.5">
+                {unreadTotal > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => markAll.mutate()}
+                    disabled={markAll.isPending}
+                    className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground shadow-2xs transition hover:bg-primary-hover disabled:opacity-60 cursor-pointer"
+                  >
+                    <span className="inline-flex items-center">
+                      <CheckCheck
+                        aria-hidden="true"
+                        animated={false}
+                        className="size-4"
+                      />
+                    </span>
+                    <span>
+                      {markAll.isPending
+                        ? "Đang xử lý..."
+                        : `Đánh dấu đã đọc tất cả (${unreadTotal})`}
+                    </span>
+                  </button>
+                )}
+
+                {readTotal > 0 && !confirmClearRead && (
+                  <button
+                    type="button"
+                    onClick={() => setConfirmClearRead(true)}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-4 py-2 text-xs font-semibold text-foreground shadow-2xs transition hover:border-primary-pastel hover:bg-primary-light hover:text-primary cursor-pointer"
+                  >
+                    <span className="inline-flex items-center">
+                      <Trash2
+                        aria-hidden="true"
+                        animated={false}
+                        className="size-3.5"
+                      />
+                    </span>
+                    <span>Dọn {readTotal} tin đã đọc</span>
+                  </button>
+                )}
+
+                {confirmClearRead && (
+                  <div className="inline-flex items-center gap-2 rounded-full border border-destructive-border bg-destructive-bg px-3 py-1.5 text-xs">
+                    <span className="font-semibold text-destructive-foreground">
+                      Xóa {readTotal} tin đã đọc?
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => clearRead.mutate()}
+                      disabled={clearRead.isPending}
+                      className="rounded-full bg-destructive px-2.5 py-0.5 text-[11px] font-bold text-white transition hover:opacity-90 cursor-pointer"
+                    >
+                      <span>{clearRead.isPending ? "Đang xóa..." : "Xác nhận"}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmClearRead(false)}
+                      className="rounded-full border border-border bg-surface px-2.5 py-0.5 text-[11px] font-semibold text-foreground hover:bg-background cursor-pointer"
+                    >
+                      <span>Hủy</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+
+          {/* Phải: Thẻ Thông Báo Thiết Bị OS */}
+          <DeviceNotificationBanner variant="card" />
+        </div>
+
+        {/* TẦNG 2: Channel Rail (Trái) + Dòng Tín Hiệu Theo Ngày (Phải) */}
+        <div className="grid gap-6 lg:grid-cols-[270px_1fr] lg:items-start">
+          {/* Cột Trái: Thanh Kênh Thông Báo */}
+          <aside className="lg:sticky lg:top-24">
+            <div className="rounded-[26px] border border-border bg-surface p-3 shadow-xs">
+              <p className="px-3 pb-2 pt-1 text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                Kênh thông báo
+              </p>
+
+              {/* Mobile: cuộn ngang | Desktop: dọc */}
+              <nav
+                aria-label="Kênh thông báo"
+                className="flex gap-1.5 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0"
+              >
+                {NOTIFICATION_CHANNELS.map((ch) => {
+                  const active = type === ch.key;
+                  const stat =
+                    ch.key === ""
+                      ? categoryCounts.all
+                      : categoryCounts[ch.key];
+                  const chUnread = stat?.unread ?? 0;
+                  const chTotal = stat?.total ?? 0;
+                  const Icon = ch.Icon;
+
+                  return (
+                    <button
+                      key={ch.key || "all"}
+                      type="button"
+                      onClick={() => setType(ch.key)}
+                      className={cn(
+                        "flex shrink-0 items-center justify-between gap-2.5 rounded-2xl px-3 py-2.5 text-left transition-all cursor-pointer lg:w-full",
+                        active
+                          ? "bg-primary text-primary-foreground shadow-2xs"
+                          : "text-foreground hover:bg-primary-light/60",
+                      )}
+                    >
+                      <span className="flex min-w-0 items-center gap-2.5">
+                        <span
+                          className={cn(
+                            "flex size-8 shrink-0 items-center justify-center rounded-xl border",
+                            active
+                              ? "border-white/25 bg-white/15 text-white"
+                              : ch.iconBoxClass,
+                          )}
+                        >
+                          <Icon
+                            aria-hidden="true"
+                            animated={false}
+                            className="size-4"
+                          />
+                        </span>
+                        <span className="truncate text-xs font-semibold sm:text-[13px]">
+                          {ch.shortLabel}
+                        </span>
+                      </span>
+
+                      <span className="flex shrink-0 items-center gap-1 tabular-nums">
+                        {chUnread > 0 ? (
+                          <span
+                            className={cn(
+                              "rounded-full px-2 py-0.5 text-[10px] font-bold",
+                              active
+                                ? "bg-white text-primary"
+                                : "bg-primary text-primary-foreground",
+                            )}
+                          >
+                            {chUnread > 99 ? "99+" : chUnread}
+                          </span>
+                        ) : chTotal > 0 ? (
+                          <span
+                            className={cn(
+                              "text-[11px] font-medium",
+                              active ? "text-white/80" : "text-subtle-foreground",
+                            )}
+                          >
+                            {chTotal}
+                          </span>
+                        ) : null}
+                      </span>
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
+          </aside>
+
+          {/* Cột Phải: Toolbar + Dòng thông báo theo ngày */}
+          <div className="min-w-0 space-y-5">
+            {/* Tiêu đề kênh đang xem */}
+            <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+              <div>
+                <h2 className="text-base font-bold text-foreground">
+                  {activeChannel.label}
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  {activeChannel.description}
+                </p>
+              </div>
+              {data && (
+                <span className="rounded-full border border-border bg-surface px-3 py-1 text-xs font-semibold text-muted-foreground tabular-nums">
+                  {data.total} kết quả
+                </span>
+              )}
+            </div>
+
+            <NotificationsToolbar
+              searchQuery={search}
+              onSearchChange={setSearch}
+              readFilter={read}
+              onReadFilterChange={setRead}
+              sortBy={sortBy}
+              onSortByChange={setSortBy}
+              orderDir={orderDir}
+              onOrderDirChange={setOrderDir}
+              hasActiveFilters={hasActiveFilters}
+              onResetFilters={resetFilters}
+            />
+
+            {error && (
+              <Alert variant="destructive">
+                Có lỗi xảy ra khi tải thông báo. Vui lòng thử lại sau.
+              </Alert>
+            )}
+
+            {isLoading && (
+              <div className="space-y-3">
+                {[1, 2, 3, 4].map((i) => (
+                  <div
+                    key={i}
+                    className="h-28 animate-pulse rounded-[24px] border border-border bg-surface/80"
+                  />
+                ))}
+              </div>
+            )}
+
+            {data && !isLoading && (
+              <>
+                {data.items.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center rounded-[28px] border border-dashed border-border bg-surface/90 px-6 py-16 text-center shadow-2xs">
+                    <span className="flex size-14 items-center justify-center rounded-3xl border border-primary-pastel bg-primary-light text-primary">
+                      <Inbox
+                        aria-hidden="true"
+                        animated={false}
+                        className="size-6"
+                      />
+                    </span>
+                    <h3 className="mt-4 text-base font-bold text-foreground">
+                      Không có thông báo nào phù hợp
+                    </h3>
+                    <p className="mt-1.5 max-w-md text-xs leading-relaxed text-muted-foreground">
+                      {hasActiveFilters
+                        ? "Thử đổi kênh thông báo hoặc xóa bộ lọc để xem toàn bộ lịch sử tín hiệu."
+                        : "Hộp thư của bạn hiện đang hoàn toàn gọn gàng. Mọi cập nhật mới sẽ tự động hiện tại đây."}
+                    </p>
+                    {hasActiveFilters && (
+                      <button
+                        type="button"
+                        onClick={resetFilters}
+                        className="mt-5 inline-flex items-center gap-2 rounded-full border border-primary-pastel bg-primary-light px-4 py-2 text-xs font-semibold text-primary transition hover:bg-primary hover:text-primary-foreground cursor-pointer"
+                      >
+                        <span className="inline-flex items-center">
+                          <RefreshCw aria-hidden="true" className="size-3.5" />
+                        </span>
+                        <span>Xem tất cả thông báo</span>
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {groupedByDay.map((group) => (
+                      <section key={group.key} className="space-y-3">
+                        <div className="flex items-center gap-2 px-1">
+                          <span className="size-2 rounded-full bg-primary" />
+                          <h3 className="text-xs font-bold uppercase tracking-[0.12em] text-foreground">
+                            {group.label}
+                          </h3>
+                          <span className="rounded-full bg-primary-light/80 px-2 py-0.5 text-[11px] font-semibold text-primary tabular-nums">
+                            {group.items.length}
+                          </span>
+                        </div>
+
+                        <div className="space-y-2.5">
+                          {group.items.map((notification) => (
+                            <NotificationCard
+                              key={notification.id}
+                              notification={notification}
+                              isBusy={busyId === notification.id}
+                              onMarkAsRead={(id) => markAsRead.mutate(id)}
+                              onMarkAsUnread={(id) => markAsUnread.mutate(id)}
+                              onDelete={(id) => deleteSingle.mutate(id)}
+                            />
+                          ))}
+                        </div>
+                      </section>
+                    ))}
+
+                    {data.total > 0 && (
+                      <div className="pt-2">
+                        <Pagination
+                          currentPage={page}
+                          totalPages={Math.ceil(data.total / limit)}
+                          totalItems={data.total}
+                          pageSize={limit}
+                          onPageChange={setPage}
+                          onPageSizeChange={setLimit}
+                          showPageSizeSelector={true}
+                          pageSizeOptions={[10, 20, 50]}
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
               </>
             )}
-          </>
-        )}
+          </div>
+        </div>
       </div>
     </div>
   );

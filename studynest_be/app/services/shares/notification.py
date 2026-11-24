@@ -11,7 +11,7 @@ from app.libs.formats.datetime import serialize, to_utc_naive
 from app.schemas.shares.notification import NotificationCreateSchema
 from fastapi import Depends, HTTPException
 from loguru import logger
-from sqlalchemy import func, or_, select, update
+from sqlalchemy import case, delete, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -111,17 +111,22 @@ class NotificationService:
                     .where(Notifications.role_target.op("&&")([role, "all"]))
                 )
 
-            # Type filter
+            # Type filter (gộp system + account vào nhóm hệ thống & tài khoản)
             if type_:
-                base_stmt = base_stmt.where(Notifications.type == type_)
+                if type_ == "system":
+                    base_stmt = base_stmt.where(
+                        Notifications.type.in_(["system", "account"])
+                    )
+                else:
+                    base_stmt = base_stmt.where(Notifications.type == type_)
 
             # Read filter
             if is_read is not None:
                 base_stmt = base_stmt.where(Notifications.is_read.is_(is_read))
 
             # Search
-            if search:
-                keyword = f"%{search.lower()}%"
+            if search and search.strip():
+                keyword = f"%{search.strip().lower()}%"
                 base_stmt = base_stmt.where(
                     Notifications.title.ilike(keyword)
                     | Notifications.content.ilike(keyword)
@@ -131,24 +136,43 @@ class NotificationService:
             total_stmt = select(func.count()).select_from(base_stmt.subquery())
             total = (await self.db.execute(total_stmt)).scalar_one()
 
-            # Unread
+            # Thống kê tổng & chưa đọc theo từng kênh (1 query GROUP BY nhẹ)
             if role == "ADMIN":
-                unread_stmt = (
-                    select(func.count())
-                    .select_from(Notifications)
-                    .where(Notifications.role_target.op("&&")(["ADMIN"]))
-                    .where(Notifications.is_read.is_(False))
-                )
+                cat_scope = Notifications.role_target.op("&&")(["ADMIN"])
             else:
-                unread_stmt = (
-                    select(func.count())
-                    .select_from(Notifications)
-                    .where(Notifications.user_id == user_id)
-                    .where(Notifications.role_target.op("&&")([role, "all"]))
-                    .where(Notifications.is_read.is_(False))
+                cat_scope = (Notifications.user_id == user_id) & (
+                    Notifications.role_target.op("&&")([role, "all"])
                 )
 
-            unread = (await self.db.execute(unread_stmt)).scalar_one()
+            cat_stmt = (
+                select(
+                    Notifications.type,
+                    func.count().label("cnt"),
+                    func.sum(
+                        case((Notifications.is_read.is_(False), 1), else_=0)
+                    ).label("unread_cnt"),
+                )
+                .where(cat_scope)
+                .group_by(Notifications.type)
+            )
+            cat_rows = (await self.db.execute(cat_stmt)).all()
+
+            category_counts: dict[str, dict[str, int]] = {
+                "all": {"total": 0, "unread": 0},
+            }
+            unread = 0
+            for row in cat_rows:
+                raw_type = (row.type or "system").lower()
+                bucket_key = "system" if raw_type in {"system", "account"} else raw_type
+                c_total = int(row.cnt or 0)
+                c_unread = int(row.unread_cnt or 0)
+                unread += c_unread
+                category_counts["all"]["total"] += c_total
+                category_counts["all"]["unread"] += c_unread
+                if bucket_key not in category_counts:
+                    category_counts[bucket_key] = {"total": 0, "unread": 0}
+                category_counts[bucket_key]["total"] += c_total
+                category_counts[bucket_key]["unread"] += c_unread
 
             # Pagination
             offset = (page - 1) * limit
@@ -160,6 +184,7 @@ class NotificationService:
                 "page": page,
                 "limit": limit,
                 "unread": unread,
+                "category_counts": category_counts,
                 "items": items,
             }
 
@@ -354,6 +379,84 @@ class NotificationService:
                 "id": str(updated_id),
             }
 
+        except Exception as e:
+            await self.db.rollback()
+            raise e
+
+    async def mark_as_unread(
+        self, notification_id: uuid.UUID, user_id: uuid.UUID, admin=False
+    ):
+        try:
+            scope = Notifications.user_id == user_id
+            if admin:
+                scope = or_(scope, Notifications.role_target.op("@>")(["ADMIN"]))
+            stmt = (
+                update(Notifications)
+                .where(
+                    Notifications.id == notification_id,
+                    scope,
+                    Notifications.is_read.is_(True),
+                )
+                .values(is_read=False, read_at=None)
+                .returning(Notifications.id)
+            )
+            result = await self.db.execute(stmt)
+            updated_id = result.scalar_one_or_none()
+            if not updated_id:
+                raise HTTPException(
+                    404, "Thông báo không tồn tại hoặc đang ở trạng thái chưa đọc."
+                )
+            await self.db.commit()
+            return {
+                "success": True,
+                "message": "Đã đánh dấu chưa đọc.",
+                "id": str(updated_id),
+            }
+        except HTTPException:
+            raise
+        except Exception as e:
+            await self.db.rollback()
+            raise e
+
+    async def delete_notification_async(
+        self, notification_id: uuid.UUID, user_id: uuid.UUID, admin=False
+    ):
+        try:
+            scope = Notifications.user_id == user_id
+            if admin:
+                scope = or_(scope, Notifications.role_target.op("@>")(["ADMIN"]))
+            stmt = (
+                delete(Notifications)
+                .where(Notifications.id == notification_id, scope)
+                .returning(Notifications.id)
+            )
+            result = await self.db.execute(stmt)
+            deleted_id = result.scalar_one_or_none()
+            if not deleted_id:
+                raise HTTPException(404, "Không tìm thấy thông báo cần xóa.")
+            await self.db.commit()
+            return {"success": True, "id": str(deleted_id)}
+        except HTTPException:
+            raise
+        except Exception as e:
+            await self.db.rollback()
+            raise e
+
+    async def delete_read_notifications_async(self, user_id: uuid.UUID, role: str):
+        try:
+            scope = (Notifications.user_id == user_id) & or_(
+                func.cardinality(Notifications.role_target) == 0,
+                Notifications.role_target.op("&&")([role, "all"]),
+            )
+            stmt = (
+                delete(Notifications)
+                .where(scope, Notifications.is_read.is_(True))
+                .returning(Notifications.id)
+            )
+            result = await self.db.execute(stmt)
+            deleted_ids = result.scalars().all()
+            await self.db.commit()
+            return {"success": True, "deleted_count": len(deleted_ids)}
         except Exception as e:
             await self.db.rollback()
             raise e

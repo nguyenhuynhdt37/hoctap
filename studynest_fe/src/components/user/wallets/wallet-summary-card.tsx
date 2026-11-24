@@ -54,48 +54,39 @@ export function WalletSummaryCard({
 
   return (
     <div className="grid gap-5 lg:grid-cols-[1.35fr_1fr]">
-      {/* KHO 1: COIN VÀNG (THẬT) — Obsidian Sky & Gold Foil */}
+      {/* KHO 1: COIN VÀNG (THẬT) — Cloudy Blue & Vanilla Pastel */}
       <section
         aria-label="Kho Coin vàng"
-        className="relative isolate flex flex-col justify-between overflow-hidden rounded-[30px] border border-[#E2B545]/45 bg-gradient-to-br from-[#13263A] via-[#1E3F63] to-[#2C5B8B] p-6 text-white shadow-lg sm:p-7"
+        className="relative isolate flex flex-col justify-between overflow-hidden rounded-[30px] border border-primary-pastel bg-gradient-to-br from-primary-light/85 via-surface to-accent-vanilla/50 p-6 text-foreground shadow-[0_20px_44px_-14px_rgba(53,111,167,0.16)] sm:p-7"
       >
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -right-14 -top-14 -z-10 h-52 w-52 rounded-full bg-[#F5C542]/20 blur-3xl"
+          className="pointer-events-none absolute -right-14 -top-14 -z-10 h-52 w-52 rounded-full bg-white/80 blur-3xl"
         />
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -bottom-20 -left-12 -z-10 h-52 w-52 rounded-full bg-[#BFD7ED]/15 blur-3xl"
-        />
-        {/* Đường kẻ lưới trang trí tinh tế */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute right-6 top-6 -z-10 h-28 w-28 rounded-full border border-[#F5C542]/20"
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute right-10 top-10 -z-10 h-20 w-20 rounded-full border border-[#F5C542]/15"
+          className="pointer-events-none absolute -bottom-20 -left-12 -z-10 h-52 w-52 rounded-full bg-primary-pastel/35 blur-3xl"
         />
 
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1.5">
             <div className="flex flex-wrap items-center gap-2">
-              <CoinBadge kind="gold" surface="dark" size="sm" />
+              <CoinBadge kind="gold" size="sm" />
               <span
                 className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${
                   isLocked
-                    ? "border-red-300/45 bg-red-500/25 text-red-100"
-                    : "border-white/25 bg-white/10 text-white/90"
+                    ? "border-destructive-border bg-destructive-bg text-destructive-foreground"
+                    : "border-success-border bg-success-bg text-success-foreground"
                 }`}
               >
                 {isLocked ? (
                   <>
-                    <Lock aria-hidden="true" animated={false} className="size-3 text-red-200" />
+                    <Lock aria-hidden="true" animated={false} className="size-3" />
                     <span>Đã khóa</span>
                   </>
                 ) : (
                   <>
-                    <CircleCheck solid aria-hidden="true" animated={false} className="size-3 text-[#FFE89E]" />
+                    <CircleCheck solid aria-hidden="true" animated={false} className="size-3" />
                     <span>Sẵn sàng</span>
                   </>
                 )}
@@ -103,14 +94,14 @@ export function WalletSummaryCard({
             </div>
 
             <div className="pt-2">
-              <p className="inline-flex items-center gap-3 font-display text-4xl font-bold tracking-tight text-[#FFE89E] sm:text-5xl tabular-nums">
-                <Coins solid aria-hidden="true" animated={false} className="size-9 shrink-0 text-[#FFD55A] sm:size-10" />
+              <p className="inline-flex items-center gap-3 font-display text-4xl font-bold tracking-tight text-foreground sm:text-5xl tabular-nums">
+                <Coins solid aria-hidden="true" animated={false} className="size-9 shrink-0 text-warning-foreground sm:size-10" />
                 <span>{goldBalance !== undefined ? numberFormat.format(goldBalance) : "…"}</span>
               </p>
               {goldBalance !== undefined && (
-                <p className="mt-1.5 text-xs text-white/75 tabular-nums">
+                <p className="mt-1.5 text-xs text-muted-foreground tabular-nums">
                   Giá trị quy đổi tương đương{" "}
-                  <strong className="font-semibold text-white">
+                  <strong className="font-semibold text-foreground">
                     {formatVnd(coinToVnd(goldBalance, rateVnd))}
                   </strong>
                 </p>
@@ -118,37 +109,37 @@ export function WalletSummaryCard({
             </div>
           </div>
 
-          <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-[#F5C542]/45 bg-[#F5C542]/15 text-[#FFD55A] backdrop-blur-md">
+          <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-accent-vanilla-border bg-accent-vanilla/80 text-accent-vanilla-foreground shadow-2xs">
             <Coins solid aria-hidden="true" animated={false} className="size-6" />
           </div>
         </div>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
-          <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur-md">
-            <p className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-white/70">
-              <Clock aria-hidden="true" animated={false} className="size-3.5 text-[#FFE89E]" />
+          <div className="rounded-2xl border border-border bg-surface/90 px-4 py-3 shadow-2xs backdrop-blur-sm">
+            <p className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+              <Clock aria-hidden="true" animated={false} className="size-3.5 text-primary" />
               <span>Giao dịch gần nhất</span>
             </p>
-            <p className="mt-1 text-sm font-semibold text-white tabular-nums">
+            <p className="mt-1 text-sm font-semibold text-foreground tabular-nums">
               {formatDateTime(wallet?.last_transaction_at)}
             </p>
           </div>
 
-          <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur-md">
-            <p className="text-[11px] font-medium uppercase tracking-wider text-white/70">
+          <div className="rounded-2xl border border-border bg-surface/90 px-4 py-3 shadow-2xs backdrop-blur-sm">
+            <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
               Công dụng chính
             </p>
-            <p className="mt-1 text-sm font-semibold text-white">
-              Mua khóa học & Combo
+            <p className="mt-1 text-sm font-semibold text-foreground">
+              Mua khóa học &amp; Combo
             </p>
           </div>
 
           {vndLeft > 0 && (
-            <div className="flex items-center justify-between gap-3 rounded-2xl border border-[#F5C542]/35 bg-[#F5C542]/10 px-4 py-2.5 sm:col-span-2">
-              <span className="text-xs text-[#FFE89E]/90">
+            <div className="flex items-center justify-between gap-3 rounded-2xl border border-accent-vanilla-border bg-accent-vanilla/50 px-4 py-2.5 sm:col-span-2">
+              <span className="text-xs text-accent-vanilla-foreground">
                 Phần dư VND lẻ (chưa đủ 1 Coin vàng)
               </span>
-              <strong className="text-sm font-bold text-[#FFE89E] tabular-nums">
+              <strong className="text-sm font-bold text-accent-vanilla-foreground tabular-nums">
                 {formatVnd(vndLeft)}
               </strong>
             </div>

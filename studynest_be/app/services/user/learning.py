@@ -447,6 +447,8 @@ class LearningService:
             if not lesson_type:
                 raise HTTPException(404, "khong tim thay lesson type")
             return [lesson_type, lesson_active.lesson_id]
+        except HTTPException:
+            raise
         except Exception as e:
             await self.db.rollback()
             raise HTTPException(status_code=500, detail=f"Lỗi server: {e}")

@@ -367,6 +367,16 @@ function LearningDetail(props: LearningDetailProps) {
     window.addEventListener('maymay:lesson-completed', refresh);
     return () => window.removeEventListener('maymay:lesson-completed', refresh);
   }, [mutateCurriculum, mutateActiveLesson, mutateNavigation]);
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem("maymay:copilot-open") === "1") {
+        setChatOpen(true);
+        setSidebarOpen(false);
+      }
+    } catch {
+      // Ignore storage access errors
+    }
+  }, []);
   const screenState = useRef({ lessonId: initialActiveLesson?.id, activeTab, sidebarOpen, chatOpen });
   screenState.current = { lessonId: initialActiveLesson?.id, activeTab, sidebarOpen, chatOpen };
   useAgentSnapshot("learning", () => ({

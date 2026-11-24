@@ -29,7 +29,7 @@ export default function PathDetail({ slug }: { slug: string }) {
   );
   async function follow() {
     if (!user) {
-      const destination = sanitizeRedirect(location.pathname + location.search, "/lo-trinh");
+      const destination = sanitizeRedirect(location.pathname + location.search, "/learning-paths");
       router.push(`/login?redirect=${encodeURIComponent(destination)}`);
       return;
     }
@@ -49,7 +49,7 @@ export default function PathDetail({ slug }: { slug: string }) {
   return (
     <main className="mx-auto max-w-6xl space-y-8 px-4 py-10 text-foreground sm:px-6">
       <nav className="text-sm">
-        <Link className="text-primary underline" href="/lo-trinh">
+        <Link className="text-primary underline" href="/learning-paths">
           ← Tất cả lộ trình
         </Link>
       </nav>

@@ -150,7 +150,7 @@ export default function PathEditor({
                 title={draft.title}
                 value={draft.slug}
                 onChange={(slug) => setDraft({ ...draft, slug })}
-                prefix="/lo-trinh/"
+                prefix="/learning-paths/"
                 locked={!!draft.path_id}
               />
             </div>

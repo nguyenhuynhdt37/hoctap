@@ -19,8 +19,10 @@ async def get_my_transactions(
     limit: int = 10,
     search: str | None = None,
     status: str | None = None,
+    type: str | None = None,
     type_: str | None = None,
     method: str | None = None,
+    direction: str | None = None,
     order_by: str = "created_at",
     order_dir: str = "desc",
     date_from: datetime | None = None,
@@ -38,10 +40,28 @@ async def get_my_transactions(
         limit=limit,
         search=search,
         status=status,
-        type_=type_,
+        type_=type or type_,
         method=method,
+        direction=direction,
         order_by=order_by,
         order_dir=order_dir,
+        date_from=date_from,
+        date_to=date_to,
+    )
+
+
+@router.get("/summary")
+async def get_my_transactions_summary(
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
+    authorization_service: AuthorizationService = Depends(AuthorizationService),
+    transactions_service: TransactionsService = Depends(TransactionsService),
+):
+    date_from = await to_vietnam_naive(date_from)
+    date_to = await to_vietnam_naive(date_to)
+    user = await authorization_service.get_current_user()
+    return await transactions_service.get_user_transactions_summary(
+        user_id=user.id,
         date_from=date_from,
         date_to=date_to,
     )

@@ -72,8 +72,18 @@ export class ActionRegistry {
       status, verified: status === 'completed', ...(result !== undefined ? { result } : {}), ...(error ? { error } : {}),
     });
     const current = this.snapshot();
-    if (current.page_instance_id !== request.page_instance_id || current.revision !== request.context_revision ||
-      current.lesson_id !== request.lesson_id || !Number.isFinite(Date.parse(request.expires_at)) || Date.parse(request.expires_at) <= Date.now()) return receipt('stale_context', undefined, 'Màn hình đã thay đổi hoặc lệnh hết hạn.');
+    const revisionDelta = current.revision - request.context_revision;
+    const currentLesson = current.lesson_id ?? null;
+    const requestedLesson = request.lesson_id ?? null;
+    if (
+      current.page_instance_id !== request.page_instance_id ||
+      revisionDelta < 0 ||
+      (revisionDelta > 0 && Boolean(request.approval_id)) ||
+      (requestedLesson !== null && currentLesson !== requestedLesson) ||
+      !Number.isFinite(Date.parse(request.expires_at)) ||
+      Date.parse(request.expires_at) <= Date.now()
+    )
+      return receipt('stale_context', undefined, 'Màn hình đã thay đổi hoặc lệnh hết hạn.');
     const definition = this.actions.get(request.name);
     if (!definition || !plainObject(request.arguments)) return receipt('failed', undefined, 'Thao tác không khả dụng trên màn hình này.');
     if (definition.mutation && !request.approval_id) return receipt('failed', undefined, 'Bản sửa cần được bạn xác nhận trước.');
@@ -83,7 +93,7 @@ export class ActionRegistry {
     signal?.addEventListener('abort', abort, { once: true });
     this.pending.set(request.action_id, controller);
     let timer: ReturnType<typeof setTimeout> | undefined;
-    const navigating = ['learning.navigate_lesson', 'learning.next_lesson', 'learning.previous_lesson', 'mcp.browser_click'].includes(request.name);
+    const navigating = ['learning.navigate_lesson', 'learning.next_lesson', 'learning.previous_lesson', 'mcp.browser_click', 'mcp.browser_navigate'].includes(request.name);
     if (navigating) this.navigationCount++;
     try {
       const timeout = new Promise<never>((_, reject) => {

@@ -10,8 +10,8 @@ Toàn bộ giao diện người dùng trong `studynest_fe/` tuân thủ hệ th�
 - **Shared UI Components**: Đặt tại [`studynest_fe/src/components/ui/`](file:///Users/huynh/codes/hoctap/studynest_fe/src/components/ui/index.ts)
 
 ### Quy tắc bắt buộc khi phát triển tính năng UI mới:
-1. Sử dụng semantic tokens (`--color-background`, `--color-surface`, `--color-primary`, `--color-foreground`, `--color-border`, v.v.) và các shared components trong `@/components/ui`.
-2. Không hardcode các màu neon hoặc màu xanh lục/ngọc cũ (`#00bba7`, `#10b981`, `#00a73d`).
+1. Sử dụng semantic tokens (`--color-background`, `--color-surface`, `--color-primary`, `--color-foreground`, `--color-border`, v.v.) và các shared components trong `@/components/ui`, đồng bộ 100% với bảng màu sáng pastel của Trang chủ (`studynest_fe/src/components/user/home/landing-ui.tsx`).
+2. **CẤM TUYỆT ĐỐI** các nền tối đậm / navy / obsidian (`#13263A`, `#14283D`, `#162C44`, `#1E3F63`, `slate-900`), vàng kim chói (`#FFE89E`, `#F5C542`), màu neon hoặc màu xanh lục/ngọc cũ (`#00bba7`, `#10b981`, `#00a73d`). Hero, Card, Popover phải sáng thoáng trên nền pastel (`bg-surface`, `bg-primary-light`, `bg-secondary-light`, `bg-accent`, `bg-accent-vanilla`).
 3. Sử dụng font `"Be Vietnam Pro"` cho toàn bộ UI/body và `"Lora"` (`.font-display`) có chọn lọc cho Hero/Editorial headings.
 4. Đảm bảo độ tương phản đạt chuẩn WCAG AA (không đặt chữ trắng trên nền pastel nhạt).
 

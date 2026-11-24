@@ -46,12 +46,8 @@ export function CatalogCard({ course, viewMode = "grid", featured = false }: Cat
                 <BookOpen className="h-12 w-12" />
               </div>
             )}
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#13263A]/55 via-transparent to-transparent"
-            />
             <div className="absolute left-3.5 top-3.5 flex flex-wrap gap-1.5">
-              <span className="rounded-full border border-[#F5C542]/70 bg-[#13263A]/85 px-2.5 py-0.5 text-[11px] font-bold text-[#FFE89E] backdrop-blur-md">
+              <span className="rounded-full border border-accent-vanilla-border bg-accent-vanilla/95 px-2.5 py-0.5 text-[11px] font-bold text-accent-vanilla-foreground backdrop-blur-md shadow-2xs">
                 Nổi bật
               </span>
               {course.subject?.name && (

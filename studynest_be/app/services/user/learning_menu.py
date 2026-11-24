@@ -20,10 +20,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.models.database import (
     CourseEnrollments,
     CourseFavourites,
+    CourseReviews,
     Courses,
+    LessonProgress,
     PurchaseItems,
     RefundRequests,
+    Role,
     User,
+    UserRoles,
 )
 from app.db.models.learning_menu import CourseAnnouncementPreference, CourseGift
 from app.libs.formats.datetime import now as get_now
@@ -81,6 +85,7 @@ async def get_player_menu_state(
         )
     )
     price = Decimal(str(course.base_price or 0))
+    giver_info = await gifted_by_info(db, user.id, course_id)
     return {
         "is_favourite": favourite is not None,
         "is_archived": bool(enrollment is not None and enrollment.archived_at is not None),
@@ -88,7 +93,8 @@ async def get_player_menu_state(
         "promotional_emails": await promotional_emails_enabled(db, user.id),
         "requires_payment": price > 0,
         "price": str(price),
-        "gifted_by_name": await gifted_by_name(db, user.id, course_id),
+        "gifted_by_name": giver_info["fullname"] if giver_info else None,
+        "gifted_by": giver_info,
     }
 
 
@@ -196,11 +202,11 @@ async def enroll_learner_if_absent(
     return True
 
 
-def gifted_by_name_subquery(user_id: uuid.UUID):
-    """Latest claimed giver for the outer course row."""
+def _gifted_by_column_subquery(user_id: uuid.UUID, column_name: str):
     giver = aliased(User)
+    col = getattr(giver, column_name)
     return (
-        select(giver.fullname)
+        select(col)
         .select_from(CourseGift)
         .join(giver, giver.id == CourseGift.sender_id)
         .where(
@@ -218,24 +224,55 @@ def gifted_by_name_subquery(user_id: uuid.UUID):
     )
 
 
+def gifted_by_name_subquery(user_id: uuid.UUID):
+    """Latest claimed giver fullname for the outer course row."""
+    return _gifted_by_column_subquery(user_id, "fullname")
+
+
+def gifted_by_id_subquery(user_id: uuid.UUID):
+    """Latest claimed giver id for the outer course row."""
+    return _gifted_by_column_subquery(user_id, "id")
+
+
+def gifted_by_avatar_subquery(user_id: uuid.UUID):
+    """Latest claimed giver avatar for the outer course row."""
+    return _gifted_by_column_subquery(user_id, "avatar")
+
+
+async def gifted_by_info(
+    db: AsyncSession, user_id: uuid.UUID, course_id: uuid.UUID
+) -> dict | None:
+    giver = aliased(User)
+    row = (
+        await db.execute(
+            select(giver.id, giver.fullname, giver.avatar)
+            .join(CourseGift, CourseGift.sender_id == giver.id)
+            .where(
+                CourseGift.course_id == course_id,
+                CourseGift.recipient_user_id == user_id,
+                CourseGift.status == "claimed",
+            )
+            .order_by(
+                CourseGift.claimed_at.desc().nulls_last(),
+                CourseGift.created_at.desc(),
+            )
+            .limit(1)
+        )
+    ).first()
+    if row is None:
+        return None
+    return {
+        "id": str(row.id),
+        "fullname": row.fullname,
+        "avatar": row.avatar,
+    }
+
+
 async def gifted_by_name(
     db: AsyncSession, user_id: uuid.UUID, course_id: uuid.UUID
 ) -> str | None:
-    giver = aliased(User)
-    return await db.scalar(
-        select(giver.fullname)
-        .join(CourseGift, CourseGift.sender_id == giver.id)
-        .where(
-            CourseGift.course_id == course_id,
-            CourseGift.recipient_user_id == user_id,
-            CourseGift.status == "claimed",
-        )
-        .order_by(
-            CourseGift.claimed_at.desc().nulls_last(),
-            CourseGift.created_at.desc(),
-        )
-        .limit(1)
-    )
+    info = await gifted_by_info(db, user_id, course_id)
+    return info["fullname"] if info else None
 
 
 async def search_gift_recipients(
@@ -410,10 +447,19 @@ async def create_course_gift(
 
 async def list_incoming_gifts(db: AsyncSession, user: User) -> dict:
     email = (user.email or "").strip().lower()
+    sender = aliased(User)
     rows = (
         await db.execute(
-            select(CourseGift, Courses.title, Courses.slug)
+            select(
+                CourseGift,
+                Courses.title,
+                Courses.slug,
+                sender.id.label("sender_id"),
+                sender.fullname.label("sender_name"),
+                sender.avatar.label("sender_avatar"),
+            )
             .join(Courses, Courses.id == CourseGift.course_id)
+            .outerjoin(sender, sender.id == CourseGift.sender_id)
             .where(CourseGift.recipient_email == email)
             .where(CourseGift.status.in_(("claimable", "fulfilled")))
             .order_by(CourseGift.created_at.desc())
@@ -427,9 +473,132 @@ async def list_incoming_gifts(db: AsyncSession, user: User) -> dict:
                 "course_title": title,
                 "course_slug": slug,
                 "status": gift.status,
+                "sender_id": str(sender_id) if sender_id else None,
+                "sender_name": sender_name,
+                "sender_avatar": sender_avatar,
             }
-            for gift, title, slug in rows
+            for gift, title, slug, sender_id, sender_name, sender_avatar in rows
         ]
+    }
+
+
+async def get_member_public_profile(db: AsyncSession, member_id: uuid.UUID) -> dict:
+    """Trả hồ sơ công khai của một thành viên Mây Mây (không lộ email/SĐT)."""
+    member = await db.get(User, member_id)
+    if member is None or member.deleted_at is not None:
+        raise HTTPException(status_code=404, detail="Không tìm thấy hồ sơ thành viên này.")
+
+    # Kiểm tra vai trò giảng viên
+    lecturer_role = await db.scalar(
+        select(Role.role_name)
+        .join(UserRoles, UserRoles.role_id == Role.id)
+        .where(
+            UserRoles.user_id == member.id,
+            func.upper(Role.role_name) == "LECTURER",
+        )
+        .limit(1)
+    )
+    is_lecturer = lecturer_role is not None
+
+    # Tải trọn bộ trang bị 3D, cấp độ & streak từ LearningService
+    from app.services.user.learning import LearningService
+
+    badges_map = await LearningService._load_qa_user_badges_async(db, [member.id])
+    gamification = badges_map.get(
+        member.id,
+        {"level": 1, "current_streak": 0, "equipment": {}},
+    )
+
+    enrolled_count = int(
+        (
+            await db.scalar(
+                select(func.count(CourseEnrollments.id)).where(
+                    CourseEnrollments.user_id == member.id,
+                    CourseEnrollments.status == "active",
+                )
+            )
+        )
+        or 0
+    )
+    completed_lessons_count = int(
+        (
+            await db.scalar(
+                select(func.count(LessonProgress.id)).where(
+                    LessonProgress.user_id == member.id,
+                    LessonProgress.is_completed.is_(True),
+                )
+            )
+        )
+        or 0
+    )
+    gifts_sent_count = int(
+        (
+            await db.scalar(
+                select(func.count(CourseGift.id)).where(
+                    CourseGift.sender_id == member.id,
+                    CourseGift.status.in_(("claimed", "claimable", "fulfilled")),
+                )
+            )
+        )
+        or 0
+    )
+    reviews_count = int(
+        (
+            await db.scalar(
+                select(func.count(CourseReviews.id)).where(
+                    CourseReviews.user_id == member.id
+                )
+            )
+        )
+        or 0
+    )
+
+    recent_course_rows = (
+        await db.execute(
+            select(
+                Courses.id,
+                Courses.title,
+                Courses.slug,
+                Courses.thumbnail_url,
+                Courses.level,
+                Courses.rating_avg,
+            )
+            .join(CourseEnrollments, CourseEnrollments.course_id == Courses.id)
+            .where(
+                CourseEnrollments.user_id == member.id,
+                CourseEnrollments.status == "active",
+                Courses.is_published.is_(True),
+            )
+            .order_by(CourseEnrollments.enrolled_at.desc())
+            .limit(4)
+        )
+    ).all()
+
+    return {
+        "id": str(member.id),
+        "fullname": member.fullname,
+        "avatar": member.avatar,
+        "bio": member.bio,
+        "joined_at": member.create_at.isoformat() if member.create_at else None,
+        "is_lecturer": is_lecturer,
+        "gamification": gamification,
+        "stats": {
+            "enrolled_courses_count": enrolled_count,
+            "completed_lessons_count": completed_lessons_count,
+            "gifts_sent_count": gifts_sent_count,
+            "reviews_count": reviews_count,
+        },
+        "recent_courses": [
+            {
+                "id": str(r.id),
+                "title": r.title,
+                "slug": r.slug,
+                "thumbnail_url": r.thumbnail_url,
+                "level": r.level,
+                "rating_avg": float(r.rating_avg or 0),
+            }
+            for r in recent_course_rows
+        ],
     }
 
 

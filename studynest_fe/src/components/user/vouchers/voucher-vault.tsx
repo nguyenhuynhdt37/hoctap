@@ -104,16 +104,16 @@ function VoucherTicketCard({
   const fixedCoin = item.fixed_value ? vndToCoin(item.fixed_value, rateVnd) : 0;
 
   const stubStyle = !isAvailable
-    ? "bg-gradient-to-br from-[#64748B] to-[#475569] text-white/90"
+    ? "bg-muted text-muted-foreground"
     : isPersonal
-      ? "bg-gradient-to-br from-[#281948] via-[#452B7A] to-[#6544AE] text-white"
+      ? "bg-gradient-to-br from-accent via-accent/80 to-primary-light text-accent-foreground"
       : isCombo
-        ? "bg-gradient-to-br from-[#285C90] via-[#356FA7] to-[#4A85BF] text-white"
+        ? "bg-gradient-to-br from-primary-light via-primary-pastel/70 to-primary-light text-primary"
         : isGlobal
-          ? "bg-gradient-to-br from-[#13263A] via-[#1E3F63] to-[#2C5B8B] text-white"
-          : "bg-gradient-to-br from-[#FCE8EF] via-[#F7D2E2] to-[#F3C0D6] text-[#7A2447]";
+          ? "bg-gradient-to-br from-accent-vanilla via-accent-vanilla/80 to-primary-light/60 text-accent-vanilla-foreground"
+          : "bg-gradient-to-br from-secondary-light via-secondary-pastel/70 to-secondary-light text-secondary-foreground";
 
-  const darkStub = !isAvailable || isPersonal || isCombo || isGlobal;
+  const darkStub = false;
   const useHref = isCombo
     ? item.primary_bundle_slug
       ? `/combo/${item.primary_bundle_slug}`
@@ -395,27 +395,27 @@ export function VoucherVault() {
   return (
     <main className="relative isolate min-h-screen overflow-clip bg-background pb-16">
       <div className="mx-auto w-full max-w-6xl space-y-7 px-4 pt-6 sm:px-6 sm:pt-8">
-        {/* VIP VAULT HERO BANNER */}
-        <header className="relative isolate overflow-hidden rounded-[32px] border border-[#BFD7ED]/35 bg-gradient-to-br from-[#13263A] via-[#1E3F63] to-[#2C5B8B] p-6 text-white shadow-lg sm:p-8 lg:p-10">
+        {/* CLOUDY BLUE VOUCHER HERO BANNER */}
+        <header className="relative isolate overflow-hidden rounded-[32px] border border-primary-pastel bg-gradient-to-br from-primary-light/85 via-surface to-accent/45 p-6 text-foreground shadow-[0_24px_48px_-14px_rgba(53,111,167,0.16)] sm:p-8 lg:p-10">
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute -right-16 -top-16 -z-10 size-64 rounded-full bg-[#F5C542]/22 blur-3xl"
+            className="pointer-events-none absolute -right-16 -top-16 -z-10 size-64 rounded-full bg-white/80 blur-3xl"
           />
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute -bottom-24 left-1/3 -z-10 size-64 rounded-full bg-[#C8B0F7]/22 blur-3xl"
+            className="pointer-events-none absolute -bottom-24 left-1/3 -z-10 size-64 rounded-full bg-secondary-light/65 blur-3xl"
           />
 
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl space-y-3">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-[#F5C542]/55 bg-[#F5C542]/18 px-3.5 py-1 text-xs font-bold uppercase tracking-[0.14em] text-[#FFE89E]">
-                <Ticket aria-hidden="true" animated={false} className="size-3.5 text-[#FFD55A]" />
-                <span>Voucher Vault · Mây Mây</span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-primary-pastel bg-surface/90 px-3.5 py-1 text-xs font-bold uppercase tracking-[0.14em] text-primary shadow-2xs">
+                <Ticket aria-hidden="true" animated={false} className="size-3.5 text-primary" />
+                <span>Kho ưu đãi · Mây Mây</span>
               </span>
-              <h1 className="font-display text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-[2.6rem]">
+              <h1 className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-[2.6rem]">
                 Kho mã giảm giá của tôi
               </h1>
-              <p className="text-sm leading-relaxed text-white/80 sm:text-base">
+              <p className="text-sm leading-relaxed text-muted-foreground sm:text-base">
                 Quản lý trọn vẹn mã thưởng cá nhân và ưu đãi từ giảng viên. Sao chép 1 chạm, hệ thống tự động chọn mã tốt nhất khi bạn thanh toán khóa học.
               </p>
             </div>
@@ -423,16 +423,16 @@ export function VoucherVault() {
             <div className="flex flex-wrap items-center gap-2.5">
               <Link
                 href="/courses"
-                className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#F5C542] px-5 text-sm font-bold text-[#241607] shadow-xs transition-colors hover:bg-[#FFD55A]"
+                className="inline-flex min-h-11 items-center gap-2 rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground shadow-xs transition-colors hover:bg-primary-hover"
               >
                 <span>Khám phá khóa học</span>
                 <ArrowRight aria-hidden="true" className="size-4" />
               </Link>
               <Link
                 href="/missions"
-                className="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/25 bg-white/12 px-4 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/20"
+                className="inline-flex min-h-11 items-center gap-2 rounded-full border border-primary-pastel bg-surface px-4 text-sm font-semibold text-primary shadow-2xs transition-colors hover:bg-primary-light"
               >
-                <Flag aria-hidden="true" className="size-4 text-[#FFE89E]" />
+                <Flag aria-hidden="true" className="size-4 text-primary" />
                 <span>Săn thêm mã</span>
               </Link>
             </div>
@@ -440,36 +440,36 @@ export function VoucherVault() {
 
           {/* 4 THẺ CHỈ SỐ SỐNG */}
           <div className="mt-7 grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <div className="rounded-2xl border border-white/18 bg-white/10 p-4 backdrop-blur-md">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-white/70">
+            <div className="rounded-2xl border border-border bg-surface/90 p-4 shadow-2xs backdrop-blur-sm">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                 Mã khả dụng
               </p>
-              <p className="mt-1.5 font-display text-3xl font-bold text-[#FFE89E] tabular-nums">
+              <p className="mt-1.5 font-display text-3xl font-bold text-primary tabular-nums">
                 {summary ? numberFormat.format(summary.total_available) : "—"}
               </p>
             </div>
-            <div className="rounded-2xl border border-white/18 bg-white/10 p-4 backdrop-blur-md">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-white/70">
+            <div className="rounded-2xl border border-border bg-surface/90 p-4 shadow-2xs backdrop-blur-sm">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                 Sắp hết hạn (&lt;72h)
               </p>
-              <p className="mt-1.5 font-display text-3xl font-bold text-white tabular-nums">
+              <p className="mt-1.5 font-display text-3xl font-bold text-warning-foreground tabular-nums">
                 {summary ? numberFormat.format(summary.expiring_soon) : "—"}
               </p>
             </div>
-            <div className="rounded-2xl border border-white/18 bg-white/10 p-4 backdrop-blur-md">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-white/70">
+            <div className="rounded-2xl border border-border bg-surface/90 p-4 shadow-2xs backdrop-blur-sm">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                 Lượt đã dùng
               </p>
-              <p className="mt-1.5 font-display text-3xl font-bold text-white tabular-nums">
+              <p className="mt-1.5 font-display text-3xl font-bold text-foreground tabular-nums">
                 {summary ? numberFormat.format(summary.total_used) : "—"}
               </p>
             </div>
-            <div className="rounded-2xl border border-[#F5C542]/40 bg-[#F5C542]/15 p-4 backdrop-blur-md">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-[#FFE89E]/90">
+            <div className="rounded-2xl border border-accent-vanilla-border bg-accent-vanilla/50 p-4 shadow-2xs backdrop-blur-sm">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-accent-vanilla-foreground">
                 Đã tiết kiệm
               </p>
               <div className="mt-2">
-                <CoinBadge kind="gold" amount={savedCoin} surface="dark" size="lg" />
+                <CoinBadge kind="gold" amount={savedCoin} size="lg" />
               </div>
             </div>
           </div>

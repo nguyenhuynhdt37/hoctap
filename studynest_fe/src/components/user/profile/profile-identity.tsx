@@ -200,21 +200,18 @@ export default function ProfileIdentity({
 
   return (
     <div className="space-y-5">
-      {/* VIP SPOTLIGHT BANNER */}
+      {/* CLOUDY BLUE IDENTITY BANNER */}
       <section
-        aria-label="Hồ sơ cá nhân VIP"
-        className={cn(
-          "relative isolate overflow-hidden rounded-[32px] border bg-gradient-to-br from-[#13263A] via-[#1E3F63] to-[#2C5B8B] p-6 text-white shadow-lg sm:p-8",
-          aura.ring,
-        )}
+        aria-label="Hồ sơ cá nhân"
+        className="relative isolate overflow-hidden rounded-[32px] border border-primary-pastel bg-gradient-to-br from-primary-light/85 via-surface to-accent/45 p-6 text-foreground shadow-[0_24px_48px_-14px_rgba(53,111,167,0.16)] sm:p-8"
       >
         <div
           aria-hidden="true"
-          className={cn("pointer-events-none absolute -right-16 -top-16 -z-10 size-64 rounded-full blur-3xl", aura.primary)}
+          className="pointer-events-none absolute -right-16 -top-16 -z-10 size-64 rounded-full bg-white/80 blur-3xl"
         />
         <div
           aria-hidden="true"
-          className={cn("pointer-events-none absolute -bottom-20 left-1/4 -z-10 size-60 rounded-full blur-3xl", aura.secondary)}
+          className="pointer-events-none absolute -bottom-20 left-1/4 -z-10 size-60 rounded-full bg-secondary-light/65 blur-3xl"
         />
 
         <input
@@ -229,7 +226,7 @@ export default function ProfileIdentity({
           {/* CỘT TRÁI: AVATAR + DANH HIỆU + THÔNG TIN ĐỊNH DANH */}
           <div className="flex flex-col items-center gap-5 text-center sm:flex-row sm:items-center sm:text-left">
             <div className="relative shrink-0">
-              <div className="rounded-full bg-white/8 p-1.5 ring-1 ring-white/15">
+              <div className="rounded-full bg-surface/90 p-1.5 ring-1 ring-primary-pastel shadow-2xs">
                 <FramedAvatar
                   src={imageSrc}
                   name={values.fullname}
@@ -242,7 +239,7 @@ export default function ProfileIdentity({
                 onClick={() => inputRef.current?.click()}
                 aria-label="Đổi ảnh đại diện"
                 title="Đổi ảnh đại diện"
-                className="absolute right-1 bottom-1 flex size-9 items-center justify-center rounded-full border border-white/30 bg-[#13263A]/90 text-white shadow-md backdrop-blur-md transition-transform hover:scale-105 hover:bg-primary cursor-pointer"
+                className="absolute right-1 bottom-1 flex size-9 items-center justify-center rounded-full border border-primary-pastel bg-surface text-primary shadow-md transition-transform hover:scale-105 hover:bg-primary hover:text-primary-foreground cursor-pointer"
               >
                 <Camera aria-hidden="true" className="size-4" />
               </button>
@@ -253,24 +250,24 @@ export default function ProfileIdentity({
                 {xp && (
                   <Link
                     href="/levels"
-                    className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/12 px-3 py-1 text-xs font-bold text-white backdrop-blur-sm transition-colors hover:bg-white/20"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-primary-pastel bg-surface/90 px-3 py-1 text-xs font-bold text-primary shadow-2xs transition-colors hover:bg-primary-light"
                   >
-                    <Trophy aria-hidden="true" animated={false} className={cn("size-3.5", aura.accentText)} />
+                    <Trophy aria-hidden="true" animated={false} className="size-3.5 text-primary" />
                     <span>Cấp {xp.level}</span>
                   </Link>
                 )}
                 {streak.data && (
                   <Link
                     href="/missions"
-                    className="inline-flex items-center gap-1 rounded-full border border-[#F5C542]/45 bg-[#F5C542]/18 px-3 py-1 text-xs font-bold text-[#FFE89E]"
+                    className="inline-flex items-center gap-1 rounded-full border border-accent-vanilla-border bg-accent-vanilla/75 px-3 py-1 text-xs font-bold text-accent-vanilla-foreground"
                   >
-                    <Flame aria-hidden="true" animated={false} className="size-3.5 text-[#FFD55A]" />
+                    <Flame aria-hidden="true" animated={false} className="size-3.5 text-warning-foreground" />
                     <span>{streak.data.current_streak} ngày</span>
                   </Link>
                 )}
               </div>
 
-              <h1 className="font-display text-2xl font-bold tracking-tight text-white sm:text-3xl wrap-anywhere">
+              <h1 className="font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl wrap-anywhere">
                 {values.fullname || "Hồ sơ của bạn"}
               </h1>
 
@@ -279,17 +276,17 @@ export default function ProfileIdentity({
                 className="justify-center sm:justify-start"
               />
 
-              <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-white/75 sm:justify-start">
+              <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground sm:justify-start">
                 <span className="truncate">{profile.email}</span>
                 {place && (
                   <span className="inline-flex items-center gap-1">
-                    <MapPin aria-hidden="true" animated={false} className="size-3.5 text-white/60" />
+                    <MapPin aria-hidden="true" animated={false} className="size-3.5 text-primary" />
                     <span>{place}</span>
                   </span>
                 )}
                 {joined && (
                   <span className="inline-flex items-center gap-1">
-                    <Calendar aria-hidden="true" animated={false} className="size-3.5 text-white/60" />
+                    <Calendar aria-hidden="true" animated={false} className="size-3.5 text-primary" />
                     <span>Tham gia {joined}</span>
                   </span>
                 )}
@@ -301,10 +298,11 @@ export default function ProfileIdentity({
                   <Button
                     type="button"
                     size="sm"
+                    variant="primary"
                     onClick={() => void upload()}
                     isLoading={uploading}
                     loadingText="Đang tải..."
-                    className="rounded-full bg-[#F5C542] text-[#241607] hover:bg-[#FFD55A]"
+                    className="rounded-full"
                   >
                     <Check aria-hidden="true" className="size-3.5" />
                     <span>Lưu ảnh mới</span>
@@ -315,7 +313,7 @@ export default function ProfileIdentity({
                       setFile(null);
                       setPreview("");
                     }}
-                    className="rounded-full border border-white/25 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/20 cursor-pointer"
+                    className="rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-background cursor-pointer"
                   >
                     Hủy
                   </button>
@@ -323,23 +321,23 @@ export default function ProfileIdentity({
               )}
 
               {avatarError && (
-                <p role="alert" className="text-xs font-semibold text-red-200">
+                <p role="alert" className="text-xs font-semibold text-destructive-foreground">
                   {avatarError}
                 </p>
               )}
               {avatarSuccess && (
-                <p role="status" className="text-xs font-semibold text-emerald-200">
+                <p role="status" className="text-xs font-semibold text-success-foreground">
                   {avatarSuccess}
                 </p>
               )}
             </div>
           </div>
 
-          {/* CỘT PHẢI: VIP STATS, XP BAR & HÀNH ĐỘNG NHANH */}
-          <div className="flex flex-col gap-3.5 rounded-3xl border border-white/15 bg-white/8 p-4 backdrop-blur-md sm:p-5">
+          {/* CỘT PHẢI: CHỈ SỐ, THANH XP & HÀNH ĐỘNG NHANH */}
+          <div className="flex flex-col gap-3.5 rounded-3xl border border-border bg-surface/90 p-4 shadow-2xs backdrop-blur-sm sm:p-5">
             {/* Đồng xu Vàng & Trắng */}
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-white/70">
+              <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
                 Số dư hiện tại
               </span>
               <div className="flex flex-wrap items-center gap-2">
@@ -347,7 +345,6 @@ export default function ProfileIdentity({
                   <CoinBadge
                     kind="gold"
                     amount={goldBalance ?? 0}
-                    surface="dark"
                     size="md"
                   />
                 </Link>
@@ -355,7 +352,6 @@ export default function ProfileIdentity({
                   <CoinBadge
                     kind="white"
                     amount={whiteBalance ?? 0}
-                    surface="dark"
                     size="md"
                   />
                 </Link>
@@ -366,25 +362,25 @@ export default function ProfileIdentity({
             {xp && (
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold text-white/85">Tiến độ Cấp {xp.level}</span>
-                  <span className="font-bold tabular-nums text-[#FFE89E]">
+                  <span className="font-semibold text-foreground">Tiến độ Cấp {xp.level}</span>
+                  <span className="font-bold tabular-nums text-primary">
                     {new Intl.NumberFormat("vi-VN").format(xp.current_xp)} /{" "}
                     {new Intl.NumberFormat("vi-VN").format(xp.required_xp)} XP
                   </span>
                 </div>
                 <div
                   aria-hidden="true"
-                  className="h-2 w-full overflow-hidden rounded-full bg-white/15"
+                  className="h-2 w-full overflow-hidden rounded-full bg-primary-light"
                 >
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-[#BFD7ED] via-[#FFE89E] to-[#F5C542] transition-all duration-500"
+                    className="h-full rounded-full bg-primary transition-all duration-500"
                     style={{ width: `${xpPct}%` }}
                   />
                 </div>
               </div>
             )}
 
-            {/* Cụm nút hành động VIP */}
+            {/* Cụm nút hành động */}
             <div className="grid grid-cols-2 gap-2 pt-1 sm:flex sm:flex-wrap">
               <button
                 type="button"
@@ -395,21 +391,21 @@ export default function ProfileIdentity({
                   const firstInput = el?.querySelector<HTMLInputElement>("input:not([disabled])");
                   firstInput?.focus({ preventScroll: true });
                 }}
-                className="col-span-2 inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-[#F5C542] px-4 text-xs font-bold text-[#241607] shadow-xs transition-colors hover:bg-[#FFD55A] cursor-pointer sm:flex-1"
+                className="col-span-2 inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-primary px-4 text-xs font-bold text-primary-foreground shadow-2xs transition-colors hover:bg-primary-hover cursor-pointer sm:flex-1"
               >
                 <Pencil aria-hidden="true" className="size-3.5" />
                 <span>Chỉnh sửa hồ sơ</span>
               </button>
               <Link
                 href="/shop"
-                className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-white/25 bg-white/12 px-3.5 text-xs font-semibold text-white transition-colors hover:bg-white/20"
+                className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-border bg-background px-3.5 text-xs font-semibold text-foreground transition-colors hover:border-primary-pastel hover:bg-primary-light hover:text-primary"
               >
                 <Store aria-hidden="true" className="size-3.5" />
                 <span>Cửa hàng</span>
               </Link>
               <Link
                 href="/wallets"
-                className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-[#F5C542]/45 bg-[#F5C542]/18 px-3.5 text-xs font-semibold text-[#FFE89E] transition-colors hover:bg-[#F5C542]/30"
+                className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-primary-pastel bg-primary-light px-3.5 text-xs font-semibold text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
               >
                 <Wallet aria-hidden="true" className="size-3.5" />
                 <span>Nạp thêm</span>

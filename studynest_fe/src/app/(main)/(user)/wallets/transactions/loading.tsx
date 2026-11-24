@@ -3,29 +3,43 @@ export default function WalletTransactionsLoading() {
     <div
       role="status"
       aria-label="Đang tải lịch sử giao dịch"
-      className="mx-auto max-w-5xl space-y-6 px-4 py-8 animate-pulse"
+      className="mx-auto max-w-7xl space-y-6 px-4 py-8 animate-pulse"
     >
       {/* Header Skeleton */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-2">
-          <div className="h-8 w-56 rounded-2xl bg-primary-light/60" />
-          <div className="h-4 w-80 rounded-xl bg-border/60" />
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="space-y-2.5">
+          <div className="h-6 w-40 rounded-full bg-primary-light/80" />
+          <div className="h-9 w-64 rounded-2xl bg-primary-light/60" />
+          <div className="h-4 w-96 max-w-full rounded-xl bg-border/60" />
         </div>
-        <div className="h-10 w-28 rounded-full bg-primary-light/70" />
+        <div className="flex gap-2.5">
+          <div className="h-9 w-28 rounded-full bg-primary-light/60" />
+          <div className="h-9 w-28 rounded-full bg-primary-light/60" />
+        </div>
       </div>
 
-      {/* Filter Bar Skeleton */}
-      <div className="h-20 rounded-[24px] border border-border bg-surface/80 p-4 shadow-xs" />
+      {/* Hero 2 Columns Skeleton */}
+      <div className="grid gap-5 lg:grid-cols-[1.28fr_1fr]">
+        <div className="h-64 rounded-[30px] bg-primary/15" />
+        <div className="h-64 rounded-[30px] border border-border bg-surface/80" />
+      </div>
 
-      {/* Table Skeleton */}
-      <div className="rounded-[28px] border border-border bg-surface/80 p-6 shadow-xs">
-        <div className="space-y-3">
-          <div className="h-10 w-full rounded-xl bg-primary-light/40" />
-          <div className="h-14 w-full rounded-xl bg-border/30" />
-          <div className="h-14 w-full rounded-xl bg-border/20" />
-          <div className="h-14 w-full rounded-xl bg-border/30" />
-          <div className="h-14 w-full rounded-xl bg-border/20" />
-        </div>
+      {/* 4 Bento Cards Skeleton */}
+      <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="h-24 rounded-[24px] border border-border bg-surface/80" />
+        <div className="h-24 rounded-[24px] border border-border bg-surface/80" />
+        <div className="h-24 rounded-[24px] border border-border bg-surface/80" />
+        <div className="h-24 rounded-[24px] border border-border bg-surface/80" />
+      </div>
+
+      {/* Smart Dock Skeleton */}
+      <div className="h-36 rounded-[26px] border border-border bg-surface/80" />
+
+      {/* Timeline Skeleton */}
+      <div className="space-y-3">
+        <div className="h-20 rounded-[24px] border border-border bg-surface/80" />
+        <div className="h-20 rounded-[24px] border border-border bg-surface/80" />
+        <div className="h-20 rounded-[24px] border border-border bg-surface/80" />
       </div>
     </div>
   );

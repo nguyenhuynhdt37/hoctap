@@ -356,7 +356,14 @@ class AuthService:
                     detail={"error_code": "EMAIL_TAKEN", "message": "Email đã được sử dụng"},
                 )
             if user is None:
-                user = User(email=schema.email, fullname=schema.full_name or "", password="", create_at=get_now())
+                user = User(
+                    email=schema.email,
+                    fullname=schema.full_name or "",
+                    password="",
+                    create_at=get_now(),
+                    grade_level=schema.grade_level,
+                    learning_track=schema.learning_track,
+                )
                 self.db.add(user)
                 await self.db.flush()
                 role = await self.db.scalar(select(Role).where(Role.role_name == "USER"))
@@ -368,6 +375,10 @@ class AuthService:
             else:
                 user.password = ""
                 user.fullname = schema.full_name or ""
+                if schema.grade_level is not None:
+                    user.grade_level = schema.grade_level
+                if schema.learning_track is not None:
+                    user.learning_track = schema.learning_track
             await self._issue_otp_async(user, VERIFY_EMAIL, pending_password_hash=password_hash)
             return {"message": "send Email ok"}
         except Exception:

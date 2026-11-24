@@ -119,6 +119,7 @@ async def get_user_notifications(
     page: int = 1,
     limit: int = 20,
     search: str | None = None,
+    type: str | None = None,
     type_: str | None = None,
     is_read: bool | None = None,
     sort_by: str = "created_at",
@@ -131,7 +132,7 @@ async def get_user_notifications(
         page=page,
         limit=limit,
         search=search,
-        type_=type_,
+        type_=type or type_,
         is_read=is_read,
         sort_by=sort_by,
         order_dir=order_dir,
@@ -145,6 +146,7 @@ async def get_lecturer_notifications(
     page: int = 1,
     limit: int = 20,
     search: str | None = None,
+    type: str | None = None,
     type_: str | None = None,
     is_read: bool | None = None,
     sort_by: str = "created_at",
@@ -157,7 +159,7 @@ async def get_lecturer_notifications(
         page=page,
         limit=limit,
         search=search,
-        type_=type_,
+        type_=type or type_,
         is_read=is_read,
         sort_by=sort_by,
         order_dir=order_dir,
@@ -171,6 +173,7 @@ async def get_admin_notifications(
     page: int = 1,
     limit: int = 20,
     search: str | None = None,
+    type: str | None = None,
     type_: str | None = None,
     is_read: bool | None = None,
     sort_by: str = "created_at",
@@ -183,7 +186,7 @@ async def get_admin_notifications(
         page=page,
         limit=limit,
         search=search,
-        type_=type_,
+        type_=type or type_,
         is_read=is_read,
         sort_by=sort_by,
         order_dir=order_dir,
@@ -230,6 +233,41 @@ async def read_notification(
     roles = await authorization_service.get_list_role_in_user(user)
     updated = await service.mark_as_read(notification_id, user.id, admin="ADMIN" in roles)
     return updated
+
+
+@router.post("/unread/{notification_id}")
+async def unread_notification(
+    notification_id: UUID,
+    service: NotificationService = Depends(NotificationService),
+    authorization_service: AuthorizationService = Depends(AuthorizationService),
+):
+    user = await authorization_service.get_current_user()
+    roles = await authorization_service.get_list_role_in_user(user)
+    return await service.mark_as_unread(
+        notification_id, user.id, admin="ADMIN" in roles
+    )
+
+
+@router.delete("/read/user")
+async def delete_read_user_notifications(
+    service: NotificationService = Depends(NotificationService),
+    authorization_service: AuthorizationService = Depends(AuthorizationService),
+):
+    user = await authorization_service.get_current_user()
+    return await service.delete_read_notifications_async(user.id, "USER")
+
+
+@router.delete("/{notification_id}")
+async def delete_notification(
+    notification_id: UUID,
+    service: NotificationService = Depends(NotificationService),
+    authorization_service: AuthorizationService = Depends(AuthorizationService),
+):
+    user = await authorization_service.get_current_user()
+    roles = await authorization_service.get_list_role_in_user(user)
+    return await service.delete_notification_async(
+        notification_id, user.id, admin="ADMIN" in roles
+    )
 
 
 @router.post("/push-tokens")

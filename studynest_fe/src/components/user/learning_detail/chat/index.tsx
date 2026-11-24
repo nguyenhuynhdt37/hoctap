@@ -1,7 +1,8 @@
 "use client";
 
 import { memo, useCallback, useEffect, useRef, useState } from "react";
-import { MessageCircle, X, AlignLeft, Plus, Mic } from "pulsoicon-react";
+import { X, AlignLeft, Plus, Mic, Eye, Play, Code, Compass } from "pulsoicon-react";
+import { Badge } from "@/components/ui/badge";
 import {
   TutorMessage,
   TutorScope,
@@ -274,54 +275,80 @@ function TutorChatPanel({
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <header className="flex items-center justify-between gap-2 border-b border-border bg-primary-light/40 px-3 py-3">
-          <div className="flex min-w-0 items-center gap-2">
+        <header className="flex items-center justify-between gap-2 border-b border-primary-pastel/70 bg-gradient-to-r from-primary-light/80 via-surface to-secondary-light/40 px-3.5 py-3">
+          <div className="flex min-w-0 items-center gap-2.5">
             <button
               aria-label={showHistory ? "Ẩn lịch sử trò chuyện" : "Mở lịch sử trò chuyện"}
               onClick={() => setShowHistory(!showHistory)}
-              className={`p-1.5 rounded-lg transition-colors ${
+              className={`rounded-xl p-1.5 transition-colors ${
                 showHistory
-                  ? "bg-primary-light text-primary"
-                  : "text-muted-foreground hover:bg-background"
+                  ? "bg-primary text-primary-foreground shadow-2xs"
+                  : "text-muted-foreground hover:bg-primary-light hover:text-primary"
               }`}
             >
-              <AlignLeft className="w-5 h-5" />
+              <AlignLeft animated={false} className="h-4 w-4" />
             </button>
-            <img
-              src="/logo/studynest-logo.svg"
-              alt="Mây Mây AI"
-              className="w-5 h-5 object-contain"
-            />
+            <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-primary-pastel bg-surface shadow-2xs">
+              <img
+                src="/logo/maymay-mark.svg"
+                alt="Mây Mây AI"
+                className="h-5 w-5 object-contain"
+              />
+              <span
+                aria-hidden="true"
+                className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border border-surface ${
+                  agent?.busy ? "animate-ping bg-primary" : "bg-success-foreground"
+                }`}
+              />
+            </div>
             <div className="min-w-0">
-              <h3 className="truncate text-sm font-semibold text-foreground">
-                Trợ giảng Mây Mây AI
-              </h3>
-              <p className="truncate text-xs text-muted-foreground">
+              <div className="flex items-center gap-1.5">
+                <h3 className="truncate font-display text-sm font-bold text-foreground">
+                  Mây Mây Co-Pilot
+                </h3>
+                <Badge variant="info" size="sm" className="px-1.5 py-0 text-[10px]">
+                  Live
+                </Badge>
+              </div>
+              <p className="truncate text-[11px] text-muted-foreground">
                 {lessonTitle}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-1">
             <AssistantSettings />
+            <button
+              type="button"
+              onClick={() => agent?.setDetailedTranscript(v => !v)}
+              title="Bật/tắt chế độ xem chi tiết từng lệnh công cụ (Ctrl+O)"
+              aria-label="Chuyển đổi log chi tiết"
+              className={`rounded-xl p-1.5 transition-colors ${
+                agent?.detailedTranscript
+                  ? "bg-primary-light text-primary"
+                  : "text-muted-foreground hover:bg-primary-light hover:text-primary"
+              }`}
+            >
+              <Eye animated={false} className="h-4 w-4" />
+            </button>
             <button type="button" onClick={() => void openVoice()} disabled={agent?.busy} title="Trò chuyện bằng giọng nói" aria-label="Mở voice Mây Mây"
-              className="rounded-lg p-2 text-primary transition-colors hover:bg-primary-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-              <Mic className="h-5 w-5" />
+              className="rounded-xl p-1.5 text-primary transition-colors hover:bg-primary-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <Mic animated={false} className="h-4 w-4" />
             </button>
             <button
               aria-label="Mở danh sách cuộc trò chuyện"
               onClick={() => setShowHistory(true)}
-              className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary-light rounded-lg"
+              className="rounded-xl p-1.5 text-muted-foreground hover:bg-primary-light hover:text-primary"
             >
-              <Plus className="w-4 h-4" />
+              <Plus animated={false} className="h-4 w-4" />
             </button>
             {onClose && (
               <button
                 type="button"
                 onClick={onClose}
                 aria-label="Đóng trợ giảng"
-                className="rounded-lg p-1.5 text-muted-foreground hover:bg-background"
+                className="rounded-xl p-1.5 text-muted-foreground hover:bg-background"
               >
-                <X className="w-4 h-4" />
+                <X animated={false} className="h-4 w-4" />
               </button>
             )}
           </div>
@@ -349,18 +376,55 @@ function TutorChatPanel({
               <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
             </div>
           ) : messages.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-center">
-              <img
-                src="/logo/studynest-logo.svg"
-                alt="Mây Mây AI"
-                className="w-11 h-11 object-contain mb-3"
-              />
-              <h4 className="font-semibold text-foreground mb-1">
-                Hỏi Trợ giảng Mây Mây nhé!
-              </h4>
-              <p className="text-xs text-muted-foreground mb-4">
-                Mây Mây sẵn sàng giải đáp bài học cho bạn.
-              </p>
+            <div className="flex h-full flex-col justify-center space-y-4 py-4">
+              <div className="rounded-2xl border border-primary-pastel bg-gradient-to-br from-primary-light/75 via-surface to-secondary-light/40 p-4 shadow-2xs">
+                <div className="mb-2 flex items-center gap-2.5">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-primary-pastel bg-surface">
+                    <img
+                      src="/logo/maymay-mark.svg"
+                      alt="Mây Mây AI"
+                      className="h-5 w-5 object-contain"
+                    />
+                  </div>
+                  <div>
+                    <h4 className="font-display text-sm font-bold text-foreground">
+                      Mây Mây Co-Pilot sẵn sàng!
+                    </h4>
+                    <p className="text-[11px] text-muted-foreground">
+                      Điều khiển màn hình · Tua video · Đọc & Sửa code · Trắc nghiệm
+                    </p>
+                  </div>
+                </div>
+                <p className="text-xs leading-relaxed text-foreground/90">
+                  Bạn có thể dùng thanh lệnh nhanh <code className="rounded bg-primary-light px-1 py-0.5 text-primary">/screen</code>,{" "}
+                  <code className="rounded bg-primary-light px-1 py-0.5 text-primary">/highlight</code>,{" "}
+                  <code className="rounded bg-primary-light px-1 py-0.5 text-primary">/video</code>,{" "}
+                  <code className="rounded bg-primary-light px-1 py-0.5 text-primary">/code</code> bên dưới hoặc trò chuyện tự nhiên để mình thao tác trực tiếp trên màn hình bài học.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-left">
+                {[
+                  { icon: Eye, title: "Quét màn hình", desc: "Đọc & tóm tắt giao diện hiện tại" },
+                  { icon: Compass, title: "Chỉ điểm Spotlight", desc: "Khoanh vùng sáng mục quan trọng" },
+                  { icon: Play, title: "Điều khiển Video", desc: "Tua, phát, dừng & giải thích theo mốc" },
+                  { icon: Code, title: "Đồng hành Code & Quiz", desc: "Đọc buffer, tạo bản sửa & gợi ý đáp án" },
+                ].map(item => {
+                  const ItemIcon = item.icon;
+                  return (
+                    <div
+                      key={item.title}
+                      className="rounded-2xl border border-border bg-surface p-3 shadow-2xs"
+                    >
+                      <span className="mb-1.5 inline-flex h-6 w-6 items-center justify-center rounded-lg bg-primary-light text-primary">
+                        <ItemIcon animated={false} className="h-3.5 w-3.5" />
+                      </span>
+                      <p className="text-xs font-semibold text-foreground">{item.title}</p>
+                      <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{item.desc}</p>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           ) : (
             <div className="space-y-4">

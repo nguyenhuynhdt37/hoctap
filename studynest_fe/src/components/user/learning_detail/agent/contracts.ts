@@ -1,3 +1,24 @@
+export type PermissionMode = 'autoPilot' | 'default' | 'plan';
+
+export interface XRayTarget {
+  target_id?: string;
+  tag: string;
+  role: string;
+  name: string;
+  text: string;
+  href?: string;
+  rect: { x: number; y: number; width: number; height: number };
+}
+
+export interface TelekinesisAction {
+  id: string;
+  kind: 'scan' | 'click' | 'fill' | 'scroll' | 'highlight' | 'video' | 'tab' | 'quiz' | 'editor';
+  label: string;
+  note?: string;
+  rect?: { x: number; y: number; width: number; height: number };
+  timestamp: number;
+}
+
 export interface ScreenContextSnapshot {
   schema_version: 1;
   page_instance_id: string;

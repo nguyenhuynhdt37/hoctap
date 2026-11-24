@@ -9,6 +9,8 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: Annotated[str, Field(min_length=6, max_length=72)]
     full_name: str | None = None
+    grade_level: int | None = Field(default=None, ge=1, le=12)
+    learning_track: str | None = Field(default=None, max_length=60)
 
 
 class UserOut(BaseModel):

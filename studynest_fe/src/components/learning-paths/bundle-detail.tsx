@@ -127,7 +127,7 @@ export default function BundleDetail({ slug }: { slug: string }) {
         },
         { timeout: 30000 },
       );
-      router.push(`/combo/don-hang/${receipt.id}`);
+      router.push(`/combo/orders/${receipt.id}`);
     } catch (err) {
       setFailure(message(err));
       setConfirm(false);

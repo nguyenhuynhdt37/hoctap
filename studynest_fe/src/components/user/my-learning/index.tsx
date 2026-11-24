@@ -2,16 +2,48 @@
 
 import { useState } from "react";
 import {
+  Archive,
   BookOpen,
-  CheckCircle2,
-  Clock,
-  GraduationCap,
-  TrendingUp,
+  Gift,
+  Heart,
+  Layers,
+  LayoutGrid,
+  List,
 } from "pulsoicon-react";
-import { Badge, Card } from "@/components/ui";
+import useSWR from "swr";
+import { Badge } from "@/components/ui";
+import api from "@/lib/utils/fetcher/client/axios";
+import { cn } from "@/lib/utils";
+import type { LearningCockpitResponse } from "@/types/user/courses-me";
+import { FavoritesPanel } from "../favorites/favorites-panel";
+import { CockpitHero } from "./cockpit-hero";
 import { CourseListPanel } from "./course-list-panel";
+import { IncomingGiftsPanel, type IncomingGiftItem } from "./incoming-gifts-panel";
+import { LearningShelves } from "./learning-shelves";
+import { OwnedBundlesPanel } from "./owned-bundles-panel";
+
+type VaultSpace = "active" | "bundles" | "archived" | "favorites" | "gifts";
+
+interface IncomingGiftsResponse {
+  gifts: IncomingGiftItem[];
+}
+
+const fetchIncomingGiftCount = async (): Promise<IncomingGiftsResponse> => {
+  const res = await api.get<IncomingGiftsResponse>("/learning/player/gifts/incoming");
+  return res.data;
+};
+
+const fetchCockpit = async (): Promise<LearningCockpitResponse> => {
+  const res = await api.get<LearningCockpitResponse>("/purchases/cockpit");
+  return res.data;
+};
 
 export default function CoursesMeSection() {
+  const [space, setSpace] = useState<VaultSpace>("active");
+  const [layout, setLayout] = useState<"grid" | "list">("grid");
+  const [selectedListId, setSelectedListId] = useState<string | null>(null);
+  const [archivedCount, setArchivedCount] = useState<number>(0);
+  const [refreshSeed, setRefreshSeed] = useState<number>(0);
   const [stats, setStats] = useState<{
     total: number;
     inProgress: number;
@@ -24,131 +56,266 @@ export default function CoursesMeSection() {
     avgProgress: 0,
   });
 
+  const {
+    data: cockpit,
+    isLoading: cockpitLoading,
+    mutate: mutateCockpit,
+  } = useSWR<LearningCockpitResponse>("/purchases/cockpit", fetchCockpit, {
+    revalidateOnFocus: false,
+  });
+
+  const { data: incomingGiftsData, mutate: mutateGifts } = useSWR<IncomingGiftsResponse>(
+    "/learning/player/gifts/incoming",
+    fetchIncomingGiftCount,
+    { revalidateOnFocus: false },
+  );
+
+  const giftList = Array.isArray(incomingGiftsData?.gifts)
+    ? incomingGiftsData.gifts
+    : Array.isArray(incomingGiftsData)
+      ? (incomingGiftsData as unknown as IncomingGiftItem[])
+      : [];
+
+  const claimableGiftsCount = giftList.filter((g) => g.status === "claimable").length;
+  const learningLists = cockpit?.lists ?? [];
+  const ownedBundles = cockpit?.owned_bundles ?? [];
+
   return (
-    <div className="relative min-h-screen bg-background text-foreground pb-16 selection:bg-primary-pastel/60 selection:text-foreground overflow-hidden">
-      {/* Đốm mây Ambient Pastel trang trí nền */}
+    <div className="relative min-h-screen overflow-hidden bg-background pb-20 text-foreground selection:bg-primary-pastel/60 selection:text-foreground">
+      {/* Đốm mây Ambient Pastel */}
       <div
-        className="pointer-events-none absolute -top-20 left-1/4 w-[600px] h-[300px] bg-gradient-to-b from-primary-light/60 via-secondary-light/30 to-transparent blur-3xl rounded-full -z-10"
+        className="pointer-events-none absolute -top-20 left-1/4 -z-10 h-[320px] w-[660px] rounded-full bg-gradient-to-b from-primary-light/75 via-secondary-light/35 to-transparent blur-3xl"
         aria-hidden="true"
       />
       <div
-        className="pointer-events-none absolute top-60 -right-20 w-80 h-80 bg-accent/20 blur-3xl rounded-full -z-10"
+        className="pointer-events-none absolute top-64 -right-24 -z-10 h-80 w-80 rounded-full bg-accent/25 blur-3xl"
         aria-hidden="true"
       />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 md:pt-10">
-        {/* Hero Section */}
-        <div className="mb-8 md:mb-10">
-          <div className="inline-flex items-center mb-3">
+      <div className="mx-auto max-w-7xl px-4 pt-7 sm:px-6 md:pt-9 lg:px-8">
+        {/* Tiêu đề gọn tinh tế */}
+        <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+          <div>
             <Badge
               variant="info"
-              className="px-3 py-1 text-xs font-medium tracking-wide shadow-2xs"
+              className="mb-2.5 px-3 py-1 text-xs font-semibold tracking-wide shadow-2xs"
             >
-              Góc học tập cá nhân • Mây Mây
+              Cloudy Learning Cockpit • Mây Mây
             </Badge>
-          </div>
-
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-            <div>
-              <h1 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold text-foreground tracking-tight">
-                Khóa học của tôi
-              </h1>
-              <p className="mt-2 text-sm sm:text-base text-muted-foreground max-w-2xl leading-relaxed">
-                Theo dõi tiến trình học tập, tiếp tục những bài giảng còn dang dở
-                và bứt phá mục tiêu điểm số cùng Học viện trên mây.
-              </p>
-            </div>
-
-            {/* Huy hiệu động viên học tập */}
-            <div className="hidden lg:flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-surface border border-border shadow-xs">
-              <div className="w-9 h-9 rounded-xl bg-primary-light text-primary flex items-center justify-center shrink-0 border border-primary-pastel/60">
-                <GraduationCap className="w-5 h-5" />
-              </div>
-              <div className="text-left">
-                <div className="text-xs font-semibold text-foreground">
-                  Học đều mỗi ngày
-                </div>
-                <div className="text-[11px] text-muted-foreground">
-                  Kiên trì là chìa khóa thành công
-                </div>
-              </div>
-            </div>
+            <h1 className="font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl md:text-4xl">
+              Góc học tập của tôi
+            </h1>
           </div>
         </div>
 
-        {/* 4 Thẻ Thống Kê Nhanh (Overview Metric Cards) */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4 mb-8">
-          {/* Card 1: Tổng số khóa */}
-          <Card className="p-4 sm:p-5 rounded-[20px] border-border bg-surface shadow-xs transition-all duration-200 hover:border-primary-pastel">
-            <div className="flex items-center gap-3.5">
-              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-primary-light text-primary flex items-center justify-center shrink-0 border border-primary-pastel/60">
-                <BookOpen className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-xs font-medium text-muted-foreground">
-                  Tổng số khóa học
-                </p>
-                <p className="text-lg sm:text-2xl font-bold text-foreground mt-0.5">
-                  {stats.total}
-                </p>
-              </div>
-            </div>
-          </Card>
+        {/* ── TẦNG 1: PERSONAL LEARNING COCKPIT HERO ── */}
+        <CockpitHero cockpit={cockpit} isLoading={cockpitLoading} stats={stats} />
 
-          {/* Card 2: Đang học */}
-          <Card className="p-4 sm:p-5 rounded-[20px] border-border bg-surface shadow-xs transition-all duration-200 hover:border-secondary-pastel">
-            <div className="flex items-center gap-3.5">
-              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-secondary-light text-secondary-foreground flex items-center justify-center shrink-0 border border-secondary-pastel/60">
-                <Clock className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-xs font-medium text-muted-foreground">
-                  Đang tiến hành
-                </p>
-                <p className="text-lg sm:text-2xl font-bold text-foreground mt-0.5">
-                  {stats.inProgress}
-                </p>
-              </div>
-            </div>
-          </Card>
+        {/* ── TẦNG 2: TỦ SÁCH CÁ NHÂN (CUSTOM LEARNING SHELVES) ── */}
+        <LearningShelves
+          lists={learningLists}
+          selectedListId={selectedListId}
+          onSelectList={(id) => {
+            setSelectedListId(id);
+            if (id && space !== "active") setSpace("active");
+          }}
+          onChanged={() => {
+            void mutateCockpit();
+            setRefreshSeed((n) => n + 1);
+          }}
+        />
 
-          {/* Card 3: Đã hoàn thành */}
-          <Card className="p-4 sm:p-5 rounded-[20px] border-border bg-surface shadow-xs transition-all duration-200 hover:border-success-border">
-            <div className="flex items-center gap-3.5">
-              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-success-bg text-success-foreground flex items-center justify-center shrink-0 border border-success-border">
-                <CheckCircle2 className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-xs font-medium text-muted-foreground">
-                  Đã hoàn thành
-                </p>
-                <p className="text-lg sm:text-2xl font-bold text-foreground mt-0.5">
-                  {stats.completed}
-                </p>
-              </div>
-            </div>
-          </Card>
+        {/* ── TẦNG 3: VAULT SPACE DOCK + CHUYỂN LƯỚI / DANH SÁCH ── */}
+        <div className="mb-7 flex flex-wrap items-center justify-between gap-3 rounded-[22px] border border-primary-pastel/70 bg-surface/95 p-2 shadow-xs">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setSpace("active")}
+              className={cn(
+                "inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-extrabold transition-all cursor-pointer",
+                space === "active"
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "text-foreground hover:bg-primary-light/60 hover:text-primary",
+              )}
+            >
+              <BookOpen className="size-4" animated={false} aria-hidden="true" />
+              <span>Đang học</span>
+              <span
+                className={cn(
+                  "rounded-full px-2 py-0.5 text-[10px] font-black tabular-nums",
+                  space === "active"
+                    ? "bg-white/20 text-primary-foreground"
+                    : "bg-primary-light text-primary",
+                )}
+              >
+                {stats.total}
+              </span>
+            </button>
 
-          {/* Card 4: Tiến độ bình quân */}
-          <Card className="p-4 sm:p-5 rounded-[20px] border-border bg-surface shadow-xs transition-all duration-200 hover:border-accent-border">
-            <div className="flex items-center gap-3.5">
-              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-accent text-accent-foreground flex items-center justify-center shrink-0 border border-accent-border/60">
-                <TrendingUp className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-xs font-medium text-muted-foreground">
-                  Tiến độ bình quân
-                </p>
-                <p className="text-lg sm:text-2xl font-bold text-foreground mt-0.5">
-                  {stats.avgProgress}%
-                </p>
-              </div>
+            <button
+              type="button"
+              onClick={() => setSpace("bundles")}
+              className={cn(
+                "inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-extrabold transition-all cursor-pointer",
+                space === "bundles"
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "text-foreground hover:bg-primary-light/60 hover:text-primary",
+              )}
+            >
+              <Layers className="size-4" animated={false} aria-hidden="true" />
+              <span>Combo đã mua</span>
+              {ownedBundles.length > 0 && (
+                <span
+                  className={cn(
+                    "rounded-full px-2 py-0.5 text-[10px] font-black tabular-nums",
+                    space === "bundles"
+                      ? "bg-white/20 text-primary-foreground"
+                      : "bg-primary-light text-primary",
+                  )}
+                >
+                  {ownedBundles.length}
+                </span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSpace("archived")}
+              className={cn(
+                "inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-extrabold transition-all cursor-pointer",
+                space === "archived"
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "text-foreground hover:bg-accent/55 hover:text-accent-foreground",
+              )}
+            >
+              <Archive className="size-4" animated={false} aria-hidden="true" />
+              <span>Kho lưu trữ</span>
+              {archivedCount > 0 && (
+                <span
+                  className={cn(
+                    "rounded-full px-2 py-0.5 text-[10px] font-black tabular-nums",
+                    space === "archived"
+                      ? "bg-white/20 text-primary-foreground"
+                      : "bg-accent text-accent-foreground",
+                  )}
+                >
+                  {archivedCount}
+                </span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSpace("favorites")}
+              className={cn(
+                "inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-extrabold transition-all cursor-pointer",
+                space === "favorites"
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "text-foreground hover:bg-secondary/60 hover:text-secondary-foreground",
+              )}
+            >
+              <Heart className="size-4" solid={space === "favorites"} animated={false} aria-hidden="true" />
+              <span>Yêu thích</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSpace("gifts")}
+              className={cn(
+                "inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-extrabold transition-all cursor-pointer",
+                space === "gifts"
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "text-foreground hover:bg-secondary/60 hover:text-secondary-foreground",
+              )}
+            >
+              <Gift className="size-4" animated={false} aria-hidden="true" />
+              <span>Hộp quà tặng</span>
+              {claimableGiftsCount > 0 && (
+                <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-black text-secondary-foreground tabular-nums">
+                  {claimableGiftsCount} mới
+                </span>
+              )}
+            </button>
+          </div>
+
+          {/* Chuyển đổi Lưới / Danh sách (cho Đang học & Kho lưu trữ) */}
+          {(space === "active" || space === "archived") && (
+            <div className="inline-flex items-center gap-1 rounded-full border border-border bg-background p-1">
+              <button
+                type="button"
+                onClick={() => setLayout("grid")}
+                aria-label="Chế độ xem lưới"
+                title="Xem dạng lưới"
+                className={cn(
+                  "inline-flex h-7 items-center gap-1 rounded-full px-2.5 text-[11px] font-bold transition-colors cursor-pointer",
+                  layout === "grid"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <LayoutGrid className="size-3.5" animated={false} aria-hidden="true" />
+                <span className="hidden sm:inline">Lưới</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setLayout("list")}
+                aria-label="Chế độ xem danh sách"
+                title="Xem dạng danh sách"
+                className={cn(
+                  "inline-flex h-7 items-center gap-1 rounded-full px-2.5 text-[11px] font-bold transition-colors cursor-pointer",
+                  layout === "list"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <List className="size-3.5" animated={false} aria-hidden="true" />
+                <span className="hidden sm:inline">Danh sách</span>
+              </button>
             </div>
-          </Card>
+          )}
         </div>
 
-        {/* Panel Quản lý danh sách khóa học */}
-        <CourseListPanel onStatsChange={setStats} />
+        {/* Nội dung từng không gian */}
+        {space === "active" && (
+          <CourseListPanel
+            key={`active-${refreshSeed}`}
+            archived={false}
+            selectedListId={selectedListId}
+            layout={layout}
+            learningLists={learningLists}
+            onStatsChange={setStats}
+            onArchivedCountChange={setArchivedCount}
+            onArchiveMutated={() => setRefreshSeed((n) => n + 1)}
+            onCockpitRefresh={() => void mutateCockpit()}
+          />
+        )}
+
+        {space === "bundles" && (
+          <OwnedBundlesPanel bundles={ownedBundles} isLoading={cockpitLoading} />
+        )}
+
+        {space === "archived" && (
+          <CourseListPanel
+            key={`archived-${refreshSeed}`}
+            archived={true}
+            layout={layout}
+            onArchivedCountChange={setArchivedCount}
+            onArchiveMutated={() => setRefreshSeed((n) => n + 1)}
+            onCockpitRefresh={() => void mutateCockpit()}
+          />
+        )}
+
+        {space === "favorites" && <FavoritesPanel />}
+
+        {space === "gifts" && (
+          <IncomingGiftsPanel
+            onClaimed={() => {
+              void mutateGifts();
+              void mutateCockpit();
+              setRefreshSeed((n) => n + 1);
+            }}
+          />
+        )}
       </div>
     </div>
   );

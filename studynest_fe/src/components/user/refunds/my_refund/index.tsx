@@ -1,13 +1,16 @@
 "use client";
 
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { ArrowRight, Coins, FileText, ShieldCheck } from "pulsoicon-react";
+import { Alert, EmptyState } from "@/components/ui";
 import api from "@/lib/utils/fetcher/client/axios";
-import {
+import type {
   RefundRequestsQuery,
   RefundRequestsResponse,
 } from "@/types/user/refund";
-import Link from "next/link";
-import { useEffect, useState } from "react";
-import { ArrowRight, CircleAlert } from "pulsoicon-react";
+import { formatRefundCoinNumber } from "../shared/refund-status";
+import { RefundStudioShell } from "../shared/refund-studio-shell";
 import { RefundRequestsFilterBar } from "./filter-bar";
 import { RefundRequestsPagination } from "./pagination";
 import { RefundRequestsTable } from "./refund-requests-table";
@@ -46,8 +49,7 @@ const buildQueryString = (query: RefundRequestsQuery) => {
   params.set("order_dir", query.order_dir);
 
   if (query.search.trim()) params.set("search", query.search.trim());
-  if (query.refund_status !== "all")
-    params.set("refund_status", query.refund_status);
+  if (query.refund_status !== "all") params.set("refund_status", query.refund_status);
   if (query.course_id) params.set("course_id", query.course_id);
   if (query.instructor_id) params.set("instructor_id", query.instructor_id);
   if (query.date_from) params.set("date_from", query.date_from);
@@ -62,7 +64,7 @@ export default function MyRefundRequests({
   initialError = null,
 }: MyRefundRequestsProps) {
   const [filters, setFilters] = useState<RefundRequestsQuery>(initialQuery);
-  const [searchValue, setSearchValue] = useState("");
+  const [searchValue, setSearchValue] = useState(initialQuery.search || "");
   const [data, setData] = useState<RefundRequestsResponse>(initialData);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(initialError);
@@ -74,22 +76,21 @@ export default function MyRefundRequests({
 
       try {
         const queryString = buildQueryString(filters);
-        const response = await api.get(
-          `/users/refunds/my-requests?${queryString}`
-        );
+        const response = await api.get(`/users/refunds/my-requests?${queryString}`);
         setData(response.data);
-      } catch (err: any) {
+      } catch (err: unknown) {
+        const maybeErr = err as { response?: { data?: { detail?: string; message?: string } } };
         const errorMsg =
-          err?.response?.data?.detail ||
-          err?.response?.data?.message ||
-          "Không thể tải danh sách yêu cầu hoàn tiền. Vui lòng thử lại.";
+          maybeErr?.response?.data?.detail ||
+          maybeErr?.response?.data?.message ||
+          "Không thể tải danh sách yêu cầu hoàn Coin. Vui lòng thử lại.";
         setError(errorMsg);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchData();
+    void fetchData();
   }, [filters]);
 
   const handleSearch = () => {
@@ -110,7 +111,7 @@ export default function MyRefundRequests({
 
   const handleOrderChange = (
     orderBy: RefundRequestsQuery["order_by"],
-    orderDir: RefundRequestsQuery["order_dir"]
+    orderDir: RefundRequestsQuery["order_dir"],
   ) => {
     setFilters((prev) => ({
       ...prev,
@@ -125,29 +126,64 @@ export default function MyRefundRequests({
     setFilters({ ...defaultQuery });
   };
 
+  const items = data?.items || [];
+  const totalRefundedCoin = items
+    .filter((r) => r.refund_status === "refunded" || r.refund_status === "admin_approved")
+    .reduce((sum, r) => sum + (r.refund_amount || 0), 0);
+  const pendingCount = items.filter(
+    (r) => r.refund_status === "requested" || r.refund_status === "instructor_approved",
+  ).length;
+
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8">
-      <header className="flex flex-col gap-2">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold text-gray-900">
-              Danh sách yêu cầu hoàn tiền
-            </h1>
-            <p className="text-sm text-gray-600 mt-2">
-              Theo dõi tất cả yêu cầu hoàn tiền của bạn. Lọc và tìm kiếm dễ
-              dàng.
+    <RefundStudioShell
+      activeTab="requests"
+      eyebrow="Cloud Shield · Hồ sơ hoàn Coin"
+      title="Theo dõi yêu cầu hoàn Coin của tôi"
+      description="Kiểm soát minh bạch tiến độ xét duyệt của giảng viên và Kho Bạc Mây Mây trên từng hồ sơ."
+      tone="blue"
+      heroRight={
+        <div
+          aria-hidden="true"
+          className="stamp-down hidden items-center gap-1.5 rounded-full border-2 border-dashed border-primary/40 bg-surface/85 px-3.5 py-1.5 text-[11px] font-extrabold tracking-[0.14em] text-primary uppercase sm:inline-flex"
+        >
+          <ShieldCheck animated={false} className="size-3.5" />
+          <span>SỔ THEO DÕI MINH BẠCH</span>
+        </div>
+      }
+      heroFooter={
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="rounded-2xl border border-border/80 bg-surface/90 p-3.5 backdrop-blur-sm">
+            <p className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
+              Tổng hồ sơ đã gửi
+            </p>
+            <p className="mt-1 font-display text-2xl font-bold text-foreground tabular-nums">
+              {data?.total ?? 0}
+              <span className="font-sans text-xs font-semibold text-muted-foreground"> hồ sơ</span>
             </p>
           </div>
-          <Link
-            href="/refunds/refundable"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 transition-colors"
-          >
-            <span>Khóa học có thể hoàn tiền</span>
-            <ArrowRight className="h-5 w-5" />
-          </Link>
-        </div>
-      </header>
 
+          <div className="rounded-2xl border border-accent-vanilla-border/80 bg-accent-vanilla/50 p-3.5 backdrop-blur-sm">
+            <p className="text-[11px] font-bold tracking-wider text-accent-vanilla-foreground uppercase">
+              Đang chờ xét duyệt
+            </p>
+            <p className="mt-1 font-display text-2xl font-bold text-foreground tabular-nums">
+              {pendingCount}
+              <span className="font-sans text-xs font-semibold text-muted-foreground"> yêu cầu</span>
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-success-border/80 bg-success-bg/55 p-3.5 backdrop-blur-sm">
+            <p className="text-[11px] font-bold tracking-wider text-success-foreground uppercase">
+              Coin đã bảo toàn (trang này)
+            </p>
+            <p className="mt-1 inline-flex items-center gap-1.5 font-display text-2xl font-bold text-success-foreground tabular-nums">
+              <Coins aria-hidden="true" animated={false} className="size-5" />
+              <span>+{formatRefundCoinNumber(totalRefundedCoin)} Coin</span>
+            </p>
+          </div>
+        </div>
+      }
+    >
       <RefundRequestsFilterBar
         searchValue={searchValue}
         filters={filters}
@@ -159,13 +195,9 @@ export default function MyRefundRequests({
         onResetFilters={handleResetFilters}
       />
 
-      {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-          {error}
-        </div>
-      )}
+      {error && <Alert variant="destructive">{error}</Alert>}
 
-      <RefundRequestsTable requests={data?.items || []} isLoading={isLoading} />
+      <RefundRequestsTable requests={items} isLoading={isLoading} />
 
       {data && data.total > 0 && (
         <RefundRequestsPagination
@@ -179,18 +211,23 @@ export default function MyRefundRequests({
       )}
 
       {!isLoading && data && data.total === 0 && (
-        <div className="text-center py-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
-            <CircleAlert solid className="h-8 w-8 text-gray-400" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Không có yêu cầu hoàn tiền nào
-          </h3>
-          <p className="text-gray-600">
-            Hiện tại bạn chưa có yêu cầu hoàn tiền nào.
-          </p>
+        <div className="rounded-[24px] border border-border bg-surface p-8 shadow-xs">
+          <EmptyState
+            icon={<FileText />}
+            title="Chưa có yêu cầu hoàn Coin nào"
+            description="Bạn chưa gửi yêu cầu hoàn tiền nào hoặc không có hồ sơ khớp với bộ lọc hiện tại."
+            action={
+              <Link
+                href="/refunds/refundable"
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-primary px-5 text-xs font-bold text-primary-foreground transition-colors hover:bg-primary-hover"
+              >
+                <span>Xem khóa học đủ điều kiện hoàn</span>
+                <ArrowRight aria-hidden="true" className="size-4" />
+              </Link>
+            }
+          />
         </div>
       )}
-    </div>
+    </RefundStudioShell>
   );
 }

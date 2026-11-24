@@ -11,6 +11,14 @@ const EXTENSION_ATTRS = ["bis_skin_checked", "bis_register"] as const;
  */
 export default function HydrationFix() {
   useEffect(() => {
+    const onUnhandledRejection = (event: PromiseRejectionEvent) => {
+      const msg = event.reason instanceof Error ? event.reason.message : String(event.reason || "");
+      if (msg.includes("controls.start() should only be called after a component has mounted")) {
+        event.preventDefault();
+      }
+    };
+    window.addEventListener("unhandledrejection", onUnhandledRejection);
+
     const cleanElement = (el: Element) => {
       for (const attr of EXTENSION_ATTRS) {
         if (el.hasAttribute(attr)) {
@@ -35,6 +43,7 @@ export default function HydrationFix() {
     };
 
     runCleanup();
+    return () => window.removeEventListener("unhandledrejection", onUnhandledRejection);
   }, []);
 
   return null;

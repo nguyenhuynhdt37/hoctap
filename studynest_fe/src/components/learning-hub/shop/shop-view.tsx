@@ -55,26 +55,26 @@ function Preview({ equipment, active, name, avatar, status, previewRef, onReset 
   return (
     <aside
       aria-labelledby="shop-preview"
-      className="relative isolate flex min-w-0 flex-col justify-between overflow-hidden rounded-[2rem] border border-[#BFD7ED]/35 bg-gradient-to-br from-[#13263A] via-[#1E3E62] to-[#2B598A] p-6 text-white shadow-lg"
+      className="relative isolate flex min-w-0 flex-col justify-between overflow-hidden rounded-[2rem] border border-primary-pastel bg-gradient-to-br from-primary-light/85 via-surface to-accent/45 p-6 text-foreground shadow-[0_20px_44px_-14px_rgba(53,111,167,0.16)]"
     >
-      {/* Spotlight glow */}
-      <div aria-hidden="true" className="pointer-events-none absolute -right-12 -top-12 -z-10 size-44 rounded-full bg-[#F5C542]/20 blur-3xl" />
-      <div aria-hidden="true" className="pointer-events-none absolute -bottom-16 -left-10 -z-10 size-44 rounded-full bg-[#C8B0F7]/20 blur-3xl" />
+      {/* Mây mờ pastel */}
+      <div aria-hidden="true" className="pointer-events-none absolute -right-12 -top-12 -z-10 size-44 rounded-full bg-white/80 blur-3xl" />
+      <div aria-hidden="true" className="pointer-events-none absolute -bottom-16 -left-10 -z-10 size-44 rounded-full bg-secondary-light/65 blur-3xl" />
 
       <div className="flex items-center justify-between gap-2">
         <h2
           id="shop-preview"
           ref={previewRef}
           tabIndex={-1}
-          className="scroll-mt-24 text-xs font-bold uppercase tracking-[0.16em] text-[#FFE89E]"
+          className="scroll-mt-24 text-xs font-bold uppercase tracking-[0.16em] text-primary"
         >
-          Gương thử đồ · Spotlight
+          Gương thử đồ trực tiếp
         </h2>
         {active && (
           <button
             type="button"
             onClick={onReset}
-            className="inline-flex items-center gap-1 rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs font-semibold text-white transition-colors hover:bg-white/20 cursor-pointer"
+            className="inline-flex items-center gap-1 rounded-full border border-primary-pastel bg-surface px-3 py-1 text-xs font-semibold text-primary transition-colors hover:bg-primary-light cursor-pointer"
           >
             <RotateCcw aria-hidden="true" className="size-3" />
             <span>Bỏ thử</span>
@@ -83,19 +83,19 @@ function Preview({ equipment, active, name, avatar, status, previewRef, onReset 
       </div>
 
       <div className="mt-5 flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
-        <div className="relative flex shrink-0 items-center justify-center rounded-full bg-white/8 p-1.5 ring-1 ring-white/15">
+        <div className="relative flex shrink-0 items-center justify-center rounded-full bg-surface/90 p-1.5 ring-1 ring-primary-pastel shadow-2xs">
           <FramedAvatar equipment={equipment} src={avatar} name={name} className="size-24 text-xl sm:size-28" />
         </div>
         <div className="min-w-0 flex-1 space-y-2">
-          <p className="text-lg font-bold tracking-tight text-white wrap-anywhere">{name}</p>
+          <p className="text-lg font-bold tracking-tight text-foreground wrap-anywhere">{name}</p>
           <EquippedMarks equipment={equipment} className="justify-center sm:justify-start" />
-          <p role="status" className="text-xs text-white/75 wrap-anywhere">
+          <p role="status" className="text-xs text-muted-foreground wrap-anywhere">
             {active ? `Đang xem thử: ${coinCopy(active.name)}` : status}
           </p>
         </div>
       </div>
 
-      <div className="mt-5 flex items-center justify-between border-t border-white/15 pt-3 text-[11px] text-white/70">
+      <div className="mt-5 flex items-center justify-between border-t border-border pt-3 text-[11px] text-muted-foreground">
         <span>Hiệu ứng hiển thị trực tiếp trên hồ sơ của bạn</span>
         {active && <RarityBadge rarity={active.rarity} />}
       </div>

@@ -1,21 +1,35 @@
 "use client";
 
-import { formatVndAsCoin } from "@/lib/learning-hub/coin-logic";
-import { getImageUrl } from "@/lib/utils/helpers/image";
-import { showToast } from "@/lib/utils/helpers/toast";
-import { RefundDetailData } from "@/types/user/refund";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import {
-  ArrowLeft,
-  CircleCheck,
+  ArrowRight,
+  BookOpen,
+  CheckCircle2,
+  CircleX,
   Clock,
+  Coins,
+  Copy,
+  FileText,
+  ShieldCheck,
   Tag,
   User,
-  CircleX,
+  Wallet,
 } from "pulsoicon-react";
+import { Badge, Button } from "@/components/ui";
+import { getImageUrl } from "@/lib/utils/helpers/image";
+import { showToast } from "@/lib/utils/helpers/toast";
+import type { RefundDetailData } from "@/types/user/refund";
+import { cn } from "@/lib/utils";
+import {
+  formatRefundCoin,
+  formatRefundCoinNumber,
+  formatRefundDateTime,
+  formatRefundVnd,
+  getRefundStatusMeta,
+} from "../shared/refund-status";
+import { RefundStudioShell } from "../shared/refund-studio-shell";
 import { DetailRow } from "./detail-row";
 import { SectionCard } from "./section-card";
 import { TimelineItem } from "./timeline-item";
@@ -24,83 +38,36 @@ interface RefundRequestDetailProps {
   data: RefundDetailData;
 }
 
-const formatCurrency = (value: number | null | undefined) => {
-  if (value === null || value === undefined) return "—";
-  return formatVndAsCoin(value);
-};
+function stripHtml(raw?: string | null): string {
+  if (!raw) return "—";
+  const cleaned = raw.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  return cleaned || "—";
+}
 
-const formatDateTime = (value?: string | null) => {
-  if (!value) return "—";
-  try {
-    return new Intl.DateTimeFormat("vi-VN", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    }).format(new Date(value));
-  } catch {
-    return "—";
-  }
-};
-
-const statusMeta: Record<
-  string,
-  { label: string; badgeClass: string; description: string }
-> = {
-  requested: {
-    label: "Đã yêu cầu",
-    badgeClass: "bg-yellow-100 text-yellow-700 border-yellow-300",
-    description: "Chờ giảng viên xử lý",
-  },
-  instructor_approved: {
-    label: "GV đã duyệt",
-    badgeClass: "bg-green-100 text-green-700 border-green-300",
-    description: "Đã chấp nhận yêu cầu",
-  },
-  instructor_rejected: {
-    label: "GV đã từ chối",
-    badgeClass: "bg-red-100 text-red-700 border-red-300",
-    description: "Đã từ chối hoàn tiền",
-  },
-  admin_approved: {
-    label: "Admin đã duyệt",
-    badgeClass: "bg-green-100 text-green-700 border-green-300",
-    description: "Admin đã thông qua",
-  },
-  admin_rejected: {
-    label: "Admin đã từ chối",
-    badgeClass: "bg-red-100 text-red-700 border-red-300",
-    description: "Admin từ chối yêu cầu",
-  },
-  refunded: {
-    label: "Đã hoàn tiền",
-    badgeClass: "bg-green-100 text-green-700 border-green-300",
-    description: "Tiền đã hoàn cho học viên",
-  },
-};
-
-export default function RefundRequestDetail({
-  data,
-}: RefundRequestDetailProps) {
-  const router = useRouter();
+export default function RefundRequestDetail({ data }: RefundRequestDetailProps) {
   const [thumbnailError, setThumbnailError] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
 
-  const statusInfo = statusMeta[data.refund.status] || statusMeta.requested;
+  const statusInfo = getRefundStatusMeta(data.refund.status);
+  const isRejected =
+    data.refund.status === "instructor_rejected" || data.refund.status === "admin_rejected";
+  const isCompleted =
+    data.refund.status === "refunded" || data.refund.status === "admin_approved";
 
-  const courseThumbnail = data.course.thumbnail
-    ? getImageUrl(data.course.thumbnail)
-    : "";
-  const instructorAvatar = data.instructor.avatar
-    ? getImageUrl(data.instructor.avatar)
-    : "";
+  const courseThumbnail = data.course.thumbnail ? getImageUrl(data.course.thumbnail) : "";
+  const instructorAvatar = data.instructor.avatar ? getImageUrl(data.instructor.avatar) : "";
+  const instructorInitials = (data.instructor.fullname || "GV")
+    .split(" ")
+    .filter(Boolean)
+    .map((name) => name[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   const timeline = useMemo(
     () => [
       {
-        title: "Học viên tạo yêu cầu",
+        title: "Học viên khởi tạo hồ sơ hoàn Coin",
         time: data.refund.created_at,
         description: data.refund.reason,
         done: true,
@@ -112,304 +79,317 @@ export default function RefundRequestDetail({
         done: Boolean(data.refund.instructor_reviewed_at),
       },
       {
-        title: "Admin xử lý",
+        title: "Kho Bạc & Quản trị viên xử lý",
         time: data.refund.admin_reviewed_at,
         description: data.refund.admin_comment,
         done: Boolean(data.refund.admin_reviewed_at),
       },
       {
-        title: "Hoàn tất",
+        title: "Hoàn tất đối soát",
         time: data.refund.resolved_at,
         description: null,
         done: Boolean(data.refund.resolved_at),
       },
     ],
-    [data]
+    [data],
   );
 
   const handleCopy = (value: string) => {
-    navigator.clipboard.writeText(value);
-    showToast.success("Đã sao chép vào clipboard");
+    if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+      navigator.clipboard
+        .writeText(value)
+        .then(() => showToast.success("Đã sao chép vào clipboard"))
+        .catch(() => undefined);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="flex items-center gap-2 text-gray-600 hover:text-green-600 transition-colors"
-        >
-          <ArrowLeft className="h-5 w-5" />
-          <span className="font-semibold text-sm">Quay lại</span>
-        </button>
+    <RefundStudioShell
+      activeTab="detail"
+      eyebrow={`Cloud Shield · Hồ sơ #${data.refund.id.slice(0, 8).toUpperCase()}`}
+      title={statusInfo.label}
+      description={statusInfo.description}
+      backHref="/refunds/my-requests"
+      backLabel="Yêu cầu của tôi"
+      tone={isRejected ? "destructive" : isCompleted ? "success" : "vanilla"}
+      heroRight={
+        <div className="flex flex-col items-start gap-2 rounded-2xl border border-border/80 bg-surface/92 px-5 py-4 shadow-xs backdrop-blur-sm lg:items-end">
+          <div
+            aria-hidden="true"
+            className={cn(
+              "stamp-down inline-flex items-center gap-1.5 rounded-full border-2 border-dashed px-3 py-0.5 text-[10px] font-extrabold tracking-[0.14em] uppercase",
+              isRejected
+                ? "border-destructive/45 text-destructive-foreground"
+                : isCompleted
+                  ? "border-success-foreground/45 text-success-foreground"
+                  : "border-accent-vanilla-foreground/45 text-accent-vanilla-foreground",
+            )}
+          >
+            {isRejected ? (
+              <CircleX animated={false} className="size-3" />
+            ) : (
+              <CheckCircle2 animated={false} className="size-3" />
+            )}
+            <span>{statusInfo.stampText}</span>
+          </div>
+          <p className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
+            Giá trị hoàn Coin
+          </p>
+          <p
+            className={cn(
+              "inline-flex items-center gap-1.5 font-display text-3xl font-bold tabular-nums",
+              isRejected ? "text-destructive-foreground" : "text-primary",
+            )}
+          >
+            <Coins aria-hidden="true" animated={false} className="size-6 text-accent-vanilla-foreground" />
+            <span>{formatRefundCoinNumber(data.refund.amount)} Coin</span>
+          </p>
+          <p className="text-[11px] font-medium text-muted-foreground tabular-nums">
+            Tương đương {formatRefundVnd(data.refund.amount)}
+          </p>
+        </div>
+      }
+    >
+      {/* Bố cục 2 cột 8/4 đồng bộ tuyệt đối với /refunds/create và /wallets/transactions/[id] */}
+      <div className="grid items-start gap-6 lg:grid-cols-12">
+        {/* CỘT TRÁI (8/12): Dòng thời gian + Hồ sơ + Mua hàng + Thu nhập */}
+        <div className="space-y-6 lg:col-span-8">
+          <SectionCard
+            title="Hành trình xét duyệt hồ sơ"
+            subtitle="Theo dõi minh bạch từng mốc phản hồi của giảng viên và Kho Bạc"
+            icon={<Clock aria-hidden="true" animated={false} className="size-4" />}
+          >
+            <div>
+              {timeline.map((item, index) => (
+                <TimelineItem
+                  key={item.title}
+                  title={item.title}
+                  timeLabel={formatRefundDateTime(item.time)}
+                  description={item.description}
+                  isDone={item.done}
+                  isActive={!item.done && Boolean(timeline[index - 1]?.done)}
+                  isLast={index === timeline.length - 1}
+                />
+              ))}
+            </div>
+          </SectionCard>
 
-        <div className="bg-white rounded-xl border border-green-200 shadow-sm p-6 flex flex-col md:flex-row items-start md:items-center gap-6">
-          <div className="flex items-center gap-4">
-            <div className="h-14 w-14 rounded-full bg-green-50 flex items-center justify-center">
-              {data.refund.status === "instructor_rejected" ||
-              data.refund.status === "admin_rejected" ? (
-                <CircleX solid className="h-8 w-8 text-red-500" />
-              ) : (
-                <CircleCheck solid className="h-8 w-8 text-green-500" />
+          <SectionCard
+            title="Chi tiết yêu cầu hoàn Coin"
+            icon={<FileText aria-hidden="true" animated={false} className="size-4" />}
+          >
+            <div>
+              <DetailRow
+                label="Mã hồ sơ"
+                value={<span className="font-mono">{data.refund.id}</span>}
+                onCopy={() => handleCopy(data.refund.id)}
+              />
+              <DetailRow
+                label="Trạng thái"
+                value={
+                  <Badge variant={statusInfo.badgeVariant} size="sm">
+                    {statusInfo.label}
+                  </Badge>
+                }
+              />
+              <DetailRow
+                label="Số Coin yêu cầu"
+                value={formatRefundCoin(data.refund.amount)}
+              />
+              <DetailRow label="Lý do gửi yêu cầu" value={stripHtml(data.refund.reason)} />
+              <DetailRow
+                label="Thời gian khởi tạo"
+                value={formatRefundDateTime(data.refund.created_at)}
+              />
+              {data.refund.instructor_reviewed_at && (
+                <DetailRow
+                  label="Giảng viên phản hồi lúc"
+                  value={formatRefundDateTime(data.refund.instructor_reviewed_at)}
+                />
+              )}
+              {data.refund.admin_reviewed_at && (
+                <DetailRow
+                  label="Quản trị viên xử lý lúc"
+                  value={formatRefundDateTime(data.refund.admin_reviewed_at)}
+                />
               )}
             </div>
+          </SectionCard>
+
+          <SectionCard
+            title="Thông tin đơn khóa học gốc"
+            icon={<Tag aria-hidden="true" animated={false} className="size-4" />}
+          >
             <div>
-              <p className="text-sm text-gray-600 mb-1">Trạng thái hiện tại</p>
-              <div className="text-2xl font-bold text-gray-900">
-                {statusInfo.label}
-              </div>
-              <div className="text-sm text-gray-500">
-                {statusInfo.description}
-              </div>
+              <DetailRow
+                label="Mã đơn hàng"
+                value={<span className="font-mono">{data.purchase.purchase_item_id}</span>}
+                onCopy={() => handleCopy(data.purchase.purchase_item_id)}
+              />
+              <DetailRow
+                label="Giá niêm yết"
+                value={formatRefundCoin(data.purchase.original_price)}
+              />
+              <DetailRow
+                label="Giá thực thanh toán"
+                value={formatRefundCoin(data.purchase.discounted_price)}
+              />
+              {data.purchase.discount_id && (
+                <DetailRow
+                  label="Mã ưu đãi đã dùng"
+                  value={<span className="font-mono">{data.purchase.discount_id}</span>}
+                  onCopy={() =>
+                    data.purchase.discount_id && handleCopy(data.purchase.discount_id)
+                  }
+                />
+              )}
+              <DetailRow
+                label="Trạng thái đơn"
+                value={
+                  <Badge
+                    variant={data.purchase.status === "completed" ? "success" : "warning"}
+                    size="sm"
+                  >
+                    {data.purchase.status === "completed" ? "Hoàn thành" : "Đang xử lý"}
+                  </Badge>
+                }
+              />
+              <DetailRow
+                label="Thời gian đăng ký"
+                value={formatRefundDateTime(data.purchase.created_at)}
+              />
             </div>
-          </div>
-          <div className="md:ml-auto text-right">
-            <p className="text-sm text-gray-600 mb-1">Số tiền hoàn</p>
-            <div className="text-3xl font-extrabold text-green-600">
-              {formatCurrency(data.refund.amount)}
+          </SectionCard>
+
+          <SectionCard
+            title="Đối soát phân bổ Kho Bạc"
+            icon={<ShieldCheck aria-hidden="true" animated={false} className="size-4" />}
+          >
+            <div>
+              <DetailRow
+                label="Trạng thái tạm giữ"
+                value={
+                  <Badge
+                    variant={data.earnings.status === "holding" ? "warning" : "success"}
+                    size="sm"
+                  >
+                    {data.earnings.status === "holding" ? "Đang tạm giữ bảo vệ" : "Đã đối soát"}
+                  </Badge>
+                }
+              />
+              <DetailRow
+                label="Phần giảng viên"
+                value={formatRefundCoin(data.earnings.amount_instructor)}
+              />
+              <DetailRow
+                label="Phần nền tảng"
+                value={formatRefundCoin(data.earnings.amount_platform)}
+              />
+              <DetailRow
+                label="Số Coin hoàn thực tế"
+                value={
+                  <span className="font-bold text-primary">
+                    {formatRefundCoin(data.earnings.refund_amount_real)}
+                  </span>
+                }
+              />
+              <DetailRow
+                label="Thời hạn tạm giữ đến"
+                value={formatRefundDateTime(data.earnings.hold_until)}
+              />
             </div>
-            <p className="text-xs text-gray-500">
-              Yêu cầu ID:{" "}
-              <span className="font-mono">
-                {data.refund.id.slice(0, 10)}...
-              </span>
-            </p>
-          </div>
+          </SectionCard>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            <SectionCard
-              title="Thông tin yêu cầu"
-              icon={<Clock className="h-5 w-5 text-green-600" />}
-            >
-              <div className="space-y-4">
-                <DetailRow
-                  label="ID yêu cầu"
-                  value={<span className="font-mono">{data.refund.id}</span>}
-                  onCopy={() => handleCopy(data.refund.id)}
-                />
-                <DetailRow
-                  label="Trạng thái"
-                  value={
-                    <span
-                      className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${statusInfo.badgeClass}`}
-                    >
-                      {statusInfo.label}
-                    </span>
-                  }
-                />
-                <DetailRow
-                  label="Số tiền yêu cầu"
-                  value={formatCurrency(data.refund.amount)}
-                />
-                <DetailRow label="Lý do" value={data.refund.reason} />
-                <DetailRow
-                  label="Thời gian tạo"
-                  value={formatDateTime(data.refund.created_at)}
-                />
-                {data.refund.instructor_reviewed_at && (
-                  <DetailRow
-                    label="Giảng viên đã xử lý"
-                    value={formatDateTime(data.refund.instructor_reviewed_at)}
-                  />
-                )}
-                {data.refund.admin_reviewed_at && (
-                  <DetailRow
-                    label="Admin đã xử lý"
-                    value={formatDateTime(data.refund.admin_reviewed_at)}
-                  />
-                )}
-              </div>
-            </SectionCard>
-
-            <SectionCard
-              title="Dòng thời gian"
-              icon={<Clock className="h-5 w-5 text-green-600" />}
-            >
-              <div className="space-y-2">
-                {timeline.map((item, index) => (
-                  <TimelineItem
-                    key={item.title}
-                    title={item.title}
-                    timeLabel={formatDateTime(item.time)}
-                    description={item.description}
-                    isDone={item.done}
-                    isActive={!item.done && timeline[index - 1]?.done}
-                    isLast={index === timeline.length - 1}
-                  />
-                ))}
-              </div>
-            </SectionCard>
-
-            <SectionCard
-              title="Thông tin mua hàng"
-              icon={<Tag className="h-5 w-5 text-green-600" />}
-            >
-              <div className="space-y-4">
-                <DetailRow
-                  label="Mã đơn hàng"
-                  value={
-                    <span className="font-mono">
-                      {data.purchase.purchase_item_id}
-                    </span>
-                  }
-                  onCopy={() => handleCopy(data.purchase.purchase_item_id)}
-                />
-                <DetailRow
-                  label="Giá gốc"
-                  value={formatCurrency(data.purchase.original_price)}
-                />
-                <DetailRow
-                  label="Giá sau giảm"
-                  value={formatCurrency(data.purchase.discounted_price)}
-                />
-                {data.purchase.discount_id && (
-                  <DetailRow
-                    label="Mã giảm giá"
-                    value={
-                      <span className="font-mono">
-                        {data.purchase.discount_id}
-                      </span>
-                    }
-                    onCopy={() =>
-                      data.purchase.discount_id &&
-                      handleCopy(data.purchase.discount_id)
-                    }
-                  />
-                )}
-                <DetailRow
-                  label="Trạng thái đơn"
-                  value={
-                    <span
-                      className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${
-                        data.purchase.status === "completed"
-                          ? "bg-green-100 text-green-700 border-green-300"
-                          : "bg-yellow-100 text-yellow-700 border-yellow-300"
-                      }`}
-                    >
-                      {data.purchase.status === "completed"
-                        ? "Hoàn thành"
-                        : "Đang xử lý"}
-                    </span>
-                  }
-                />
-                <DetailRow
-                  label="Thời gian mua"
-                  value={formatDateTime(data.purchase.created_at)}
-                />
-              </div>
-            </SectionCard>
-
-            <SectionCard
-              title="Thông tin thu nhập"
-              icon={<CircleCheck solid className="h-5 w-5 text-green-600" />}
-            >
-              <div className="space-y-4">
-                <DetailRow
-                  label="Trạng thái"
-                  value={
-                    <span
-                      className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${
-                        data.earnings.status === "holding"
-                          ? "bg-yellow-100 text-yellow-700 border-yellow-300"
-                          : "bg-green-100 text-green-700 border-green-300"
-                      }`}
-                    >
-                      {data.earnings.status === "holding"
-                        ? "Đang giữ"
-                        : "Đã giải ngân"}
-                    </span>
-                  }
-                />
-                <DetailRow
-                  label="Thu nhập giảng viên"
-                  value={formatCurrency(data.earnings.amount_instructor)}
-                />
-                <DetailRow
-                  label="Thu nhập nền tảng"
-                  value={formatCurrency(data.earnings.amount_platform)}
-                />
-                <DetailRow
-                  label="Số tiền hoàn thực tế"
-                  value={formatCurrency(data.earnings.refund_amount_real)}
-                />
-                <DetailRow
-                  label="Giữ đến"
-                  value={formatDateTime(data.earnings.hold_until)}
-                />
-              </div>
-            </SectionCard>
-          </div>
-
-          <div className="space-y-6">
-            <SectionCard
-              title="Khóa học"
-              icon={<Tag className="h-5 w-5 text-green-600" />}
-            >
-              <Link
-                href={`/learning/${data.course.course_id}`}
-                className="block group"
-              >
-                <div className="relative w-full h-48 rounded-xl overflow-hidden bg-gray-100 mb-4">
-                  {courseThumbnail && !thumbnailError ? (
-                    <Image
-                      src={courseThumbnail}
-                      alt={data.course.title}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform"
-                      onError={() => setThumbnailError(true)}
-                      unoptimized
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-500">
-                      Không có ảnh
-                    </div>
-                  )}
-                </div>
-                <p className="text-base font-semibold text-gray-900 group-hover:text-green-600 transition-colors line-clamp-2">
-                  {data.course.title}
-                </p>
-              </Link>
-            </SectionCard>
-
-            <SectionCard
-              title="Giảng viên"
-              icon={<User className="h-5 w-5 text-green-600" />}
-            >
-              <div className="flex items-center gap-3">
-                {instructorAvatar && !avatarError ? (
+        {/* CỘT PHẢI (4/12, Sticky): Khóa học + Giảng viên + Hành động tài sản */}
+        <aside className="space-y-5 lg:sticky lg:top-24 lg:col-span-4">
+          <SectionCard
+            title="Khóa học liên quan"
+            icon={<BookOpen aria-hidden="true" animated={false} className="size-4" />}
+          >
+            <Link href={`/learning/${data.course.course_id}`} className="group block">
+              <div className="relative mb-3.5 h-44 w-full overflow-hidden rounded-2xl border border-border bg-primary-light/40">
+                {courseThumbnail && !thumbnailError ? (
                   <Image
-                    src={instructorAvatar}
-                    alt={data.instructor.fullname}
-                    width={56}
-                    height={56}
-                    className="rounded-full object-cover object-center aspect-square border border-green-200"
-                    onError={() => setAvatarError(true)}
+                    src={courseThumbnail}
+                    alt={data.course.title}
+                    fill
+                    className="object-cover transition-transform duration-300 group-hover:scale-[1.03] motion-reduce:group-hover:scale-100"
+                    onError={() => setThumbnailError(true)}
                     unoptimized
                   />
                 ) : (
-                  <div className="w-14 h-14 rounded-full bg-green-100 text-green-700 font-bold flex items-center justify-center border border-green-200">
-                    {data.instructor.fullname
-                      .split(" ")
-                      .map((name) => name[0])
-                      .slice(0, 2)
-                      .join("")
-                      .toUpperCase()}
+                  <div className="grid size-full place-items-center text-primary">
+                    <BookOpen aria-hidden="true" animated={false} className="size-8" />
                   </div>
                 )}
-                <div>
-                  <p className="font-semibold text-gray-900">
-                    {data.instructor.fullname}
-                  </p>
-                  <p className="text-sm text-gray-600">Người tạo khóa học</p>
-                </div>
               </div>
-            </SectionCard>
+              <p className="line-clamp-2 text-sm font-bold text-foreground transition-colors group-hover:text-primary">
+                {data.course.title}
+              </p>
+              <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-primary">
+                <span>Mở khóa học</span>
+                <ArrowRight aria-hidden="true" className="size-3.5" />
+              </span>
+            </Link>
+          </SectionCard>
+
+          <SectionCard
+            title="Giảng viên phụ trách"
+            icon={<User aria-hidden="true" animated={false} className="size-4" />}
+          >
+            <div className="flex items-center gap-3.5">
+              {instructorAvatar && !avatarError ? (
+                <Image
+                  src={instructorAvatar}
+                  alt={data.instructor.fullname}
+                  width={52}
+                  height={52}
+                  className="aspect-square rounded-full border border-primary-pastel object-cover"
+                  onError={() => setAvatarError(true)}
+                  unoptimized
+                />
+              ) : (
+                <span className="grid size-13 shrink-0 place-items-center rounded-full border border-primary-pastel bg-primary-light text-sm font-bold text-primary">
+                  {instructorInitials}
+                </span>
+              )}
+              <div className="min-w-0">
+                <p className="truncate text-sm font-bold text-foreground">
+                  {data.instructor.fullname}
+                </p>
+                <p className="text-xs text-muted-foreground">Giảng viên tạo khóa học</p>
+              </div>
+            </div>
+          </SectionCard>
+
+          <div className="rounded-[24px] border border-primary-pastel/80 bg-gradient-to-br from-primary-light/65 via-surface to-accent-vanilla/45 p-5 shadow-xs space-y-3">
+            <p className="text-xs font-bold text-foreground">Quản lý Kho Coin của bạn</p>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Sao chép mã hồ sơ khi cần hỗ trợ hoặc kiểm tra số dư Coin trong ví ngay.
+            </p>
+            <div className="flex flex-col gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => handleCopy(data.refund.id)}
+                className="min-h-10 w-full rounded-full bg-surface font-bold"
+              >
+                <Copy aria-hidden="true" className="size-3.5" />
+                <span>Sao chép mã hồ sơ</span>
+              </Button>
+              <Link
+                href="/wallets"
+                className="inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full bg-primary px-4 text-xs font-bold text-primary-foreground transition-colors hover:bg-primary-hover"
+              >
+                <Wallet aria-hidden="true" animated={false} className="size-3.5" />
+                <span>Mở Ví & Kho Coin</span>
+              </Link>
+            </div>
           </div>
-        </div>
+        </aside>
       </div>
-    </div>
+    </RefundStudioShell>
   );
 }

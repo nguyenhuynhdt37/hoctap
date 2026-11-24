@@ -903,7 +903,7 @@ export default function LearningLibrary() {
             Kho mã giảm giá
           </Link>
           <Link
-            href="/combo/don-hang"
+            href="/my-learning"
             className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-primary px-3.5 text-xs font-bold text-primary-foreground hover:bg-primary-hover"
           >
             <Ticket className="size-3.5" aria-hidden="true" />

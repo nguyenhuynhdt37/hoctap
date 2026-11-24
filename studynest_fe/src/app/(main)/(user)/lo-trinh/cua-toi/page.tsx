@@ -1,4 +1,5 @@
-import { MyLearningPaths } from "@/components/learning-paths/my-learning-paths";
+import { redirect } from "next/navigation";
+
 export default function Page() {
-  return <MyLearningPaths />;
+  redirect("/learning-paths/my");
 }

@@ -192,7 +192,7 @@ async def course(ctx, args):
     value = await ctx.db.scalar(select(Courses).where(Courses.id == args.course_id, public_course()))
     if value is None:
         raise HTTPException(404, "Không tìm thấy khóa học công khai")
-    return {"id": str(value.id), "title": value.title, "description": (value.description or "")[:7000],
+    return {"id": str(value.id), "slug": value.slug, "url_path": f"/courses/{value.slug}", "learning_path": f"/learning/{value.slug}", "title": value.title, "description": (value.description or "")[:7000],
             "outcomes": value.outcomes or [], "requirements": value.requirements or [],
             "target_audience": value.target_audience or [], "price": str(value.base_price),
             "currency": value.currency, "taxonomy": await CatalogService(ctx.db).course_taxonomy(value.id)}
@@ -202,7 +202,13 @@ async def courses(ctx, args):
     from app.schemas.catalog import CatalogFilters
     from app.services.catalog import CatalogService
     filters = CatalogFilters(keyword=args.query, grade=args.grade, subject=args.subject, max_price=args.max_price, limit=5)
-    return await CatalogService(ctx.db).courses(filters)
+    res = await CatalogService(ctx.db).courses(filters)
+    if isinstance(res, dict) and isinstance(res.get("items"), list):
+        for item in res["items"]:
+            if isinstance(item, dict) and item.get("slug"):
+                item["url_path"] = f"/courses/{item['slug']}"
+                item["learning_path"] = f"/learning/{item['slug']}"
+    return res
 
 
 async def exercise(ctx, args):
@@ -395,6 +401,12 @@ class QuizResultInput(Contract):
     attempt_id: UUID | None = None
 
 
+class QuizOptionSelect(Contract):
+    option_index: int = Field(ge=0, le=15)
+    question_id: UUID | None = None
+
+
+
 async def compare_courses(ctx,args):
     from app.agent.advisor import CourseAdvisorService
     values=[]
@@ -439,11 +451,16 @@ REGISTRY['data.query_account'] = ToolDefinition(
 )
 
 
-from app.agent.workspace_mcp import BrowserTarget, BrowserFill, BashCommand, bash_handler
+from app.agent.workspace_mcp import BrowserTarget, BrowserFill, BrowserScroll, BrowserHighlight, BrowserNavigate, BashCommand, bash_handler
 for tool in [
-    ToolDefinition('mcp.browser_snapshot','Đọc DOM và ID điều khiển thật. Dùng trước khi mở trang/khóa học hay nhấn nút bằng browser_click; không đọc desktop/cookie/iframe khác nguồn.',Empty,client=True),
-    ToolDefinition('mcp.browser_click','Nhấn điều khiển hiển thị theo snapshot_id/target_id vừa đọc khi người dùng yêu cầu. Không dùng cho thanh toán, xóa, nộp bài hoặc đổi tài khoản.',BrowserTarget,risk='navigation',requires_approval=True,client=True),
+    ToolDefinition('mcp.browser_snapshot','Đọc DOM, danh sách điều khiển và đường dẫn (href) đang hiển thị trên màn hình. Dùng trước khi nhấn nút, khoanh vùng highlight hoặc cuộn tới phần tử; không đọc desktop/cookie/iframe khác nguồn.',Empty,client=True),
+    ToolDefinition('mcp.browser_click','Nhấn điều khiển hiển thị theo snapshot_id/target_id vừa đọc khi người dùng yêu cầu. Không dùng cho thanh toán, xóa, nộp bài hoặc đổi tài khoản.',BrowserTarget,risk='navigation',requires_approval=False,client=True),
+    ToolDefinition('mcp.browser_navigate','Điều hướng trực tiếp màn hình tới một đường dẫn nội bộ (ví dụ /courses/<slug>, /learning/<slug>, /courses, /dashboard) khi người dùng yêu cầu mở/truy cập trang hoặc khóa học.',BrowserNavigate,risk='navigation',requires_approval=False,client=True),
     ToolDefinition('mcp.browser_fill','Điền trường văn bản không nhạy cảm theo ID vừa đọc; cần xác nhận, không tự gửi form.',BrowserFill,risk='write',requires_approval=True,client=True),
+    ToolDefinition('mcp.browser_scroll','Cuộn màn hình học tập lên/xuống/đầu/cuối hoặc cuộn mượt tới một target_id trong snapshot hiện tại.',BrowserScroll,risk='navigation',requires_approval=False,client=True),
+    ToolDefinition('mcp.browser_highlight','Khoanh vùng sáng (Telekinesis Spotlight) và gắn chú thích trực tiếp lên phần tử target_id trên màn hình để chỉ điểm cho học viên.',BrowserHighlight,risk='navigation',requires_approval=False,client=True),
+    ToolDefinition('quiz.get_state','Đọc câu hỏi trắc nghiệm và các lựa chọn đang hiển thị trên màn hình học viên (không tiết lộ đáp án ẩn của server).',Empty,client=True),
+    ToolDefinition('quiz.select_option','Chọn giúp một phương án trắc nghiệm trên giao diện theo option_index (0=A, 1=B, 2=C, 3=D) khi học viên yêu cầu; không tự nộp bài.',QuizOptionSelect,risk='navigation',requires_approval=False,client=True),
     ToolDefinition('mcp.bash','Chạy Bash trong workspace sandbox tạm, đọc/xử lý các tệp được gửi trong files. Không shell máy chủ, không mạng/app credentials và không chứng minh điểm bài học.',BashCommand,risk='write',timeout_seconds=25,handler=bash_handler),
 ]:
     register(tool)

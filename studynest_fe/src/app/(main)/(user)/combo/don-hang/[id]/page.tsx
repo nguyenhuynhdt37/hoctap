@@ -1,9 +1,10 @@
-import { BundleReceiptView } from "@/components/learning-paths/my-learning-paths";
+import { redirect } from "next/navigation";
+
 export default async function Page({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  return <BundleReceiptView id={id} />;
+  redirect(`/combo/orders/${id}`);
 }

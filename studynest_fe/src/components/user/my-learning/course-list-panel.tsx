@@ -12,12 +12,15 @@ import {
 } from "pulsoicon-react";
 import { Button, Card, Input, Select } from "@/components/ui";
 import api from "@/lib/utils/fetcher/client/axios";
+import { showToast } from "@/lib/utils/helpers/toast";
+import GiftTransferDialog from "../learning_detail/header/gift-transfer-dialog";
 import type {
   CoursesMeCategory,
   CoursesMeItem,
   CoursesMeResponse,
   CoursesMeSortField,
   CoursesMeVariant,
+  LearningListItem,
 } from "@/types/user/courses-me";
 import { CourseCard } from "./course-card";
 import { CourseSkeletonGrid } from "./course-skeleton-grid";
@@ -65,15 +68,31 @@ const BASE_PATH = "purchases/courses";
 const VARIANT: CoursesMeVariant = "purchased";
 
 interface CourseListPanelProps {
+  archived?: boolean;
+  selectedListId?: string | null;
+  layout?: "grid" | "list";
+  learningLists?: LearningListItem[];
   onStatsChange?: (stats: {
     total: number;
     inProgress: number;
     completed: number;
     avgProgress: number;
   }) => void;
+  onArchivedCountChange?: (count: number) => void;
+  onArchiveMutated?: () => void;
+  onCockpitRefresh?: () => void;
 }
 
-export const CourseListPanel = ({ onStatsChange }: CourseListPanelProps) => {
+export const CourseListPanel = ({
+  archived = false,
+  selectedListId = null,
+  layout = "grid",
+  learningLists = [],
+  onStatsChange,
+  onArchivedCountChange,
+  onArchiveMutated,
+  onCockpitRefresh,
+}: CourseListPanelProps) => {
   const [page, setPage] = useState(1);
   const [size, setSize] = useState<number>(9);
   const [sortBy, setSortBy] = useState<CoursesMeSortField>("enrolled_at");
@@ -85,6 +104,9 @@ export const CourseListPanel = ({ onStatsChange }: CourseListPanelProps) => {
   const [language, setLanguage] = useState("");
   const [statusTab, setStatusTab] = useState<StatusFilterTab>("all");
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [archivingId, setArchivingId] = useState<string | null>(null);
+  const [pinningId, setPinningId] = useState<string | null>(null);
+  const [giftCourse, setGiftCourse] = useState<CoursesMeItem | null>(null);
 
   // Lấy danh mục khóa học
   const { data: categoriesData, isLoading: isLoadingCategories } = useSWR<
@@ -116,13 +138,15 @@ export const CourseListPanel = ({ onStatsChange }: CourseListPanelProps) => {
       size: String(size),
       sort_by: sortBy,
       order: sortOrder,
+      archived: archived ? "true" : "false",
     });
+    if (selectedListId && !archived) params.set("list_id", selectedListId);
     if (debouncedKeyword) params.set("keyword", debouncedKeyword);
     if (categoryId) params.set("category_id", categoryId);
     if (level) params.set("level", level);
     if (language) params.set("language", language);
     return `${BASE_PATH}?${params.toString()}`;
-  }, [page, size, sortBy, sortOrder, debouncedKeyword, categoryId, level, language]);
+  }, [page, size, sortBy, sortOrder, archived, selectedListId, debouncedKeyword, categoryId, level, language]);
 
   const { data, error, isLoading, isValidating, mutate } =
     useSWR<CoursesMeResponse>(swrKey, fetchCourses, {
@@ -147,9 +171,85 @@ export const CourseListPanel = ({ onStatsChange }: CourseListPanelProps) => {
     });
   }, [rawCourses, statusTab]);
 
-  // Cập nhật thống kê nhanh cho Header
+  // Đồng bộ số lượng khóa đã lưu trữ lên header
   useEffect(() => {
-    if (!rawCourses || !onStatsChange) return;
+    if (typeof data?.archived_count === "number") {
+      onArchivedCountChange?.(data.archived_count);
+    }
+  }, [data?.archived_count, onArchivedCountChange]);
+
+  const handleToggleArchive = useCallback(
+    async (course: CoursesMeItem) => {
+      if (archivingId) return;
+      setArchivingId(course.id);
+      const nextArchived = !archived;
+      try {
+        await api.post(`/learning/player/${course.id}/archive`, {
+          archived: nextArchived,
+        });
+        showToast.success(
+          nextArchived
+            ? `Đã chuyển “${course.title}” vào Kho lưu trữ.`
+            : `Đã khôi phục “${course.title}” về danh sách đang học.`,
+        );
+        await mutate();
+        onArchiveMutated?.();
+        onCockpitRefresh?.();
+      } catch {
+        showToast.error("Không thể cập nhật trạng thái lưu trữ lúc này.");
+      } finally {
+        setArchivingId(null);
+      }
+    },
+    [archived, archivingId, mutate, onArchiveMutated, onCockpitRefresh],
+  );
+
+  const handleTogglePin = useCallback(
+    async (course: CoursesMeItem) => {
+      if (pinningId) return;
+      setPinningId(course.id);
+      try {
+        const res = await api.post<{ is_pinned: boolean }>(`/purchases/courses/${course.id}/pin`);
+        showToast.success(
+          res.data.is_pinned
+            ? `Đã ghim “${course.title}” lên đầu danh sách!`
+            : `Đã bỏ ghim “${course.title}”.`,
+        );
+        await mutate();
+        onCockpitRefresh?.();
+      } catch (err: unknown) {
+        const detail = (err as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail;
+        showToast.error(
+          typeof detail === "string" && detail.trim() ? detail : "Không thể ghim khóa học lúc này.",
+        );
+      } finally {
+        setPinningId(null);
+      }
+    },
+    [pinningId, mutate, onCockpitRefresh],
+  );
+
+  const handleToggleCourseInList = useCallback(
+    async (listId: string, courseId: string) => {
+      try {
+        const res = await api.post<{ in_list: boolean }>(
+          `/purchases/lists/${listId}/courses/${courseId}`,
+        );
+        showToast.success(
+          res.data.in_list ? "Đã thêm khóa học vào tủ sách." : "Đã gỡ khóa học khỏi tủ sách.",
+        );
+        await mutate();
+        onCockpitRefresh?.();
+      } catch {
+        showToast.error("Không thể cập nhật tủ sách lúc này.");
+      }
+    },
+    [mutate, onCockpitRefresh],
+  );
+
+  // Cập nhật thống kê nhanh cho Header (chỉ khi ở tab Đang học)
+  useEffect(() => {
+    if (archived || !rawCourses || !onStatsChange) return;
     const completedCount = rawCourses.filter(
       (c) => Math.round(c.progress_percent || 0) === 100
     ).length;
@@ -447,9 +547,28 @@ export const CourseListPanel = ({ onStatsChange }: CourseListPanelProps) => {
       {/* Lưới danh sách khóa học */}
       {!isInitialLoading && !error && displayedCourses.length > 0 && (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <div
+            className={
+              layout === "list"
+                ? "mb-8 flex flex-col gap-4"
+                : "mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
+            }
+          >
             {displayedCourses.map((course: CoursesMeItem) => (
-              <CourseCard key={course.id} course={course} variant={VARIANT} />
+              <CourseCard
+                key={course.id}
+                course={course}
+                variant={VARIANT}
+                layout={layout}
+                isArchived={archived}
+                isArchiving={archivingId === course.id}
+                isPinning={pinningId === course.id}
+                learningLists={learningLists}
+                onTogglePin={(item) => void handleTogglePin(item)}
+                onToggleArchive={(item) => void handleToggleArchive(item)}
+                onOpenGift={archived ? undefined : (item) => setGiftCourse(item)}
+                onToggleCourseInList={(listId, cid) => void handleToggleCourseInList(listId, cid)}
+              />
             ))}
           </div>
 
@@ -477,14 +596,33 @@ export const CourseListPanel = ({ onStatsChange }: CourseListPanelProps) => {
                     "Không có khóa học nào khớp với bộ lọc hoặc từ khóa bạn vừa chọn. Hãy thử điều chỉnh hoặc đặt lại bộ lọc.",
                   onResetFilters: clearFilters,
                 }
-              : {
-                  title: "Bạn chưa sở hữu khóa học nào",
-                  description:
-                    "Khám phá ngay kho tàng tri thức THPT phong phú trên Mây Mây để bắt đầu lộ trình bứt phá điểm số nhé!",
-                  actionHref: "/courses",
-                  actionLabel: "Khám phá khóa học ngay",
-                }
+              : archived
+                ? {
+                    title: "Kho lưu trữ đang trống",
+                    description:
+                      "Các khóa học bạn chọn lưu trữ từ trang học bài hoặc thẻ khóa học sẽ nằm gọn tại đây để bạn khôi phục bất cứ lúc nào.",
+                  }
+                : {
+                    title: "Bạn chưa sở hữu khóa học nào",
+                    description:
+                      "Khám phá ngay kho tàng tri thức phong phú trên Mây Mây để bắt đầu lộ trình bứt phá điểm số nhé!",
+                    actionHref: "/courses",
+                    actionLabel: "Khám phá khóa học ngay",
+                  }
           }
+        />
+      )}
+
+      {giftCourse && (
+        <GiftTransferDialog
+          open={Boolean(giftCourse)}
+          courseId={giftCourse.id}
+          courseTitle={giftCourse.title}
+          onClose={() => setGiftCourse(null)}
+          onTransferred={() => {
+            setGiftCourse(null);
+            void mutate();
+          }}
         />
       )}
     </>

@@ -19,7 +19,7 @@ export function DictationButton({ getValue, onValueChange, disabled, onBusyChang
       disabled={Boolean(disabled && !active) || dictation.state === 'finishing'}
       title={active ? 'Dừng mic và chốt chữ đang nhận' : 'Nói để chữ hiện ngay trong ô chat, chưa gửi tin nhắn'}
       onClick={() => active ? dictation.stop() : void dictation.start()}>
-      {active ? <CircleStop size="1em" solid /> : <Mic size="1em" />}
+      {active ? <CircleStop animated={false} size="1em" solid /> : <Mic animated={false} size="1em" />}
     </Button>
     {active && <span role="status" aria-live="polite" className="absolute bottom-full left-0 z-10 mb-2 w-56 rounded-xl border border-primary-pastel bg-primary-light p-2 text-xs text-foreground">
       {dictation.state === 'recording' ? 'Đang nghe · chữ hiện trực tiếp. Nhấn để dừng.' : dictation.state === 'requesting' ? 'Đang kết nối micro…' : 'Mic đã tắt · đang chốt phần chữ cuối…'}

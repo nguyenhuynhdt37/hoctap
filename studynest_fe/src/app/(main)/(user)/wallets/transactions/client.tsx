@@ -14,6 +14,8 @@ const defaultQuery: WalletTransactionsQuery = {
   status: "all",
   type: "all",
   method: "all",
+  direction: "all",
+  datePreset: "all",
 };
 
 const queryString = new URLSearchParams({

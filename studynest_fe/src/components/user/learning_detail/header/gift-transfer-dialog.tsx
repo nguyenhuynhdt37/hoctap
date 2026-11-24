@@ -1,12 +1,15 @@
 "use client";
 
+import { useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { Check, Gift, Mail, Search, UserCheck, X } from "pulsoicon-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert } from "@/components/ui/states";
 import api from "@/lib/utils/fetcher/client/axios";
-import { useEffect, useId, useRef, useState } from "react";
-import { Cloud } from "pulsoicon-react";
+import { showToast } from "@/lib/utils/helpers/toast";
+import { cn } from "@/lib/utils";
 
 interface GiftRecipient {
   user_id: string;
@@ -24,16 +27,17 @@ interface GiftTransferDialogProps {
   onTransferred: () => void;
 }
 
+type GiftMode = "transfer" | "email";
+
 function readError(error: unknown, fallback: string) {
-  const detail = (error as { response?: { data?: { detail?: unknown } } })?.response
-    ?.data?.detail;
+  const detail = (error as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail;
   if (typeof detail === "string" && detail.trim()) return detail;
   return fallback;
 }
 
 function Initial({ name }: { name: string }) {
   return (
-    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-light text-sm font-semibold text-primary">
+    <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-light text-sm font-bold text-primary">
       {name.slice(0, 1).toUpperCase()}
     </span>
   );
@@ -48,18 +52,27 @@ export default function GiftTransferDialog({
 }: GiftTransferDialogProps) {
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
+
+  const [mode, setMode] = useState<GiftMode>("transfer");
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<GiftRecipient[]>([]);
   const [searching, setSearching] = useState(false);
   const [selected, setSelected] = useState<GiftRecipient | null>(null);
+
+  const [recipientEmail, setRecipientEmail] = useState("");
+  const [giftSentSuccess, setGiftSentSuccess] = useState<string | null>(null);
+
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) {
+      setMode("transfer");
       setQuery("");
       setResults([]);
       setSelected(null);
+      setRecipientEmail("");
+      setGiftSentSuccess(null);
       setError(null);
       setPending(false);
       setSearching(false);
@@ -78,7 +91,7 @@ export default function GiftTransferDialog({
   }, [open, pending, onClose]);
 
   useEffect(() => {
-    if (!open || selected) return;
+    if (!open || mode !== "transfer" || selected) return;
     const keyword = query.trim();
     if (keyword.length < 2) {
       setResults([]);
@@ -87,12 +100,12 @@ export default function GiftTransferDialog({
     }
     let cancelled = false;
     setSearching(true);
+    setError(null);
     const timer = window.setTimeout(() => {
       api
-        .get<{ recipients: GiftRecipient[] }>(
-          `/learning/player/${courseId}/recipients`,
-          { params: { q: keyword } },
-        )
+        .get<{ recipients: GiftRecipient[] }>(`/learning/player/${courseId}/recipients`, {
+          params: { q: keyword },
+        })
         .then((response) => {
           if (!cancelled) setResults(response.data.recipients ?? []);
         })
@@ -110,7 +123,7 @@ export default function GiftTransferDialog({
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [courseId, open, query, selected]);
+  }, [courseId, open, mode, query, selected]);
 
   async function confirmTransfer() {
     if (!selected || pending) return;
@@ -120,6 +133,7 @@ export default function GiftTransferDialog({
       await api.post(`/learning/player/${courseId}/transfer`, {
         recipient_user_id: selected.user_id,
       });
+      showToast.success(`Đã chuyển quyền học khóa này cho ${selected.fullname}!`);
       onTransferred();
     } catch (requestError) {
       setError(readError(requestError, "Không chuyển được khóa học"));
@@ -127,174 +141,285 @@ export default function GiftTransferDialog({
     }
   }
 
-  if (!open) return null;
+  async function submitEmailGift(e: React.FormEvent) {
+    e.preventDefault();
+    const cleaned = recipientEmail.trim();
+    if (!cleaned || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleaned)) {
+      setError("Vui lòng nhập đúng định dạng email người nhận.");
+      return;
+    }
+    setPending(true);
+    setError(null);
+    try {
+      await api.post(`/learning/player/${courseId}/gifts`, {
+        recipient_email: cleaned,
+      });
+      setGiftSentSuccess(cleaned);
+      showToast.success(`Đã gửi quà tặng khóa học tới ${cleaned}!`);
+    } catch (requestError) {
+      setError(readError(requestError, "Không gửi được quà tặng qua email lúc này."));
+    } finally {
+      setPending(false);
+    }
+  }
+
+  if (!open || typeof document === "undefined") return null;
 
   const keyword = query.trim();
-  const title = selected ? "Chuyển quyền truy cập" : "Tặng khóa học";
 
-  return (
-    <div className="fixed inset-0 z-[80]">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-foreground/30 p-4 backdrop-blur-xs">
       <div
-        className="absolute inset-0 bg-foreground/10 backdrop-blur-[1px]"
+        className="absolute inset-0"
         onClick={pending ? undefined : onClose}
       />
-      <div className="absolute left-3 right-3 top-[4.5rem] sm:left-auto sm:right-6 sm:w-full sm:max-w-md">
-        <span
-          aria-hidden
-          className="absolute -top-2 right-5 z-10 hidden h-4 w-4 rotate-45 border-l border-t border-border bg-surface sm:block"
-        />
-        <div
-          ref={panelRef}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby={titleId}
-          tabIndex={-1}
-          className="flex max-h-[calc(100dvh-6rem)] flex-col overflow-hidden rounded-[20px] border border-border bg-surface text-foreground shadow-lg outline-none"
-        >
-          <div className="flex items-start justify-between gap-3 border-b border-border bg-background/70 px-5 py-4">
-            <div className="flex min-w-0 items-start gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-primary-pastel bg-primary-light text-primary">
-                <Cloud className="h-5 w-5" />
-              </span>
-              <div className="min-w-0">
-                <h2 id={titleId} className="text-base font-semibold text-foreground">
-                  {title}
-                </h2>
-                <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                  {courseTitle}
-                </p>
-              </div>
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        onClick={(e) => e.stopPropagation()}
+        className="relative z-10 flex max-h-[calc(100dvh-4rem)] w-full max-w-md flex-col overflow-hidden rounded-[26px] border border-primary-pastel bg-surface text-foreground shadow-2xl outline-none"
+      >
+        {/* Header */}
+        <div className="flex items-start justify-between gap-3 border-b border-primary-pastel/70 bg-gradient-to-r from-secondary/45 via-surface to-primary-light/60 px-5 py-4">
+          <div className="flex min-w-0 items-start gap-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-secondary-pastel bg-surface text-secondary-foreground shadow-2xs">
+              <Gift className="size-5" animated={false} aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <h2 id={titleId} className="font-display text-lg font-bold text-foreground">
+                Tặng khóa học
+              </h2>
+              <p className="mt-0.5 truncate text-xs text-muted-foreground">{courseTitle}</p>
             </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={pending}
+            aria-label="Đóng hộp thoại"
+            className="grid size-8 shrink-0 cursor-pointer place-items-center rounded-full text-muted-foreground transition-colors hover:bg-primary-light hover:text-foreground disabled:opacity-60"
+          >
+            <X className="size-4" animated={false} aria-hidden="true" />
+          </button>
+        </div>
+
+        {/* Switcher 2 chế độ */}
+        <div className="border-b border-border/70 bg-background/50 px-5 py-2.5">
+          <div className="grid grid-cols-2 gap-1 rounded-full border border-border bg-surface p-1">
             <button
               type="button"
-              onClick={onClose}
               disabled={pending}
-              aria-label="Đóng hộp thoại"
-              className="inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-primary-light hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
+              onClick={() => {
+                setMode("transfer");
+                setError(null);
+                setGiftSentSuccess(null);
+              }}
+              className={cn(
+                "inline-flex items-center justify-center gap-1.5 rounded-full py-1.5 text-xs font-bold transition-colors cursor-pointer",
+                mode === "transfer"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
             >
-              <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
-              </svg>
+              <UserCheck className="size-3.5" animated={false} aria-hidden="true" />
+              <span>Chuyển quyền học</span>
+            </button>
+
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => {
+                setMode("email");
+                setSelected(null);
+                setError(null);
+              }}
+              className={cn(
+                "inline-flex items-center justify-center gap-1.5 rounded-full py-1.5 text-xs font-bold transition-colors cursor-pointer",
+                mode === "email"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <Mail className="size-3.5" animated={false} aria-hidden="true" />
+              <span>Gửi quà qua Email</span>
             </button>
           </div>
+        </div>
 
-          <div className="flex-1 space-y-3 overflow-y-auto px-5 py-4">
-            {selected ? (
-              <>
-                <div className="flex items-center gap-3 rounded-2xl border border-primary-pastel bg-primary-light/55 px-3 py-3">
+        {/* Nội dung từng chế độ */}
+        <div className="overflow-y-auto p-5">
+          {mode === "transfer" ? (
+            selected ? (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 rounded-2xl border border-primary-pastel bg-primary-light/35 p-3.5">
                   <Initial name={selected.fullname} />
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-foreground">
+                    <p className="truncate text-sm font-bold text-foreground">
                       {selected.fullname}
                     </p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {selected.email}
-                    </p>
+                    <p className="truncate text-xs text-muted-foreground">{selected.email}</p>
                   </div>
                 </div>
-                <Alert variant="warning" title="Bạn sẽ mất quyền truy cập">
-                  Lịch sử học và tiến độ của bạn vẫn được giữ nguyên.{" "}
-                  {selected.fullname} nhận một khóa học mới, chưa có lịch sử
-                  truy cập, tiến độ 0%.
-                </Alert>
-              </>
-            ) : (
-              <>
-                <Input
-                  label="Tìm người nhận"
-                  value={query}
-                  onChange={(event) => {
-                    setQuery(event.target.value);
-                    setError(null);
-                  }}
-                  placeholder="Tên hoặc email"
-                  autoComplete="off"
-                />
-                <div role="listbox" aria-label="Người nhận" className="space-y-1.5">
-                  {keyword.length < 2 && (
-                    <p className="rounded-xl bg-background px-3 py-3 text-sm text-muted-foreground">
-                      Nhập ít nhất 2 ký tự để hiện danh sách.
-                    </p>
-                  )}
-                  {searching && (
-                    <p className="px-1 text-sm text-muted-foreground">Đang tìm</p>
-                  )}
-                  {!searching && keyword.length >= 2 && results.length === 0 && (
-                    <p className="rounded-xl bg-background px-3 py-3 text-sm text-muted-foreground">
-                      Không thấy người phù hợp.
-                    </p>
-                  )}
-                  {results.map((person) => (
-                    <button
-                      key={person.user_id}
-                      type="button"
-                      role="option"
-                      aria-selected={false}
-                      disabled={person.already_owns}
-                      onClick={() => {
-                        setError(null);
-                        setSelected(person);
-                      }}
-                      className="flex w-full cursor-pointer items-center gap-3 rounded-2xl border border-border bg-surface px-3 py-2.5 text-left transition-colors hover:border-primary-pastel hover:bg-primary-light/45 disabled:cursor-not-allowed disabled:bg-background disabled:opacity-70"
-                    >
-                      <Initial name={person.fullname} />
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-medium text-foreground">
-                          {person.fullname}
-                        </span>
-                        <span className="block truncate text-xs text-muted-foreground">
-                          {person.email}
-                        </span>
-                      </span>
-                      {person.already_owns && (
-                        <Badge variant="neutral" size="sm">
-                          Đã sở hữu khóa học
-                        </Badge>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-            {error && (
-              <p className="text-sm text-destructive-foreground" role="alert">
-                {error}
-              </p>
-            )}
-          </div>
 
-          <div className="flex flex-wrap items-center justify-end gap-2.5 border-t border-border bg-background/70 px-5 py-4">
-            {selected ? (
-              <>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setSelected(null);
-                    setError(null);
-                  }}
-                  disabled={pending}
-                >
-                  Quay lại
-                </Button>
-                <Button
-                  type="button"
-                  variant="destructive"
-                  onClick={() => void confirmTransfer()}
-                  isLoading={pending}
-                  loadingText="Đang chuyển"
-                >
-                  Chuyển khóa học
-                </Button>
-              </>
+                <Alert variant="warning" title="Lưu ý trước khi chuyển quyền">
+                  Quyền học khóa <strong>{courseTitle}</strong> của bạn sẽ được chuyển sang cho{" "}
+                  <strong>{selected.fullname}</strong>. Bạn sẽ không còn truy cập khóa học này nữa.
+                </Alert>
+
+                {error && <Alert variant="destructive">{error}</Alert>}
+
+                <div className="flex items-center justify-end gap-2 pt-1">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    disabled={pending}
+                    onClick={() => setSelected(null)}
+                  >
+                    Chọn lại
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    isLoading={pending}
+                    disabled={pending}
+                    onClick={() => void confirmTransfer()}
+                  >
+                    Xác nhận chuyển quyền
+                  </Button>
+                </div>
+              </div>
             ) : (
-              <Button type="button" variant="outline" onClick={onClose}>
-                Đóng
+              <div className="space-y-3">
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  Tìm tài khoản bạn bè trên Mây Mây theo <strong>tên</strong> hoặc{" "}
+                  <strong>email</strong> để chuyển quyền sở hữu khóa học này.
+                </p>
+
+                <div className="relative">
+                  <Search
+                    className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+                    animated={false}
+                    aria-hidden="true"
+                  />
+                  <Input
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Nhập tên hoặc email người nhận (từ 2 ký tự)..."
+                    className="pl-9"
+                  />
+                </div>
+
+                {error && <Alert variant="destructive">{error}</Alert>}
+
+                <div className="max-h-60 space-y-1.5 overflow-y-auto">
+                  {searching && (
+                    <p className="py-4 text-center text-xs text-muted-foreground">
+                      Đang tìm người nhận…
+                    </p>
+                  )}
+
+                  {!searching && keyword.length >= 2 && results.length === 0 && (
+                    <p className="rounded-2xl border border-dashed border-border py-5 text-center text-xs text-muted-foreground">
+                      Không tìm thấy tài khoản nào khớp với “{keyword}”. Bạn có thể thử tab{" "}
+                      <strong>Gửi quà qua Email</strong>!
+                    </p>
+                  )}
+
+                  {!searching &&
+                    results.map((recipient) => (
+                      <button
+                        key={recipient.user_id}
+                        type="button"
+                        disabled={recipient.already_owns}
+                        onClick={() => setSelected(recipient)}
+                        className="flex w-full items-center justify-between gap-3 rounded-2xl border border-border/80 bg-background/60 p-2.5 text-left transition-colors hover:border-primary-pastel hover:bg-primary-light/40 disabled:cursor-not-allowed disabled:opacity-55 cursor-pointer"
+                      >
+                        <div className="flex min-w-0 items-center gap-2.5">
+                          <Initial name={recipient.fullname} />
+                          <div className="min-w-0">
+                            <div className="truncate text-sm font-bold text-foreground">
+                              {recipient.fullname}
+                            </div>
+                            <div className="truncate text-xs text-muted-foreground">
+                              {recipient.email}
+                            </div>
+                          </div>
+                        </div>
+                        {recipient.already_owns ? (
+                          <Badge variant="default" className="shrink-0 text-[10px]">
+                            Đã sở hữu
+                          </Badge>
+                        ) : (
+                          <span className="shrink-0 rounded-full bg-primary-light px-2.5 py-1 text-[11px] font-bold text-primary">
+                            Chọn
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                </div>
+              </div>
+            )
+          ) : giftSentSuccess ? (
+            <div className="flex flex-col items-center py-6 text-center">
+              <span className="grid size-12 place-items-center rounded-full border border-success-border bg-success-bg text-success-foreground">
+                <Check className="size-6" animated={false} aria-hidden="true" />
+              </span>
+              <h3 className="mt-3 font-display text-base font-bold text-foreground">
+                Đã gửi lời mời nhận quà!
+              </h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Người nhận tại <strong>{giftSentSuccess}</strong> có thể mở hộp thư hoặc mục quà tặng để nhận khóa học này.
+              </p>
+              <Button size="sm" className="mt-4" onClick={onClose}>
+                Hoàn tất
               </Button>
-            )}
-          </div>
+            </div>
+          ) : (
+            <form onSubmit={(e) => void submitEmailGift(e)} className="space-y-4">
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                Nhập email của bạn bè hoặc người thân để gửi món quà khóa học{" "}
+                <strong>{courseTitle}</strong> trực tiếp qua hộp thư.
+              </p>
+
+              <div>
+                <label className="mb-1.5 block text-xs font-bold text-foreground">
+                  Email người nhận
+                </label>
+                <Input
+                  type="email"
+                  value={recipientEmail}
+                  onChange={(e) => setRecipientEmail(e.target.value)}
+                  placeholder="vd: banbe@example.com"
+                  required
+                />
+              </div>
+
+              {error && <Alert variant="destructive">{error}</Alert>}
+
+              <div className="flex items-center justify-end gap-2">
+                <Button type="button" size="sm" variant="ghost" disabled={pending} onClick={onClose}>
+                  Hủy
+                </Button>
+                <Button
+                  type="submit"
+                  size="sm"
+                  isLoading={pending}
+                  disabled={pending}
+                  leftIcon={<Gift className="size-3.5" />}
+                >
+                  Gửi quà ngay
+                </Button>
+              </div>
+            </form>
+          )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

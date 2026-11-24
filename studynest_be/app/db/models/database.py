@@ -256,6 +256,9 @@ class User(Base):
     daily_goal_minutes: Mapped[Optional[int]] = mapped_column(Integer, server_default=text('30'))
     preferred_learning_style: Mapped[Optional[str]] = mapped_column(String(50), server_default=text("'''video'''::character varying"))
     promotional_email_opt_in: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('true'), default=True)
+    grade_level: Mapped[Optional[int]] = mapped_column(SmallInteger, nullable=True)
+    learning_track: Mapped[Optional[str]] = mapped_column(String(60), nullable=True)
+    focus_subjects: Mapped[list[str]] = mapped_column(ARRAY(Text()), nullable=False, server_default=text("'{}'::text[]"), default=list)
 
     discounts: Mapped[list['Discounts']] = relationship('Discounts', back_populates='user')
     email_verifications: Mapped[list['EmailVerifications']] = relationship('EmailVerifications', back_populates='user')
@@ -1342,9 +1345,41 @@ class CourseEnrollments(Base):
     last_accessed: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
     status: Mapped[Optional[str]] = mapped_column(Text, server_default=text("'active'::text"))
     archived_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+    pinned_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
 
     course: Mapped[Optional['Courses']] = relationship('Courses', back_populates='course_enrollments')
     user: Mapped[Optional['User']] = relationship('User', back_populates='course_enrollments')
+
+
+class LearningLists(Base):
+    __tablename__ = 'learning_lists'
+    __table_args__ = (
+        ForeignKeyConstraint(['user_id'], ['public.user.id'], ondelete='CASCADE', name='learning_lists_user_id_fkey'),
+        PrimaryKeyConstraint('id', name='learning_lists_pkey'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('uuid_generate_v4()'))
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    name: Mapped[str] = mapped_column(String(80), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(String(240))
+    color_tone: Mapped[str] = mapped_column(String(20), nullable=False, server_default=text("'sky'"))
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+
+
+class LearningListCourses(Base):
+    __tablename__ = 'learning_list_courses'
+    __table_args__ = (
+        ForeignKeyConstraint(['list_id'], ['public.learning_lists.id'], ondelete='CASCADE', name='learning_list_courses_list_id_fkey'),
+        ForeignKeyConstraint(['course_id'], ['public.courses.id'], ondelete='CASCADE', name='learning_list_courses_course_id_fkey'),
+        PrimaryKeyConstraint('list_id', 'course_id', name='learning_list_courses_pkey'),
+        {'schema': 'public'}
+    )
+
+    list_id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
+    course_id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
+    added_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
 
 
 class CourseFavourites(Base):

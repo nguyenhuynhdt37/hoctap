@@ -979,17 +979,33 @@ class BundleService:
         }
 
     async def receipt(self, order_id, user_id):
-        order = await self.db.scalar(
-            select(BundleOrder).where(
-                BundleOrder.id == order_id, BundleOrder.user_id == user_id
+        order_row = (
+            await self.db.execute(
+                select(
+                    BundleOrder,
+                    BundleVersion.thumbnail_url.label("thumbnail_url"),
+                    BundleVersion.subtitle.label("subtitle"),
+                    CourseBundle.slug.label("bundle_slug"),
+                )
+                .outerjoin(BundleVersion, BundleVersion.id == BundleOrder.version_id)
+                .outerjoin(CourseBundle, CourseBundle.id == BundleVersion.bundle_id)
+                .where(
+                    BundleOrder.id == order_id, BundleOrder.user_id == user_id
+                )
             )
-        )
-        if not order:
+        ).first()
+        if not order_row:
             raise HTTPException(404, "Không tìm thấy đơn combo")
+        order, thumbnail_url, subtitle, bundle_slug = order_row
+        policy = await billing_policy(self.db)
         lines = (
             await self.db.execute(
                 select(
-                    BundleOrderLine, PurchaseItems.status, InstructorEarnings.hold_until
+                    BundleOrderLine,
+                    PurchaseItems.status,
+                    InstructorEarnings.hold_until,
+                    Courses.slug.label("course_slug"),
+                    Courses.thumbnail_url.label("course_thumbnail_url"),
                 )
                 .outerjoin(
                     PurchaseItems, PurchaseItems.id == BundleOrderLine.purchase_item_id
@@ -998,15 +1014,44 @@ class BundleService:
                     InstructorEarnings,
                     InstructorEarnings.id == BundleOrderLine.earning_id,
                 )
+                .outerjoin(Courses, Courses.id == BundleOrderLine.course_id)
                 .where(BundleOrderLine.order_id == order.id)
                 .order_by(BundleOrderLine.title)
             )
         ).all()
+
+        total_list_price = sum(
+            (Decimal(line.list_price or 0) for line, *_ in lines),
+            Decimal(0),
+        )
+        total_paid_dec = Decimal(order.total_paid or 0)
+        discount_dec = Decimal(order.discount_amount or 0)
+        total_list_coin = price_to_coin(total_list_price, policy.coin_vnd_rate)
+        total_paid_coin = price_to_coin(total_paid_dec, policy.coin_vnd_rate)
+        discount_coin = price_to_coin(discount_dec, policy.coin_vnd_rate)
+        total_savings_coin = max(0, total_list_coin - total_paid_coin)
+
         return {
             **record(order),
+            "bundle_slug": bundle_slug,
+            "thumbnail_url": thumbnail_url,
+            "subtitle": subtitle,
+            "total_list_price": str(total_list_price),
+            "total_list_price_coin": total_list_coin,
+            "total_paid_coin": total_paid_coin,
+            "discount_coin": discount_coin,
+            "total_savings_coin": total_savings_coin,
             "lines": [
                 {
                     **record(line),
+                    "course_slug": course_slug,
+                    "course_thumbnail_url": course_thumbnail_url,
+                    "list_price_coin": price_to_coin(
+                        Decimal(line.list_price or 0), policy.coin_vnd_rate
+                    ),
+                    "paid_coin": price_to_coin(
+                        Decimal(line.paid or 0), policy.coin_vnd_rate
+                    ),
                     "purchase_status": status,
                     "refund_deadline": deadline.replace(
                         tzinfo=VIETNAM_TIMEZONE
@@ -1014,7 +1059,7 @@ class BundleService:
                     if deadline
                     else None,
                 }
-                for line, status, deadline in lines
+                for line, status, deadline, course_slug, course_thumbnail_url in lines
             ],
         }
 

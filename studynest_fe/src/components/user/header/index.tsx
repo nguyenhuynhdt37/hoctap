@@ -200,7 +200,7 @@ function SkyIsland({ pathname }: { pathname: string }) {
 
           <nav aria-label="Điều hướng chính" className="ml-1 hidden items-center gap-0.5 2xl:flex">
             {links.map((link) => {
-              const sections = link.href === "/combo" ? ["/combo", "/lo-trinh"] : [link.href];
+              const sections = link.href === "/combo" ? ["/combo", "/learning-paths"] : [link.href];
               const current = isCurrentPage(pathname, link.href);
               const inSection = !current && sections.some((href) => isCurrentPage(pathname, href) || isInSection(pathname, href));
               return (

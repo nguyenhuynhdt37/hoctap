@@ -35,7 +35,12 @@ export function toolLabel(name: string) {
   if (name === 'mcp.bash' || /^(?:bash|shell|terminal)(?:\.|$)/.test(name)) return 'Bash';
   if (name === 'mcp.browser_snapshot') return 'Đọc màn hình';
   if (name === 'mcp.browser_click') return 'Nhấn trên màn hình';
+  if (name === 'mcp.browser_navigate') return 'Điều hướng trang';
   if (name === 'mcp.browser_fill') return 'Điền nội dung';
+  if (name === 'mcp.browser_scroll') return 'Cuộn màn hình';
+  if (name === 'mcp.browser_highlight') return 'Chỉ điểm trên màn hình';
+  if (name === 'quiz.get_state') return 'Đọc câu hỏi trắc nghiệm';
+  if (name === 'quiz.select_option') return 'Chọn đáp án trắc nghiệm';
   if (name.includes('github_list')) return 'Liệt kê repo GitHub';
   if (name.includes('github_read')) return 'Đọc file GitHub';
   if (name.includes('github_tree')) return 'Xem cây thư mục';
@@ -49,5 +54,6 @@ export function toolLabel(name: string) {
   if (name === 'learning.get_lesson_content') return 'Đọc nội dung bài học';
   if (name.startsWith('memory.')) return 'Bộ nhớ tài khoản';
   if (name.startsWith('video.')) return 'Điều khiển video';
+  if (name.startsWith('ui.')) return 'Điều khiển giao diện';
   return 'Thực hiện công cụ';
 }

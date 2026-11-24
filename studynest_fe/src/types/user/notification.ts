@@ -1,10 +1,16 @@
+export interface NotificationCategoryStat {
+  total: number;
+  unread: number;
+}
+
 export interface Notification {
   id: string;
   user_id: string;
   title: string;
   content: string;
   url: string | null;
-  metadata_: Record<string, unknown>;
+  metadata_?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
   is_read: boolean;
   created_at: string;
   action: string;
@@ -19,6 +25,7 @@ export interface NotificationsResponse {
   page: number;
   limit: number;
   unread: number;
+  category_counts?: Record<string, NotificationCategoryStat>;
   items: Notification[];
 }
 

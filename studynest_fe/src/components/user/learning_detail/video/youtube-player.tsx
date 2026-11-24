@@ -1,7 +1,7 @@
 "use client";
 
 import { ActiveLessonResponse } from "@/types/user/activeLesson";
-import { useCallback, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 
 declare global {
   interface Window {
@@ -25,85 +25,109 @@ export default function YouTubePlayer({
 }: YouTubePlayerProps) {
   const playerRef = useRef<any>(null);
   const iframeId = `youtube-player-${lesson.id}`;
-  const isInitializedRef = useRef(false);
 
-  const initializePlayer = useCallback(() => {
-    if (!lesson.file_id || !window.YT || !window.YT.Player) return;
-    
-    // Nếu player đã tồn tại và cùng videoId, không cần tạo lại
-    if (playerRef.current && playerRef.current.getVideoData) {
-      try {
-        const currentVideoId = playerRef.current.getVideoData().video_id;
-        if (currentVideoId === lesson.file_id && isInitializedRef.current) {
-          return;
-        }
-      } catch (e) {
-        // Nếu không lấy được videoId, tiếp tục tạo mới
-      }
-    }
-
-    // Destroy player cũ nếu có
-    if (playerRef.current) {
-      try {
-        playerRef.current.destroy();
-      } catch (e) {
-        console.warn("Error destroying old player:", e);
-      }
-      playerRef.current = null;
-    }
-
-    try {
-      const player = new window.YT.Player(iframeId, {
-        videoId: lesson.file_id,
-        playerVars: {
-          enablejsapi: 1,
-          playsinline: 1,
-        },
-        events: {
-          onReady: onPlayerReady,
-          onStateChange: onPlayerStateChange,
-        },
-      });
-      playerRef.current = player;
-      isInitializedRef.current = true;
-    } catch (error) {
-      console.error("Error initializing YouTube player:", error);
-      setTimeout(() => onVideoLoaded(), 3000);
-    }
-  }, [lesson.file_id, iframeId, onPlayerReady, onPlayerStateChange, onVideoLoaded]);
+  // Giữ callback mới nhất qua ref để KHÔNG BAO GIỜ destroy/recreate iframe khi parent re-render
+  const onReadyRef = useRef(onPlayerReady);
+  const onStateChangeRef = useRef(onPlayerStateChange);
+  const onVideoLoadedRef = useRef(onVideoLoaded);
 
   useEffect(() => {
-    const loadYouTubeAPI = () => {
-      const script = document.createElement("script");
-      script.src = "https://www.youtube.com/iframe_api";
-      script.id = "youtube-iframe-api";
-      document.body.appendChild(script);
+    onReadyRef.current = onPlayerReady;
+  }, [onPlayerReady]);
 
-      (window as any).onYouTubeIframeAPIReady = initializePlayer;
-    };
+  useEffect(() => {
+    onStateChangeRef.current = onPlayerStateChange;
+  }, [onPlayerStateChange]);
 
-    if (!window.YT) {
-      if (!document.getElementById("youtube-iframe-api")) {
-        loadYouTubeAPI();
-      } else {
-        (window as any).onYouTubeIframeAPIReady = initializePlayer;
-      }
-    } else {
-      initializePlayer();
-    }
+  useEffect(() => {
+    onVideoLoadedRef.current = onVideoLoaded;
+  }, [onVideoLoaded]);
 
-    return () => {
+  useEffect(() => {
+    if (!lesson.file_id) return;
+    let cancelled = false;
+    let pollTimer: number | null = null;
+
+    const mountPlayer = () => {
+      if (cancelled || !window.YT?.Player) return;
+      const container = document.getElementById(iframeId);
+      if (!container) return;
+
       if (playerRef.current) {
         try {
           playerRef.current.destroy();
-          isInitializedRef.current = false;
-        } catch (e) {
-          console.warn("Error destroying player:", e);
+        } catch {
+          // Ignore destroy error
         }
+        playerRef.current = null;
+      }
+
+      try {
+        playerRef.current = new window.YT.Player(iframeId, {
+          videoId: lesson.file_id,
+          playerVars: {
+            enablejsapi: 1,
+            playsinline: 1,
+          },
+          events: {
+            onReady: (event: any) => {
+              if (!cancelled) onReadyRef.current(event);
+            },
+            onStateChange: (event: any) => {
+              if (!cancelled) onStateChangeRef.current(event);
+            },
+          },
+        });
+      } catch (error) {
+        console.error("Error initializing YouTube player:", error);
+        window.setTimeout(() => {
+          if (!cancelled) onVideoLoadedRef.current();
+        }, 3000);
       }
     };
-  }, [lesson.id, lesson.file_id, initializePlayer]);
 
-  return <div id={iframeId} className="w-full h-[70vh]" />;
+    if (window.YT?.Player) {
+      mountPlayer();
+    } else {
+      if (!document.getElementById("youtube-iframe-api")) {
+        const script = document.createElement("script");
+        script.src = "https://www.youtube.com/iframe_api";
+        script.id = "youtube-iframe-api";
+        document.body.appendChild(script);
+      }
+
+      const prevReady = window.onYouTubeIframeAPIReady;
+      window.onYouTubeIframeAPIReady = () => {
+        if (typeof prevReady === "function") prevReady();
+        mountPlayer();
+      };
+
+      // Dự phòng nếu script tải xong trước khi gán callback
+      pollTimer = window.setInterval(() => {
+        if (window.YT?.Player) {
+          if (pollTimer) window.clearInterval(pollTimer);
+          pollTimer = null;
+          mountPlayer();
+        }
+      }, 200);
+    }
+
+    return () => {
+      cancelled = true;
+      if (pollTimer) {
+        window.clearInterval(pollTimer);
+        pollTimer = null;
+      }
+      if (playerRef.current) {
+        try {
+          playerRef.current.destroy();
+        } catch {
+          // Ignore destroy error
+        }
+        playerRef.current = null;
+      }
+    };
+  }, [lesson.id, lesson.file_id, iframeId]);
+
+  return <div id={iframeId} className="h-[70vh] w-full" />;
 }
-

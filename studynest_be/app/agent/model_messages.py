@@ -35,15 +35,13 @@ def native_tools(prompt):
 
 
 def configure_agent_llm(llm, prompt, images=None, tool_history=None):
-    if llm.provider != '9router':
-        return
     llm.messages_override = agent_messages(prompt, images)
     llm.native_tools = native_tools(prompt)
     llm.messages_override[0]['content'] += (
-        '\nGiao thức API: nếu cần công cụ, ưu tiên gọi function native được cấp (dấu chấm trong tên được mã hóa thành __). '
+        '\nGiao thức API: nếu cần công cụ, ưu tiên gọi function native được cấp (dấu chấm trong tên được mã hóa thành __) hoặc trả về trong mảng tool_calls của JSON hợp đồng. '
         'Không chỉ nói đang làm thao tác mà không gọi function. Kết quả công cụ từ vòng trước nằm trong tool_results. '
         'Function schema không có thuộc tính thì arguments={}; không thêm reason/reasoning. '
-        'Kết quả đọc metadata chưa hoàn thành yêu cầu thao tác giao diện: tiếp tục snapshot rồi click nếu được cấp, không chỉ đưa hướng dẫn bấm tay. '
+        'Kết quả đọc metadata chưa hoàn thành yêu cầu thao tác giao diện: tiếp tục snapshot/highlight/scroll/click nếu được cấp, không chỉ đưa hướng dẫn bấm tay. '
         'Khi không gọi function, trả JSON theo hợp đồng; câu trả lời cuối không bịa đã thực hiện thao tác.'
     )
 

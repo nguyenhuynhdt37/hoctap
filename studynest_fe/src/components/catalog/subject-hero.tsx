@@ -36,70 +36,70 @@ export function SubjectHero({ currentSubject, totalCourses }: SubjectHeroProps) 
   return (
     <section
       aria-label="Khám phá khóa học"
-      className="relative isolate overflow-hidden rounded-[32px] border border-[#BFD7ED]/35 bg-gradient-to-br from-[#13263A] via-[#1E3F63] to-[#2C5B8B] p-6 text-white shadow-lg sm:p-8 lg:p-10"
+      className="relative isolate overflow-hidden rounded-[32px] border border-primary-pastel bg-gradient-to-br from-primary-light/85 via-surface to-accent/40 p-6 text-foreground shadow-[0_24px_48px_-14px_rgba(53,111,167,0.16)] sm:p-8 lg:p-10"
     >
-      {/* Hào quang nền đồng bộ phong cách Atelier VIP */}
+      {/* Mây mờ nền chuẩn Cloudy Blue */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -right-20 -top-20 -z-10 h-72 w-72 rounded-full bg-[#F5C542]/20 blur-3xl"
+        className="pointer-events-none absolute -right-20 -top-20 -z-10 h-72 w-72 rounded-full bg-white/80 blur-3xl"
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -bottom-24 left-1/4 -z-10 h-64 w-80 rounded-full bg-[#BFD7ED]/20 blur-3xl"
+        className="pointer-events-none absolute -bottom-24 left-1/4 -z-10 h-64 w-80 rounded-full bg-secondary-light/65 blur-3xl"
       />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,0.85fr)] lg:items-center">
         {/* Cột trái: Tiêu đề Editorial + Quyền lợi đồng Coin */}
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-[#F5C542]/50 bg-[#F5C542]/18 px-3.5 py-1 text-xs font-bold uppercase tracking-[0.14em] text-[#FFE89E]">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-primary-pastel bg-surface/90 px-3.5 py-1 text-xs font-bold uppercase tracking-[0.14em] text-primary shadow-2xs">
               {isDiaLy ? (
-                <Globe2 aria-hidden="true" animated={false} className="size-3.5 text-[#FFD55A]" />
+                <Globe2 aria-hidden="true" animated={false} className="size-3.5 text-primary" />
               ) : (
-                <BookOpen aria-hidden="true" animated={false} className="size-3.5 text-[#FFD55A]" />
+                <BookOpen aria-hidden="true" animated={false} className="size-3.5 text-primary" />
               )}
               <span>{currentSubject ? `Chuyên đề ${currentSubject.name}` : "Học viện Mây Mây"}</span>
             </span>
 
             {totalCourses !== null && totalCourses !== undefined && (
-              <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-white/90 tabular-nums">
+              <span className="rounded-full border border-border bg-surface/90 px-3 py-1 text-xs font-semibold text-muted-foreground tabular-nums">
                 {totalCourses} khóa học công khai
               </span>
             )}
           </div>
 
-          <h1 className="font-display text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-[2.65rem] lg:leading-[1.12]">
+          <h1 className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-[2.65rem] lg:leading-[1.12]">
             {currentSubject ? (
               <>
                 Chinh phục môn{" "}
-                <span className="text-[#FFE89E]">{currentSubject.name}</span>
+                <span className="text-primary">{currentSubject.name}</span>
               </>
             ) : (
               <>
                 Khám phá kho tri thức{" "}
-                <span className="text-[#FFE89E]">Mây Mây</span>
+                <span className="text-primary">Mây Mây</span>
               </>
             )}
           </h1>
 
-          <p className="max-w-2xl text-sm leading-relaxed text-white/80 sm:text-base">
+          <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
             {desc ||
               "Lọc khóa học theo khối lớp, môn học và mục tiêu thi cử. Giá khóa học tự động áp mã ưu đãi tốt nhất và chiết khấu ngay bằng số dư của bạn."}
           </p>
 
           {/* Dải ưu đãi đồng Coin trực quan */}
           <div className="flex flex-wrap items-center gap-2.5 pt-1 text-xs">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-white/90 backdrop-blur-sm">
-              <Percent aria-hidden="true" animated={false} className="size-3.5 text-[#FFE89E]" />
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface/90 px-3 py-1.5 text-foreground shadow-2xs">
+              <Percent aria-hidden="true" animated={false} className="size-3.5 text-primary" />
               <span>Chiết khấu 50%:</span>
-              <CoinBadge kind="white" amount={10} surface="dark" size="sm" />
+              <CoinBadge kind="white" amount={10} size="sm" />
               <span>=</span>
-              <CoinBadge kind="gold" amount={1} surface="dark" size="sm" />
+              <CoinBadge kind="gold" amount={1} size="sm" />
             </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-white/90 backdrop-blur-sm">
-              <Gift aria-hidden="true" animated={false} className="size-3.5 text-[#BFD7ED]" />
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface/90 px-3 py-1.5 text-foreground shadow-2xs">
+              <Gift aria-hidden="true" animated={false} className="size-3.5 text-primary" />
               <span>Mua xong hoàn</span>
-              <CoinBadge kind="white" amount="+20%" surface="dark" size="sm" />
+              <CoinBadge kind="white" amount="+20%" size="sm" />
             </span>
           </div>
         </div>
@@ -108,38 +108,38 @@ export function SubjectHero({ currentSubject, totalCourses }: SubjectHeroProps) 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
           <Link
             href="/combo"
-            className="group flex items-center justify-between gap-4 rounded-3xl border border-white/20 bg-white/10 p-4 backdrop-blur-md transition-all hover:border-[#F5C542]/60 hover:bg-white/15"
+            className="group flex items-center justify-between gap-4 rounded-3xl border border-primary-pastel bg-surface/90 p-4 shadow-2xs backdrop-blur-sm transition-all hover:border-primary hover:bg-primary-light/50"
           >
             <div className="flex items-center gap-3.5">
-              <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-[#F5C542]/45 bg-[#F5C542]/20 text-[#FFD55A]">
+              <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-primary-pastel bg-primary-light text-primary">
                 <Compass aria-hidden="true" className="size-6" />
               </div>
               <div>
-                <p className="text-sm font-bold text-white">Combo lộ trình học</p>
-                <p className="mt-0.5 text-xs text-white/75">
+                <p className="text-sm font-bold text-foreground">Combo lộ trình học</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
                   Học theo chuỗi bài giảng từ giảng viên, tiết kiệm hơn
                 </p>
               </div>
             </div>
-            <ArrowRight aria-hidden="true" className="size-4 shrink-0 text-[#FFE89E] transition-transform group-hover:translate-x-1" />
+            <ArrowRight aria-hidden="true" className="size-4 shrink-0 text-primary transition-transform group-hover:translate-x-1" />
           </Link>
 
           <Link
             href="/wallets"
-            className="group flex items-center justify-between gap-4 rounded-3xl border border-white/15 bg-white/8 p-4 backdrop-blur-md transition-all hover:border-white/35 hover:bg-white/14"
+            className="group flex items-center justify-between gap-4 rounded-3xl border border-border bg-surface/90 p-4 shadow-2xs backdrop-blur-sm transition-all hover:border-primary-pastel hover:bg-primary-light/40"
           >
             <div className="flex items-center gap-3.5">
-              <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-white/25 bg-white/12 text-[#BFD7ED]">
+              <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-accent-vanilla-border bg-accent-vanilla/70 text-accent-vanilla-foreground">
                 <Wallet aria-hidden="true" className="size-6" />
               </div>
               <div>
-                <p className="text-sm font-bold text-white">Nạp thêm số dư</p>
-                <p className="mt-0.5 text-xs text-white/75">
-                  Quy đổi PayPal realtime, sẵn sàng đăng ký khóa học
+                <p className="text-sm font-bold text-foreground">Nạp thêm số dư</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Quy đổi PayPal trực tuyến, sẵn sàng đăng ký khóa học
                 </p>
               </div>
             </div>
-            <ArrowRight aria-hidden="true" className="size-4 shrink-0 text-white/80 transition-transform group-hover:translate-x-1" />
+            <ArrowRight aria-hidden="true" className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary" />
           </Link>
         </div>
       </div>

@@ -245,27 +245,27 @@ function WalletSummaryCard({ wallet, walletStatus }: WalletSummaryCardProps) {
   const isLocked = Boolean(wallet?.is_locked);
   const statusStyles = isLocked
     ? "bg-destructive-bg text-destructive-foreground border-destructive-border"
-    : "bg-white/15 text-white border-white/25";
+    : "bg-success-bg text-success-foreground border-success-border";
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-primary-pastel/40 bg-gradient-to-br from-primary via-[#2D5F94] to-[#234C78] p-6 text-white shadow-soft-md">
-      <div className="pointer-events-none absolute -right-14 -top-14 h-36 w-36 rounded-full bg-white/10 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-16 -left-10 h-40 w-40 rounded-full bg-white/5 blur-3xl" />
+    <div className="relative overflow-hidden rounded-3xl border border-primary-pastel bg-gradient-to-br from-primary-light/85 via-surface to-accent-vanilla/45 p-6 text-foreground shadow-[0_20px_44px_-14px_rgba(53,111,167,0.16)]">
+      <div className="pointer-events-none absolute -right-14 -top-14 h-36 w-36 rounded-full bg-white/80 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-16 -left-10 h-40 w-40 rounded-full bg-primary-pastel/35 blur-3xl" />
 
       <div className="relative flex items-start justify-between gap-4">
         <div className="flex flex-col gap-3">
-          <span className="text-xs font-semibold uppercase tracking-wide text-[#FFE89E]">
+          <span className="text-xs font-semibold uppercase tracking-wide text-primary">
             Số dư Coin vàng
           </span>
-          <p className="mt-1 text-3xl font-semibold sm:text-4xl tracking-tight text-[#FFE89E] tabular-nums">
+          <p className="mt-1 text-3xl font-semibold sm:text-4xl tracking-tight text-foreground tabular-nums">
             {coins ? `${new Intl.NumberFormat("vi-VN").format(coins.paid)} Coin vàng` : "…"}
           </p>
           {coins && (
             <div className="flex flex-wrap items-center gap-2">
-              <CoinBadge kind="gold" amount={coins.paid} surface="dark" size="sm" />
-              <CoinBadge kind="white" amount={coins.bonus} surface="dark" size="sm" />
+              <CoinBadge kind="gold" amount={coins.paid} size="sm" />
+              <CoinBadge kind="white" amount={coins.bonus} size="sm" />
               {Number(wallet?.balance) > 0 && (
-                <span className="text-xs text-white/75">
+                <span className="text-xs text-muted-foreground">
                   · phần dư VND cũ {formatCurrency(wallet?.balance)}
                 </span>
               )}
@@ -273,39 +273,39 @@ function WalletSummaryCard({ wallet, walletStatus }: WalletSummaryCardProps) {
           )}
         </div>
         <div className="flex flex-col items-end gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 backdrop-blur border border-white/15">
-            <WalletIcon className="h-6 w-6 text-[#FFD55A]" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-accent-vanilla-border bg-accent-vanilla/80 text-accent-vanilla-foreground shadow-2xs">
+            <WalletIcon className="h-6 w-6" />
           </div>
-          <span className="rounded-full border border-[#F5C542]/50 bg-[#F5C542]/20 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#FFE89E]">
+          <span className="rounded-full border border-accent-vanilla-border bg-accent-vanilla/70 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-accent-vanilla-foreground">
             Coin vàng
           </span>
         </div>
       </div>
 
-      <div className="relative mt-6 grid gap-3 text-sm text-white/85 sm:grid-cols-2">
-        <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3">
-          <p className="text-xs uppercase tracking-wide text-white/70">
+      <div className="relative mt-6 grid gap-3 text-sm sm:grid-cols-2">
+        <div className="rounded-2xl border border-border bg-surface/90 px-4 py-3 shadow-2xs">
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">
             Tổng nạp
           </p>
-          <p className="mt-1 text-base font-semibold text-white">
+          <p className="mt-1 text-base font-semibold text-foreground">
             {formatCurrency(wallet?.total_in)}
           </p>
         </div>
-        <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3">
-          <p className="text-xs uppercase tracking-wide text-white/70">
+        <div className="rounded-2xl border border-border bg-surface/90 px-4 py-3 shadow-2xs">
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">
             Tổng rút
           </p>
-          <p className="mt-1 text-base font-semibold text-white">
+          <p className="mt-1 text-base font-semibold text-foreground">
             {formatCurrency(wallet?.total_out)}
           </p>
         </div>
-        <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 sm:col-span-2">
+        <div className="rounded-2xl border border-border bg-surface/90 px-4 py-3 shadow-2xs sm:col-span-2">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-xs uppercase tracking-wide text-white/70">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
                 Trạng thái
               </p>
-              <p className="mt-1 text-base font-semibold text-white">
+              <p className="mt-1 text-base font-semibold text-foreground">
                 {walletStatus}
               </p>
             </div>

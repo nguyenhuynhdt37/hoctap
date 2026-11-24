@@ -3,7 +3,8 @@
 import { prepareImageUpload } from "@/lib/prepare-image-upload";
 import toast from "react-hot-toast";
 import { memo, useCallback, useRef, useState, useEffect } from "react";
-import { Send, Image, X } from "pulsoicon-react";
+import { Send, Image, X, Eye, Play, Code, Shield, Compass } from "pulsoicon-react";
+import { Badge } from "@/components/ui/badge";
 import {
   TutorScope,
   UploadedImage,
@@ -66,6 +67,7 @@ function MessageInput({
   const [isDragging, setIsDragging] = useState(false);
   const [dictating, setDictating] = useState(false);
   const [viewingImage, setViewingImage] = useState<string | null>(null);
+  const historyIdx = useRef(-1);
 
   // Derived state
   const isUploading = localImages.some((img) => img.isUploading);
@@ -254,19 +256,108 @@ function MessageInput({
 
   // ========== HANDLERS ==========
 
+  const expandSlashCommand = useCallback((raw: string): string | null => {
+    const trimmed = raw.trim();
+    if (trimmed === "/mode") {
+      agent?.cyclePermissionMode();
+      if (inputRef.current) inputRef.current.value = "";
+      return null;
+    }
+    if (trimmed === "/verbose" || trimmed === "/detail") {
+      agent?.setDetailedTranscript(v => !v);
+      if (inputRef.current) inputRef.current.value = "";
+      return null;
+    }
+    if (trimmed === "/xray") {
+      agent?.setXrayActive(v => !v);
+      if (inputRef.current) inputRef.current.value = "";
+      return null;
+    }
+    if (trimmed.startsWith("/screen")) {
+      const rest = trimmed.slice(7).trim();
+      return rest
+        ? `Hãy đọc màn hình hiện tại (browser_snapshot) và thực hiện: ${rest}`
+        : "Hãy dùng công cụ đọc màn hình hiện tại (browser_snapshot) và tóm tắt những phần quan trọng đang hiển thị cho mình.";
+    }
+    if (trimmed.startsWith("/highlight")) {
+      const rest = trimmed.slice(10).trim();
+      return rest
+        ? `Hãy đọc màn hình hiện tại rồi khoanh vùng chỉ điểm (browser_highlight) vào: ${rest}`
+        : "Hãy đọc màn hình hiện tại rồi khoanh vùng chỉ điểm (browser_highlight) vào phần quan trọng nhất đang hiển thị trên trang.";
+    }
+    if (trimmed.startsWith("/scroll")) {
+      const rest = trimmed.slice(7).trim();
+      return rest ? `Hãy cuộn màn hình ${rest}` : "Hãy cuộn màn hình xuống dưới";
+    }
+    if (trimmed.startsWith("/video")) {
+      const rest = trimmed.slice(6).trim();
+      return rest ? `Với video bài giảng hiện tại: ${rest}` : "Hãy kiểm tra trạng thái video đang mở và tóm tắt nội dung tại mốc hiện tại.";
+    }
+    if (trimmed.startsWith("/code")) {
+      const rest = trimmed.slice(5).trim();
+      return rest
+        ? `Hãy đọc buffer code hiện tại của mình trên editor và ${rest}`
+        : "Hãy đọc buffer code đang mở trên editor, phân tích lỗi và gợi ý hướng cải thiện.";
+    }
+    if (trimmed.startsWith("/quiz")) {
+      const rest = trimmed.slice(5).trim();
+      return rest
+        ? `Hãy đọc câu hỏi trắc nghiệm đang hiển thị trên màn hình (quiz.get_state) và ${rest}`
+        : "Hãy đọc câu hỏi trắc nghiệm đang hiển thị trên màn hình (quiz.get_state), giải thích từng phương án và gợi ý cách suy luận.";
+    }
+    return trimmed;
+  }, [agent]);
+
   const handleSubmit = useCallback(() => {
-    const text = inputRef.current?.value.trim() || (localImages.some(image=>image.data) ? "Bạn hãy xem và giải thích ảnh này." : "");
-    sendMessage(text);
-  }, [sendMessage, localImages]);
+    const rawText = inputRef.current?.value.trim() || (localImages.some(image=>image.data) ? "Bạn hãy xem và giải thích ảnh này." : "");
+    const expanded = expandSlashCommand(rawText);
+    if (expanded === null) return;
+    agent?.recordPrompt(rawText);
+    historyIdx.current = -1;
+    const pinned = agent?.pinnedTarget;
+    if (pinned) {
+      agent?.setPinnedTarget(null);
+      sendMessage(`[Phần tử người dùng vừa chỉ điểm bằng X-Ray trên màn hình: role="${pinned.role}", tên="${pinned.name}"${pinned.href ? `, href="${pinned.href}"` : ""}, nội dung="${pinned.text.slice(0, 240)}"]\nYêu cầu: ${expanded}`);
+      return;
+    }
+    sendMessage(expanded);
+  }, [sendMessage, localImages, expandSlashCommand, agent]);
+
+  useEffect(() => {
+    const onQuickPrompt = (event: Event) => {
+      const prompt = (event as CustomEvent<{ prompt?: string }>).detail?.prompt;
+      if (prompt) void sendMessage(prompt);
+    };
+    window.addEventListener("maymay:quick-prompt", onQuickPrompt);
+    return () => window.removeEventListener("maymay:quick-prompt", onQuickPrompt);
+  }, [sendMessage]);
 
   const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === "Enter" && !e.shiftKey) {
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
         e.preventDefault();
         handleSubmit();
+        return;
+      }
+      if (e.key === "ArrowUp" && agent?.promptHistory.length) {
+        const el = e.currentTarget;
+        if (el.selectionStart === 0 || !el.value.includes("\n")) {
+          e.preventDefault();
+          const nextIdx = Math.min(agent.promptHistory.length - 1, historyIdx.current + 1);
+          historyIdx.current = nextIdx;
+          if (inputRef.current) inputRef.current.value = agent.promptHistory[nextIdx] || "";
+        }
+      } else if (e.key === "ArrowDown" && historyIdx.current >= 0 && agent?.promptHistory.length) {
+        const el = e.currentTarget;
+        if (!el.value.includes("\n")) {
+          e.preventDefault();
+          const nextIdx = historyIdx.current - 1;
+          historyIdx.current = nextIdx;
+          if (inputRef.current) inputRef.current.value = nextIdx >= 0 ? agent.promptHistory[nextIdx] || "" : "";
+        }
       }
     },
-    [handleSubmit]
+    [handleSubmit, agent]
   );
 
   const handleDrop = useCallback(
@@ -384,7 +475,7 @@ function MessageInput({
                 onClick={() => removeImage(img.tempId)}
                 className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center shadow-sm z-10 transition-opacity"
               >
-                <X className="w-3 h-3" />
+                <X animated={false} className="w-3 h-3" />
               </button>
 
               {/* OCR Badge */}
@@ -401,10 +492,110 @@ function MessageInput({
       {/* Drag overlay */}
       {isDragging && (
         <div className="mb-2 p-4 border-2 border-dashed border-primary-light rounded-xl bg-primary-pastel/40 text-center">
-          <Image className="w-8 h-8 text-primary mx-auto mb-1" />
+          <Image animated={false} className="w-8 h-8 text-primary mx-auto mb-1" />
           <p className="text-sm text-primary">Thả ảnh vào đây</p>
         </div>
       )}
+
+      {/* Pinned X-Ray Target Chip */}
+      {agent?.pinnedTarget && (
+        <div className="mb-2 flex items-center justify-between gap-2 rounded-xl border border-primary-pastel bg-primary-light/60 px-2.5 py-1.5 text-xs">
+          <div className="flex min-w-0 items-center gap-1.5">
+            <Compass animated={false} className="h-3.5 w-3.5 shrink-0 text-primary" />
+            <span className="truncate font-medium text-foreground">
+              Đã ghim: <strong>{agent.pinnedTarget.name.slice(0, 45)}</strong>
+            </span>
+          </div>
+          <button
+            type="button"
+            aria-label="Bỏ ghim phần tử"
+            onClick={() => agent.setPinnedTarget(null)}
+            className="rounded-md p-0.5 text-muted-foreground hover:text-foreground"
+          >
+            <X animated={false} className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* Hannes-Lite Co-Pilot Slash Bar & Permission Mode Pill */}
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-1.5">
+        <div className="flex flex-wrap items-center gap-1">
+          <button
+            type="button"
+            onClick={() => agent?.setXrayActive(v => !v)}
+            title="Bật Tia X-Ray để chỉ thẳng vào bất kỳ vùng nào trên bài học"
+            className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-medium transition-colors ${
+              agent?.xrayActive
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-primary-pastel bg-primary-light/70 text-primary hover:bg-primary-light"
+            }`}
+          >
+            <Compass animated={false} className="h-3 w-3" />
+            <span>{agent?.xrayActive ? "X-Ray Bật" : "Tia X-Ray"}</span>
+          </button>
+          {[
+            { label: "/screen", prompt: "/screen", title: "Quét & đọc màn hình realtime", icon: Eye },
+            { label: "/highlight", prompt: "/highlight ", title: "Khoanh vùng chỉ điểm trên màn hình", icon: Compass },
+            { label: "/video", prompt: "Tạm dừng video", title: "Điều khiển video nhanh", icon: Play },
+            { label: "/code", prompt: "/code", title: "Đọc & kiểm tra buffer code hiện tại", icon: Code },
+          ].map((chip) => {
+            const ChipIcon = chip.icon;
+            return (
+              <button
+                key={chip.label}
+                type="button"
+                disabled={disabled}
+                title={chip.title}
+                onClick={() => {
+                  if (chip.prompt.endsWith(" ")) {
+                    if (inputRef.current) {
+                      inputRef.current.value = chip.prompt;
+                      inputRef.current.focus();
+                    }
+                  } else {
+                    const expanded = expandSlashCommand(chip.prompt);
+                    if (expanded) void sendMessage(expanded);
+                  }
+                }}
+                className="inline-flex items-center gap-1 rounded-full border border-primary-pastel bg-primary-light/50 px-2.5 py-0.5 text-[11px] font-medium text-primary transition-colors hover:bg-primary-light disabled:opacity-40"
+              >
+                <ChipIcon animated={false} className="h-3 w-3" />
+                <span>{chip.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {agent && (
+          <button
+            type="button"
+            onClick={() => agent.cyclePermissionMode()}
+            title="Chế độ quyền Co-Pilot (Shift+Tab để chuyển: Auto-Pilot -> Hỏi trước -> Chỉ đọc)"
+            className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <Badge
+              variant={
+                agent.permissionMode === "autoPilot"
+                  ? "primary"
+                  : agent.permissionMode === "default"
+                    ? "vanilla"
+                    : "lavender"
+              }
+              size="sm"
+              className="cursor-pointer gap-1"
+            >
+              <Shield animated={false} className="h-3 w-3" />
+              <span>
+                {agent.permissionMode === "autoPilot"
+                  ? "Auto-Pilot"
+                  : agent.permissionMode === "default"
+                    ? "Hỏi trước"
+                    : "Plan"}
+              </span>
+            </Badge>
+          </button>
+        )}
+      </div>
 
       {/* Input row */}
       <div className="flex gap-2">
@@ -423,7 +614,7 @@ function MessageInput({
           disabled={disabled}
           className="p-2 text-muted-foreground hover:text-primary hover:bg-primary-pastel/50 rounded-xl disabled:opacity-40 transition-colors cursor-pointer"
         >
-          <Image className="w-5 h-5" />
+          <Image animated={false} className="w-5 h-5" />
         </button>
 
         <DictationButton disabled={isLoading || isUploading || Boolean(voice?.active)} onBusyChange={setDictating} getValue={()=>inputRef.current?.value || ""} onValueChange={text=>{if(inputRef.current){inputRef.current.value=text;inputRef.current.scrollTop=inputRef.current.scrollHeight;}}} />
@@ -448,7 +639,7 @@ function MessageInput({
           {isLoading ? (
             <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
           ) : (
-            <Send className="w-4 h-4 rotate-90" />
+            <Send animated={false} className="w-4 h-4 rotate-90" />
           )}
         </button>
       </div>

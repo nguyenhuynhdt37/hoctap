@@ -348,7 +348,7 @@ export default function NotFound() {
 
             {/* Card 2: Lộ trình */}
             <Link
-              href="/lo-trinh"
+              href="/learning-paths"
               className="group p-5 bg-surface rounded-[20px] border border-border hover:border-secondary-pastel hover:shadow-ambient-md transition-all duration-200 block"
             >
               <div className="flex items-start gap-3.5">

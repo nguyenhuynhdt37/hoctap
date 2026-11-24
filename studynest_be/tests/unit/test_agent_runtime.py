@@ -197,6 +197,43 @@ def test_navigation_intent_binds_operation_and_target_type():
     assert not navigation_requested('Mở bài trước','learning.next_lesson')
     assert navigation_requested('Chỉnh tốc độ video lên 1.5x','video.set_playback_rate')
     assert navigation_requested('Đóng panel chat','ui.close_panel')
+    assert navigation_requested('Hãy cuộn xuống dưới xem nội dung','mcp.browser_scroll')
+    assert navigation_requested('Khoanh vùng chỉ điểm vào phần công thức','mcp.browser_highlight')
+    assert navigation_requested('Chọn đáp án B giúp mình','quiz.select_option')
+    assert navigation_requested('khiển màn truy cập vào khóa học đang học','mcp.browser_click')
+    assert navigation_requested('truy cập vào','mcp.browser_navigate')
+    assert not navigation_requested('Đừng cuộn trang xuống','mcp.browser_scroll')
+    assert not navigation_requested('Đừng chọn đáp án nào cả','quiz.select_option')
+    assert not navigation_requested('Đừng truy cập vào trang đó','mcp.browser_navigate')
+
+
+@pytest.mark.asyncio
+async def test_hannes_lite_turn_engine_gate_and_reread_deduplication():
+    from app.agent.turn_engine import TurnToolRuntime, UNCHANGED_NOTICE
+    runtime = TurnToolRuntime(max_shared=2)
+    r1 = await runtime.gate.acquire(exclusive=False)
+    r2 = await runtime.gate.acquire(exclusive=False)
+    r1()
+    r2()
+    ex = await runtime.gate.acquire(exclusive=True)
+    ex()
+
+    first, is_new_1 = runtime.record_outcome(
+        'learning.get_current_lesson', {}, 'read', {'title': 'Bài 1', 'verified': True}, revision=3
+    )
+    assert is_new_1 is True and not first.get('unchanged')
+
+    second, is_new_2 = runtime.record_outcome(
+        'learning.get_current_lesson', {}, 'read', {'title': 'Bài 1', 'verified': True}, revision=3
+    )
+    assert is_new_2 is False and second.get('unchanged') is True and second['notice'] == UNCHANGED_NOTICE
+
+    # A navigation action invalidates cached read fingerprints
+    runtime.record_outcome('ui.switch_tab', {'tab': 'notes'}, 'navigation', {'active_tab': 'notes', 'verified': True}, revision=3)
+    third, is_new_3 = runtime.record_outcome(
+        'learning.get_current_lesson', {}, 'read', {'title': 'Bài 1', 'verified': True}, revision=3
+    )
+    assert is_new_3 is True and not third.get('unchanged')
 
 
 @pytest.mark.asyncio

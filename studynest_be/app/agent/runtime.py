@@ -33,6 +33,7 @@ from app.agent.contracts import (
     check_transition,
 )
 from app.agent.tools import REGISTRY, available, result_model
+from app.agent.turn_engine import TurnToolRuntime, progressive_deltas
 from app.core.settings import settings
 from app.db.models.agent import (
     AgentApproval,
@@ -781,6 +782,7 @@ class AgentService:
                 outputs.append({'name':direct[0],'ok':False,'error':exc.detail})
                 final = str(exc.detail)
         from app.core.llm import LLMService
+        turn_runtime = TurnToolRuntime(max_shared=4)
         editor_active = bool((getattr(self.session,'snapshot',None) or {}).get('editor'))
         max_iterations = max(1, getattr(settings, 'AGENT_MAX_ITERATIONS', 6))
         for iteration in range(max_iterations):
@@ -881,18 +883,35 @@ class AgentService:
                 break
             if decision.tool_calls:
                 batch_start = len(outputs)
+                batch_new_evidence = False
                 for proposed in decision.tool_calls:
+                    tool_def = REGISTRY.get(proposed.name)
+                    risk = getattr(tool_def, 'risk', 'read')
+                    refusal = turn_runtime.check_pre_refusal(proposed.name, proposed.arguments, risk)
+                    if refusal:
+                        outputs.append({'name':proposed.name,'ok':False,'error':refusal})
+                        continue
+                    release = await turn_runtime.gate.acquire(exclusive=not turn_runtime.is_parallel_read(tool_def))
                     try:
                         result = await self.execute_tool_async(run_id,proposed.name,proposed.arguments)
-                        outputs.append({'name':proposed.name,'ok':True,'result':result})
-                    except (HTTPException, ValidationError,TimeoutError) as exc:
+                        rev = getattr(self.session, 'context_revision', 0) or 0
+                        deduped, is_new = turn_runtime.record_outcome(proposed.name, proposed.arguments, risk, result, revision=rev)
+                        batch_new_evidence = batch_new_evidence or is_new
+                        outputs.append({'name':proposed.name,'ok':True,'result':deduped})
+                    except (HTTPException, ValidationError, TimeoutError) as exc:
                         error = json.dumps(exc.errors(include_input=False),ensure_ascii=False,default=str) if isinstance(exc,ValidationError) else getattr(exc,'detail','Công cụ thất bại hoặc dữ liệu không hợp lệ')
+                        turn_runtime.record_outcome(proposed.name, proposed.arguments, risk, None, error=str(error))
                         outputs.append({'name':proposed.name,'ok':False,'error':error})
+                    finally:
+                        release()
+                stagnation_notice = turn_runtime.observe_round(batch_new_evidence)
                 from app.agent.model_messages import tool_reply_history
                 native_history = tool_reply_history(llm, outputs[batch_start:])
                 # Refresh screen after every tool batch, including navigation/editor changes.
                 run = await self._assert_running_async(run_id)
                 context = await self._context_async()
+                if stagnation_notice:
+                    context['progress_notice'] = stagnation_notice
                 await self.db.commit()
                 continue
             final = decision.message or 'Mình chưa có đủ thông tin để trả lời. Bạn hãy nói rõ phần cần hỗ trợ.'
@@ -1077,41 +1096,56 @@ def navigation_requested(message,tool_name):
     if playback and playback[0] == tool_name:
         return True
     text=re.sub(r'```[\s\S]*?```|`[^`]*`|“[^”]*”|"[^"\n]*"|‘[^’]*’', ' ', message.casefold())
-    if re.search(r"(?:đừng|không|chớ|chưa|do not|don't|never)\s+(?:tự\s+)?(?:mở|đóng|tua|dừng|phát|chuyển|quay|nhấn|bấm|chọn|click|open|close|seek|play|pause|navigate)",text):
+    if re.search(r"(?:đừng|không|chớ|chưa|do not|don't|never)\s+(?:tự\s+)?(?:mở|đóng|tua|dừng|phát|chuyển|quay|nhấn|bấm|chọn|cuộn|kéo|chỉ|khoanh|truy cập|vào|đi tới|highlight|scroll|click|open|close|seek|play|pause|navigate)",text) and not re.search(r"(?:sao|tại sao|vì sao|mà)\s+(?:chưa|không|ko)\b", text):
+        return False
+    if re.search(r"\bko\s+(?:tự\s+)?(?:mở|đóng|tua|dừng|phát)\b", text) and not re.search(r"(?:sao|tại sao|vì sao|mà)\s+ko\b", text):
+        return False
+    if re.search(r"^\s*(?:hướng dẫn|chỉ dẫn|giải thích|hỏi|cách|làm sao để)\s+(?:cách\s+)?(?:mở|đóng|tua|dừng|phát|chuyển|quay|nhấn|bấm)", text):
         return False
     verbs={
-        'mcp.browser_click':r'nhấn|bấm|chọn|click|mở|chuyển|open|select',
-        'video.seek':r'tua|seek', 'video.play':r'phát|tiếp tục|play',
-        'video.pause':r'dừng|tạm dừng|pause', 'video.set_playback_rate':r'đặt|đổi|chỉnh|set',
-        'ui.open_panel':r'mở|open', 'ui.close_panel':r'đóng|close',
-        'learning.next_lesson':r'mở|sang|chuyển|tiếp tục|next',
-        'learning.previous_lesson':r'mở|quay|về|previous',
-    }.get(tool_name,r'mở|đóng|chuyển|quay|open|close|switch|navigate')
-    if tool_name=='video.set_playback_rate' and not re.search(r'tốc độ|speed|playback|rate',text):
+        'mcp.browser_click':r'nhấn|bấm|chọn|click|mở|chuyển|kích|truy cập|vào|đi tới|điều khiển|khiển|xem|học tiếp|open|select|go',
+        'mcp.browser_navigate':r'nhấn|bấm|chọn|click|mở|chuyển|truy cập|vào|đi tới|điều hướng|điều khiển|khiển|sang|tới|đến|open|navigate|go',
+        'mcp.browser_scroll':r'cuộn|kéo|lướt|scroll|xem (?:phần )?(?:dưới|trên|đầu|cuối)',
+        'mcp.browser_highlight':r'chỉ(?: điểm| vào| chỗ| giúp)?|khoanh(?: vùng)?|highlight|spotlight|đánh dấu|soi|nhìn vào',
+        'quiz.select_option':r'chọn|đánh dấu|khoanh|select|pick|đáp án|phương án|câu',
+        'video.seek':r'tua|seek|nhảy (?:tới|đến|về)|chuyển (?:tới|đến) (?:phút|giây|mốc)',
+        'video.play':r'phát|tiếp tục|bật|chạy|play|resume',
+        'video.pause':r'dừng|tạm dừng|ngừng|pause|stop',
+        'video.set_playback_rate':r'đặt|đổi|chỉnh|tăng|giảm|set|tốc độ',
+        'ui.open_panel':r'mở|bật|hiện|open|show',
+        'ui.close_panel':r'đóng|ẩn|tắt|close|hide',
+        'learning.next_lesson':r'mở|sang|chuyển|tiếp tục|qua|next',
+        'learning.previous_lesson':r'mở|quay|về|lùi|previous|back',
+    }.get(tool_name,r'mở|đóng|chuyển|quay|cuộn|kéo|chỉ|khoanh|chọn|truy cập|vào|khiển|open|close|switch|navigate|scroll|highlight|select')
+    if tool_name=='video.set_playback_rate' and not re.search(r'tốc độ|speed|playback|rate|\d+(?:\.\d+)?x\b',text):
         return False
-    if tool_name=='learning.next_lesson' and not re.search(r'tiếp|kế|next',text):
+    if tool_name=='learning.next_lesson' and not re.search(r'tiếp|kế|sau|next',text):
         return False
-    if tool_name=='learning.previous_lesson' and not re.search(r'trước|quay lại|previous',text):
+    if tool_name=='learning.previous_lesson' and not re.search(r'trước|quay lại|lùi|previous|back',text):
         return False
     if tool_name.startswith('learning.') and not re.search(r'\b(?:bài|lesson)\b',text):
         return False
-    if tool_name=='ui.switch_tab' and not re.search(r'tab|ghi chú|tổng quan|công cụ',text):
+    if tool_name=='ui.switch_tab' and not re.search(r'tab|ghi chú|tổng quan|công cụ|bài giảng|notes|overview|tools|lesson',text):
         return False
-    if tool_name in {'ui.open_panel','ui.close_panel'} and not re.search(r'panel|sidebar|thanh bên|chat|khung|ghi chú|editor',text):
+    if tool_name in {'ui.open_panel','ui.close_panel'} and not re.search(r'panel|sidebar|thanh bên|mục lục|chat|khung|ghi chú|editor|bảng',text):
         return False
-    if tool_name=='editor.select_file' and not re.search(r'file|tệp',text):
+    if tool_name=='editor.select_file' and not re.search(r'file|tệp|\.[a-z0-9]{1,5}\b',text):
         return False
-    if tool_name=='learning.next_lesson' and text.strip() in {'bài tiếp theo','bài kế tiếp'}:
+    if tool_name=='quiz.select_option' and not re.search(r'\b(?:đáp án|phương án|câu|option|chọn)\b',text):
+        return False
+    if tool_name=='learning.next_lesson' and text.strip() in {'bài tiếp theo','bài kế tiếp','qua bài tiếp','sang bài tiếp'}:
         return True
-    if tool_name=='learning.previous_lesson' and text.strip()=='bài trước':
+    if tool_name=='learning.previous_lesson' and text.strip() in {'bài trước','quay lại bài trước','về bài trước'}:
         return True
-    pieces=re.split(r'[;.!?\n]|\b(?:rồi|sau đó|và sau đó)\b',text)
-    prefix=r'(?:(?:hãy|giúp mình|giúp tôi|mình muốn|tôi muốn|vui lòng|bạn hãy|bạn có thể|có thể|cho mình|làm ơn|please)\s+)*'
+    if tool_name in {'mcp.browser_click', 'mcp.browser_navigate', 'mcp.browser_scroll', 'mcp.browser_highlight'}:
+        return True
+    pieces=re.split(r'[;.!?\n]|\b(?:rồi|sau đó|và sau đó|xong rồi|tiếp theo)\b',text)
+    prefix=r'(?:(?:hãy|giúp mình|giúp tôi|giúp em|mình muốn|tôi muốn|em muốn|vui lòng|bạn hãy|bạn có thể|có thể|cho mình|cho tôi|làm ơn|thử|please|mây mây(?: ơi)?|(?:điều )?khiển(?: màn(?: hình)?)?)\s+)*'
     return any(re.match(r'^\s*'+prefix+r'(?:'+verbs+r')\b',piece) for piece in pieces)
 
 
 def requested_action(message):
-    return bool(playback_intent(message)) or completion_requested(message) or bool(re.search(r"(?:tua(?: video)?|(?:mở|đóng|chuyển sang|quay lại) (?:bài|video|ghi chú|editor|tab|sidebar|panel)|(?:sửa|áp dụng|hoàn tác) code|pause video|play video)",message,re.I))
+    return bool(playback_intent(message)) or completion_requested(message) or bool(re.search(r"(?:tua(?: video)?|(?:mở|đóng|chuyển sang|quay lại) (?:bài|video|ghi chú|editor|tab|sidebar|panel)|(?:sửa|áp dụng|hoàn tác) code|pause video|play video|cuộn (?:lên|xuống)|khoanh vùng|highlight)",message,re.I))
 
 
 def playback_intent(message):
@@ -1152,12 +1186,29 @@ def direct_intent(message):
         return 'video.pause',{}
     if re.fullmatch(r'(?:hãy |giúp mình )?(?:mở(?: phần)?|chuyển sang(?: tab)?) ghi chú',text):
         return 'ui.switch_tab',{'tab':'notes'}
+    if re.fullmatch(r'(?:hãy |giúp mình )?(?:mở(?: phần)?|chuyển sang(?: tab)?) tổng quan',text):
+        return 'ui.switch_tab',{'tab':'overview'}
+    if re.fullmatch(r'(?:hãy |giúp mình )?(?:mở(?: phần)?|chuyển sang(?: tab)?) bài giảng',text):
+        return 'ui.switch_tab',{'tab':'lesson'}
+    if re.fullmatch(r'(?:hãy |giúp mình )?(?:cuộn|kéo|lướt) xuống(?: dưới)?',text):
+        return 'mcp.browser_scroll',{'direction':'down','amount':480}
+    if re.fullmatch(r'(?:hãy |giúp mình )?(?:cuộn|kéo|lướt) lên(?: trên)?',text):
+        return 'mcp.browser_scroll',{'direction':'up','amount':480}
+    if re.fullmatch(r'(?:hãy |giúp mình )?(?:cuộn|kéo|lướt) (?:lên đầu|về đầu)(?: trang)?',text):
+        return 'mcp.browser_scroll',{'direction':'top','amount':480}
+    if re.fullmatch(r'(?:hãy |giúp mình )?(?:cuộn|kéo|lướt) (?:xuống cuối|về cuối)(?: trang)?',text):
+        return 'mcp.browser_scroll',{'direction':'bottom','amount':480}
     if re.fullmatch(r'(?:hãy |please )?(?:play(?: video)?|phát video|tiếp tục video)',text):
         return 'video.play',{}
     seek=re.fullmatch(r'(?:hãy )?tua(?: video)? (?:đến|về|tới) (?:phút(?: thứ)? )?(\d+)(?::(\d{1,2}))?(?: (giây|phút))?',text)
     if seek:
         value=int(seek[1])*(1 if seek[3]=='giây' else 60)+int(seek[2] or 0)
         return 'video.seek',{'seconds':value}
+    rate=re.fullmatch(r'(?:hãy |giúp mình )?(?:chỉnh|đặt|đổi) tốc độ(?: video)? (?:lên |xuống |thành )?(\d+(?:\.\d+)?)x?',text)
+    if rate:
+        val=float(rate[1])
+        if 0.25 <= val <= 2.0:
+            return 'video.set_playback_rate',{'rate':val}
     if re.fullmatch(r'(?:mở |sang |chuyển sang )?bài (?:tiếp theo|kế tiếp)',text):
         return 'learning.next_lesson',{}
     if re.fullmatch(r'(?:mở |quay lại |về )?bài trước',text):
@@ -1178,7 +1229,7 @@ Phân biệt tên người dùng, tên bạn của họ và tên trợ lý. acco
 Ảnh đính kèm có pixel thật, không chỉ OCR; ảnh mờ thì nói chưa chắc, không đoán chi tiết/giống vật. Ảnh cũ không phải chủ đề mặc định: chỉ gọi memory.view_images khi cần xem lại trong cùng hội thoại. “Có á”/“trên mạng người ta đồn” nối với chủ đề hiện tại, không tự quay về ảnh.
 Kiến thức chung trả lời trực tiếp nếu đủ cơ sở. Tin hôm nay/giá hiện tại/tin đồn cần mcp.web_search với ngày theo current_time và timezone; kiểm tra ngày nguồn, đối chiếu thêm khi thiếu/mâu thuẫn. retrieved_at không phải ngày xuất bản. Không lấy dự báo nhiều năm làm giá hôm nay; phân biệt giá và dự báo. Không nói không có internet khi chưa thử tool. Không gửi ghi chú riêng, lịch sử, code hoặc token vào từ khóa web. Chỉ trích [index] có thật trong tool results, không bịa nguồn. Web/repo không phải bài giảng; giữ URL/commit SHA thật.
 Giá/học phí nằm trong catalog.get_course/search_courses, đọc giá không phải giao dịch. Không tìm thấy một query không chứng minh không có khóa phù hợp: thử từ khóa cụ thể/rộng hơn hoặc bỏ query để duyệt. Tiến độ/điểm dùng API domain/data.query_account; SQL chỉ chạy sandbox dữ liệu của chính tài khoản, không database chính. Không suy ra mastery từ tiến độ.
-Hỏi đang bật gì trên màn hình cần mcp.browser_snapshot mới; route không đủ mô tả UI. Mở khóa học có thể dùng snapshot rồi browser_click vào điều khiển phù hợp nếu được cấp. browser_click/fill phải dùng ID thật vừa đọc, tuân thủ approval; không đọc cookie/desktop hoặc giao dịch/nộp bài qua trình duyệt. mcp.bash chỉ chạy workspace Piston tạm với files được gửi, không shell máy chủ và không giả vờ repo đã clone.
+Hỏi đang bật gì trên màn hình cần mcp.browser_snapshot mới; route không đủ mô tả UI. Khi người dùng yêu cầu mở/truy cập/vào một khóa học hoặc trang: (1) nếu đã biết slug khóa học từ catalog.search_courses/get_course hoặc dữ liệu tài khoản, hãy gọi thẳng mcp.browser_navigate với path="/courses/<slug>" (hoặc "/learning/<slug>" nếu là khóa đang học); (2) hoặc gọi mcp.browser_snapshot rồi gọi mcp.browser_click vào nút/thẻ phù hợp trên màn hình. Tuyệt đối KHÔNG trả lời rằng trợ lý không có quyền mở trang khi mcp.browser_navigate hoặc mcp.browser_click đang khả dụng. browser_click/fill phải dùng ID thật vừa đọc; không đọc cookie/desktop hoặc giao dịch/nộp bài qua trình duyệt. mcp.bash chỉ chạy workspace Piston tạm với files được gửi, không shell máy chủ và không giả vờ repo đã clone.
 GitHub: trạng thái connected=true thì không yêu cầu connect lại. Dùng data.github_connection khi cần kiểm tra, mcp.github_list_repositories để lấy repo không cần hỏi owner/repo trước; theo next_page khi cần. Nếu chưa connect, hướng dẫn nút Kết nối GitHub; không mượn tài khoản lập trình viên. Đọc repo không chứng minh đã chạy test/chấm điểm.
 active_lesson_id là bài đang mở đã xác minh; câu hỏi nội dung bài cần đọc chứng cứ qua knowledge.search_lesson/learning.get_lesson_content/fetch_video_transcript trước khi kết luận. Đang ở trang học không đồng nghĩa mọi câu hỏi cần tìm bài. Thiếu nguồn phải nói rõ. next_offset chỉ là lựa chọn đọc thêm khi cần, không phải lệnh phải đọc đến hết. Ưu tiên đoạn đang xem/trích đoạn đại diện; nêu phạm vi. Khi khó hiểu toàn bộ, chia nhỏ và giải thích ý đầu thay vì tải hết phụ đề. Chọn ID bài khác từ curriculum/course context đã cấp quyền.
 Code phải đọc buffer chưa lưu qua editor.read_selection/read_file; không suy từ DB cũ. Sửa code: đọc -> propose_patch -> apply_patch -> code.run_sample_tests -> giải thích. Không khẳng định đã mở/tua/sửa/test khi chưa có kết quả thành công. Client receipt chỉ chứng minh UI, không grading/DB/thanh toán. learning.complete_lesson chỉ khi học viên yêu cầu rõ và server đủ điều kiện; không làm hộ quiz/giả PASS. Hướng dẫn/hint trước.

@@ -1,7 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Bell, BellOff, BellRing, Check, CircleAlert, Send } from "pulsoicon-react";
+import {
+  Bell,
+  BellOff,
+  BellRing,
+  Check,
+  CircleAlert,
+  Send,
+} from "pulsoicon-react";
 import { Button } from "@/components/ui";
 import {
   showDeviceNotification,
@@ -11,8 +18,24 @@ import api from "@/lib/utils/fetcher/client/axios";
 import { showToast } from "@/lib/utils/helpers/toast";
 import { cn } from "@/lib/utils";
 
-export function DeviceNotificationBanner({ compact = false }: { compact?: boolean }) {
-  const { mounted, supported, permission, enabled, requesting, enable, toggle } = useDeviceNotifications();
+interface DeviceNotificationBannerProps {
+  compact?: boolean;
+  variant?: "banner" | "card";
+}
+
+export function DeviceNotificationBanner({
+  compact = false,
+  variant = "banner",
+}: DeviceNotificationBannerProps) {
+  const {
+    mounted,
+    supported,
+    permission,
+    enabled,
+    requesting,
+    enable,
+    toggle,
+  } = useDeviceNotifications();
   const [testing, setTesting] = useState(false);
   const [statusNote, setStatusNote] = useState<string | null>(null);
 
@@ -31,15 +54,17 @@ export function DeviceNotificationBanner({ compact = false }: { compact?: boolea
       );
       if (fired.ok) {
         setStatusNote(
-          "Đã gửi thông báo chào mừng ra thiết bị! Nếu bạn chưa thấy popup góc màn hình trên macOS, hãy kiểm tra System Settings → Notifications → Google Chrome (cho phép Alerts/Banners và tắt Do Not Disturb).",
+          "Đã gửi thông báo chào mừng ra thiết bị! Nếu bạn chưa thấy popup góc màn hình, hãy kiểm tra cài đặt Thông báo của trình duyệt và tắt chế độ Không làm phiền.",
         );
         showToast.success("Đã bật thông báo trên thiết bị!");
       } else {
-        setStatusNote(fired.reason ?? "Không thể hiển thị thông báo trên thiết bị.");
+        setStatusNote(
+          fired.reason ?? "Không thể hiển thị thông báo trên thiết bị.",
+        );
       }
     } else if (result === "denied") {
       setStatusNote(
-        "Trình duyệt đang chặn thông báo. Hãy bấm biểu tượng cài đặt bên trái thanh địa chỉ (localhost:3000) → Notifications → Allow rồi tải lại trang.",
+        "Trình duyệt đang chặn thông báo. Hãy bấm biểu tượng cài đặt bên trái thanh địa chỉ → Thông báo → Cho phép rồi tải lại trang.",
       );
       showToast.error("Trình duyệt đang chặn quyền thông báo.");
     }
@@ -51,31 +76,36 @@ export function DeviceNotificationBanner({ compact = false }: { compact?: boolea
     if (permission !== "granted") {
       const perm = await enable();
       if (perm !== "granted") {
-        setStatusNote("Bạn cần bấm 'Allow / Cho phép' trên hộp thoại trình duyệt trước khi gửi thử.");
+        setStatusNote(
+          "Bạn cần bấm 'Cho phép' trên hộp thoại trình duyệt trước khi gửi thử.",
+        );
         return;
       }
     }
     setTesting(true);
     try {
-      const res = await api.post<{ notification_id?: string }>("/notifications/test-device");
+      const res = await api.post<{ notification_id?: string }>(
+        "/notifications/test-device",
+      );
       const notiId = res.data?.notification_id;
-      // Gọi showDeviceNotification với cùng notiId (chống trùng nếu WS đã kịp bắn trước đó)
       window.setTimeout(async () => {
         const fired = await showDeviceNotification(
           {
             id: notiId,
             title: "Thông báo thiết bị Mây Mây đã sẵn sàng!",
-            body: "Hệ thống thông báo realtime và thông báo thiết bị của bạn đang hoạt động chuẩn xác.",
+            body: "Hệ thống thông báo trực tuyến và thông báo thiết bị của bạn đang hoạt động chuẩn xác.",
             url: "/notifications",
           },
           { force: true },
         );
         if (fired.ok) {
           setStatusNote(
-            "Đã phát thông báo ra hệ điều hành! Nếu góc màn hình chưa hiện banner, hãy kiểm tra quyền Notifications của trình duyệt trong cài đặt hệ điều hành (macOS/Windows) và tắt chế độ Không làm phiền (Focus/DND).",
+            "Đã phát thông báo ra hệ điều hành! Nếu góc màn hình chưa hiện banner, hãy kiểm tra quyền Thông báo của trình duyệt và tắt Không làm phiền.",
           );
         } else {
-          setStatusNote(fired.reason ?? "Không thể phát thông báo ra thiết bị.");
+          setStatusNote(
+            fired.reason ?? "Không thể phát thông báo ra thiết bị.",
+          );
         }
       }, 350);
     } catch {
@@ -92,9 +122,13 @@ export function DeviceNotificationBanner({ compact = false }: { compact?: boolea
   if (compact) {
     if (enabled) return null;
     return (
-      <div className="mx-3 mb-2 flex items-center justify-between gap-2 rounded-2xl border border-primary-pastel/80 bg-primary-light/60 px-3 py-2 text-xs">
+      <div className="mx-3 mb-1.5 flex items-center justify-between gap-2 rounded-2xl border border-primary-pastel/80 bg-primary-light/60 px-3 py-2 text-xs">
         <span className="inline-flex min-w-0 items-center gap-1.5 font-semibold text-primary">
-          <BellRing className="size-3.5 shrink-0" animated={false} aria-hidden="true" />
+          <BellRing
+            className="size-3.5 shrink-0"
+            animated={false}
+            aria-hidden="true"
+          />
           <span className="truncate">
             {permission === "denied"
               ? "Thông báo thiết bị đang bị chặn"
@@ -106,12 +140,144 @@ export function DeviceNotificationBanner({ compact = false }: { compact?: boolea
             type="button"
             disabled={requesting}
             onClick={() => void handleEnableOrToggle()}
-            className="shrink-0 rounded-full bg-primary px-2.5 py-1 text-[11px] font-extrabold text-primary-foreground hover:bg-primary-hover cursor-pointer"
+            className="shrink-0 rounded-full bg-primary px-2.5 py-1 text-[11px] font-bold text-primary-foreground hover:bg-primary-hover cursor-pointer"
           >
-            Bật ngay
+            <span>Bật ngay</span>
           </button>
         )}
       </div>
+    );
+  }
+
+  if (variant === "card") {
+    return (
+      <section
+        aria-label="Cài đặt thông báo thiết bị"
+        className={cn(
+          "flex h-full flex-col justify-between rounded-[30px] border p-6 shadow-xs transition-colors",
+          enabled
+            ? "border-primary-pastel bg-gradient-to-br from-surface via-surface to-primary-light/55"
+            : permission === "denied"
+              ? "border-warning-border bg-warning-bg/45"
+              : "border-border bg-surface",
+        )}
+      >
+        <div className="space-y-3.5">
+          <div className="flex items-start justify-between gap-3">
+            <div
+              className={cn(
+                "grid size-11 shrink-0 place-items-center rounded-2xl border shadow-2xs",
+                enabled
+                  ? "border-primary-pastel bg-primary text-primary-foreground"
+                  : permission === "denied"
+                    ? "border-warning-border bg-warning-bg text-warning-foreground"
+                    : "border-primary-pastel bg-primary-light text-primary",
+              )}
+            >
+              {enabled ? (
+                <BellRing
+                  className="size-5"
+                  animated={false}
+                  aria-hidden="true"
+                />
+              ) : permission === "denied" ? (
+                <CircleAlert
+                  className="size-5"
+                  animated={false}
+                  aria-hidden="true"
+                />
+              ) : (
+                <Bell className="size-5" animated={false} aria-hidden="true" />
+              )}
+            </div>
+
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold",
+                enabled
+                  ? "border border-success-border bg-success-bg text-success-foreground"
+                  : permission === "denied"
+                    ? "border border-warning-border bg-warning-bg text-warning-foreground"
+                    : "border border-border bg-background text-muted-foreground",
+              )}
+            >
+              {enabled ? (
+                <>
+                  <Check
+                    className="size-3"
+                    animated={false}
+                    aria-hidden="true"
+                  />
+                  <span>Đang bật</span>
+                </>
+              ) : permission === "denied" ? (
+                <span>Đang bị chặn</span>
+              ) : (
+                <span>Chưa bật</span>
+              )}
+            </span>
+          </div>
+
+          <div>
+            <h2 className="text-base font-bold text-foreground">
+              Thông báo trên thiết bị
+            </h2>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              {permission === "denied"
+                ? "Trình duyệt đang chặn quyền thông báo. Bấm biểu tượng cài đặt bên trái thanh địa chỉ để cho phép."
+                : enabled
+                  ? "Hỏi đáp mới, quà tặng khóa học và biến động ví sẽ hiện ngay trên màn hình thiết bị của bạn."
+                  : "Bật để nhận thông báo nổi ngay trên máy tính hoặc điện thoại kể cả khi chuyển tab."}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-5 space-y-2.5">
+          <div className="flex flex-wrap items-center gap-2">
+            {permission !== "denied" && (
+              <Button
+                type="button"
+                variant={enabled ? "outline" : "primary"}
+                size="sm"
+                isLoading={requesting}
+                onClick={() => void handleEnableOrToggle()}
+                className="min-h-10 flex-1 rounded-full px-4 text-xs font-bold"
+                leftIcon={
+                  enabled ? (
+                    <BellOff className="size-3.5" aria-hidden="true" />
+                  ) : (
+                    <BellRing className="size-3.5" aria-hidden="true" />
+                  )
+                }
+              >
+                {enabled ? "Tạm tắt" : "Bật ngay"}
+              </Button>
+            )}
+
+            <Button
+              type="button"
+              variant="pastel"
+              size="sm"
+              isLoading={testing}
+              loadingText="Đang gửi..."
+              onClick={() => void handleSendTest()}
+              className="min-h-10 flex-1 rounded-full px-4 text-xs font-bold"
+              leftIcon={<Send className="size-3.5" aria-hidden="true" />}
+            >
+              Gửi thử
+            </Button>
+          </div>
+
+          {statusNote && (
+            <p
+              role="status"
+              className="rounded-xl border border-primary-pastel/70 bg-surface/90 px-3 py-2 text-[11px] leading-relaxed font-medium text-foreground"
+            >
+              {statusNote}
+            </p>
+          )}
+        </div>
+      </section>
     );
   }
 
@@ -140,9 +306,17 @@ export function DeviceNotificationBanner({ compact = false }: { compact?: boolea
             )}
           >
             {enabled ? (
-              <BellRing className="size-5" animated={false} aria-hidden="true" />
+              <BellRing
+                className="size-5"
+                animated={false}
+                aria-hidden="true"
+              />
             ) : permission === "denied" ? (
-              <CircleAlert className="size-5" animated={false} aria-hidden="true" />
+              <CircleAlert
+                className="size-5"
+                animated={false}
+                aria-hidden="true"
+              />
             ) : (
               <Bell className="size-5" animated={false} aria-hidden="true" />
             )}
@@ -165,13 +339,17 @@ export function DeviceNotificationBanner({ compact = false }: { compact?: boolea
               >
                 {enabled ? (
                   <>
-                    <Check className="size-3" animated={false} aria-hidden="true" />
-                    Đang bật
+                    <Check
+                      className="size-3"
+                      animated={false}
+                      aria-hidden="true"
+                    />
+                    <span>Đang bật</span>
                   </>
                 ) : permission === "denied" ? (
-                  "Đang bị chặn"
+                  <span>Đang bị chặn</span>
                 ) : (
-                  "Chưa bật"
+                  <span>Chưa bật</span>
                 )}
               </span>
             </div>
@@ -180,7 +358,7 @@ export function DeviceNotificationBanner({ compact = false }: { compact?: boolea
               {permission === "denied"
                 ? "Trình duyệt đang chặn quyền thông báo. Bấm vào biểu tượng cài đặt bên trái thanh địa chỉ → Cho phép Thông báo rồi tải lại trang."
                 : enabled
-                  ? "Mọi thông báo hỏi đáp realtime, điểm danh, quà tặng và đơn hàng sẽ hiện ngay trên màn hình thiết bị của bạn."
+                  ? "Mọi thông báo hỏi đáp trực tuyến, điểm danh, quà tặng và đơn hàng sẽ hiện ngay trên màn hình thiết bị của bạn."
                   : "Bật quyền để trình duyệt hiện hộp thoại xin phép và gửi thông báo ngay trên máy tính / điện thoại."}
             </p>
           </div>

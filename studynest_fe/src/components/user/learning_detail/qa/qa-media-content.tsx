@@ -14,10 +14,24 @@ interface QAMarkdownContentProps {
   content: string;
   onOpenImage?: (image: LightboxImage) => void;
   className?: string;
+  /**
+   * "auto" (mặc định): tự phát hiện nội dung HTML (từ Tiptap/DB) vs Markdown thuần.
+   * Bỏ qua thẻ HTML nằm trong fenced code block (```...```).
+   */
+  isHtml?: boolean | "auto";
+}
+
+export function detectIsHtml(content: string): boolean {
+  if (!content) return false;
+  const withoutCodeBlocks = content.replace(/```[\s\S]*?```/g, "");
+  return /<(?:p|div|h[1-6]|ul|ol|li|blockquote|table|thead|tbody|tr|td|th|strong|em|br|hr|figure|a\s+href=|img\s+src=)\b[^>]*>/i.test(
+    withoutCodeBlocks,
+  );
 }
 
 /**
- * Bọc MarkdownRenderer dành riêng cho Hỏi đáp Realtime:
+ * Bọc MarkdownRenderer dành riêng cho Hỏi đáp Realtime & Trang học bài:
+ * - Tự động nhận diện HTML (Tiptap) vs Markdown thuần để không lộ thẻ <p>/<ol>.
  * - Giới hạn kích thước ảnh và khối code để không bao giờ tràn/bể layout.
  * - Tự động gắn nút "Sao chép" ở góc mỗi khối code.
  * - Click vào bất kỳ ảnh nào để phóng to trong Lightbox.
@@ -26,8 +40,10 @@ export function QAMarkdownContent({
   content,
   onOpenImage,
   className,
+  isHtml = "auto",
 }: QAMarkdownContentProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const resolvedIsHtml = isHtml === "auto" ? detectIsHtml(content) : isHtml;
 
   useEffect(() => {
     const root = wrapperRef.current;
@@ -110,7 +126,7 @@ export function QAMarkdownContent({
         className,
       )}
     >
-      <MarkdownRenderer content={content} isHtml={false} />
+      <MarkdownRenderer content={content} isHtml={resolvedIsHtml} />
     </div>
   );
 }

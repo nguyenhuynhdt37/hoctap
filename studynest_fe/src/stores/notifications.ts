@@ -17,6 +17,8 @@ interface RealtimeNotiState {
   hydrate: (role: string, items: Notification[], unread: number) => void;
   add: (role: string, noti: Notification) => void;
   markAsRead: (role: string, id: string) => void;
+  markAsUnread: (role: string, id: string) => void;
+  remove: (role: string, id: string) => void;
   markAllRead: (role: string) => void;
   clearAll: () => void; // khi logout
 }
@@ -112,18 +114,60 @@ export const useRealtimeNotiStore = create<RealtimeNotiState>((set, get) => ({
     const bucket = state.buckets[role];
     if (!bucket) return;
 
+    const target = bucket.top10.find((n) => n.id === id);
+    const shouldDecrement = target ? !target.is_read : true;
     const updatedTop10 = bucket.top10.map((n) =>
       n.id === id ? { ...n, is_read: true } : n,
     );
-
-    const newUnread = Math.max(0, bucket.unread - 1);
 
     set({
       buckets: {
         ...state.buckets,
         [role]: {
           top10: updatedTop10,
-          unread: newUnread,
+          unread: shouldDecrement ? Math.max(0, bucket.unread - 1) : bucket.unread,
+        },
+      },
+    });
+  },
+
+  markAsUnread: (role, id) => {
+    const state = get();
+    const bucket = state.buckets[role];
+    if (!bucket) return;
+
+    const target = bucket.top10.find((n) => n.id === id);
+    const shouldIncrement = target ? target.is_read : true;
+    const updatedTop10 = bucket.top10.map((n) =>
+      n.id === id ? { ...n, is_read: false, read_at: null } : n,
+    );
+
+    set({
+      buckets: {
+        ...state.buckets,
+        [role]: {
+          top10: updatedTop10,
+          unread: shouldIncrement ? bucket.unread + 1 : bucket.unread,
+        },
+      },
+    });
+  },
+
+  remove: (role, id) => {
+    const state = get();
+    const bucket = state.buckets[role];
+    if (!bucket) return;
+
+    const target = bucket.top10.find((n) => n.id === id);
+    const wasUnread = target ? !target.is_read : false;
+    const updatedTop10 = bucket.top10.filter((n) => n.id !== id);
+
+    set({
+      buckets: {
+        ...state.buckets,
+        [role]: {
+          top10: updatedTop10,
+          unread: wasUnread ? Math.max(0, bucket.unread - 1) : bucket.unread,
         },
       },
     });

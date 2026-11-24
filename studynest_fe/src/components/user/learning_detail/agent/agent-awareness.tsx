@@ -100,6 +100,11 @@ export function screenControlText(
     if (last.name === "learning.next_lesson") return "Đã mở bài tiếp theo.";
     if (last.name === "learning.previous_lesson") return "Đã mở bài trước.";
     if (last.name === "learning.navigate_lesson") return "Đã chuyển bài học.";
+    if (last.name === "mcp.browser_scroll") return "Đã cuộn màn hình theo yêu cầu.";
+    if (last.name === "mcp.browser_highlight") return "Đã khoanh vùng chỉ điểm trên màn hình.";
+    if (last.name === "mcp.browser_click") return "Đã nhấn điều khiển trên màn hình.";
+    if (last.name === "mcp.browser_navigate") return "Đã điều hướng sang trang bạn yêu cầu.";
+    if (last.name === "quiz.select_option") return "Đã chọn phương án trắc nghiệm trên giao diện.";
     return "Đã điều khiển màn hình theo yêu cầu.";
   }
   const parts: string[] = [];
@@ -120,6 +125,8 @@ export function screenControlText(
   if (capabilities.includes("learning.next_lesson"))
     parts.push("bài tiếp theo");
   if (capabilities.includes("editor.read_file")) parts.push("đọc code");
+  if (capabilities.includes("mcp.browser_highlight")) parts.push("chỉ điểm màn hình");
+  if (capabilities.includes("quiz.select_option")) parts.push("hỗ trợ trắc nghiệm");
   if (!parts.length) return "Chưa gắn công cụ điều khiển màn hình.";
   return `Công cụ màn hình: ${parts.join(", ")}.`;
 }

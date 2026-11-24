@@ -92,7 +92,7 @@ export const SourceList = memo(function SourceList({
                 className="flex items-center gap-1.5 px-2.5 py-1.5 bg-background border border-border rounded-lg hover:bg-primary-pastel/50 hover:border-primary-light hover:text-primary transition-colors text-xs text-muted-foreground max-w-full cursor-pointer"
               >
                 <span className="font-semibold text-primary">[{source.index}]</span>
-                <Icon className="w-3.5 h-3.5 flex-shrink-0" />
+                <Icon animated={false} className="w-3.5 h-3.5 flex-shrink-0" />
                 <span className="truncate max-w-[200px]">{label}</span>
               </button>
             </HoverCardTrigger>
@@ -106,7 +106,7 @@ export const SourceList = memo(function SourceList({
                 {/* Header */}
                 <div className="flex items-start gap-3 mb-3 pb-3 border-b border-border">
                   <div className="p-2 bg-primary-pastel rounded-lg shrink-0">
-                    <Icon className="w-5 h-5 text-primary" />
+                    <Icon animated={false} className="w-5 h-5 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5 flex-wrap">

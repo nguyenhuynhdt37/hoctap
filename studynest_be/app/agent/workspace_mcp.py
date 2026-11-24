@@ -5,6 +5,7 @@ program execution is exclusively delegated to the configured Piston runner.
 """
 import json
 import asyncio
+import re
 from datetime import timedelta
 from typing import Literal
 import httpx
@@ -16,7 +17,7 @@ from pydantic import Field
 from app.agent.contracts import Contract
 from app.core.settings import settings
 
-BROWSER_TOOLS={'mcp.browser_snapshot','mcp.browser_click','mcp.browser_fill'}
+BROWSER_TOOLS={'mcp.browser_snapshot','mcp.browser_click','mcp.browser_fill','mcp.browser_scroll','mcp.browser_highlight','mcp.browser_navigate'}
 
 class BrowserTarget(Contract):
     snapshot_id: str = Field(min_length=8,max_length=80)
@@ -25,6 +26,22 @@ class BrowserTarget(Contract):
 
 class BrowserFill(BrowserTarget):
     value: str = Field(max_length=2000)
+
+class BrowserScroll(Contract):
+    direction: Literal["up", "down", "top", "bottom"] = "down"
+    amount: int = Field(default=480, ge=80, le=2400)
+    target_id: str | None = Field(default=None, min_length=1, max_length=40)
+    snapshot_id: str | None = Field(default=None, min_length=8, max_length=80)
+
+class BrowserHighlight(Contract):
+    snapshot_id: str = Field(min_length=8, max_length=80)
+    target_id: str = Field(min_length=1, max_length=40)
+    target_name: str = Field(min_length=1, max_length=220)
+    note: str = Field(default="", max_length=280)
+
+class BrowserNavigate(Contract):
+    path: str = Field(min_length=1, max_length=320, pattern=r"^/[A-Za-z0-9_./?&=%-]*$")
+    label: str = Field(default="", max_length=160)
 
 class BashFile(Contract):
     name: str = Field(min_length=1,max_length=150)
@@ -84,6 +101,26 @@ async def exchange(name, arguments, bridge=None):
         if bridge is None:raise ValueError('No active browser bridge')
         return await bridge({'snapshot_id':snapshot_id,'target_id':target_id,'target_name':target_name,'value':value})
     @server.tool(annotations=act)
+    async def browser_scroll(direction:str='down',amount:int=480,target_id:str|None=None,snapshot_id:str|None=None) -> dict:
+        """Scroll the active learning viewport or bring a target element into view."""
+        if bridge is None:raise ValueError('No active browser bridge')
+        payload={'direction':direction,'amount':amount}
+        if target_id:payload['target_id']=target_id
+        if snapshot_id:payload['snapshot_id']=snapshot_id
+        return await bridge(payload)
+    @server.tool(annotations=act)
+    async def browser_highlight(snapshot_id:str,target_id:str,target_name:str,note:str='') -> dict:
+        """Highlight and point to a visible element on screen with an explanatory callout."""
+        if bridge is None:raise ValueError('No active browser bridge')
+        return await bridge({'snapshot_id':snapshot_id,'target_id':target_id,'target_name':target_name,'note':note})
+    @server.tool(annotations=act)
+    async def browser_navigate(path:str,label:str='') -> dict:
+        """Navigate the same-origin web application to an authorized public/learning path."""
+        if bridge is None:raise ValueError('No active browser bridge')
+        if re.match(r'^/(?:admin|login|register|auth|checkout|payment)(?:/|$)',path):
+            raise ValueError('Path is outside assistant navigation scope')
+        return await bridge({'path':path,'label':label})
+    @server.tool(annotations=act)
     async def bash(command:str,files:list[dict],timeout_ms:int=3000) -> dict:
         """Execute Bash only in the isolated runner, with no app credentials or host files."""
         validated=BashCommand.model_validate({'command':command,'files':files,'timeout_ms':timeout_ms})
@@ -95,9 +132,15 @@ async def exchange(name, arguments, bridge=None):
             result=await session.call_tool(alias,arguments)
     except asyncio.CancelledError:
         raise
-    except Exception:
-        raise HTTPException(502,'Workspace MCP chưa trả được kết quả; lệnh chưa được xác minh.') from None
-    if result.isError:raise HTTPException(502,'Workspace MCP chưa thực hiện được lệnh; chưa có kết quả được xác minh.')
+    except HTTPException:
+        raise
+    except Exception as exc:
+        detail = getattr(exc, 'detail', None) or str(exc)
+        raise HTTPException(502, f'Workspace MCP chưa trả được kết quả ({detail[:200]}).') from None
+    if result.isError:
+        err_text = ''.join(getattr(item, 'text', '') for item in (result.content or [])).strip()
+        raise HTTPException(409 if 'Màn hình đã đổi' in err_text or 'Không xác minh được' in err_text else 502,
+                            err_text[:280] or 'Workspace MCP chưa thực hiện được lệnh; chưa có kết quả được xác minh.')
     data=result.structuredContent
     if data is None:data=json.loads(''.join(item.text for item in result.content if item.type=='text'))
     if not isinstance(data,dict):raise HTTPException(502,'Workspace MCP trả dữ liệu không hợp lệ.')

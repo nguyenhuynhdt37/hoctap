@@ -26,6 +26,7 @@ const Register = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [gradeLevel, setGradeLevel] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const validateEmail = (value: string) => {
@@ -240,6 +241,7 @@ const Register = () => {
         email: email.trim(),
         full_name: fullName.trim(),
         password,
+        ...(gradeLevel ? { grade_level: gradeLevel } : {}),
       });
       router.push(
         "/email_authentication?registered=true&email=" +
@@ -394,6 +396,46 @@ const Register = () => {
           }
           placeholder="••••••••"
         />
+
+        {/* Chọn nhanh Lớp học (1 → 12) để cá nhân hóa lộ trình ngay khi tạo tài khoản */}
+        <div className="rounded-2xl border border-border bg-background/70 p-3.5">
+          <div className="flex items-center justify-between gap-2">
+            <label className="text-xs font-semibold text-foreground">
+              Bạn đang học lớp mấy? <span className="font-normal text-muted-foreground">(tùy chọn)</span>
+            </label>
+            {gradeLevel && (
+              <button
+                type="button"
+                onClick={() => setGradeLevel(null)}
+                className="text-[11px] font-semibold text-primary hover:underline cursor-pointer"
+              >
+                <span>Bỏ chọn</span>
+              </button>
+            )}
+          </div>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
+            Mây Mây sẽ tự thiết kế sẵn lộ trình Lớp 1 → 12 phù hợp cho bạn.
+          </p>
+          <div className="mt-2.5 grid grid-cols-6 gap-1.5">
+            {Array.from({ length: 12 }, (_, idx) => idx + 1).map((g) => {
+              const selected = gradeLevel === g;
+              return (
+                <button
+                  key={g}
+                  type="button"
+                  onClick={() => setGradeLevel((prev) => (prev === g ? null : g))}
+                  className={`rounded-xl border py-1.5 text-xs font-bold transition cursor-pointer tabular-nums ${
+                    selected
+                      ? "border-primary bg-primary text-primary-foreground shadow-2xs"
+                      : "border-border bg-surface text-foreground hover:border-primary-pastel hover:bg-primary-light hover:text-primary"
+                  }`}
+                >
+                  <span>L{g}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         <Button
           type="submit"

@@ -90,7 +90,7 @@ export const USER_NAV: NavGroup[] = [
     icon: BookOpen,
     items: [
       { id: "my-learning", href: "/my-learning", label: "Khóa học của tôi", description: "Quay lại đúng bài đang học dở", icon: BookOpen, audience: "member", size: "wide" },
-      { id: "my-paths", href: "/lo-trinh/cua-toi", label: "Lộ trình của tôi", description: "Các chặng bạn đang theo", icon: Route, audience: "member" },
+      { id: "my-paths", href: "/learning-paths/my", label: "Lộ trình của tôi", description: "Các chặng bạn đang theo", icon: Route, audience: "member" },
       { id: "review", href: "/review", label: "Ôn tập", description: "Nhắc lại đúng lúc để nhớ lâu", icon: ListChecks, audience: "member" },
       { id: "mastery", href: "/mastery", label: "Bản đồ năng lực", description: "Chỗ đã vững, chỗ cần luyện", icon: Network, audience: "member" },
       { id: "goals", href: "/goals", label: "Mục tiêu", description: "Đặt đích đến cho tuần này", icon: Target, audience: "member" },
@@ -116,7 +116,7 @@ export const USER_NAV: NavGroup[] = [
         ],
       },
       { id: "combo", href: "/combo", label: "Combo", description: "Gói khóa học tiết kiệm hơn", icon: Package, audience: "all" },
-      { id: "paths", href: "/lo-trinh", label: "Lộ trình", description: "Chặng học dựng sẵn theo mục tiêu", icon: Map, audience: "all" },
+      { id: "paths", href: "/learning-paths", label: "Lộ trình", description: "Chặng học dựng sẵn theo mục tiêu", icon: Map, audience: "all" },
       { id: "instructors", href: "/instructors", label: "Giáo viên", description: "Gặp những người dẫn đường", icon: UsersRound, audience: "all" },
       {
         id: "favorites", href: "/favorites", label: "Yêu thích", description: "Khóa học bạn đã thả tim", icon: Heart, audience: "member",
@@ -124,7 +124,6 @@ export const USER_NAV: NavGroup[] = [
       },
       { id: "shop", href: "/shop", label: "Cửa hàng", description: "Dùng Coin đổi đồ trang trí cho hồ sơ", icon: ShoppingBag, audience: "member" },
       { id: "gifts", href: "/gifts", label: "Quà tặng", description: "Quà và ưu đãi dành cho bạn", icon: Gift, audience: "member" },
-      { id: "combo-orders", href: "/combo/don-hang", label: "Đơn combo", description: "Theo dõi các gói đã mua", icon: ShoppingBag, audience: "member" },
     ],
   },
   {

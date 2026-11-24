@@ -1,6 +1,7 @@
 "use client";
 
 import { memo, useState } from "react";
+import { Bot } from "pulsoicon-react";
 import { TutorMessage, MessageSource } from "@/types/user/tutor-chat";
 import { AgentActivity } from "../agent/agent-activity";
 import MarkdownRenderer from "./markdown-renderer";
@@ -17,23 +18,27 @@ interface Props {
 function MessageBubble({ message, onSourceClick, currentLessonId }: Props) {
   const isUser = message.role === "user";
   const [viewingImage, setViewingImage] = useState<string | null>(null);
+  const timeStr =
+    message.timestamp instanceof Date && !Number.isNaN(message.timestamp.getTime())
+      ? message.timestamp.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })
+      : "";
 
-  // User message
+  // User message (Hannes prompt style: ❯ command / prompt pill)
   if (isUser) {
     return (
       <div className="flex justify-end">
-        <div className="max-w-[85%] flex flex-col items-end">
+        <div className="flex max-w-[88%] flex-col items-end">
           {/* Images Grid */}
           {message.images && message.images.length > 0 ? (
-            <div className="flex flex-wrap justify-end gap-1 mb-2 max-w-[300px]">
+            <div className="mb-2 flex max-w-[300px] flex-wrap justify-end gap-1.5">
               {message.images.map((img, index) => {
                 const src = getImageUrl(img.url);
                 return (
                   <img
                     key={img.id || index}
                     src={src}
-                    alt=""
-                    className="w-[90px] h-[90px] object-cover rounded-lg cursor-zoom-in border border-gray-100 bg-gray-50 hover:opacity-90 transition-opacity shadow-sm"
+                    alt="Ảnh đính kèm của bạn"
+                    className="h-[88px] w-[88px] cursor-zoom-in rounded-xl border border-primary-pastel bg-background object-cover shadow-2xs transition-opacity hover:opacity-90"
                     onClick={() => setViewingImage(src)}
                   />
                 );
@@ -43,42 +48,64 @@ function MessageBubble({ message, onSourceClick, currentLessonId }: Props) {
 
           {/* Text */}
           {message.content && (
-            <div className="bg-primary text-primary-foreground rounded-2xl rounded-br-sm px-4 py-2.5 shadow-2xs">
-              <p className="text-sm whitespace-pre-wrap leading-relaxed">
-                {message.content}
-              </p>
+            <div className="rounded-2xl rounded-br-xs border border-primary/20 bg-primary px-4 py-2.5 text-primary-foreground shadow-xs">
+              <div className="flex items-start gap-2">
+                <span aria-hidden="true" className="select-none font-mono text-xs font-bold opacity-75">
+                  ❯
+                </span>
+                <p className="whitespace-pre-wrap text-sm leading-relaxed">{message.content}</p>
+              </div>
             </div>
           )}
+          {timeStr && <span className="mt-1 px-1 text-[10px] text-muted-foreground">{timeStr}</span>}
         </div>
 
-        <ImagePreviewModal
-          src={viewingImage}
-          onClose={() => setViewingImage(null)}
-        />
+        <ImagePreviewModal src={viewingImage} onClose={() => setViewingImage(null)} />
       </div>
     );
   }
 
-  // Assistant message
+  // Assistant message (Hannes Editorial Co-Pilot card)
   return (
-    <div className="w-full">
-      <AgentActivity events={message.activity} running={message.isStreaming} />
-      {/* Content */}
-      {message.content && <MarkdownRenderer content={message.content} />}
+    <div className="group relative w-full rounded-2xl border border-border/80 bg-surface p-3.5 shadow-2xs transition-colors hover:border-primary-pastel/80">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <span className="flex h-6 w-6 items-center justify-center rounded-lg border border-primary-pastel bg-primary-light text-primary">
+            <Bot animated={false} className="h-3.5 w-3.5" />
+          </span>
+          <span className="text-xs font-semibold text-foreground">Mây Mây Co-Pilot</span>
+          {message.isStreaming && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-primary-light px-2 py-0.5 text-[10px] font-medium text-primary">
+              <span className="h-1.5 w-1.5 animate-ping rounded-full bg-primary" />
+              Live
+            </span>
+          )}
+        </div>
+        {timeStr && <span className="text-[10px] tabular-nums text-muted-foreground">{timeStr}</span>}
+      </div>
 
-      {/* Loading dots */}
+      <AgentActivity events={message.activity} running={message.isStreaming} />
+
+      {/* Content */}
+      {message.content && (
+        <div className="pl-0.5">
+          <MarkdownRenderer content={message.content} />
+        </div>
+      )}
+
+      {/* Loading state when waiting for first event */}
       {message.isStreaming && !message.content && !message.activity?.length && (
-        <div className="flex items-center gap-2 py-2">
+        <div className="flex items-center gap-2.5 rounded-xl bg-primary-light/40 px-3 py-2">
           <div className="flex gap-1">
-            {[0, 150, 300].map((delay) => (
+            {[0, 150, 300].map(delay => (
               <div
                 key={delay}
-                className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce"
+                className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary"
                 style={{ animationDelay: `${delay}ms` }}
               />
             ))}
           </div>
-          <span className="text-xs text-muted-foreground">Mây Mây đang suy nghĩ...</span>
+          <span className="text-xs font-medium text-primary">Mây Mây đang khởi động vòng lặp công cụ…</span>
         </div>
       )}
 

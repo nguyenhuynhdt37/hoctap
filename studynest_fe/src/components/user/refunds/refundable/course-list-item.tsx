@@ -1,34 +1,21 @@
 "use client";
 
-import { getImageUrl } from "@/lib/utils/helpers/image";
-import { RefundableCourseItem } from "@/types/user/refund";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { Clock } from "pulsoicon-react";
+import { ArrowRight, BookOpen, Clock, Coins, ShieldCheck } from "pulsoicon-react";
+import { Badge, Button } from "@/components/ui";
+import { getImageUrl } from "@/lib/utils/helpers/image";
+import type { RefundableCourseItem } from "@/types/user/refund";
+import { cn } from "@/lib/utils";
+import {
+  formatRefundCoin,
+  formatRefundDateTime,
+} from "../shared/refund-status";
 
 interface RefundableCourseListItemProps {
   item: RefundableCourseItem;
   onRequestRefund: (purchaseItemId: string) => void;
 }
-
-import { formatVndAsCoin } from "@/lib/learning-hub/coin-logic";
-
-const formatCurrency = (value: number) => formatVndAsCoin(value);
-
-const formatDateTime = (value: string) => {
-  try {
-    return new Intl.DateTimeFormat("vi-VN", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    }).format(new Date(value));
-  } catch {
-    return value;
-  }
-};
 
 const getTimeRemaining = (deadline: string) => {
   try {
@@ -52,9 +39,7 @@ const getTimeRemaining = (deadline: string) => {
 };
 
 const formatCountdown = (time: ReturnType<typeof getTimeRemaining>) => {
-  if (time.total <= 0) {
-    return "Đã hết hạn";
-  }
+  if (time.total <= 0) return "Đã hết hạn bảo vệ";
 
   const parts: string[] = [];
   if (time.days > 0) parts.push(`${time.days} ngày`);
@@ -70,14 +55,12 @@ export default function RefundableCourseListItem({
   onRequestRefund,
 }: RefundableCourseListItemProps) {
   const [timeRemaining, setTimeRemaining] = useState(() =>
-    getTimeRemaining(item.deadline)
+    getTimeRemaining(item.deadline),
   );
   const [thumbnailError, setThumbnailError] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
 
-  const thumbnailSrc = item.course.thumbnail
-    ? getImageUrl(item.course.thumbnail)
-    : "";
+  const thumbnailSrc = item.course.thumbnail ? getImageUrl(item.course.thumbnail) : "";
   const instructorAvatarSrc = item.instructor.avatar
     ? getImageUrl(item.instructor.avatar)
     : "";
@@ -86,139 +69,150 @@ export default function RefundableCourseListItem({
     const interval = setInterval(() => {
       const time = getTimeRemaining(item.deadline);
       setTimeRemaining(time);
-
-      if (time.total <= 0) {
-        clearInterval(interval);
-      }
+      if (time.total <= 0) clearInterval(interval);
     }, 1000);
 
     return () => clearInterval(interval);
   }, [item.deadline]);
 
   const canRefund = timeRemaining.total > 0 && item.can_refund;
+  const savedAmount = Math.max(0, item.original_price - item.discounted_price);
+  const initials = (item.instructor.fullname || "GV")
+    .split(" ")
+    .filter(Boolean)
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   return (
-    <div className="bg-white rounded-xl border border-green-200 shadow-sm hover:shadow-md transition-shadow">
-      <div className="flex flex-col md:flex-row gap-6 p-6">
-        {/* Thumbnail */}
-        <div className="relative w-full md:w-56 h-48 md:h-40 shrink-0 rounded-lg overflow-hidden bg-gray-100">
+    <article className="group overflow-hidden rounded-[24px] border border-border bg-surface p-5 shadow-xs transition-all duration-200 hover:border-primary-pastel hover:shadow-[0_16px_32px_-12px_rgba(53,111,167,0.14)] sm:p-6">
+      <div className="flex flex-col gap-5 md:flex-row">
+        {/* Ảnh khóa học */}
+        <div className="relative h-48 w-full shrink-0 overflow-hidden rounded-2xl border border-border bg-primary-light/40 md:h-44 md:w-60">
           {thumbnailSrc && !thumbnailError ? (
             <Image
               src={thumbnailSrc}
               alt={item.course.title}
               fill
-              className="object-cover"
+              className="object-cover transition-transform duration-300 group-hover:scale-[1.03] motion-reduce:group-hover:scale-100"
               onError={() => setThumbnailError(true)}
               unoptimized
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gray-200">
-              <span className="text-gray-400 text-sm">Không có ảnh</span>
+            <div className="grid size-full place-items-center text-primary">
+              <BookOpen aria-hidden="true" animated={false} className="size-8" />
             </div>
           )}
+
+          {/* Nhãn trạng thái đếm ngược nổi trên ảnh */}
+          <div
+            className={cn(
+              "absolute top-2.5 left-2.5 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold shadow-xs backdrop-blur-md",
+              canRefund
+                ? "border-accent-vanilla-border bg-accent-vanilla/95 text-accent-vanilla-foreground"
+                : "border-destructive-border bg-destructive-bg/95 text-destructive-foreground",
+            )}
+          >
+            <Clock aria-hidden="true" animated={false} className="size-3" />
+            <span className="tabular-nums font-mono">{formatCountdown(timeRemaining)}</span>
+          </div>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 flex flex-col gap-4 relative">
-          {/* Countdown Timer - Top Right */}
-          {timeRemaining.total > 0 && (
-            <div className="absolute top-0 right-0 rounded-lg bg-yellow-500 text-white px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 shadow-md z-10">
-              <Clock className="h-3.5 w-3.5" />
-              <span className="tabular-nums font-mono">
-                {formatCountdown(timeRemaining)}
-              </span>
-            </div>
-          )}
-          {timeRemaining.total <= 0 && (
-            <div className="absolute top-0 right-0 rounded-lg bg-red-500 text-white px-3 py-1.5 text-xs font-semibold shadow-md z-10">
-              Đã hết hạn
-            </div>
-          )}
-
-          {/* Header */}
+        {/* Nội dung chi tiết */}
+        <div className="flex min-w-0 flex-1 flex-col justify-between gap-4">
           <div>
-            <h3 className="text-xl font-bold text-gray-900 mb-3 pr-32">
-              {item.course.title}
-            </h3>
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div className="min-w-0">
+                <h3 className="font-display text-lg font-bold text-foreground sm:text-xl">
+                  {item.course.title}
+                </h3>
 
-            {/* Instructor Info with Avatar */}
-            <div className="flex items-center gap-2 mb-4">
-              {instructorAvatarSrc && !avatarError ? (
-                <Image
-                  src={instructorAvatarSrc}
-                  alt={item.instructor.fullname}
-                  width={28}
-                  height={28}
-                  className="rounded-full object-cover object-center aspect-square border border-green-200"
-                  onError={() => setAvatarError(true)}
-                  unoptimized
-                />
-              ) : (
-                <div className="w-7 h-7 rounded-full bg-green-100 text-green-700 text-xs font-bold flex items-center justify-center border border-green-200">
-                  {item.instructor.fullname
-                    .split(" ")
-                    .map((n) => n[0])
-                    .slice(0, 2)
-                    .join("")
-                    .toUpperCase()}
+                <div className="mt-2 flex items-center gap-2">
+                  {instructorAvatarSrc && !avatarError ? (
+                    <Image
+                      src={instructorAvatarSrc}
+                      alt={item.instructor.fullname}
+                      width={26}
+                      height={26}
+                      className="aspect-square rounded-full border border-primary-pastel object-cover"
+                      onError={() => setAvatarError(true)}
+                      unoptimized
+                    />
+                  ) : (
+                    <span className="grid size-6.5 place-items-center rounded-full border border-primary-pastel bg-primary-light text-[10px] font-bold text-primary">
+                      {initials}
+                    </span>
+                  )}
+                  <span className="text-xs font-semibold text-muted-foreground">
+                    {item.instructor.fullname}
+                  </span>
                 </div>
-              )}
-              <span className="text-sm text-gray-600 font-medium">
-                {item.instructor.fullname}
-              </span>
+              </div>
+
+              <Badge variant={canRefund ? "success" : "destructive"} size="sm">
+                {canRefund ? "Đủ điều kiện hoàn" : "Hết hạn hoàn"}
+              </Badge>
+            </div>
+
+            {/* Lưới 4 chỉ số tài sản */}
+            <div className="mt-4 grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+              <div className="rounded-xl border border-border/80 bg-background/65 px-3 py-2.5">
+                <p className="text-[11px] font-semibold text-muted-foreground">Giá niêm yết</p>
+                <p className="mt-0.5 text-xs font-bold text-foreground tabular-nums">
+                  {formatRefundCoin(item.original_price)}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-primary-pastel/70 bg-primary-light/55 px-3 py-2.5">
+                <p className="text-[11px] font-semibold text-primary">Coin hoàn tối đa</p>
+                <p className="mt-0.5 inline-flex items-center gap-1 text-xs font-extrabold text-primary tabular-nums">
+                  <Coins aria-hidden="true" animated={false} className="size-3.5" />
+                  {formatRefundCoin(item.discounted_price)}
+                </p>
+                {savedAmount > 0 && (
+                  <p className="text-[10px] font-medium text-muted-foreground">
+                    Đã ưu đãi {formatRefundCoin(savedAmount)}
+                  </p>
+                )}
+              </div>
+
+              <div className="rounded-xl border border-border/80 bg-background/65 px-3 py-2.5">
+                <p className="text-[11px] font-semibold text-muted-foreground">Ngày đầu tư</p>
+                <p className="mt-0.5 text-xs font-semibold text-foreground tabular-nums">
+                  {formatRefundDateTime(item.purchase_date)}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-border/80 bg-background/65 px-3 py-2.5">
+                <p className="text-[11px] font-semibold text-muted-foreground">Hạn bảo vệ</p>
+                <p className="mt-0.5 text-xs font-semibold text-foreground tabular-nums">
+                  {formatRefundDateTime(item.deadline)}
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* Info Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-4 border-y border-gray-100">
-            <div>
-              <div className="text-xs text-gray-500 mb-1">Giá gốc</div>
-              <div className="text-sm font-semibold text-gray-900">
-                {formatCurrency(item.original_price)}
-              </div>
-            </div>
-            {item.discounted_price < item.original_price && (
-              <div>
-                <div className="text-xs text-gray-500 mb-1">Giá đã mua</div>
-                <div className="text-sm font-semibold text-green-600">
-                  {formatCurrency(item.discounted_price)}
-                </div>
-                <div className="text-xs text-gray-500 mt-0.5">
-                  Giảm{" "}
-                  {formatCurrency(item.original_price - item.discounted_price)}
-                </div>
-              </div>
-            )}
-            <div>
-              <div className="text-xs text-gray-500 mb-1">Mua ngày</div>
-              <div className="text-sm font-medium text-gray-700">
-                {formatDateTime(item.purchase_date)}
-              </div>
-            </div>
-            <div>
-              <div className="text-xs text-gray-500 mb-1">Hạn hoàn tiền</div>
-              <div className="text-sm font-medium text-gray-700">
-                {formatDateTime(item.deadline)}
-              </div>
-            </div>
-          </div>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/70 pt-3">
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+              <ShieldCheck aria-hidden="true" animated={false} className="size-4 text-primary" />
+              Hoàn trực tiếp về Ví Coin sau khi được phê duyệt
+            </span>
 
-          {/* Action Button */}
-          <div className="flex justify-end pt-2">
-            <button
-              onClick={() => onRequestRefund(item.purchase_item_id)}
+            <Button
+              type="button"
+              variant={canRefund ? "primary" : "outline"}
+              size="sm"
               disabled={!canRefund}
-              className="px-6 py-2.5 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-semibold text-sm"
+              onClick={() => onRequestRefund(item.purchase_item_id)}
+              className="min-h-10 rounded-full px-5 font-bold"
             >
-              {timeRemaining.total <= 0
-                ? "Đã hết hạn"
-                : !item.can_refund
-                ? "Không thể hoàn tiền"
-                : "Yêu cầu hoàn tiền"}
-            </button>
+              <span>{canRefund ? "Yêu cầu hoàn Coin" : "Không thể hoàn"}</span>
+              {canRefund && <ArrowRight aria-hidden="true" className="size-4" />}
+            </Button>
           </div>
         </div>
       </div>
-    </div>
+    </article>
   );
 }

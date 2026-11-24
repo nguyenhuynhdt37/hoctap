@@ -55,32 +55,26 @@ class TransactionsService:
     def __init__(self, db: AsyncSession = Depends(get_session)):
         self.db = db
 
-    async def get_user_transactions(
-        self,
-        user_id: uuid.UUID,
-        page: int = 1,
-        limit: int = 10,
-        search: str | None = None,
-        status: str | None = None,
-        type_: str | None = None,  # deposit | purchase | refund | withdraw
-        method: str | None = None,  # paypal | momo | internal
-        order_by: str = "created_at",
-        order_dir: str = "desc",
-        date_from: Optional[datetime.datetime] = None,
-        date_to: Optional[datetime.datetime] = None,
-    ):
-        """
-        Lấy danh sách giao dịch của người dùng.
-        Chuẩn hóa để phục vụ tính năng hoàn tiền sau này.
-        """
+    @staticmethod
+    def _is_incoming_tx(tx_direction: str | None, tx_type: str | None) -> bool:
+        if tx_direction == "in":
+            return True
+        if tx_direction == "out":
+            return False
+        return (tx_type or "") in {"deposit", "income", "refund", "withdraw_reject_refund"}
 
+    @staticmethod
+    def _normalize_category(tx_type: str | None) -> str:
+        t = (tx_type or "").lower()
+        if t in {"withdraw", "withdraw_hold", "withdraw_reject_refund"}:
+            return "withdraw"
+        if t in {"deposit", "purchase", "refund", "income", "fee"}:
+            return t
+        return "other"
+
+    async def _auto_expire_pending_transactions(self, user_id: uuid.UUID) -> datetime.datetime:
         now = get_now()
-
-        # ====================================================
-        # 1) TỰ ĐỘNG HỦY GIAO DỊCH pending QUÁ 3 GIỜ
-        # ====================================================
-        expire_time = now - timedelta(hours=3)
-
+        expire_time = now - timedelta(hours=MAX_PENDING_HOURS)
         await self.db.execute(
             update(Transactions)
             .where(Transactions.user_id == user_id)
@@ -90,110 +84,144 @@ class TransactionsService:
                 status="canceled",
                 confirmed_at=now,
                 description=func.concat(
-                    Transactions.description,
+                    func.coalesce(Transactions.description, ""),
                     " (Tự động hủy do quá hạn thanh toán)",
                 ),
             )
         )
         await self.db.commit()
+        return now
+
+    async def get_user_transactions(
+        self,
+        user_id: uuid.UUID,
+        page: int = 1,
+        limit: int = 10,
+        search: str | None = None,
+        status: str | None = None,
+        type_: str | None = None,  # deposit | purchase | refund | withdraw | income | fee
+        method: str | None = None,  # paypal | momo | wallet | internal
+        direction: str | None = None,  # in | out
+        order_by: str = "created_at",
+        order_dir: str = "desc",
+        date_from: Optional[datetime.datetime] = None,
+        date_to: Optional[datetime.datetime] = None,
+    ):
+        """
+        Lấy danh sách giao dịch của người dùng.
+        Chuẩn hóa bộ lọc đồng bộ cho cả query phân trang lẫn tổng số bản ghi.
+        """
+        await self._auto_expire_pending_transactions(user_id)
 
         # ====================================================
-        # 2) QUERY CHÍNH
+        # 2) ĐIỀU KIỆN LỌC DÙNG CHUNG
         # ====================================================
-        query = select(Transactions).where(Transactions.user_id == user_id)
+        conditions = [Transactions.user_id == user_id]
 
-        # ----- SEARCH -----
-        if search:
-            s = f"%{search.lower()}%"
-            query = query.where(
+        if search and search.strip():
+            s = f"%{search.strip().lower()}%"
+            conditions.append(
                 or_(
-                    func.lower(Transactions.description).like(s),
-                    func.lower(Transactions.transaction_code).like(s),
-                    func.lower(Transactions.order_id.cast(String)).like(s),
+                    func.lower(func.coalesce(Transactions.description, "")).like(s),
+                    func.lower(func.coalesce(Transactions.transaction_code, "")).like(s),
+                    func.lower(func.coalesce(Transactions.order_id.cast(String), "")).like(s),
+                    func.lower(Transactions.id.cast(String)).like(s),
                 )
             )
 
-        # ----- LỌC THEO TRẠNG THÁI -----
         if status:
-            query = query.where(Transactions.status == status)
+            conditions.append(Transactions.status == status)
 
-        # ----- LỌC THEO LOẠI (purchase, deposit, withdraw, refund) -----
         if type_:
-            query = query.where(Transactions.type == type_)
+            if type_ == "withdraw":
+                conditions.append(
+                    Transactions.type.in_(["withdraw", "withdraw_hold", "withdraw_reject_refund"])
+                )
+            else:
+                conditions.append(Transactions.type == type_)
 
-        # ----- LỌC PAYMENT METHOD (paypal/momo/bank...) -----
         if method:
-            query = query.where(func.lower(Transactions.method) == method.lower())
+            m = method.lower()
+            if m == "internal":
+                conditions.append(
+                    or_(
+                        func.lower(func.coalesce(Transactions.method, "")) == "internal",
+                        func.lower(func.coalesce(Transactions.gateway, "")) == "internal",
+                    )
+                )
+            else:
+                conditions.append(func.lower(func.coalesce(Transactions.method, "")) == m)
 
-        # ----- LỌC NGÀY -----
-        if date_from and date_to:
-            query = query.where(Transactions.created_at.between(date_from, date_to))
+        if direction == "in":
+            conditions.append(
+                or_(
+                    Transactions.direction == "in",
+                    and_(
+                        Transactions.direction.is_(None),
+                        Transactions.type.in_(["deposit", "income", "refund", "withdraw_reject_refund"]),
+                    ),
+                )
+            )
+        elif direction == "out":
+            conditions.append(
+                or_(
+                    Transactions.direction == "out",
+                    and_(
+                        Transactions.direction.is_(None),
+                        Transactions.type.in_(["purchase", "withdraw", "withdraw_hold", "fee"]),
+                    ),
+                )
+            )
+
+        if date_from:
+            conditions.append(Transactions.created_at >= date_from)
+        if date_to:
+            conditions.append(Transactions.created_at <= date_to)
 
         # ====================================================
-        # 3) SẮP XẾP
+        # 3) QUERY CHÍNH + SẮP XẾP + PHÂN TRANG
         # ====================================================
-        order_column = getattr(Transactions, order_by, Transactions.created_at)
+        query = select(Transactions).where(*conditions)
+
+        allowed_order = {"created_at", "amount", "status"}
+        safe_order_by = order_by if order_by in allowed_order else "created_at"
+        order_column = getattr(Transactions, safe_order_by, Transactions.created_at)
         if order_dir.lower() == "desc":
-            query = query.order_by(order_column.desc())
+            query = query.order_by(order_column.desc(), Transactions.created_at.desc())
         else:
-            query = query.order_by(order_column.asc())
+            query = query.order_by(order_column.asc(), Transactions.created_at.asc())
 
-        # ====================================================
-        # 4) PHÂN TRANG
-        # ====================================================
-        offset = (page - 1) * limit
-        query = query.offset(offset).limit(limit)
+        safe_page = max(1, page)
+        safe_limit = min(100, max(1, limit))
+        offset = (safe_page - 1) * safe_limit
+        query = query.offset(offset).limit(safe_limit)
 
-        # ====================================================
-        # 5) FETCH DATA
-        # ====================================================
         result = await self.db.execute(query)
         items = result.scalars().all()
 
         # ====================================================
-        # 6) TÍNH TOTAL
+        # 4) TÍNH TOTAL ĐỒNG BỘ 100%
         # ====================================================
-        total_query = (
-            select(func.count())
-            .select_from(Transactions)
-            .where(Transactions.user_id == user_id)
-        )
-
-        if search:
-            total_query = total_query.where(
-                or_(
-                    func.lower(Transactions.description).like(s),
-                    func.lower(Transactions.transaction_code).like(s),
-                )
-            )
-        if status:
-            total_query = total_query.where(Transactions.status == status)
-        if type_:
-            total_query = total_query.where(Transactions.type == type_)
-        if method:
-            total_query = total_query.where(
-                func.lower(Transactions.method) == method.lower()
-            )
-
+        total_query = select(func.count()).select_from(Transactions).where(*conditions)
         total = (await self.db.execute(total_query)).scalar() or 0
 
         # ====================================================
-        # 7) RETURN — chuẩn UI
+        # 5) RETURN — chuẩn UI
         # ====================================================
         return {
-            "page": page,
-            "limit": limit,
+            "page": safe_page,
+            "limit": safe_limit,
             "total": total,
             "transactions": [
                 {
                     "id": str(t.id),
-                    "type": t.type,  # purchase / deposit / refund / withdraw
-                    "method": t.method,  # paypal / momo / internal
-                    "gateway": t.gateway,  # paypal / momo
+                    "type": t.type,
+                    "method": t.method,
+                    "gateway": t.gateway,
                     "amount": float(t.amount),
                     "direction": t.direction,
                     "currency": t.currency,
-                    "status": t.status,  # pending / completed / canceled / refunded
+                    "status": t.status,
                     "description": t.description,
                     "transaction_code": t.transaction_code,
                     "order_id": t.order_id,
@@ -202,6 +230,151 @@ class TransactionsService:
                 }
                 for t in items
             ],
+        }
+
+    async def get_user_transactions_summary(
+        self,
+        user_id: uuid.UUID,
+        date_from: Optional[datetime.datetime] = None,
+        date_to: Optional[datetime.datetime] = None,
+    ):
+        """
+        Tổng hợp phân tích dòng tiền của người dùng cho trang Lịch sử giao dịch:
+        - Tổng tiền vào / tiền ra / dòng tiền ròng (chỉ tính giao dịch completed)
+        - Số lượng theo trạng thái
+        - Phân bổ theo nhóm loại giao dịch
+        - Biểu đồ dòng tiền 6 tháng gần nhất
+        - Danh sách nhanh các giao dịch PayPal đang chờ xử lý còn hạn
+        """
+        now = await self._auto_expire_pending_transactions(user_id)
+
+        rows_result = await self.db.execute(
+            select(
+                Transactions.id,
+                Transactions.type,
+                Transactions.direction,
+                Transactions.amount,
+                Transactions.status,
+                Transactions.method,
+                Transactions.gateway,
+                Transactions.order_id,
+                Transactions.description,
+                Transactions.created_at,
+            )
+            .where(Transactions.user_id == user_id)
+            .order_by(Transactions.created_at.desc())
+        )
+        all_rows = rows_result.all()
+
+        # Chuẩn bị 6 mốc tháng gần nhất (từ cũ -> mới)
+        month_buckets: dict[str, dict] = {}
+        month_order: list[str] = []
+        y, m = now.year, now.month
+        for offset in range(5, -1, -1):
+            total_months = (y * 12 + (m - 1)) - offset
+            by = total_months // 12
+            bm = (total_months % 12) + 1
+            key = f"{by:04d}-{bm:02d}"
+            month_order.append(key)
+            month_buckets[key] = {
+                "key": key,
+                "label": f"T{bm:02d}",
+                "full_label": f"Tháng {bm:02d}/{by}",
+                "in_vnd": 0.0,
+                "out_vnd": 0.0,
+                "count": 0,
+            }
+
+        total_in_vnd = 0.0
+        total_out_vnd = 0.0
+        counts = {
+            "all": 0,
+            "completed": 0,
+            "pending": 0,
+            "canceled": 0,
+            "refunded": 0,
+            "failed": 0,
+        }
+        category_stats: dict[str, dict] = {}
+        pending_orders: list[dict] = []
+
+        for row in all_rows:
+            created_at = row.created_at
+            amount = float(row.amount or 0)
+            status = (row.status or "").lower()
+            incoming = self._is_incoming_tx(row.direction, row.type)
+
+            # Cập nhật chuỗi 6 tháng (luôn tính trên toàn lịch sử để biểu đồ đầy đủ)
+            if created_at is not None and status == "completed":
+                m_key = f"{created_at.year:04d}-{created_at.month:02d}"
+                if m_key in month_buckets:
+                    if incoming:
+                        month_buckets[m_key]["in_vnd"] += amount
+                    else:
+                        month_buckets[m_key]["out_vnd"] += amount
+                    month_buckets[m_key]["count"] += 1
+
+            # Danh sách pending còn hạn (không bị ảnh hưởng bởi date filter)
+            if status == "pending" and row.order_id and len(pending_orders) < 3:
+                expires_at = (
+                    created_at + timedelta(hours=MAX_PENDING_HOURS)
+                    if created_at is not None
+                    else None
+                )
+                pending_orders.append(
+                    {
+                        "id": str(row.id),
+                        "order_id": row.order_id,
+                        "amount": amount,
+                        "method": row.method,
+                        "gateway": row.gateway,
+                        "description": row.description,
+                        "created_at": created_at,
+                        "expires_at": expires_at,
+                    }
+                )
+
+            # Áp dụng lọc ngày cho phần KPI tổng hợp nếu người dùng chọn khoảng thời gian
+            if date_from and created_at and created_at < date_from:
+                continue
+            if date_to and created_at and created_at > date_to:
+                continue
+
+            counts["all"] += 1
+            if status in counts:
+                counts[status] += 1
+
+            if status == "completed":
+                if incoming:
+                    total_in_vnd += amount
+                else:
+                    total_out_vnd += amount
+
+                cat = self._normalize_category(row.type)
+                if cat not in category_stats:
+                    category_stats[cat] = {
+                        "type": cat,
+                        "direction": "in" if incoming else "out",
+                        "count": 0,
+                        "amount_vnd": 0.0,
+                    }
+                category_stats[cat]["count"] += 1
+                category_stats[cat]["amount_vnd"] += amount
+
+        by_type = sorted(
+            category_stats.values(),
+            key=lambda item: item["amount_vnd"],
+            reverse=True,
+        )
+
+        return {
+            "total_in_vnd": round(total_in_vnd, 2),
+            "total_out_vnd": round(total_out_vnd, 2),
+            "net_vnd": round(total_in_vnd - total_out_vnd, 2),
+            "counts": counts,
+            "by_type": by_type,
+            "monthly_cashflow": [month_buckets[k] for k in month_order],
+            "pending_orders": pending_orders,
         }
 
     async def get_user_transaction_detail(

@@ -106,6 +106,28 @@ class LLMService:
                 if not text:
                     return "⚠️ Mô hình không sinh được nội dung."
 
+                if mime_type == "application/json" and text.startswith("```") and text.endswith("```"):
+                    text = text.split("\n", 1)[1].rsplit("```", 1)[0].strip()
+
+                if self.native_tools is not None:
+                    try:
+                        parsed = json.loads(text)
+                    except json.JSONDecodeError:
+                        return json.dumps({"message": text, "tool_calls": [], "done": True}, ensure_ascii=False)
+                    if isinstance(parsed, dict):
+                        cleaned = {k: v for k, v in parsed.items() if k in {"message", "plan", "tool_calls", "done", "memories"}}
+                        if isinstance(cleaned.get("tool_calls"), list):
+                            norm_calls = []
+                            for tc in cleaned["tool_calls"]:
+                                if isinstance(tc, dict) and isinstance(tc.get("name"), str):
+                                    tname = tc["name"].replace("__", ".")
+                                    targs = tc.get("arguments") if isinstance(tc.get("arguments"), dict) else {}
+                                    for meta in ("reason", "reasoning"):
+                                        targs.pop(meta, None)
+                                    norm_calls.append({"name": tname, "arguments": targs})
+                            cleaned["tool_calls"] = norm_calls
+                        return json.dumps(cleaned, ensure_ascii=False)
+
                 return text
 
             return await asyncio.to_thread(_sync_call)

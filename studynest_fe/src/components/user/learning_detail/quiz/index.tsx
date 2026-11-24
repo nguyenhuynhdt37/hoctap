@@ -12,7 +12,8 @@ import QuestionDisplay from "./question-display";
 import QuizNavigation from "./quiz-navigation";
 import QuizResults from "./quiz-results";
 import { submitQuizAttempt, type VerifiedQuizAttempt } from "./submit-attempt";
-import { useLearningAgent, useAgentSnapshot } from "../agent/agent-context";
+import { useLearningAgent, useAgentAction, useAgentSnapshot } from "../agent/agent-context";
+import { numberArg } from "../agent/action-registry";
 
 interface QuizLessonProps {
   lesson: ActiveLessonResponse;
@@ -119,6 +120,47 @@ export default function QuizLesson({
       : 0);
   useAgentSnapshot("quiz", () => ({ quiz: { quiz_id: lesson.id, question_id: currentQuestion?.id, state: showResults ? "results" : submitting ? "submitting" : isAnswered ? "answered" : "answering" } }));
   useEffect(() => { agent?.changed(); }, [currentQuestion?.id, showResults, agent?.changed]);
+  useAgentAction("quiz.get_state", {
+    execute: async () => ({
+      quiz_id: lesson.id,
+      question_index: currentQuestionIndex,
+      total_questions: quizQuestions.length,
+      question_id: currentQuestion?.id,
+      question: currentQuestion?.question || "",
+      options: (currentQuestion?.options || []).map((text, index) => ({
+        index,
+        label: String.fromCharCode(65 + index),
+        text,
+      })),
+      selected_index: currentAnswer !== undefined ? currentAnswer : null,
+      state: showResults ? "results" : submitting ? "submitting" : isAnswered ? "answered" : "answering",
+      verified: true,
+    }),
+    verify: (result) => Boolean((result as { verified?: boolean })?.verified),
+  });
+  useAgentAction("quiz.select_option", {
+    execute: async (args) => {
+      if (showResults || submitting || !currentQuestion) {
+        throw new Error("Câu hỏi hiện không ở trạng thái chọn đáp án.");
+      }
+      const optionIndex = numberArg(
+        { option_index: args.option_index ?? args.index },
+        "option_index",
+        0,
+        Math.max(0, currentQuestion.options.length - 1),
+      );
+      handleAnswerSelect(currentQuestion.id, optionIndex);
+      return {
+        question_id: currentQuestion.id,
+        selected_index: optionIndex,
+        selected_label: String.fromCharCode(65 + optionIndex),
+        selected_text: currentQuestion.options[optionIndex],
+        submitted: false,
+        verified: true,
+      };
+    },
+    verify: (result) => Boolean((result as { verified?: boolean })?.verified),
+  });
 
   const playSuccessSound = () => {
     try {

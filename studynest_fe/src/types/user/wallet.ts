@@ -36,17 +36,65 @@ export interface WalletTransactionsResponse {
 
 export type WalletTransactionOrderBy = "created_at" | "amount" | "status";
 
+export type WalletDatePreset = "all" | "7d" | "30d" | "month" | "90d";
+
 export interface WalletTransactionsQuery {
   page: number;
   limit: number;
   search: string;
-  status: "all" | "pending" | "completed" | "canceled";
+  status: "all" | "pending" | "completed" | "canceled" | "refunded" | "failed";
   type: "all" | string;
   method: "all" | string;
+  direction?: "all" | "in" | "out";
   orderBy: WalletTransactionOrderBy;
   orderDir: "asc" | "desc";
+  datePreset?: WalletDatePreset;
   dateFrom?: string | null;
   dateTo?: string | null;
+}
+
+export interface MonthlyCashflowPoint {
+  key: string;
+  label: string;
+  full_label: string;
+  in_vnd: number;
+  out_vnd: number;
+  count: number;
+}
+
+export interface CategoryBreakdownItem {
+  type: string;
+  direction: "in" | "out";
+  count: number;
+  amount_vnd: number;
+}
+
+export interface PendingOrderHighlight {
+  id: string;
+  order_id: string;
+  amount: number;
+  method: string | null;
+  gateway: string | null;
+  description: string | null;
+  created_at: string;
+  expires_at: string | null;
+}
+
+export interface WalletTransactionSummary {
+  total_in_vnd: number;
+  total_out_vnd: number;
+  net_vnd: number;
+  counts: {
+    all: number;
+    completed: number;
+    pending: number;
+    canceled: number;
+    refunded: number;
+    failed: number;
+  };
+  by_type: CategoryBreakdownItem[];
+  monthly_cashflow: MonthlyCashflowPoint[];
+  pending_orders: PendingOrderHighlight[];
 }
 
 export interface TransactionDetailPurchase {

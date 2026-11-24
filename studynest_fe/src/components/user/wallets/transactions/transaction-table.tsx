@@ -2,95 +2,47 @@
 
 import ContextMenu from "@/components/shared/context-menu";
 import { Badge } from "@/components/ui";
-import { WalletTransaction } from "@/types/user/wallet";
+import { DEFAULT_COIN_VND_RATE } from "@/lib/learning-hub/coin-logic";
+import type { WalletTransaction } from "@/types/user/wallet";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { ArrowDown, ArrowUp, RefreshCw } from "pulsoicon-react";
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  Check,
+  Coins,
+  Copy,
+  RefreshCw,
+} from "pulsoicon-react";
+import {
+  formatCoinNumber,
+  formatVnDateTime,
+  formatVndCompact,
+  getTransactionMethodLabel,
+  getTransactionStatusMeta,
+  getTransactionTypeLabel,
+  isIncomingTransaction,
+} from "./formatters";
 
 interface Props {
   transactions: WalletTransaction[];
   isLoading: boolean;
+  rateVnd?: number;
   retryOrderId?: string | null;
+  onSelectTransaction?: (transaction: WalletTransaction) => void;
   onRetry?: (orderId?: string | null) => void;
 }
-
-import { formatVndAsCoin } from "@/lib/learning-hub/coin-logic";
-
-const formatCurrency = (val?: number) => formatVndAsCoin(val ?? 0);
-
-const formatDateTime = (val?: string | null) => {
-  if (!val) return "—";
-  try {
-    return new Intl.DateTimeFormat("vi-VN", {
-      dateStyle: "short",
-      timeStyle: "short",
-      hour12: false,
-    }).format(new Date(val));
-  } catch {
-    return "—";
-  }
-};
-
-const getTypeLabel = (type: string) => {
-  const labels: Record<string, string> = {
-    deposit: "Nạp tiền vào ví",
-    purchase: "Thanh toán khóa học",
-    withdraw: "Rút tiền về tài khoản",
-    refund: "Hoàn tiền học phí",
-    income: "Thu nhập giảng dạy",
-  };
-  return labels[type] || type;
-};
-
-const getMethodLabel = (method: string, gateway: string) => {
-  if (method === "wallet" || gateway === "internal_wallet") return "Ví nội bộ";
-  if (method === "paypal" || gateway === "paypal") return "PayPal";
-  if (method === "momo" || gateway === "momo") return "MoMo";
-  return method?.toUpperCase() || "Không rõ";
-};
-
-const isIncome = (t: WalletTransaction) => {
-  if (t.direction === "in") return true;
-  if (t.direction === "out") return false;
-  return ["deposit", "income", "refund"].includes(t.type);
-};
-
-const getStatusBadge = (status: string) => {
-  switch (status) {
-    case "completed":
-      return (
-        <Badge variant="default" size="sm">
-          Thành công
-        </Badge>
-      );
-    case "pending":
-      return (
-        <Badge variant="vanilla" size="sm">
-          Chờ xử lý
-        </Badge>
-      );
-    case "canceled":
-      return (
-        <Badge variant="destructive" size="sm">
-          Đã hủy
-        </Badge>
-      );
-    default:
-      return (
-        <Badge variant="secondary" size="sm">
-          {status}
-        </Badge>
-      );
-  }
-};
 
 export function TransactionsTable({
   transactions,
   isLoading,
+  rateVnd = DEFAULT_COIN_VND_RATE,
   retryOrderId,
+  onSelectTransaction,
   onRetry,
 }: Props) {
   const router = useRouter();
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<{
     x: number;
     y: number;
@@ -99,49 +51,52 @@ export function TransactionsTable({
 
   const handleContextMenu = (
     e: React.MouseEvent,
-    transaction: WalletTransaction
+    transaction: WalletTransaction,
   ) => {
     e.preventDefault();
     setContextMenu({ x: e.clientX, y: e.clientY, transaction });
   };
 
+  const handleCopy = (e: React.MouseEvent, text: string, key: string) => {
+    e.stopPropagation();
+    void navigator.clipboard.writeText(text);
+    setCopiedId(key);
+    window.setTimeout(() => {
+      setCopiedId((prev) => (prev === key ? null : prev));
+    }, 1800);
+  };
+
   return (
-    <div className="rounded-[28px] border border-border bg-surface p-6 shadow-xs">
+    <div className="overflow-hidden rounded-[26px] border border-border bg-surface shadow-xs">
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-border">
           <thead>
-            <tr className="bg-primary-light/40">
-              <th className="rounded-l-xl px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Mã hệ thống
+            <tr className="bg-primary-light/45">
+              <th className="px-5 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                Giao dịch
               </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Loại giao dịch
+              <th className="px-4 py-3.5 text-right text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                Biến động Coin
               </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Số tiền
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <th className="px-4 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                 Trạng thái
               </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Mã giao dịch
+              <th className="px-4 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                Mã đối chiếu
               </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Order ID
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <th className="px-4 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                 Thời gian
               </th>
-              <th className="rounded-r-xl px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Nội dung chi tiết
+              <th className="px-5 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                Nội dung
               </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border/60 bg-surface">
-            {isLoading ? (
+            {isLoading && transactions.length === 0 ? (
               <tr>
                 <td
-                  colSpan={8}
+                  colSpan={6}
                   className="px-4 py-14 text-center text-sm text-muted-foreground"
                 >
                   <div className="flex items-center justify-center gap-2.5">
@@ -153,7 +108,7 @@ export function TransactionsTable({
             ) : transactions.length === 0 ? (
               <tr>
                 <td
-                  colSpan={8}
+                  colSpan={6}
                   className="px-4 py-14 text-center text-sm text-muted-foreground"
                 >
                   Không tìm thấy giao dịch nào phù hợp với bộ lọc hiện tại
@@ -161,102 +116,145 @@ export function TransactionsTable({
               </tr>
             ) : (
               transactions.map((t) => {
-                const income = isIncome(t);
+                const incoming = isIncomingTransaction(t);
+                const statusMeta = getTransactionStatusMeta(t.status);
+                const refCode = t.transaction_code || t.order_id || t.id;
+                const isCopied = copiedId === t.id;
 
                 return (
                   <tr
                     key={t.id}
-                    className="cursor-pointer transition-colors hover:bg-primary-light/30"
+                    className="cursor-pointer transition-colors hover:bg-primary-light/25"
                     onContextMenu={(e) => handleContextMenu(e, t)}
-                    onClick={() => router.push(`/wallets/transactions/${t.id}`)}
+                    onClick={() => {
+                      if (onSelectTransaction) {
+                        onSelectTransaction(t);
+                      } else {
+                        router.push(`/wallets/transactions/${t.id}`);
+                      }
+                    }}
                   >
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <span
-                        className="inline-flex items-center rounded-lg border border-border bg-background px-2 py-1 font-mono text-[11px] text-muted-foreground transition-colors hover:border-primary-pastel hover:text-primary"
-                        title="Click để sao chép ID"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigator.clipboard.writeText(t.id);
-                        }}
-                      >
-                        {t.id.slice(0, 8)}...
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
+                    <td className="px-5 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
                         <div
-                          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border shadow-2xs ${
-                            income
+                          className={`flex size-10 shrink-0 items-center justify-center rounded-2xl border shadow-2xs ${
+                            incoming
                               ? "border-primary-pastel/80 bg-primary-light text-primary"
                               : "border-border bg-background text-muted-foreground"
                           }`}
                         >
-                          {income ? (
-                            <ArrowDown animated={false} className="h-4 w-4" />
+                          {incoming ? (
+                            <ArrowDownLeft
+                              aria-hidden="true"
+                              animated={false}
+                              className="size-4"
+                            />
                           ) : (
-                            <ArrowUp animated={false} className="h-4 w-4" />
+                            <ArrowUpRight
+                              aria-hidden="true"
+                              animated={false}
+                              className="size-4"
+                            />
                           )}
                         </div>
                         <div>
                           <div className="text-sm font-semibold text-foreground">
-                            {getTypeLabel(t.type)}
+                            {getTransactionTypeLabel(t.type)}
                           </div>
                           <div className="mt-0.5 text-xs text-muted-foreground">
-                            {getMethodLabel(t.method, t.gateway)}
+                            {getTransactionMethodLabel(t.method, t.gateway)}
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <span
-                        className={`text-base font-bold ${
-                          income ? "text-primary" : "text-foreground"
+
+                    <td className="px-4 py-4 text-right whitespace-nowrap">
+                      <div
+                        className={`inline-flex items-center justify-end gap-1 text-sm font-bold tabular-nums ${
+                          t.status === "canceled" || t.status === "failed"
+                            ? "text-muted-foreground line-through"
+                            : incoming
+                              ? "text-primary"
+                              : "text-foreground"
                         }`}
                       >
-                        {income ? "+" : "-"}
-                        {formatCurrency(t.amount)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      {getStatusBadge(t.status)}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      {t.transaction_code ? (
-                        <span className="inline-flex items-center rounded-lg border border-border bg-background px-2 py-1 font-mono text-xs text-foreground">
-                          {t.transaction_code}
+                        <span>
+                          {incoming ? "+" : "-"}
+                          {formatCoinNumber(t.amount, rateVnd)}
                         </span>
-                      ) : (
-                        <span className="text-subtle-foreground">—</span>
-                      )}
+                        <Coins
+                          solid={incoming}
+                          aria-hidden="true"
+                          animated={false}
+                          className="size-3.5"
+                        />
+                      </div>
+                      <div className="mt-0.5 text-[11px] text-subtle-foreground tabular-nums">
+                        {formatVndCompact(t.amount)}
+                      </div>
                     </td>
+
                     <td className="px-4 py-4 whitespace-nowrap">
-                      {t.order_id ? (
-                        <span className="inline-flex items-center rounded-lg border border-border bg-background px-2 py-1 font-mono text-xs text-foreground">
-                          {t.order_id}
+                      <Badge variant={statusMeta.badgeVariant} size="sm">
+                        {statusMeta.label}
+                      </Badge>
+                    </td>
+
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <button
+                        type="button"
+                        onClick={(e) => handleCopy(e, refCode, t.id)}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 py-1 font-mono text-[11px] text-muted-foreground transition hover:border-primary-pastel hover:text-primary cursor-pointer"
+                        title="Nhấn để sao chép mã đối chiếu"
+                      >
+                        <span className="inline-flex items-center">
+                          {isCopied ? (
+                            <Check
+                              aria-hidden="true"
+                              animated={false}
+                              className="size-3 text-success-foreground"
+                            />
+                          ) : (
+                            <Copy
+                              aria-hidden="true"
+                              animated={false}
+                              className="size-3"
+                            />
+                          )}
                         </span>
-                      ) : (
-                        <span className="text-subtle-foreground">—</span>
-                      )}
+                        <span>
+                          {isCopied
+                            ? "Đã chép"
+                            : refCode.length > 14
+                              ? `${refCode.slice(0, 12)}…`
+                              : refCode}
+                        </span>
+                      </button>
                     </td>
+
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="flex flex-col gap-0.5">
-                        <span className="text-xs text-foreground">
-                          {formatDateTime(t.created_at)}
+                      <div className="flex flex-col gap-0.5 tabular-nums">
+                        <span className="text-xs font-medium text-foreground">
+                          {formatVnDateTime(t.created_at)}
                         </span>
                         {t.confirmed_at && (
                           <span className="text-[11px] text-muted-foreground">
-                            Xác nhận: {formatDateTime(t.confirmed_at)}
+                            Xác nhận: {formatVnDateTime(t.confirmed_at)}
                           </span>
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-4">
-                      <div className="flex flex-col gap-1.5 max-w-xs">
-                        {t.description && (
-                          <p className="text-xs text-foreground line-clamp-2">
+
+                    <td className="px-5 py-4">
+                      <div className="flex max-w-xs flex-col gap-1.5">
+                        {t.description ? (
+                          <p className="line-clamp-2 text-xs text-foreground">
                             {t.description}
                           </p>
+                        ) : (
+                          <span className="text-xs text-subtle-foreground">—</span>
                         )}
+
                         {t.status === "pending" && onRetry && t.order_id && (
                           <button
                             type="button"
@@ -265,13 +263,17 @@ export function TransactionsTable({
                               onRetry(t.order_id);
                             }}
                             disabled={retryOrderId === t.order_id}
-                            className="inline-flex w-fit items-center gap-1.5 rounded-full border border-primary-pastel bg-surface px-3 py-1 text-xs font-semibold text-primary transition-colors hover:bg-primary-light disabled:opacity-60 cursor-pointer shadow-2xs"
+                            className="inline-flex w-fit items-center gap-1.5 rounded-full border border-warning-border bg-warning-bg px-3 py-1 text-xs font-semibold text-warning-foreground transition hover:bg-accent-vanilla disabled:opacity-60 cursor-pointer"
                           >
-                            <RefreshCw animated={false}
-                              className={`h-3.5 w-3.5 ${
-                                retryOrderId === t.order_id ? "animate-spin" : ""
-                              }`}
-                            />
+                            <span className="inline-flex items-center">
+                              <RefreshCw
+                                aria-hidden="true"
+                                animated={false}
+                                className={`size-3.5 ${
+                                  retryOrderId === t.order_id ? "animate-spin" : ""
+                                }`}
+                              />
+                            </span>
                             <span>
                               {retryOrderId === t.order_id
                                 ? "Đang mở PayPal..."
@@ -296,21 +298,32 @@ export function TransactionsTable({
           onClose={() => setContextMenu(null)}
           items={[
             {
-              label: "Xem chi tiết",
+              label: "Xem nhanh biên nhận",
+              onClick: () => {
+                if (contextMenu.transaction && onSelectTransaction) {
+                  onSelectTransaction(contextMenu.transaction);
+                }
+                setContextMenu(null);
+              },
+            },
+            {
+              label: "Mở trang chi tiết",
               onClick: () => {
                 if (contextMenu.transaction) {
                   router.push(
-                    `/wallets/transactions/${contextMenu.transaction.id}`
+                    `/wallets/transactions/${contextMenu.transaction.id}`,
                   );
                 }
                 setContextMenu(null);
               },
             },
             {
-              label: "Sao chép ID",
+              label: "Sao chép mã hệ thống",
               onClick: () => {
                 if (contextMenu.transaction) {
-                  navigator.clipboard.writeText(contextMenu.transaction.id);
+                  void navigator.clipboard.writeText(
+                    contextMenu.transaction.id,
+                  );
                 }
                 setContextMenu(null);
               },

@@ -1,11 +1,31 @@
 "use client";
 
-import TiptapEditor from "@/components/shared/tiptap_editor";
-import { formatVndAsCoin } from "@/lib/learning-hub/coin-logic";
-import api from "@/lib/utils/fetcher/client/axios";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { ArrowLeft, CircleAlert } from "pulsoicon-react";
+import {
+  ArrowRight,
+  CheckCircle2,
+  CircleAlert,
+  Clock,
+  Coins,
+  FileText,
+  ShieldCheck,
+} from "pulsoicon-react";
+import TiptapEditor from "@/components/shared/tiptap_editor";
+import { Alert, Button } from "@/components/ui";
+import api from "@/lib/utils/fetcher/client/axios";
+import {
+  formatRefundCoin,
+  formatRefundDateTime,
+} from "../shared/refund-status";
+import { RefundStudioShell } from "../shared/refund-studio-shell";
+
+const QUICK_REASONS = [
+  "Nội dung khóa học chưa phù hợp với trình độ hiện tại của mình.",
+  "Mình đăng ký nhầm khóa học và muốn chuyển Coin sang khóa học khác.",
+  "Lịch học cá nhân thay đổi nên chưa thể theo kịp lộ trình khóa học.",
+];
 
 export default function CreateRefundPage() {
   const router = useRouter();
@@ -26,12 +46,13 @@ export default function CreateRefundPage() {
     setError(null);
 
     if (!purchaseItemId.trim()) {
-      setError("Thiếu thông tin đơn hàng. Vui lòng quay lại trang trước.");
+      setError("Thiếu thông tin đơn hàng. Vui lòng chọn khóa học từ danh sách đủ điều kiện.");
       return;
     }
 
-    if (!reason.trim()) {
-      setError("Vui lòng nhập lý do hoàn tiền.");
+    const plainReason = reason.replace(/<[^>]*>/g, "").trim();
+    if (!plainReason) {
+      setError("Vui lòng nhập lý do hoàn Coin để đội ngũ xem xét nhanh nhất.");
       return;
     }
 
@@ -48,175 +69,261 @@ export default function CreateRefundPage() {
         refund_amount: response.data.refund_amount,
         deadline: response.data.deadline,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const maybeErr = err as { response?: { data?: { detail?: string; message?: string } } };
       const errorMsg =
-        err?.response?.data?.detail ||
-        err?.response?.data?.message ||
-        "Không thể gửi yêu cầu hoàn tiền. Vui lòng thử lại.";
+        maybeErr?.response?.data?.detail ||
+        maybeErr?.response?.data?.message ||
+        "Không thể gửi yêu cầu hoàn Coin. Vui lòng thử lại.";
       setError(errorMsg);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const formatCurrency = (value: number) => formatVndAsCoin(value);
-
-  const formatDateTime = (value: string) => {
-    try {
-      return new Intl.DateTimeFormat("vi-VN", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-      }).format(new Date(value));
-    } catch {
-      return value;
-    }
-  };
-
   if (success) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-3xl mx-auto px-4 py-8">
-          <div className="bg-white rounded-xl border border-green-200 shadow-sm p-8">
-            <div className="text-center mb-6">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-4">
-                <CircleAlert solid className="h-8 w-8 text-green-600" />
-              </div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                Yêu cầu hoàn tiền đã được gửi thành công
-              </h1>
-              <p className="text-gray-600">
-                Yêu cầu của bạn đã được ghi nhận và đang chờ xử lý.
-              </p>
-            </div>
-
-            <div className="space-y-4 mb-6">
-              <div className="p-4 rounded-lg bg-green-50 border border-green-200">
-                <div className="text-sm text-gray-600 mb-1">ID yêu cầu</div>
-                <div className="font-mono text-sm text-gray-900">
-                  {success.refund_id}
-                </div>
-              </div>
-
-              <div className="p-4 rounded-lg bg-gray-50 border border-gray-200">
-                <div className="text-sm text-gray-600 mb-1">
-                  Số tiền hoàn tiền
-                </div>
-                <div className="text-xl font-bold text-green-600">
-                  {formatCurrency(success.refund_amount)}
-                </div>
-              </div>
-
-              <div className="p-4 rounded-lg bg-yellow-50 border border-yellow-200">
-                <div className="text-sm text-yellow-800 mb-1">
-                  Hạn xử lý yêu cầu
-                </div>
-                <div className="text-sm font-semibold text-yellow-900">
-                  {formatDateTime(success.deadline)}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => router.push("/refunds/my-requests")}
-                className="flex-1 px-4 py-2 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 transition-colors"
-              >
-                Xem danh sách yêu cầu
-              </button>
-              <button
-                onClick={() => router.push("/refunds/refundable")}
-                className="flex-1 px-4 py-2 rounded-lg border border-gray-200 bg-white text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
-              >
-                Quay lại
-              </button>
-            </div>
+      <RefundStudioShell
+        activeTab="create"
+        eyebrow="Cloud Shield · Biên nhận hồ sơ"
+        title="Đã tiếp nhận yêu cầu hoàn Coin"
+        description="Hồ sơ của bạn đã được ghi nhận vào hệ thống Kho Bạc Mây Mây và chuyển tới giảng viên xem xét."
+        backHref="/refunds/my-requests"
+        backLabel="Danh sách yêu cầu"
+        tone="success"
+        heroRight={
+          <div
+            aria-hidden="true"
+            className="stamp-down inline-flex items-center gap-1.5 rounded-full border-2 border-dashed border-success-foreground/45 bg-surface/85 px-3.5 py-1.5 text-[11px] font-extrabold tracking-[0.14em] text-success-foreground uppercase"
+          >
+            <CheckCircle2 animated={false} className="size-3.5" />
+            <span>ĐÃ TIẾP NHẬN</span>
           </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-3xl mx-auto px-4 py-8">
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="flex items-center gap-2 text-gray-600 hover:text-green-600 transition-colors mb-6"
-        >
-          <ArrowLeft className="h-5 w-5" />
-          <span className="font-medium">Quay lại</span>
-        </button>
-
-        <div className="bg-white rounded-xl border border-green-200 shadow-sm p-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Yêu cầu hoàn tiền
-          </h1>
-          <p className="text-gray-600 mb-6">
-            Vui lòng điền thông tin và lý do để gửi yêu cầu hoàn tiền.
-          </p>
-
-          {error && (
-            <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Lý do hoàn tiền <span className="text-red-500">*</span>
-              </label>
-              <div className="border-2 border-gray-300 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-green-500 focus-within:border-green-500 transition-all">
-                <TiptapEditor
-                  value={reason}
-                  onChange={setReason}
-                  placeholder="Nhập lý do bạn muốn hoàn tiền cho khóa học này..."
-                  minHeight="200px"
-                  showToolbar={true}
-                />
+        }
+      >
+        <div className="grid gap-6 lg:grid-cols-12">
+          <div className="rounded-[24px] border border-success-border bg-surface p-6 shadow-xs sm:p-8 lg:col-span-8">
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="rounded-2xl border border-border bg-background/65 p-4">
+                <p className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
+                  Mã hồ sơ hoàn Coin
+                </p>
+                <p className="mt-1.5 break-all font-mono text-xs font-bold text-foreground">
+                  {success.refund_id}
+                </p>
               </div>
-              <p className="mt-2 text-xs text-gray-500">
-                Vui lòng mô tả chi tiết lý do bạn muốn hoàn tiền để chúng tôi có
-                thể xử lý nhanh chóng.
-              </p>
-            </div>
 
-            <div className="flex items-start gap-3 p-4 rounded-lg bg-yellow-50 border border-yellow-200">
-              <CircleAlert solid className="h-5 w-5 text-yellow-600 shrink-0 mt-0.5" />
-              <div className="text-sm text-yellow-800">
-                <p className="font-semibold mb-1">Lưu ý quan trọng</p>
-                <p>
-                  Bạn chỉ có thể yêu cầu hoàn tiền{" "}
-                  <strong>1 lần duy nhất</strong> cho khóa học này. Sau khi yêu
-                  cầu được gửi, bạn không thể hủy hoặc yêu cầu lại.
+              <div className="rounded-2xl border border-success-border bg-success-bg/55 p-4">
+                <p className="text-[11px] font-bold tracking-wider text-success-foreground uppercase">
+                  Giá trị hoàn dự kiến
+                </p>
+                <p className="mt-1 inline-flex items-center gap-1.5 font-display text-xl font-bold text-success-foreground tabular-nums">
+                  <Coins aria-hidden="true" animated={false} className="size-4" />
+                  {formatRefundCoin(success.refund_amount)}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-accent-vanilla-border bg-accent-vanilla/50 p-4">
+                <p className="text-[11px] font-bold tracking-wider text-accent-vanilla-foreground uppercase">
+                  Hạn phản hồi dự kiến
+                </p>
+                <p className="mt-1.5 text-xs font-bold text-foreground tabular-nums">
+                  {formatRefundDateTime(success.deadline)}
                 </p>
               </div>
             </div>
 
-            <div className="flex gap-3 pt-4">
-              <button
+            <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-border/70 pt-5">
+              <Link
+                href={`/refunds/${success.refund_id}`}
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-primary px-5 text-xs font-bold text-primary-foreground transition-colors hover:bg-primary-hover"
+              >
+                <span>Theo dõi chi tiết hồ sơ</span>
+                <ArrowRight aria-hidden="true" className="size-4" />
+              </Link>
+              <Link
+                href="/refunds/my-requests"
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-border bg-surface px-5 text-xs font-bold text-foreground transition-colors hover:border-primary-pastel hover:bg-primary-light hover:text-primary"
+              >
+                <span>Xem tất cả yêu cầu</span>
+              </Link>
+            </div>
+          </div>
+
+          <aside className="rounded-[24px] border border-primary-pastel bg-primary-light/45 p-6 lg:col-span-4">
+            <h2 className="font-display text-lg font-bold text-foreground">
+              Bước tiếp theo là gì?
+            </h2>
+            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+              Ngay khi giảng viên và quản trị viên xác nhận, toàn bộ số Coin sẽ được cộng thẳng về Kho Coin của bạn để bạn thoải mái đầu tư khóa học phù hợp hơn.
+            </p>
+          </aside>
+        </div>
+      </RefundStudioShell>
+    );
+  }
+
+  return (
+    <RefundStudioShell
+      activeTab="create"
+      eyebrow="Cloud Shield · Khởi tạo hồ sơ"
+      title="Gửi yêu cầu hoàn Coin"
+      description="Chia sẻ rõ lý do của bạn để giảng viên và Kho Bạc Mây Mây xem xét, bảo toàn quyền lợi nhanh chóng."
+      backHref="/refunds/refundable"
+      backLabel="Khóa học đủ điều kiện"
+      tone="blue"
+    >
+      <div className="grid items-start gap-6 lg:grid-cols-12">
+        {/* Cột trái (8/12): Biểu mẫu gửi yêu cầu */}
+        <section
+          aria-label="Biểu mẫu yêu cầu hoàn Coin"
+          className="rounded-[24px] border border-border bg-surface p-6 shadow-xs sm:p-7 lg:col-span-8"
+        >
+          {error && (
+            <div className="mb-5">
+              <Alert variant="destructive">{error}</Alert>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Gợi ý lý do nhanh 1 chạm */}
+            <div className="space-y-2">
+              <p className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
+                Gợi ý lý do nhanh (bấm để chèn)
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {QUICK_REASONS.map((template) => (
+                  <button
+                    key={template}
+                    type="button"
+                    onClick={() => setReason(`<p>${template}</p>`)}
+                    className="rounded-full border border-primary-pastel/80 bg-primary-light/55 px-3 py-1.5 text-left text-xs font-semibold text-primary transition-colors hover:bg-primary-light cursor-pointer"
+                  >
+                    + {template}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-2 block text-xs font-bold tracking-wider text-foreground uppercase">
+                Lý do hoàn Coin <span className="text-destructive">*</span>
+              </label>
+              <div className="overflow-hidden rounded-2xl border border-border-strong bg-background transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
+                <TiptapEditor
+                  value={reason}
+                  onChange={setReason}
+                  placeholder="Mô tả chi tiết lý do bạn muốn hoàn Coin cho khóa học này..."
+                  minHeight="210px"
+                  showToolbar={true}
+                />
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Mô tả cụ thể giúp giảng viên và quản trị viên xử lý hồ sơ nhanh hơn.
+              </p>
+            </div>
+
+            <div className="flex items-start gap-3 rounded-2xl border border-warning-border bg-warning-bg/75 p-4 text-warning-foreground">
+              <CircleAlert aria-hidden="true" animated={false} className="mt-0.5 size-5 shrink-0" />
+              <div className="text-xs leading-relaxed">
+                <p className="font-bold">Lưu ý quan trọng về quyền hoàn Coin</p>
+                <p className="mt-0.5">
+                  Mỗi đơn khóa học chỉ được gửi yêu cầu hoàn Coin{" "}
+                  <strong className="font-extrabold">1 lần duy nhất</strong>. Sau khi gửi, bạn không thể hủy hoặc tạo lại yêu cầu mới cho đơn này.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-end gap-3 border-t border-border/70 pt-4">
+              <Button
                 type="button"
+                variant="outline"
                 onClick={() => router.back()}
-                className="flex-1 px-4 py-2 rounded-lg border border-gray-200 bg-white text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
+                className="min-h-11 rounded-full px-6 font-bold"
               >
-                Hủy
-              </button>
-              <button
+                Hủy bỏ
+              </Button>
+              <Button
                 type="submit"
-                disabled={!reason.trim() || isSubmitting}
-                className="flex-1 px-4 py-2 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                variant="primary"
+                disabled={!reason.replace(/<[^>]*>/g, "").trim() || isSubmitting}
+                className="min-h-11 rounded-full px-6 font-bold"
               >
-                {isSubmitting ? "Đang gửi..." : "Gửi yêu cầu"}
-              </button>
+                <span>{isSubmitting ? "Đang gửi hồ sơ..." : "Gửi yêu cầu hoàn Coin"}</span>
+                {!isSubmitting && <ArrowRight aria-hidden="true" className="size-4" />}
+              </Button>
             </div>
           </form>
-        </div>
+        </section>
+
+        {/* Cột phải (4/12): Cẩm nang Bảo Toàn Tài Sản 3 bước */}
+        <aside
+          aria-label="Lộ trình xử lý hoàn Coin"
+          className="space-y-4 lg:sticky lg:top-24 lg:col-span-4"
+        >
+          <div className="rounded-[24px] border border-primary-pastel/80 bg-gradient-to-br from-primary-light/70 via-surface to-accent-vanilla/45 p-5 shadow-xs">
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-primary-pastel bg-surface/90 px-3 py-1 text-[11px] font-bold tracking-wider text-primary uppercase">
+              <ShieldCheck aria-hidden="true" animated={false} className="size-3.5" />
+              <span>Quy trình 3 bước minh bạch</span>
+            </div>
+
+            <ol className="mt-4 space-y-3.5">
+              <li className="flex items-start gap-3">
+                <span className="grid size-7 shrink-0 place-items-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                  1
+                </span>
+                <div>
+                  <p className="text-xs font-bold text-foreground">Gửi hồ sơ hoàn Coin</p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                    Hệ thống khóa trạng thái đơn và lưu biên nhận tức thì.
+                  </p>
+                </div>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="grid size-7 shrink-0 place-items-center rounded-full border border-primary-pastel bg-surface text-xs font-bold text-primary">
+                  2
+                </span>
+                <div>
+                  <p className="text-xs font-bold text-foreground">Giảng viên & Kho Bạc đối soát</p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                    Mọi phản hồi và thời gian duyệt được cập nhật công khai.
+                  </p>
+                </div>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="grid size-7 shrink-0 place-items-center rounded-full border border-success-border bg-success-bg text-xs font-bold text-success-foreground">
+                  3
+                </span>
+                <div>
+                  <p className="text-xs font-bold text-foreground">Cộng Coin trực tiếp vào ví</p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                    Số Coin bảo toàn sẵn sàng để tái đầu tư khóa học mới.
+                  </p>
+                </div>
+              </li>
+            </ol>
+          </div>
+
+          <div className="rounded-[24px] border border-border bg-surface p-5 shadow-xs">
+            <div className="flex items-center gap-2 text-primary">
+              <Clock aria-hidden="true" animated={false} className="size-4" />
+              <span className="text-xs font-bold">Mã đơn đang yêu cầu</span>
+            </div>
+            <p className="mt-2 break-all rounded-xl border border-border bg-background px-3 py-2 font-mono text-[11px] font-semibold text-foreground">
+              {purchaseItemId || "Chưa chọn đơn khóa học"}
+            </p>
+            {!purchaseItemId && (
+              <Link
+                href="/refunds/refundable"
+                className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline"
+              >
+                <FileText aria-hidden="true" animated={false} className="size-3.5" />
+                <span>Chọn từ danh sách khóa học đủ điều kiện</span>
+              </Link>
+            )}
+          </div>
+        </aside>
       </div>
-    </div>
+    </RefundStudioShell>
   );
 }

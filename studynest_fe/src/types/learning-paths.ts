@@ -124,16 +124,29 @@ export interface BundleQuote {
 export interface BundleReceipt {
   id: string;
   title: string;
+  bundle_slug?: string | null;
+  thumbnail_url?: string | null;
+  subtitle?: string | null;
   total_paid: Money;
+  total_paid_coin?: number;
+  total_list_price?: Money;
+  total_list_price_coin?: number;
+  total_savings_coin?: number;
   currency: string;
   created_at: string;
   coupon_code: string | null;
   discount_amount: Money;
+  discount_coin?: number;
   lines: {
     id: string;
     title: string;
     course_id: string;
+    course_slug?: string | null;
+    course_thumbnail_url?: string | null;
+    list_price?: Money;
+    list_price_coin?: number;
     paid: Money;
+    paid_coin?: number;
     already_owned: boolean;
     purchase_item_id: string | null;
     purchase_status: string | null;
@@ -205,4 +218,111 @@ export interface BundleCoupon {
   per_user_limit: number;
   is_active: boolean;
   usage_count: number;
+}
+
+export interface RoadmapTierDefinition {
+  key: "tieu-hoc" | "thcs" | "thpt";
+  label: string;
+  region_name: string;
+  grade_range: string;
+  grades: number[];
+  tagline: string;
+}
+
+export interface LearningTrackOption {
+  code: string;
+  tier: "tieu-hoc" | "thcs" | "thpt";
+  label: string;
+  badge: string;
+  description: string;
+  default_subjects: string[];
+}
+
+export interface LearningGoalOption {
+  code: string;
+  label: string;
+  description: string;
+}
+
+export interface GradeStation {
+  grade: number;
+  label: string;
+  tier: "tieu-hoc" | "thcs" | "thpt";
+  total_courses: number;
+  enrolled_courses: number;
+  progress_percent: number;
+  is_user_grade: boolean;
+  is_active: boolean;
+}
+
+export interface RoadmapSubjectChip {
+  slug: string;
+  name: string;
+  count: number;
+  is_focus: boolean;
+}
+
+export interface RoadmapCourseItem {
+  id: string;
+  title: string;
+  slug: string;
+  thumbnail: string | null;
+  subject_name: string;
+  subject_slug: string;
+  base_price: number;
+  rating_avg: number;
+  total_enrolls: number;
+  level: string;
+  is_enrolled: boolean;
+  progress_percent: number;
+  is_focus: boolean;
+  match_reason: string;
+}
+
+export interface RoadmapStage {
+  index: number;
+  code: string;
+  title: string;
+  subtitle: string;
+  accent: "sky" | "lavender" | "vanilla";
+  progress_percent: number;
+  courses: RoadmapCourseItem[];
+}
+
+export interface PersonalizedRoadmapProfile {
+  fullname: string;
+  avatar: string | null;
+  is_configured: boolean;
+  grade_level: number | null;
+  learning_track: string;
+  learning_track_label: string;
+  focus_subjects: string[];
+  goal_mode: string;
+  goal_label: string;
+  daily_goal_minutes: number;
+}
+
+export interface PersonalizedRoadmapBlueprint {
+  profile: PersonalizedRoadmapProfile;
+  active_grade: number;
+  active_tier: RoadmapTierDefinition;
+  active_track: LearningTrackOption;
+  active_grade_stats: GradeStation;
+  grade_map: GradeStation[];
+  available_subjects: RoadmapSubjectChip[];
+  stages: RoadmapStage[];
+  following_paths: { version_id: string; title: string; slug: string }[];
+  catalog: {
+    tiers: RoadmapTierDefinition[];
+    tracks: LearningTrackOption[];
+    goals: LearningGoalOption[];
+  };
+}
+
+export interface LearningPreferencesPayload {
+  grade_level: number;
+  learning_track: string;
+  focus_subjects: string[];
+  goal_mode: string;
+  daily_goal_minutes: number;
 }

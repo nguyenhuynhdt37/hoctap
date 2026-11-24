@@ -66,7 +66,7 @@ export function PathAndGoals({ course, children }: { course?: CoursesMeItem | nu
         <p className="text-sm font-semibold">{steps.length ? `${completedSteps}/${steps.length} mốc hoàn thành` : "Mở lộ trình để xem các mốc"}</p>
         {steps.length > 0 && <ThinBar value={(100 * completedSteps) / steps.length} label="Tiến độ lộ trình" />}
         <div className="flex flex-wrap gap-2">
-          <HomeLink href="/lo-trinh/cua-toi" primary endIcon={false} className="text-sm">Mở lộ trình</HomeLink>
+          <HomeLink href="/learning-paths/my" primary endIcon={false} className="text-sm">Mở lộ trình</HomeLink>
           <HomeLink href="/goals" endIcon={false} className="border-primary-pastel text-sm">Đặt ngày về đích</HomeLink>
         </div>
       </div>

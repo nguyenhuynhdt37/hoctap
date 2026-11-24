@@ -4,7 +4,7 @@ export const userRoles: AuthRole[] = ["USER", "LECTURER", "ADMIN"];
 
 // Matches the protected user routes in the cookie middleware.
 const userPrefixes = [
-  "/lo-trinh/cua-toi", "/combo/don-hang", "/profile", "/my-learning",
+  "/learning-paths/my", "/combo/orders", "/lo-trinh/cua-toi", "/combo/don-hang", "/profile", "/my-learning",
   "/favorites", "/notifications", "/wallets", "/refunds", "/learning", "/chat-sql",
 ];
 

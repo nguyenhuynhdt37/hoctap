@@ -1,4 +1,9 @@
-import { RefundRequestsQuery } from "@/types/user/refund";
+"use client";
+
+import { RotateCcw, Search } from "pulsoicon-react";
+import { Button } from "@/components/ui";
+import type { RefundRequestsQuery } from "@/types/user/refund";
+import { cn } from "@/lib/utils";
 
 interface RefundRequestsFilterBarProps {
   searchValue: string;
@@ -9,7 +14,7 @@ interface RefundRequestsFilterBarProps {
   onStatusChange: (value: RefundRequestsQuery["refund_status"]) => void;
   onOrderChange: (
     orderBy: RefundRequestsQuery["order_by"],
-    orderDir: RefundRequestsQuery["order_dir"]
+    orderDir: RefundRequestsQuery["order_dir"],
   ) => void;
   onResetFilters: () => void;
 }
@@ -18,13 +23,13 @@ const statusOptions: Array<{
   label: string;
   value: RefundRequestsQuery["refund_status"];
 }> = [
-  { label: "Tất cả trạng thái", value: "all" },
+  { label: "Tất cả", value: "all" },
   { label: "Đã yêu cầu", value: "requested" },
   { label: "GV đã duyệt", value: "instructor_approved" },
-  { label: "GV đã từ chối", value: "instructor_rejected" },
-  { label: "Admin đã duyệt", value: "admin_approved" },
-  { label: "Admin đã từ chối", value: "admin_rejected" },
-  { label: "Đã hoàn tiền", value: "refunded" },
+  { label: "Admin duyệt", value: "admin_approved" },
+  { label: "Đã hoàn Coin", value: "refunded" },
+  { label: "GV từ chối", value: "instructor_rejected" },
+  { label: "Admin từ chối", value: "admin_rejected" },
 ];
 
 const orderOptions: Array<{
@@ -34,22 +39,10 @@ const orderOptions: Array<{
     orderDir: RefundRequestsQuery["order_dir"];
   };
 }> = [
-  {
-    label: "Mới nhất",
-    value: { orderBy: "created_at", orderDir: "desc" },
-  },
-  {
-    label: "Cũ nhất",
-    value: { orderBy: "created_at", orderDir: "asc" },
-  },
-  {
-    label: "Số tiền cao → thấp",
-    value: { orderBy: "refund_amount", orderDir: "desc" },
-  },
-  {
-    label: "Số tiền thấp → cao",
-    value: { orderBy: "refund_amount", orderDir: "asc" },
-  },
+  { label: "Mới nhất", value: { orderBy: "created_at", orderDir: "desc" } },
+  { label: "Cũ nhất", value: { orderBy: "created_at", orderDir: "asc" } },
+  { label: "Coin cao → thấp", value: { orderBy: "refund_amount", orderDir: "desc" } },
+  { label: "Coin thấp → cao", value: { orderBy: "refund_amount", orderDir: "asc" } },
 ];
 
 export function RefundRequestsFilterBar({
@@ -62,102 +55,105 @@ export function RefundRequestsFilterBar({
   onOrderChange,
   onResetFilters,
 }: RefundRequestsFilterBarProps) {
+  const currentOrderValue = `${filters.order_by}:${filters.order_dir}`;
+
   return (
-    <div className="rounded-xl border border-green-200 bg-green-50/50 p-4 shadow-sm">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <section
+      aria-label="Bộ lọc yêu cầu hoàn Coin"
+      className="space-y-3 rounded-[24px] border border-border bg-surface/92 p-4 shadow-xs backdrop-blur-md"
+    >
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <form
-          className="flex w-full flex-col gap-3 sm:flex-row sm:items-center"
+          className="flex w-full flex-1 flex-col gap-2.5 sm:flex-row sm:items-center"
           onSubmit={(event) => {
             event.preventDefault();
             onSearchSubmit();
           }}
         >
           <div className="relative flex-1">
-            <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-green-500">
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                />
-                <path
-                  d="m20 20-2.5-2.5"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </span>
+            <Search
+              aria-hidden="true"
+              animated={false}
+              className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-primary"
+            />
             <input
               value={searchValue}
               onChange={(event) => onSearchChange(event.target.value)}
-              placeholder="Tìm theo tên khóa học, lý do hoàn tiền..."
-              className="w-full rounded-lg border-2 border-green-200 bg-white pl-10 pr-4 py-2.5 text-sm text-gray-900 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-500"
+              placeholder="Tìm theo tên khóa học, lý do hoàn Coin..."
+              className="w-full rounded-full border border-border bg-background py-2.5 pr-4 pl-10 text-xs font-medium text-foreground outline-none transition-colors placeholder:text-subtle-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
             />
           </div>
-          <button
+          <Button
             type="submit"
-            className="inline-flex items-center justify-center rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-green-700"
+            variant="primary"
+            size="sm"
+            disabled={isLoading}
+            className="min-h-10 rounded-full px-5 font-bold"
           >
             Tìm kiếm
-          </button>
+          </Button>
         </form>
 
-        <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 xl:flex xl:flex-wrap xl:items-center">
+        <div className="flex flex-wrap items-center gap-2">
           <select
-            value={filters.refund_status}
-            onChange={(event) =>
-              onStatusChange(
-                event.target.value as RefundRequestsQuery["refund_status"]
-              )
-            }
-            className="rounded-lg border border-green-200 bg-white px-4 py-2.5 text-sm font-semibold text-green-600 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-500"
-          >
-            {statusOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={`${filters.order_by}-${filters.order_dir}`}
+            aria-label="Sắp xếp yêu cầu"
+            value={currentOrderValue}
             onChange={(event) => {
-              const [orderBy, orderDir] = event.target.value.split("-");
-              onOrderChange(
-                orderBy as RefundRequestsQuery["order_by"],
-                orderDir as RefundRequestsQuery["order_dir"]
-              );
+              const [orderBy, orderDir] = event.target.value.split(":") as [
+                RefundRequestsQuery["order_by"],
+                RefundRequestsQuery["order_dir"],
+              ];
+              onOrderChange(orderBy, orderDir);
             }}
-            className="rounded-lg border border-green-200 bg-white px-4 py-2.5 text-sm font-semibold text-green-600 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-500"
+            disabled={isLoading}
+            className="min-h-10 rounded-full border border-border bg-background px-3.5 text-xs font-bold text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
           >
-            {orderOptions.map((option) => (
+            {orderOptions.map((opt) => (
               <option
-                key={`${option.value.orderBy}-${option.value.orderDir}`}
-                value={`${option.value.orderBy}-${option.value.orderDir}`}
+                key={`${opt.value.orderBy}:${opt.value.orderDir}`}
+                value={`${opt.value.orderBy}:${opt.value.orderDir}`}
               >
-                {option.label}
+                {opt.label}
               </option>
             ))}
           </select>
 
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
             onClick={onResetFilters}
             disabled={isLoading}
-            className="inline-flex items-center justify-center rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-2.5 text-sm font-semibold text-yellow-600 transition hover:bg-yellow-100 disabled:cursor-not-allowed disabled:opacity-60"
+            className="min-h-10 rounded-full px-3.5 text-xs font-bold"
           >
-            Đặt lại
-          </button>
+            <RotateCcw aria-hidden="true" className="size-3.5" />
+            <span>Đặt lại</span>
+          </Button>
         </div>
       </div>
-    </div>
+
+      {/* Dải pill chọn nhanh trạng thái */}
+      <div className="flex flex-wrap items-center gap-1.5 border-t border-border/70 pt-3">
+        {statusOptions.map((opt) => {
+          const active = filters.refund_status === opt.value;
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => onStatusChange(opt.value)}
+              disabled={isLoading}
+              className={cn(
+                "inline-flex min-h-8 items-center rounded-full px-3 text-xs font-bold transition-all cursor-pointer",
+                active
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "border border-border bg-background text-muted-foreground hover:border-primary-pastel hover:bg-primary-light/60 hover:text-primary",
+              )}
+            >
+              {opt.label}
+            </button>
+          );
+        })}
+      </div>
+    </section>
   );
 }
-

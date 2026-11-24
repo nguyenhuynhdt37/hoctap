@@ -8,6 +8,7 @@ from app.db.sesson import get_session
 from app.services.user.learning_menu import (
     claim_course_gift,
     create_course_gift,
+    get_member_public_profile,
     get_player_menu_state,
     list_incoming_gifts,
     search_gift_recipients,
@@ -129,3 +130,11 @@ async def claim_gift(
 ):
     user = await authorization.get_current_user()
     return await claim_course_gift(db, gift_id, user)
+
+
+@router.get("/members/{member_id}/profile")
+async def member_public_profile(
+    member_id: uuid.UUID,
+    db: AsyncSession = Depends(get_session),
+):
+    return await get_member_public_profile(db, member_id)
