@@ -37,7 +37,9 @@ export function AuthBootstrap() {
     async function syncUser() {
       const request = ++revision;
       const isCurrent = () => active && request === revision;
-      setStatus("pending");
+      if (!useUserStore.getState().user) {
+        setStatus("pending");
+      }
       try {
         const outcome = await bootstrapSessionOutcome();
         if (!isCurrent()) return;

@@ -2,12 +2,12 @@
 import uuid
 
 from fastapi import Depends, HTTPException
-from sqlalchemy import desc, select, update
+from sqlalchemy import desc, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.embedding import EmbeddingService, get_embedding_service
-from app.db.models.database import Courses, CourseSections
+from app.db.models.database import Courses, CourseSections, LessonChunks
 from app.db.sesson import get_session
 from app.schemas.lecturer.chapter import (
     CreateCourseSection,
@@ -38,12 +38,32 @@ class ChapterService:
         if not course or course.instructor_id != lecturer_id:
             raise HTTPException(status_code=401, detail="Unauthorized")
 
-        sections = await self.db.scalars(
-            select(CourseSections)
-            .options(selectinload(CourseSections.lessons))
-            .where(CourseSections.course_id == course_id)
-            .order_by(CourseSections.position)
-        )
+        sections = (
+            await self.db.scalars(
+                select(CourseSections)
+                .options(selectinload(CourseSections.lessons))
+                .where(CourseSections.course_id == course_id)
+                .order_by(CourseSections.position)
+            )
+        ).all()
+
+        all_lesson_ids = [
+            les.id for sec in sections for les in (sec.lessons or [])
+        ]
+        chunk_counts: dict[uuid.UUID, int] = {}
+        if all_lesson_ids:
+            rows = (
+                await self.db.execute(
+                    select(LessonChunks.lesson_id, func.count(LessonChunks.id))
+                    .where(
+                        LessonChunks.lesson_id.in_(all_lesson_ids),
+                        LessonChunks.embedding.is_not(None),
+                    )
+                    .group_by(LessonChunks.lesson_id)
+                )
+            ).all()
+            chunk_counts = {row[0]: int(row[1]) for row in rows}
+
         data = []
         for sec in sections:
             lessons = sorted(sec.lessons, key=lambda l: l.position)
@@ -58,6 +78,9 @@ class ChapterService:
                             "lesson_title": les.title,
                             "lesson_type": les.lesson_type,
                             "position": les.position,
+                            "chunk_count": chunk_counts.get(les.id, 0),
+                            "has_embedding": (les.embedding is not None)
+                            or (chunk_counts.get(les.id, 0) > 0),
                         }
                         for les in lessons
                     ],

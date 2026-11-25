@@ -13,7 +13,8 @@ interface AuthRequestConfig extends InternalAxiosRequestConfig {
 
 const api = axios.create({
   baseURL: "/api",
-  headers: { "Content-Type": "application/json" },
+  // ngrok-skip-browser-warning: khi chia sẻ qua ngrok free, bỏ trang cảnh báo HTML ở các request API.
+  headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "1" },
   // The browser XHR adapter can still send same-origin cookies with false.
   ...(isDpopMode ? { adapter: "fetch", withCredentials: false } : { withCredentials: true }),
 });
@@ -111,7 +112,9 @@ api.interceptors.response.use(response => {
 
 export async function authedFetch(input: string, init?: RequestInit): Promise<Response> {
   if (!isDpopMode) {
-    const send = () => fetch(input, { credentials: "include", ...init });
+    const plainHeaders = new Headers(init?.headers);
+    plainHeaders.set("ngrok-skip-browser-warning", "1");
+    const send = () => fetch(input, { credentials: "include", ...init, headers: plainHeaders });
     const response = await send();
     if (response.status !== 401 || init?.signal?.aborted || init?.body instanceof ReadableStream) return response;
     await response.body?.cancel();
@@ -124,6 +127,8 @@ export async function authedFetch(input: string, init?: RequestInit): Promise<Re
   const headers = new Headers(init?.headers);
   headers.delete("Authorization");
   headers.delete("DPoP");
+  // Khi chia sẻ qua ngrok free, tránh trang cảnh báo HTML thay cho JSON/SSE.
+  headers.set("ngrok-skip-browser-warning", "1");
   const send = async (previous?: { response: Response; used: AccessSession }) => {
     const expectedSessionId = previous?.used.id;
     const auth = target && !isSessionEndpoint(target)

@@ -11,6 +11,8 @@ export interface ProfileValues {
   district: string;
   instructor_description: string;
   citizenship_identity: string;
+  paypal_email: string;
+  paypal_payer_id: string;
 }
 
 export type ProfileFieldErrors = Partial<Record<keyof ProfileValues, string>>;
@@ -25,6 +27,8 @@ export function profileValuesFrom(profile: UserProfile): ProfileValues {
     district: profile.district || "",
     instructor_description: profile.instructor_description || "",
     citizenship_identity: profile.citizenship_identity || "",
+    paypal_email: profile.paypal_email || "",
+    paypal_payer_id: profile.paypal_payer_id || "",
   };
 }
 
@@ -54,6 +58,8 @@ function comparable(values: ProfileValues, mode: ProfileMode) {
   for (const field of fields) {
     if (field === "birthday" || field === "conscious" || field === "district") {
       snapshot[field] = values[field] || null;
+    } else if (field === "citizenship_identity") {
+      snapshot[field] = emptyToNull(values[field].replace(/[\s-]+/g, ""));
     } else {
       snapshot[field] = emptyToNull(values[field]);
     }
@@ -138,9 +144,14 @@ export function validateProfile(
     errors.instructor_description = "Giới thiệu giảng viên tối đa 5000 ký tự";
   }
 
-  const identity = values.citizenship_identity.trim();
+  const identity = values.citizenship_identity.replace(/[\s-]+/g, "").trim();
   if (identity && !/^\d{9}$|^\d{12}$/.test(identity)) {
-    errors.citizenship_identity = "Nhập 9 số CMND hoặc 12 số CCCD";
+    errors.citizenship_identity = "Nhập đúng 9 số CMND hoặc 12 số CCCD";
+  }
+
+  const paypalEmail = values.paypal_email.trim();
+  if (paypalEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(paypalEmail)) {
+    errors.paypal_email = "Email PayPal không đúng định dạng";
   }
 
   return errors;

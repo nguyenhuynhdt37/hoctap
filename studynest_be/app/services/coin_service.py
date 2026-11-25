@@ -104,18 +104,9 @@ class CoinService:
         return paid.balance
 
     async def withdrawable_paid_async(self, user_id: uuid.UUID) -> int:
-        """Coin thật được phép rút: chỉ Coin có nguồn từ thu nhập (trừ số đã khóa để rút, cộng số đã hoàn).
-
-        Coin nạp bằng tiền chỉ tiêu được, không rút ra tiền thật.
-        """
-        earned = await self._sum_kind(
-            user_id, "paid", PeakTransactions.source == EARNING_SOURCE, PeakTransactions.type == "credit")
-        held = await self._sum_kind(
-            user_id, "paid", PeakTransactions.source == WITHDRAW_HOLD_SOURCE, PeakTransactions.type == "debit")
-        refunded = await self._sum_kind(
-            user_id, "paid", PeakTransactions.source == WITHDRAW_REFUND_SOURCE, PeakTransactions.type == "credit")
+        """Coin thật được phép rút: toàn bộ số dư Coin thật (gồm cả Coin nạp và thu nhập, không gồm Coin thưởng)."""
         balance = (await self.get_balances_async(user_id)).paid
-        return max(0, min(balance, earned - held + refunded))
+        return max(0, balance)
 
     async def debit_paid_async(
         self, user_id: uuid.UUID, amount: int, *, source: str, ref_id: uuid.UUID,

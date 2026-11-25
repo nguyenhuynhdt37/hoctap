@@ -33,7 +33,9 @@ async def agent_service(auth: AuthorizationService = Depends(AuthorizationServic
         raise HTTPException(503, "Agent đang được chuẩn bị. Tutor Chat hiện tại vẫn khả dụng.")
     user = await auth.get_current_user()
     sid = await auth.get_current_sid()
-    return AgentService(db, user, sid)
+    service = AgentService(db, user, sid)
+    await service.principal_async()  # học viên/giảng viên hợp lệ; quản trị viên bị từ chối
+    return service
 
 
 @router.post("/sessions", status_code=201)

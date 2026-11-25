@@ -13,9 +13,14 @@ from app.core.redis import get_redis
 from app.db.models.database import Courses
 from app.schemas.catalog import (
     BrowseFiltersResponse,
+    CatalogAiEnrichInput,
+    CatalogAiEnrichResponse,
     CatalogCoursesResponse,
     CatalogFilters,
+    CatalogMatrixToggleInput,
     CatalogOptionsResponse,
+    CatalogQuickUpdateInput,
+    CatalogReorderInput,
     CourseTaxonomy,
     TaxonomyInput,
 )
@@ -179,6 +184,62 @@ async def taxonomy(
         )
         rows = [r for r in rows if r["id"] in ids]
     return rows
+
+
+@router.get("/admin/catalog/overview")
+async def admin_catalog_overview(
+    service: CatalogService = CATALOG_DEP,
+    auth: AuthorizationService = AUTH_DEP,
+):
+    await auth.require_role(["ADMIN"])
+    return await service.admin_overview()
+
+
+@router.post("/admin/catalog/matrix/toggle")
+async def admin_matrix_toggle(
+    data: CatalogMatrixToggleInput,
+    service: CatalogService = CATALOG_DEP,
+    auth: AuthorizationService = AUTH_DEP,
+):
+    await auth.require_role(["ADMIN"])
+    return await service.toggle_matrix(data.grade_ids, data.subject_id, data.enabled)
+
+
+@router.post("/admin/catalog/ai-enrich", response_model=CatalogAiEnrichResponse)
+async def admin_catalog_ai_enrich(
+    data: CatalogAiEnrichInput,
+    service: CatalogService = CATALOG_DEP,
+    auth: AuthorizationService = AUTH_DEP,
+):
+    await auth.require_role(["ADMIN"])
+    return await service.ai_enrich_taxonomy(
+        data.kind, data.name, data.code, data.exam_type
+    )
+
+
+@router.put("/admin/catalog/{kind}/reorder")
+async def admin_reorder_taxonomy(
+    kind: str,
+    data: CatalogReorderInput,
+    service: CatalogService = CATALOG_DEP,
+    auth: AuthorizationService = AUTH_DEP,
+):
+    await auth.require_role(["ADMIN"])
+    return await service.reorder_taxonomy(kind, data.ids)
+
+
+@router.patch("/admin/catalog/{kind}/{item_id}/quick")
+async def admin_quick_update_taxonomy(
+    kind: str,
+    item_id: UUID,
+    data: CatalogQuickUpdateInput,
+    service: CatalogService = CATALOG_DEP,
+    auth: AuthorizationService = AUTH_DEP,
+):
+    await auth.require_role(["ADMIN"])
+    return await service.quick_update(
+        kind, item_id, is_active=data.is_active, is_featured=data.is_featured
+    )
 
 
 @router.get("/admin/catalog/{kind}")

@@ -253,8 +253,8 @@ function HoldEarningsRow({ item }: { item: HoldEarningsItem }) {
       </td>
 
       <td className="px-5 py-4">
-        <div className="inline-flex items-center gap-1 font-display text-base font-bold tabular-nums text-primary">
-          <Coins animated={false} className="h-4 w-4" aria-hidden="true" />
+        <div className="inline-flex items-center gap-1 font-display text-base font-bold tabular-nums text-warning-foreground">
+          <Coins animated={false} className="h-4 w-4 text-[#C98A2C]" aria-hidden="true" />
           {formatVndAsCoin(item.amount_instructor)}
         </div>
       </td>

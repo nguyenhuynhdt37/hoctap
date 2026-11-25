@@ -15,7 +15,11 @@ async function backend(path: string, cookie: string, method = "GET") {
 export async function middleware(req: NextRequest) {
   if (process.env.NEXT_PUBLIC_AUTH_MODE === "dpop") {
     const response = NextResponse.next();
-    response.headers.set("Referrer-Policy", "no-referrer");
+    const isAuthRoute = req.nextUrl.pathname.startsWith("/auth/");
+    response.headers.set(
+      "Referrer-Policy",
+      isAuthRoute ? "no-referrer" : "strict-origin-when-cross-origin"
+    );
     return response;
   }
 

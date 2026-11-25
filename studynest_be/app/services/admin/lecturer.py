@@ -8,12 +8,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.services.shares.auth import revoke_user_sessions_async
+from app.db.models.coins import UserPaidCoinBalances
 from app.db.models.database import (
     Courses,
     CourseSections,
+    InstructorEarnings,
+    PlatformSettings,
     Role,
     Transactions,
     User,
+    UserPeakBalances,
     UserRoles,
     Wallets,
 )
@@ -38,22 +42,27 @@ class LecturerService:
         page: int,
         size: int,
     ):
-        # 🔹 Base query: lấy user có role 'LECTURER'
+        # 🔹 Base query: lấy user có role 'LECTURER' kèm số dư Coin thật & Coin thưởng
+        paid_col = func.coalesce(UserPaidCoinBalances.balance, 0)
+        bonus_col = func.coalesce(UserPeakBalances.current_balance, 0)
+
         stmt = (
             select(
                 User,
-                Wallets.balance.label("wallet_balance"),
+                paid_col.label("paid_coins"),
+                bonus_col.label("bonus_coins"),
             )
             .join(UserRoles, UserRoles.user_id == User.id)
             .join(Role, Role.id == UserRoles.role_id)
-            .join(Wallets, Wallets.user_id == User.id, isouter=True)
+            .outerjoin(UserPaidCoinBalances, UserPaidCoinBalances.user_id == User.id)
+            .outerjoin(UserPeakBalances, UserPeakBalances.user_id == User.id)
             .options(selectinload(User.user_roles).selectinload(UserRoles.role))
             .where(
                 Role.role_name == "LECTURER",
                 Role.role_name != "ADMIN",
                 User.deleted_at.is_(None),
             )
-            .group_by(User.id, Wallets.balance)
+            .group_by(User.id, UserPaidCoinBalances.balance, UserPeakBalances.current_balance)
         )
 
         # 🔹 Bộ lọc nâng cao
@@ -81,7 +90,7 @@ class LecturerService:
             "rating_avg": User.rating_avg,
             "evaluated_count": User.evaluated_count,
             "student_count": User.student_count,
-            "wallet_balance": Wallets.balance,
+            "wallet_balance": paid_col,
         }
 
         sort_column = sort_fields.get(sort_by, getattr(User, sort_by, User.create_at))
@@ -95,7 +104,9 @@ class LecturerService:
 
         # 🔹 Map dữ liệu trả về
         lecturers = []
-        for user, wallet_balance in records:
+        for user, paid_coins, bonus_coins in records:
+            paid_int = int(paid_coins or 0)
+            bonus_int = int(bonus_coins or 0)
             lecturers.append(
                 {
                     "id": user.id,
@@ -112,7 +123,9 @@ class LecturerService:
                     "evaluated_count": user.evaluated_count or 0,
                     "rating_avg": round(float(user.rating_avg or 0), 2),
                     "instructor_description": user.instructor_description,
-                    "wallet_balance": round(float(wallet_balance or 0), 2),
+                    "wallet_balance": paid_int,
+                    "paid_coins": paid_int,
+                    "bonus_coins": bonus_int,
                     "is_verified_email": user.is_verified_email,
                     "is_banned": user.is_banned,
                     "create_at": user.create_at,
@@ -284,10 +297,27 @@ class LecturerService:
         if not lecturer:
             raise HTTPException(404, "Không tìm thấy giảng viên")
 
-        # 2️⃣ Ví
+        # 2️⃣ Ví & Số dư Coin thực tế (UserPaidCoinBalances + UserPeakBalances + InstructorEarnings)
         wallet = await self.db.scalar(
             select(Wallets).where(Wallets.user_id == lecturer_id)
         )
+        paid_coins = await self.db.scalar(
+            select(UserPaidCoinBalances.balance).where(
+                UserPaidCoinBalances.user_id == lecturer_id
+            )
+        )
+        bonus_coins = await self.db.scalar(
+            select(UserPeakBalances.current_balance).where(
+                UserPeakBalances.user_id == lecturer_id
+            )
+        )
+        total_earnings_vnd = await self.db.scalar(
+            select(func.coalesce(func.sum(InstructorEarnings.amount_instructor), 0)).where(
+                InstructorEarnings.instructor_id == lecturer_id
+            )
+        )
+        ps = (await self.db.execute(select(PlatformSettings))).scalars().first()
+        coin_vnd_rate = int(getattr(ps, "coin_vnd_rate", 10000) or 10000)
 
         # 3️⃣ Giao dịch (phân trang + sắp xếp)
         offset = (page - 1) * page_size
@@ -333,7 +363,11 @@ class LecturerService:
             "update_at": lecturer.update_at,
             "is_verified_email": lecturer.is_verified_email,
             "wallet": {
-                "balance": round(float(wallet.balance or 0), 2) if wallet else 0,
+                "balance": int(paid_coins or 0),
+                "paid_coins": int(paid_coins or 0),
+                "bonus_coins": int(bonus_coins or 0),
+                "coin_vnd_rate": coin_vnd_rate,
+                "total_earnings_vnd": round(float(total_earnings_vnd or 0), 2),
                 "total_in": round(float(wallet.total_in or 0), 2) if wallet else 0,
                 "total_out": round(float(wallet.total_out or 0), 2) if wallet else 0,
                 "last_transaction_at": wallet.last_transaction_at if wallet else None,
@@ -710,3 +744,157 @@ class LecturerService:
         except Exception as e:
             await self.db.rollback()
             raise HTTPException(500, f"Lỗi khi cấp quyền giảng viên: {e}")
+
+    async def search_candidate_users_async(self, search: str | None = None, limit: int = 15):
+        """Tìm thành viên đang hoạt động chưa có quyền LECTURER để thăng cấp 1 chạm."""
+        lecturer_role = await self.db.scalar(
+            select(Role).where(func.upper(Role.role_name) == "LECTURER")
+        )
+        lecturer_user_ids_subq = (
+            select(UserRoles.user_id).where(UserRoles.role_id == lecturer_role.id)
+            if lecturer_role
+            else None
+        )
+        stmt = select(User).where(
+            User.deleted_at.is_(None),
+            User.is_banned.is_(False),
+        )
+        if lecturer_user_ids_subq is not None:
+            stmt = stmt.where(User.id.not_in(lecturer_user_ids_subq))
+        if search and search.strip():
+            kw = f"%{search.strip().lower()}%"
+            stmt = stmt.where(
+                or_(
+                    func.lower(func.coalesce(User.fullname, "")).ilike(kw),
+                    func.lower(User.email).ilike(kw),
+                )
+            )
+        rows = (
+            await self.db.scalars(stmt.order_by(User.create_at.desc()).limit(limit))
+        ).all()
+        return [
+            {
+                "id": str(u.id),
+                "fullname": u.fullname or "",
+                "email": u.email,
+                "avatar": u.avatar,
+                "is_verified_email": bool(u.is_verified_email),
+            }
+            for u in rows
+        ]
+
+    async def create_lecturer_async(self, admin: User, payload):
+        """Admin tạo mới tài khoản giảng viên trực tiếp kèm ví và role LECTURER."""
+        from app.core.security import SecurityService
+
+        email_clean = payload.email.strip().lower()
+        existing = await self.db.scalar(
+            select(User).where(func.lower(User.email) == email_clean)
+        )
+        if existing:
+            raise HTTPException(409, "Email này đã tồn tại trong hệ thống.")
+
+        now_utc = await to_utc_naive(get_now())
+        hashed = await SecurityService.hash_password(payload.password)
+
+        new_user = User(
+            id=uuid.uuid4(),
+            fullname=payload.fullname.strip(),
+            email=email_clean,
+            password_hash=hashed,
+            bio=(payload.bio or "").strip() or None,
+            instructor_description=(payload.instructor_description or "").strip() or None,
+            conscious=(payload.conscious or "").strip() or None,
+            district=(payload.district or "").strip() or None,
+            is_verified_email=bool(payload.is_verified_email),
+            email_verified_at=now_utc if payload.is_verified_email else None,
+            is_banned=False,
+            create_at=now_utc,
+            update_at=now_utc,
+        )
+        self.db.add(new_user)
+        await self.db.flush()
+
+        # Tạo ví mặc định
+        self.db.add(
+            Wallets(
+                id=uuid.uuid4(),
+                user_id=new_user.id,
+                balance=0,
+                total_in=0,
+                total_out=0,
+                currency="VND",
+                is_locked=False,
+                kyc_verified=False,
+                created_at=now_utc,
+                updated_at=now_utc,
+            )
+        )
+
+        # Gắn role LECTURER (và USER nếu có)
+        roles = (
+            await self.db.scalars(
+                select(Role).where(func.upper(Role.role_name).in_(["LECTURER", "USER"]))
+            )
+        ).all()
+        for r in roles:
+            await self.db.execute(
+                insert(UserRoles).values(
+                    user_id=new_user.id,
+                    role_id=r.id,
+                    create_at=now_utc,
+                    update_at=now_utc,
+                )
+            )
+
+        await self.db.commit()
+        return {
+            "id": str(new_user.id),
+            "fullname": new_user.fullname,
+            "email": new_user.email,
+            "message": "Đã tạo tài khoản giảng viên mới thành công.",
+        }
+
+    async def update_lecturer_async(self, admin: User, lecturer_id: uuid.UUID, payload):
+        """Admin cập nhật đầy đủ hồ sơ giảng viên."""
+        user = await self.db.scalar(
+            select(User).where(User.id == lecturer_id, User.deleted_at.is_(None))
+        )
+        if not user:
+            raise HTTPException(404, "Không tìm thấy giảng viên.")
+
+        if payload.email is not None:
+            email_clean = payload.email.strip().lower()
+            if email_clean != (user.email or "").lower():
+                dup = await self.db.scalar(
+                    select(User).where(
+                        func.lower(User.email) == email_clean, User.id != lecturer_id
+                    )
+                )
+                if dup:
+                    raise HTTPException(409, "Email này đã thuộc về tài khoản khác.")
+                user.email = email_clean
+
+        if payload.fullname is not None:
+            user.fullname = payload.fullname.strip()
+        if payload.bio is not None:
+            user.bio = payload.bio.strip() or None
+        if payload.instructor_description is not None:
+            user.instructor_description = payload.instructor_description.strip() or None
+        if payload.conscious is not None:
+            user.conscious = payload.conscious.strip() or None
+        if payload.district is not None:
+            user.district = payload.district.strip() or None
+        if payload.is_verified_email is not None:
+            user.is_verified_email = bool(payload.is_verified_email)
+            if payload.is_verified_email and not user.email_verified_at:
+                user.email_verified_at = await to_utc_naive(get_now())
+
+        user.update_at = await to_utc_naive(get_now())
+        await self.db.commit()
+        return {
+            "id": str(user.id),
+            "fullname": user.fullname,
+            "email": user.email,
+            "message": "Đã cập nhật hồ sơ giảng viên thành công.",
+        }

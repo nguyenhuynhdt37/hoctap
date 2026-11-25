@@ -2,17 +2,36 @@
 
 import Header from "@/components/admin/header";
 import Sidebar from "@/components/admin/siderbar";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+const STORAGE_KEY = "maymay_admin_sidebar_collapsed";
 
 export function AdminLayoutClient({ children }: { children: React.ReactNode }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(STORAGE_KEY);
+      if (saved === "true") setIsCollapsed(true);
+    } catch {
+      // Ignore storage access errors
+    }
+  }, []);
+
   const toggleSidebar = () => {
-    setIsCollapsed(!isCollapsed);
+    setIsCollapsed((prev) => {
+      const next = !prev;
+      try {
+        window.localStorage.setItem(STORAGE_KEY, String(next));
+      } catch {
+        // Ignore
+      }
+      return next;
+    });
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Sidebar */}
       <Sidebar isCollapsed={isCollapsed} onToggle={toggleSidebar} />
 
@@ -21,8 +40,8 @@ export function AdminLayoutClient({ children }: { children: React.ReactNode }) {
 
       {/* Main Content */}
       <main
-        className={`pt-16 transition-all duration-300 ${
-          isCollapsed ? "ml-16" : "ml-64"
+        className={`pt-[72px] transition-all duration-300 ${
+          isCollapsed ? "lg:ml-20" : "lg:ml-72"
         }`}
       >
         <div className="p-4 lg:p-6">{children}</div>

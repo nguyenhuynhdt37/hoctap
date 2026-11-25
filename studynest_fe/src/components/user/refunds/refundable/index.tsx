@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
 import { ArrowRight, Coins, RotateCcw, ShieldCheck } from "pulsoicon-react";
 import useSWR from "swr";
 import { Alert, EmptyState, Skeleton } from "@/components/ui";
+import { useUrlQueryState } from "@/hooks/useUrlQueryState";
 import api from "@/lib/utils/fetcher/client/axios";
 import type { RefundableCoursesResponse } from "@/types/user/refund";
 import { cn } from "@/lib/utils";
@@ -17,12 +17,17 @@ interface RefundableCoursesProps {
   initialError: string | null;
 }
 
+const REFUNDABLE_QUERY_SCHEMA = {
+  page: { type: "number", default: 1, min: 1 },
+  limit: { type: "number", default: 10, min: 1, max: 100 },
+} as const;
+
 export default function RefundableCourses({
   initialData,
   initialError,
 }: RefundableCoursesProps) {
-  const [page, setPage] = useState(1);
-  const [limit] = useState(10);
+  const { values, setParam } = useUrlQueryState(REFUNDABLE_QUERY_SCHEMA);
+  const { page, limit } = values;
 
   const { data, error, isLoading } = useSWR<RefundableCoursesResponse>(
     `/users/refunds/my/refundable-courses?page=${page}&limit=${limit}`,
@@ -31,7 +36,7 @@ export default function RefundableCourses({
       return res.data;
     },
     {
-      fallbackData: initialData,
+      fallbackData: page === 1 && limit === 10 ? initialData : undefined,
     },
   );
 
@@ -149,7 +154,7 @@ export default function RefundableCourses({
               limit={limit}
               total={total}
               isLoading={isLoading}
-              onPageChange={setPage}
+              onPageChange={(nextPage) => setParam("page", nextPage)}
             />
           )}
         </>

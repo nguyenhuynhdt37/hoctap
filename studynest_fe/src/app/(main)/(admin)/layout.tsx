@@ -1,7 +1,7 @@
 import RequireAuth from "@/components/auth/RequireAuth";
 import { NotificationWS } from "@/provider/notification-ws";
 import { RoleNotificationsBootstrap } from "@/provider/NotificationHydrator";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { AdminLayoutClient } from "./layout-client";
 
 export default function AdminLayout({
@@ -13,7 +13,9 @@ export default function AdminLayout({
     <RequireAuth roles={["ADMIN"]}>
       <RoleNotificationsBootstrap role="ADMIN" />
       <NotificationWS role_name="ADMIN" />
-      <AdminLayoutClient>{children}</AdminLayoutClient>
+      <AdminLayoutClient>
+        <Suspense fallback={null}>{children}</Suspense>
+      </AdminLayoutClient>
     </RequireAuth>
   );
 }

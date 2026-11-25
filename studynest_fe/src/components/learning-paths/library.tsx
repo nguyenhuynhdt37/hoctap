@@ -23,6 +23,7 @@ import {
   X,
 } from "pulsoicon-react";
 import { Button, CoinPrice, EmptyState, Select } from "@/components/ui";
+import { useDebouncedUrlSearch, useUrlQueryState } from "@/hooks/useUrlQueryState";
 import { cn } from "@/lib/utils";
 import api from "@/lib/utils/fetcher/client/axios";
 import { useUserStore } from "@/stores/user";
@@ -770,18 +771,60 @@ function CompareModal({
 /* ------------------------------------------------------------------ */
 /* MAIN PAGE                                                           */
 /* ------------------------------------------------------------------ */
+const BUNDLE_SORT_VALUES = [
+  "savings_desc",
+  "recent",
+  "price_asc",
+  "price_desc",
+  "title",
+] as const;
+
+type BundleSort = (typeof BUNDLE_SORT_VALUES)[number];
+
+const LEARNING_LIBRARY_QUERY_SCHEMA = {
+  page: { type: "number", default: 1, min: 1 },
+  search: { type: "string", default: "" as string, trim: true },
+  level: {
+    type: "string",
+    default: "" as LevelFilter,
+    allowed: ["", "tieu-hoc", "thcs", "thpt"] as const,
+  },
+  price_filter: {
+    type: "string",
+    default: "all" as PriceFilter,
+    allowed: ["all", "free", "paid"] as const,
+  },
+  has_coupon: { type: "boolean", default: false },
+  saved_only: { type: "boolean", default: false },
+  sort: {
+    type: "string",
+    default: "savings_desc" as BundleSort,
+    allowed: BUNDLE_SORT_VALUES,
+  },
+} as const;
+
 export default function LearningLibrary() {
   const user = useUserStore((s) => s.user);
   const results = useRef<HTMLElement>(null);
 
-  const [page, setPage] = useState(1);
-  const [input, setInput] = useState("");
-  const [keyword, setKeyword] = useState("");
-  const [level, setLevel] = useState<LevelFilter>("");
-  const [priceFilter, setPriceFilter] = useState<PriceFilter>("all");
-  const [hasCoupon, setHasCoupon] = useState(false);
-  const [savedOnly, setSavedOnly] = useState(false);
-  const [sort, setSort] = useState("savings_desc");
+  const { values, setParam, resetParams } = useUrlQueryState(
+    LEARNING_LIBRARY_QUERY_SCHEMA,
+  );
+  const {
+    page,
+    search: keyword,
+    level,
+    price_filter: priceFilter,
+    has_coupon: hasCoupon,
+    saved_only: savedOnly,
+    sort,
+  } = values;
+
+  const {
+    inputValue: input,
+    setInputValue: setInput,
+    commitNow: commitSearchNow,
+  } = useDebouncedUrlSearch(keyword, (val) => setParam("search", val));
 
   const [compareItems, setCompareItems] = useState<Bundle[]>([]);
   const [compareOpen, setCompareOpen] = useState(false);
@@ -802,7 +845,12 @@ export default function LearningLibrary() {
 
   const { data, error, mutate } = useSWR<PageResult<Bundle>>(`/bundles?${query}`, fetchLearning);
   const pageCount = Math.max(1, Math.ceil((data?.total ?? 0) / PAGE_SIZE));
-  const hasFilters = Boolean(keyword) || priceFilter !== "all" || Boolean(level) || hasCoupon || savedOnly;
+  const hasFilters =
+    Boolean(keyword || input.trim()) ||
+    priceFilter !== "all" ||
+    Boolean(level) ||
+    hasCoupon ||
+    savedOnly;
 
   const isBookmarked = (item: Bundle) =>
     localBookmarks[item.bundle_id] !== undefined
@@ -849,16 +897,11 @@ export default function LearningLibrary() {
 
   function clearFilters() {
     setInput("");
-    setKeyword("");
-    setLevel("");
-    setPriceFilter("all");
-    setHasCoupon(false);
-    setSavedOnly(false);
-    setPage(1);
+    resetParams();
   }
 
   function changePage(nextPage: number) {
-    setPage(nextPage);
+    setParam("page", nextPage);
     results.current?.scrollIntoView({ block: "start" });
   }
 
@@ -962,8 +1005,7 @@ export default function LearningLibrary() {
               className="flex max-w-lg items-center gap-2 rounded-full border border-primary-pastel bg-surface p-1.5 shadow-sm"
               onSubmit={(event) => {
                 event.preventDefault();
-                setPage(1);
-                setKeyword(input.trim());
+                commitSearchNow(input.trim());
                 results.current?.scrollIntoView({ block: "start" });
               }}
             >
@@ -1040,8 +1082,7 @@ export default function LearningLibrary() {
                 key={opt.value || "all"}
                 type="button"
                 onClick={() => {
-                  setLevel(opt.value);
-                  setPage(1);
+                  setParam("level", opt.value);
                 }}
                 className={cn(
                   "inline-flex min-h-8 items-center rounded-full px-3 text-xs font-bold transition-all cursor-pointer",
@@ -1061,8 +1102,7 @@ export default function LearningLibrary() {
                 key={value}
                 type="button"
                 onClick={() => {
-                  setPriceFilter(value);
-                  setPage(1);
+                  setParam("price_filter", value);
                 }}
                 className={cn(
                   "inline-flex min-h-8 items-center rounded-full px-2.5 text-xs font-semibold transition-colors cursor-pointer",
@@ -1079,8 +1119,7 @@ export default function LearningLibrary() {
               type="button"
               aria-pressed={hasCoupon}
               onClick={() => {
-                setHasCoupon((v) => !v);
-                setPage(1);
+                setParam("has_coupon", !hasCoupon);
               }}
               className={cn(
                 "inline-flex min-h-8 items-center gap-1 rounded-full border px-3 text-xs font-bold transition-colors cursor-pointer",
@@ -1102,8 +1141,7 @@ export default function LearningLibrary() {
                   window.setTimeout(() => setBookmarkNotice(null), 3500);
                   return;
                 }
-                setSavedOnly((v) => !v);
-                setPage(1);
+                setParam("saved_only", !savedOnly);
               }}
               className={cn(
                 "inline-flex min-h-8 items-center gap-1 rounded-full border px-3 text-xs font-bold transition-colors cursor-pointer",
@@ -1136,8 +1174,7 @@ export default function LearningLibrary() {
               className="h-8 rounded-full border-border bg-background py-0.5 text-xs font-bold"
               value={sort}
               onChange={(e) => {
-                setSort(e.target.value);
-                setPage(1);
+                setParam("sort", e.target.value as BundleSort);
               }}
             >
               <option value="savings_desc">Tiết kiệm nhiều nhất</option>

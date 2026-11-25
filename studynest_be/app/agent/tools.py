@@ -1,3 +1,4 @@
+from contextlib import suppress
 """Native application tools. Models choose names; code owns permissions and effects."""
 from dataclasses import dataclass
 from typing import Any, Awaitable, Callable, Literal
@@ -230,7 +231,7 @@ def available(session):
     return {name: tool for name, tool in REGISTRY.items()
             if (not tool.client or name in capabilities)
             and (not name.startswith('mcp.') or settings.AGENT_MCP_ENABLED)
-            and (session.lesson_id is not None or name.startswith(("catalog.", "memory.", "data.", "mcp.", "tools.")))}
+            and (session.lesson_id is not None or name.startswith(("catalog.", "memory.", "data.", "mcp.", "tools.", "api.")))}
 
 
 for tool in [
@@ -368,6 +369,32 @@ async def github_connection_status(ctx, args):
 
 
 register(ToolDefinition('data.github_connection', 'Kiểm tra tài khoản GitHub đang liên kết, không đọc token. Dùng để trả lời đã connect chưa.', Empty, handler=github_connection_status))
+
+
+class ApiSearch(Contract):
+    query: str = Field(min_length=2, max_length=200)
+
+
+class ApiCall(Contract):
+    method: Literal['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] = 'GET'
+    path: str = Field(min_length=1, max_length=500)
+    query: dict[str, Any] | None = None
+    body: dict[str, Any] | None = None
+
+
+async def api_search(ctx, args):
+    from app.agent.api_gateway import search_operations
+    return {'operations': search_operations(args.query), 'notice': 'Danh sách lấy từ API thật của ứng dụng. Mục có "blocked" là việc Mây Mây không được làm.'}
+
+
+async def api_call(ctx, args):
+    from app.agent.api_gateway import call_api
+    principal = {'user_id': ctx.user.id, 'sid': UUID(ctx.auth_sid)}
+    return await call_api(principal, args.method, args.path, args.query, args.body)
+
+
+register(ToolDefinition('api.search', 'Tìm trong API thật của ứng dụng (OpenAPI) thao tác phù hợp với việc cần làm: ghi chú, hồ sơ, thông báo, yêu thích, khóa học, hội thoại, giảng viên... Tính năng mới thêm vào API sẽ tự xuất hiện ở đây, không cần tool riêng. Trả method, path, tham số, body.', ApiSearch, handler=api_search))
+register(ToolDefinition('api.call', 'Gọi một thao tác API của ứng dụng đúng quyền của người dùng (path như /learning/{lesson_id}/notes, không cần /api/v1). Dùng sau api.search. Tiền, mua/đăng ký, mở khóa, phần thưởng và tiến độ học bị chặn ở máy chủ. Đọc (GET) thì mở.', ApiCall, risk='write', timeout_seconds=40, handler=api_call))
 
 
 class AttemptTarget(Contract):

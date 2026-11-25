@@ -20,7 +20,7 @@ interface Subcategory {
 }
 
 async function fetchCategories(path: string): Promise<Subcategory[]> {
-  const response = await fetch(path, { credentials: "omit", cache: "no-store" });
+  const response = await fetch(path, { credentials: "omit", cache: "no-store", headers: { "ngrok-skip-browser-warning": "1" } });
   if (!response.ok) throw new Error("Không thể tải danh mục học tập.");
   const result: Subcategory[] = await response.json();
   return Array.isArray(result) ? result : [];

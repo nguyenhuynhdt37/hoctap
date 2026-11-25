@@ -14,6 +14,8 @@ export interface Lecturer {
   rating_avg: number;
   instructor_description: string;
   wallet_balance: number;
+  paid_coins?: number;
+  bonus_coins?: number;
   upgrade_date: string;
   is_verified_email: boolean;
   is_banned: boolean;

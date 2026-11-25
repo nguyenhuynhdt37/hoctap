@@ -1,16 +1,34 @@
 import uuid
 from typing import List, Optional
 
-from fastapi import APIRouter, BackgroundTasks, Body, Depends, File, UploadFile, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Body,
+    Depends,
+    File,
+    UploadFile,
+    WebSocket,
+    WebSocketDisconnect,
+    status,
+)
 
 from app.core.deps import AuthorizationService
+from app.core.ws_manager import ws_manager
 from app.db.models.database import User
 from app.schemas.lecturer.lesson import (
     CreateLesson,
+    FillBlankRenderAudioSchema,
+    FlashcardTTSPreviewSchema,
     LessonCodeCreate,
     LessonCodeUpdateBatch,
     LessonCodeVerify,
+    LessonFillBlankSaveSchema,
+    LessonFlashcardBulkCreate,
+    LessonListeningSaveSchema,
     LessonQuizBulkCreate,
+    LessonSpeakingSaveSchema,
+    ListeningRenderAudioSchema,
     MoveLessonSchema,
     UpdateLessonResourcesLinkSchema,
     UpdateLessonSchema,
@@ -18,6 +36,7 @@ from app.schemas.lecturer.lesson import (
     UpdateLessonVideoSchema,
 )
 from app.services.lecturer.lesson import LessonService
+from app.services.shares.lesson_pipeline_tracker import lesson_pipeline_tracker
 from app.services.shares.OCR_service import OCRService, get_ocr_service
 from app.services.shares.youtube_uploader import (
     UPLOAD_LOCK,
@@ -249,8 +268,9 @@ async def get_quizzes_video_by_lesson(
 
 @router.get("/{lesson_id}/upload_progress")
 async def get_upload_progress(lesson_id: uuid.UUID) -> dict:
-    """Lấy phần trăm, tốc độ upload, và kết quả nếu đã hoàn tất."""
+    """Lấy phần trăm, tốc độ upload, trạng thái pipeline embedding và kết quả."""
     task_id = str(lesson_id)
+    pipeline_state = await lesson_pipeline_tracker.get(task_id)
     async with UPLOAD_LOCK:
         percent = UPLOAD_PROGRESS.get(task_id, 0)
         stat = UPLOAD_STATS.get(task_id, {})
@@ -259,17 +279,173 @@ async def get_upload_progress(lesson_id: uuid.UUID) -> dict:
         if percent >= 100:
             result = UPLOAD_RESULT.get(task_id, {})
 
+        is_done = (
+            bool(pipeline_state.get("is_completed"))
+            if pipeline_state is not None
+            else (percent >= 100 or not UPLOAD_PROGRESS.get(task_id))
+        )
+
         return {
             "task_id": task_id,
-            "percent": percent,
-            "speed_mb_s": round(stat.get("speed", 0.0), 2),
-            "uploaded_mb": round(stat.get("uploaded_bytes", 0) / 1_048_576, 2),
-            "total_mb": round(stat.get("total_size", 0) / 1_048_576, 2),
-            "video_url": result.get("video_url"),
-            "video_id": result.get("video_id"),
-            # ✅ Nếu không có task upload hoặc đã xong → True
-            "is_completed": percent >= 100 or not UPLOAD_PROGRESS.get(task_id),
+            "percent": pipeline_state.get("percent", percent)
+            if pipeline_state
+            else percent,
+            "speed_mb_s": pipeline_state.get(
+                "speed_mb_s", round(stat.get("speed", 0.0), 2)
+            )
+            if pipeline_state
+            else round(stat.get("speed", 0.0), 2),
+            "uploaded_mb": pipeline_state.get(
+                "uploaded_mb", round(stat.get("uploaded_bytes", 0) / 1_048_576, 2)
+            )
+            if pipeline_state
+            else round(stat.get("uploaded_bytes", 0) / 1_048_576, 2),
+            "total_mb": pipeline_state.get(
+                "total_mb", round(stat.get("total_size", 0) / 1_048_576, 2)
+            )
+            if pipeline_state
+            else round(stat.get("total_size", 0) / 1_048_576, 2),
+            "video_url": (pipeline_state or {}).get("video_url")
+            or result.get("video_url"),
+            "video_id": (pipeline_state or {}).get("video_id")
+            or result.get("video_id"),
+            "is_completed": is_done,
+            "pipeline": pipeline_state,
         }
+
+
+@router.get("/ai-queue", status_code=status.HTTP_200_OK)
+async def get_ai_pipeline_queue(
+    authorization: AuthorizationService = Depends(AuthorizationService),
+):
+    """Lấy danh sách hàng đợi xử lý Video & Tài liệu AI theo phân quyền (Giảng viên chỉ thấy của mình, Admin thấy toàn hệ thống)."""
+    user = await authorization.require_role(["LECTURER", "ADMIN"])
+    roles = await authorization.get_list_role_in_user(user)
+    is_admin = "ADMIN" in roles
+    items = await lesson_pipeline_tracker.list_jobs(
+        instructor_id=None if is_admin else str(user.id)
+    )
+    return {
+        "scope": "all" if is_admin else "mine",
+        "items": items,
+    }
+
+
+@router.post("/{lesson_id}/reindex", status_code=status.HTTP_200_OK)
+async def reindex_lesson_ai(
+    lesson_id: uuid.UUID,
+    background_tasks: BackgroundTasks,
+    lesson_service: LessonService = Depends(LessonService),
+    authorization: AuthorizationService = Depends(AuthorizationService),
+):
+    """Kích hoạt chạy lại pipeline trích xuất nội dung & tạo vector embedding cho bài học."""
+    actor = await authorization.require_role(["LECTURER", "ADMIN"])
+    roles = await authorization.get_list_role_in_user(actor)
+    return await lesson_service.reindex_lesson_async(
+        lesson_id,
+        actor.id,
+        background_tasks,
+        is_admin="ADMIN" in roles,
+    )
+
+
+@router.post("/resources/{resource_id}/reindex", status_code=status.HTTP_200_OK)
+async def reindex_resource_ai(
+    resource_id: uuid.UUID,
+    background_tasks: BackgroundTasks,
+    lesson_service: LessonService = Depends(LessonService),
+    authorization: AuthorizationService = Depends(AuthorizationService),
+):
+    """Kích hoạt chạy lại OCR & Batch Embedding cho tài liệu PDF/ảnh."""
+    actor = await authorization.require_role(["LECTURER", "ADMIN"])
+    roles = await authorization.get_list_role_in_user(actor)
+    return await lesson_service.reindex_resource_async(
+        resource_id,
+        actor.id,
+        background_tasks,
+        is_admin="ADMIN" in roles,
+    )
+
+
+@router.websocket("/ws/queue")
+async def ws_ai_pipeline_queue(websocket: WebSocket):
+    """WebSocket realtime cho Trung tâm Hàng đợi AI (Giảng viên xem của mình, Admin xem toàn hệ thống)."""
+    await websocket.accept()
+    user = await AuthorizationService.get_require_role_ws(
+        websocket, ["LECTURER", "ADMIN"]
+    )
+    if not user:
+        await websocket.close(code=4401)
+        return
+
+    role_param = (websocket.query_params.get("role_name") or "").upper()
+    is_admin_scope = role_param == "ADMIN"
+    if is_admin_scope:
+        admin_ok = await AuthorizationService.get_require_role_ws(
+            websocket, ["ADMIN"]
+        )
+        is_admin_scope = bool(admin_ok)
+
+    room_id = (
+        lesson_pipeline_tracker.admin_room_id()
+        if is_admin_scope
+        else lesson_pipeline_tracker.lecturer_room_id(str(user.id))
+    )
+    await ws_manager.connect(websocket, room_id)
+    try:
+        items = await lesson_pipeline_tracker.list_jobs(
+            instructor_id=None if is_admin_scope else str(user.id)
+        )
+        await websocket.send_json(
+            {
+                "type": "queue_snapshot",
+                "scope": "all" if is_admin_scope else "mine",
+                "items": items,
+            }
+        )
+        while True:
+            msg = await websocket.receive_text()
+            if msg == "ping":
+                await websocket.send_text("pong")
+    except WebSocketDisconnect:
+        pass
+    except Exception:
+        pass
+    finally:
+        ws_manager.disconnect(websocket, room_id)
+
+
+@router.websocket("/ws/pipeline/{lesson_id}")
+async def ws_lesson_pipeline(websocket: WebSocket, lesson_id: uuid.UUID):
+    """WebSocket realtime theo dõi tiến độ tải video, trích xuất nội dung, retry và embedding."""
+    await websocket.accept()
+    user = await AuthorizationService.get_require_role_ws(
+        websocket, ["LECTURER", "ADMIN"]
+    )
+    if not user:
+        await websocket.close(code=4401)
+        return
+
+    task_id = str(lesson_id)
+    room_id = lesson_pipeline_tracker.room_id(task_id)
+    await ws_manager.connect(websocket, room_id)
+    try:
+        # Gửi ngay snapshot hiện tại nếu pipeline đã khởi chạy
+        snapshot = await lesson_pipeline_tracker.get(task_id)
+        if snapshot:
+            await websocket.send_json(snapshot)
+
+        # Giữ kết nối mở và phản hồi ping/pong
+        while True:
+            msg = await websocket.receive_text()
+            if msg == "ping":
+                await websocket.send_text("pong")
+    except WebSocketDisconnect:
+        pass
+    except Exception:
+        pass
+    finally:
+        ws_manager.disconnect(websocket, room_id)
 
 
 @router.delete("/resources/{resource_id}")
@@ -311,6 +487,125 @@ async def create_quizzes_bulk(
     lecturer = await authorization.require_role(["LECTURER"])
 
     return await lesson_service.create_quizzes_bulk_async(lecturer.id, schema)
+
+
+@router.get("/flashcards/voices", status_code=status.HTTP_200_OK)
+async def get_flashcard_tts_voices(
+    authorization: AuthorizationService = Depends(AuthorizationService),
+):
+    await authorization.require_role(["LECTURER", "ADMIN", "USER"])
+    from app.services.shares.tts_service import TTSService
+    return {"voices": TTSService.list_voices()}
+
+
+@router.post("/flashcards/tts/preview", status_code=status.HTTP_200_OK)
+async def preview_flashcard_tts(
+    schema: FlashcardTTSPreviewSchema = Body(...),
+    lesson_service: LessonService = Depends(LessonService),
+    authorization: AuthorizationService = Depends(AuthorizationService),
+):
+    await authorization.require_role(["LECTURER", "ADMIN"])
+    return await lesson_service.preview_flashcard_tts_async(schema)
+
+
+@router.post("/flashcards/bulk", status_code=status.HTTP_201_CREATED)
+async def create_flashcards_bulk(
+    schema: LessonFlashcardBulkCreate = Body(...),
+    lesson_service: LessonService = Depends(LessonService),
+    authorization: AuthorizationService = Depends(AuthorizationService),
+):
+    lecturer = await authorization.require_role(["LECTURER"])
+    return await lesson_service.create_flashcards_bulk_async(lecturer.id, schema)
+
+
+@router.get("/{lesson_id}/flashcards", status_code=status.HTTP_200_OK)
+async def get_flashcards_by_lesson(
+    lesson_id: uuid.UUID,
+    lesson_service: LessonService = Depends(LessonService),
+    authorization: AuthorizationService = Depends(AuthorizationService),
+):
+    lecturer = await authorization.require_role(["LECTURER"])
+    return await lesson_service.get_flashcards_by_lesson_async(lesson_id, lecturer.id)
+
+
+@router.post("/listening/render-audio", status_code=status.HTTP_200_OK)
+async def render_listening_dialogue_audio(
+    schema: ListeningRenderAudioSchema = Body(...),
+    lesson_service: LessonService = Depends(LessonService),
+    authorization: AuthorizationService = Depends(AuthorizationService),
+):
+    await authorization.require_role(["LECTURER", "ADMIN"])
+    return await lesson_service.render_listening_audio_async(schema)
+
+
+@router.post("/listening/save", status_code=status.HTTP_200_OK)
+async def save_lesson_listening(
+    schema: LessonListeningSaveSchema = Body(...),
+    lesson_service: LessonService = Depends(LessonService),
+    authorization: AuthorizationService = Depends(AuthorizationService),
+):
+    lecturer = await authorization.require_role(["LECTURER"])
+    return await lesson_service.save_lesson_listening_async(lecturer.id, schema)
+
+
+@router.get("/{lesson_id}/listening", status_code=status.HTTP_200_OK)
+async def get_listening_by_lesson(
+    lesson_id: uuid.UUID,
+    lesson_service: LessonService = Depends(LessonService),
+    authorization: AuthorizationService = Depends(AuthorizationService),
+):
+    lecturer = await authorization.require_role(["LECTURER"])
+    return await lesson_service.get_listening_by_lesson_async(lesson_id, lecturer.id)
+
+
+@router.post("/fill-blank/render-audio", status_code=status.HTTP_200_OK)
+async def render_fill_blank_audio(
+    schema: FillBlankRenderAudioSchema = Body(...),
+    lesson_service: LessonService = Depends(LessonService),
+    authorization: AuthorizationService = Depends(AuthorizationService),
+):
+    await authorization.require_role(["LECTURER", "ADMIN"])
+    return await lesson_service.render_fill_blank_audio_async(schema)
+
+
+@router.post("/fill-blank/save", status_code=status.HTTP_200_OK)
+async def save_lesson_fill_blank(
+    schema: LessonFillBlankSaveSchema = Body(...),
+    lesson_service: LessonService = Depends(LessonService),
+    authorization: AuthorizationService = Depends(AuthorizationService),
+):
+    lecturer = await authorization.require_role(["LECTURER"])
+    return await lesson_service.save_lesson_fill_blank_async(lecturer.id, schema)
+
+
+@router.get("/{lesson_id}/fill-blank", status_code=status.HTTP_200_OK)
+async def get_fill_blank_by_lesson(
+    lesson_id: uuid.UUID,
+    lesson_service: LessonService = Depends(LessonService),
+    authorization: AuthorizationService = Depends(AuthorizationService),
+):
+    lecturer = await authorization.require_role(["LECTURER"])
+    return await lesson_service.get_fill_blank_by_lesson_async(lesson_id, lecturer.id)
+
+
+@router.post("/speaking/save", status_code=status.HTTP_200_OK)
+async def save_lesson_speaking(
+    schema: LessonSpeakingSaveSchema = Body(...),
+    lesson_service: LessonService = Depends(LessonService),
+    authorization: AuthorizationService = Depends(AuthorizationService),
+):
+    lecturer = await authorization.require_role(["LECTURER"])
+    return await lesson_service.save_lesson_speaking_async(lecturer.id, schema)
+
+
+@router.get("/{lesson_id}/speaking", status_code=status.HTTP_200_OK)
+async def get_speaking_by_lesson(
+    lesson_id: uuid.UUID,
+    lesson_service: LessonService = Depends(LessonService),
+    authorization: AuthorizationService = Depends(AuthorizationService),
+):
+    lecturer = await authorization.require_role(["LECTURER"])
+    return await lesson_service.get_speaking_by_lesson_async(lesson_id, lecturer.id)
 
 
 @router.get("/code_languages", status_code=status.HTTP_200_OK)

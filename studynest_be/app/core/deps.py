@@ -214,6 +214,18 @@ class AuthorizationService:
         # A single request can call both get_current_user() and get_current_sid().
         # Reuse the completed authentication without consuming the proof twice.
         cached = getattr(request.state, "access_identity", None)
+        principal = request.scope.get("maymay_agent_principal")
+        if cached is None and principal is not None:
+            # In-process call made by the assistant on behalf of an already authenticated user. The scope is built by
+            # the server, never by a client, so this key cannot be forged from a request.
+            identity = AccessIdentity(principal["user_id"], principal["sid"], int(time.time()) + 120, None)
+            session = await self.db.scalar(select(Sessions).where(
+                Sessions.id == identity.sid, Sessions.user_id == identity.user_id, Sessions.is_revoked.is_(False)))
+            if not session or has_expired(session.expired_at):
+                raise AuthError("session_revoked")
+            user = await self._load_user(identity)
+            cached = (identity, session, user)
+            request.state.access_identity = cached
         if cached is None:
             credentials = credentials or _connection_credentials(request)
             if credentials is None:

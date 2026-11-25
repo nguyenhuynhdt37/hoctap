@@ -5,7 +5,6 @@ import useSWR from "swr";
 import {
   ArrowRight,
   BarChart3,
-  Layers,
   Library,
   Plus,
   RotateCcw,
@@ -23,10 +22,10 @@ import {
   LecturerOverview,
 } from "@/types/lecturer/statistics";
 import { LecturerWallet } from "@/types/lecturer/wallet";
-import { RevenuePulse } from "./revenue-pulse";
+import { CloudWaveChart, ColorCloudKpis } from "./revenue-pulse";
 import { StudioHero } from "./studio-hero";
 import { TopCoursesCard } from "./top-courses-card";
-import { WalletPanel } from "./wallet-panel";
+import { CloudTreasuryPass, HoldPulseCard } from "./wallet-panel";
 
 interface IsLecturerResponse {
   is_lecturer: boolean;
@@ -58,22 +57,22 @@ const LecturerHome = ({ isLecturer }: { isLecturer?: boolean }) => {
 
   if (isCheckingLecturer) {
     return (
-      <div className="mx-auto max-w-7xl space-y-6 bg-background px-4 py-6 sm:px-6 lg:px-8">
-        <Skeleton variant="rect" className="h-52 w-full rounded-[28px]" />
+      <div className="mx-auto max-w-7xl space-y-6 bg-background px-4 py-7 sm:px-6 lg:px-8">
+        <Skeleton variant="rect" className="h-60 w-full rounded-[32px]" />
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
+          <Skeleton
+            variant="rect"
+            className="h-80 rounded-[28px] xl:col-span-8"
+          />
+          <Skeleton
+            variant="rect"
+            className="h-80 rounded-[28px] xl:col-span-4"
+          />
+        </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} variant="rect" className="h-32 rounded-[22px]" />
+            <Skeleton key={i} variant="rect" className="h-32 rounded-[24px]" />
           ))}
-        </div>
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-          <Skeleton
-            variant="rect"
-            className="h-96 rounded-[24px] lg:col-span-8"
-          />
-          <Skeleton
-            variant="rect"
-            className="h-96 rounded-[24px] lg:col-span-4"
-          />
         </div>
       </div>
     );
@@ -148,131 +147,133 @@ const LecturerDashboard = ({
   const holdCount = holdData?.total ?? 0;
   const pendingRefundCount = pendingRefunds?.total ?? 0;
 
-  const quickActions = [
+  // 6 phím tắt vận hành đa sắc mây (2×3 gọn đẹp)
+  const cloudDockActions = [
     {
-      title: "Tạo khóa học mới",
-      description: "Thiết kế giáo trình & xuất bản",
+      title: "Tạo khóa học",
+      description: "Soạn giáo trình & xuất bản",
       href: "/lecturer/courses/create",
       icon: Plus,
-      iconBg: "bg-primary-light text-primary border-primary-pastel/70",
-      hoverBorder: "hover:border-primary-pastel",
+      tileBg: "from-primary-light/85 to-surface border-primary-pastel/80",
+      iconBg: "bg-surface text-primary border-primary-pastel",
     },
     {
       title: "Quản lý khóa học",
-      description: "Chỉnh sửa nội dung & học viên",
+      description: "Chương bài, tài nguyên & HV",
       href: "/lecturer/courses",
       icon: Video,
-      iconBg: "bg-primary-light text-primary border-primary-pastel/70",
-      hoverBorder: "hover:border-primary-pastel",
-    },
-    {
-      title: "Chương & Bài học",
-      description: "Sắp xếp cấu trúc bài giảng",
-      href: "/lecturer/chapters",
-      icon: Layers,
-      iconBg:
-        "bg-secondary-light text-secondary-foreground border-secondary-pastel/70",
-      hoverBorder: "hover:border-secondary-pastel",
-    },
-    {
-      title: "Thống kê & Báo cáo",
-      description: "Phân tích doanh thu & tương tác",
-      href: "/lecturer/dashboard",
-      icon: BarChart3,
-      iconBg: "bg-accent text-accent-foreground border-accent-border/70",
-      hoverBorder: "hover:border-accent-border",
+      tileBg: "from-secondary-light/80 to-surface border-secondary-pastel/80",
+      iconBg: "bg-surface text-secondary-foreground border-secondary-pastel",
     },
     {
       title: "Combo & Lộ trình",
-      description: "Đóng gói khóa học và mở bán",
+      description: "Đóng gói khóa học trọn bộ",
       href: "/lecturer/combos",
       icon: Library,
-      iconBg: "bg-primary-light text-primary border-primary-pastel/70",
-      hoverBorder: "hover:border-primary-pastel",
+      tileBg: "from-primary-light/70 to-surface border-primary-pastel/70",
+      iconBg: "bg-surface text-primary border-primary-pastel",
     },
     {
       title: "Mã giảm giá",
-      description: "Tạo chiến dịch ưu đãi & combo",
+      description: "Chiến dịch ưu đãi & combo",
       href: "/lecturer/discounts",
       icon: Tag,
+      tileBg: "from-accent-vanilla/90 to-surface border-accent-vanilla-border/80",
       iconBg:
-        "bg-accent-vanilla text-accent-vanilla-foreground border-accent-vanilla-border/70",
-      hoverBorder: "hover:border-accent-vanilla-border",
+        "bg-surface text-accent-vanilla-foreground border-accent-vanilla-border",
+    },
+    {
+      title: "Thống kê sâu",
+      description: "Phân tích doanh thu & tương tác",
+      href: "/lecturer/dashboard",
+      icon: BarChart3,
+      tileBg: "from-success-bg/80 to-surface border-success-border/80",
+      iconBg: "bg-surface text-success-foreground border-success-border",
     },
     {
       title: "Trạm hoàn tiền",
-      description: "Xử lý phản hồi & đối soát",
+      description: "Thẩm định & đối soát hồ sơ",
       href: "/lecturer/refund",
       icon: RotateCcw,
-      iconBg:
-        "bg-destructive-bg text-destructive-foreground border-destructive-border/70",
-      hoverBorder: "hover:border-destructive-border",
+      tileBg: "from-destructive-bg/65 to-surface border-destructive-border/75",
+      iconBg: "bg-surface text-destructive-foreground border-destructive-border",
     },
   ];
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="mx-auto max-w-7xl space-y-6 px-4 py-7 sm:px-6 lg:px-8">
-        {/* 1. Studio Hero & Action Radar */}
+        {/* Tầng 1: Sky Studio Panoramic Hero */}
         <StudioHero
           fullname={user?.fullname}
+          overview={overview}
           pendingRefundCount={pendingRefundCount}
           holdCount={holdCount}
         />
 
-        {/* 2. Bố cục chính 2 cột (8/12 Trái - 4/12 Phải) */}
-        <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-12">
-          {/* Cột Trái (8 cột) */}
-          <div className="space-y-6 xl:col-span-8">
-            {/* KPI + Nhịp Doanh Thu */}
-            <RevenuePulse
-              overview={overview}
-              isLoadingOverview={isLoadingOverview}
-            />
+        {/* Tầng 2: Asymmetric Showcase (8/4) — Cloud Wave Chart + Cloud Treasury Pass */}
+        <div className="grid grid-cols-1 items-stretch gap-6 xl:grid-cols-12">
+          <div className="xl:col-span-8">
+            <CloudWaveChart />
+          </div>
+          <div className="xl:col-span-4">
+            <CloudTreasuryPass wallet={wallet} />
+          </div>
+        </div>
 
-            {/* Bảng xếp hạng Khóa học nổi bật */}
+        {/* Tầng 3: 4 Thẻ KPI Đa Sắc Mây */}
+        <ColorCloudKpis
+          overview={overview}
+          isLoadingOverview={isLoadingOverview}
+        />
+
+        {/* Tầng 4: Spotlight Podium (7/12) + Cloud Dock & Hold Pulse (5/12) */}
+        <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-12">
+          <div className="xl:col-span-7">
             <TopCoursesCard
               courses={coursesPerformance}
               isLoading={isLoadingCourses}
             />
+          </div>
 
-            {/* Lối tắt vận hành Studio */}
+          <div className="space-y-6 xl:col-span-5">
+            {/* Cloud Dock: 6 phím tắt vận hành đa sắc pastel */}
             <Card
               variant="surface"
               density="none"
-              className="overflow-hidden rounded-[24px] border border-border shadow-2xs"
+              className="overflow-hidden rounded-[28px] border border-border shadow-xs"
             >
-              <div className="border-b border-border bg-primary-light/30 px-6 py-4">
+              <div className="border-b border-border bg-gradient-to-r from-primary-light/50 via-surface to-accent-vanilla/50 px-6 py-4">
                 <h2 className="font-display text-lg font-semibold text-foreground">
-                  Công cụ vận hành nhanh
+                  Điều phối nhanh
                 </h2>
                 <p className="text-xs text-muted-foreground">
-                  Truy cập tức thì các phân khu giảng dạy, khuyến mãi và đối soát
+                  Truy cập 1 chạm tới mọi phân khu vận hành giảng dạy
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 gap-3 p-6 sm:grid-cols-2 md:grid-cols-3">
-                {quickActions.map((item) => {
+              <div className="grid grid-cols-2 gap-3 p-5">
+                {cloudDockActions.map((item) => {
                   const Icon = item.icon;
                   return (
                     <button
                       key={item.href}
                       type="button"
                       onClick={() => router.push(item.href)}
-                      className={`group flex flex-col items-start rounded-2xl border border-border bg-background/60 p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:bg-surface hover:shadow-xs cursor-pointer ${item.hoverBorder}`}
+                      className={`group flex flex-col items-start rounded-2xl border bg-gradient-to-br p-3.5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xs cursor-pointer ${item.tileBg}`}
                     >
-                      <div className="mb-3 flex w-full items-center justify-between">
-                        <div
-                          className={`flex h-10 w-10 items-center justify-center rounded-xl border transition-transform group-hover:scale-105 ${item.iconBg}`}
+                      <div className="mb-2.5 flex w-full items-center justify-between">
+                        <span
+                          className={`flex h-9 w-9 items-center justify-center rounded-xl border shadow-2xs transition-transform group-hover:scale-105 ${item.iconBg}`}
                         >
-                          <Icon className="h-5 w-5" />
-                        </div>
-                        <ArrowRight className="h-4 w-4 text-subtle-foreground opacity-0 transition-all group-hover:translate-x-0.5 group-hover:text-primary group-hover:opacity-100" />
+                          <Icon className="h-4 w-4" />
+                        </span>
+                        <ArrowRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 transition-all group-hover:translate-x-0.5 group-hover:text-primary group-hover:opacity-100" />
                       </div>
                       <h3 className="text-sm font-semibold text-foreground transition-colors group-hover:text-primary">
                         {item.title}
                       </h3>
-                      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                      <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
                         {item.description}
                       </p>
                     </button>
@@ -280,11 +281,9 @@ const LecturerDashboard = ({
                 })}
               </div>
             </Card>
-          </div>
 
-          {/* Cột Phải (4 cột Sticky): Ví Kho Bạc + Hold + Tài nguyên */}
-          <div className="xl:col-span-4">
-            <WalletPanel wallet={wallet} holdCount={holdCount} />
+            {/* Hold Pulse Card */}
+            <HoldPulseCard holdCount={holdCount} />
           </div>
         </div>
       </div>

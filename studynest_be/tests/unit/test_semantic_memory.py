@@ -52,16 +52,3 @@ def test_invalid_optional_model_memories_do_not_break_answer():
     assert ModelDecision.model_validate({'memories':'bad'}).memories==[]
 
 
-@pytest.mark.asyncio
-async def test_irrelevant_tool_blocked_before_lesson_validation_or_handler(monkeypatch):
-    from app.agent.runtime import AgentService
-    service=AgentService(SimpleNamespace(),SimpleNamespace(id=uuid4()),str(uuid4()))
-    run=SimpleNamespace(message='Bạn nhớ gì về tôi?')
-    service._assert_running_async=AsyncMock(return_value=run)
-    service.session=SimpleNamespace(lesson_id=uuid4())
-    service.validate_lesson_async=AsyncMock()
-    monkeypatch.setattr('app.agent.runtime.available',lambda session:{'knowledge.search_lesson':SimpleNamespace()})
-    with pytest.raises(HTTPException) as error:
-        await service._execute_tool_async(uuid4(),'knowledge.search_lesson',{'query':run.message})
-    assert error.value.status_code==422
-    service.validate_lesson_async.assert_not_awaited()

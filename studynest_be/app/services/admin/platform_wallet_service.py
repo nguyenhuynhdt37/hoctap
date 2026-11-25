@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Optional
 
 from fastapi import Depends, HTTPException
-from sqlalchemy import and_, func, or_, select
+from sqlalchemy import String, and_, case, cast, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models.database import (
@@ -33,29 +33,157 @@ class PlatformWalletService:
         if not wallet:
             raise HTTPException(404, "Ví nền tảng chưa được khởi tạo.")
 
-        # 2) Lấy top 5 lịch sử gần nhất
+        # 2) Lấy top 8 lịch sử gần nhất
         history = (
             (
                 await self.db.execute(
                     select(PlatformWalletHistory)
                     .where(PlatformWalletHistory.wallet_id == wallet.id)
                     .order_by(PlatformWalletHistory.created_at.desc())
-                    .limit(5)
+                    .limit(8)
                 )
             )
             .scalars()
             .all()
         )
 
-        # 3) Trả response chuẩn
+        # 3) Cơ cấu theo loại giao dịch
+        type_rows = (
+            await self.db.execute(
+                select(
+                    PlatformWalletHistory.type,
+                    func.count(PlatformWalletHistory.id),
+                    func.coalesce(func.sum(PlatformWalletHistory.amount), 0),
+                )
+                .where(PlatformWalletHistory.wallet_id == wallet.id)
+                .group_by(PlatformWalletHistory.type)
+                .order_by(func.count(PlatformWalletHistory.id).desc())
+            )
+        ).all()
+        total_logs = sum(int(r[1]) for r in type_rows)
+        type_breakdown = [
+            {
+                "type": str(r[0]),
+                "count": int(r[1]),
+                "total_amount": float(r[2] or 0),
+            }
+            for r in type_rows
+        ]
+
+        # 4) Chuỗi dòng tiền theo ngày (14 ngày có giao dịch gần nhất)
+        day_col = func.date(PlatformWalletHistory.created_at)
+        daily_rows = (
+            await self.db.execute(
+                select(
+                    day_col.label("day"),
+                    func.coalesce(
+                        func.sum(
+                            case(
+                                (PlatformWalletHistory.type == "in", PlatformWalletHistory.amount),
+                                else_=0,
+                            )
+                        ),
+                        0,
+                    ).label("in_amount"),
+                    func.coalesce(
+                        func.sum(
+                            case(
+                                (PlatformWalletHistory.type.in_(["out", "refund"]), func.abs(PlatformWalletHistory.amount)),
+                                else_=0,
+                            )
+                        ),
+                        0,
+                    ).label("out_amount"),
+                    func.coalesce(
+                        func.sum(
+                            case(
+                                (PlatformWalletHistory.type == "fee", PlatformWalletHistory.amount),
+                                else_=0,
+                            )
+                        ),
+                        0,
+                    ).label("fee_amount"),
+                    func.count(PlatformWalletHistory.id).label("tx_count"),
+                )
+                .where(PlatformWalletHistory.wallet_id == wallet.id)
+                .group_by(day_col)
+                .order_by(day_col.desc())
+                .limit(14)
+            )
+        ).all()
+        daily_cashflow = [
+            {
+                "date": str(r.day),
+                "in_amount": float(r.in_amount or 0),
+                "out_amount": float(r.out_amount or 0),
+                "fee_amount": float(r.fee_amount or 0),
+                "net": float(r.in_amount or 0) - float(r.out_amount or 0),
+                "tx_count": int(r.tx_count or 0),
+            }
+            for r in reversed(daily_rows)
+        ]
+
+        # 5) Tổng hợp tạm giữ Escrow (InstructorEarnings)
+        escrow_rows = (
+            await self.db.execute(
+                select(
+                    InstructorEarnings.status,
+                    func.count(InstructorEarnings.id),
+                    func.coalesce(func.sum(InstructorEarnings.amount_instructor), 0),
+                    func.coalesce(func.sum(InstructorEarnings.amount_platform), 0),
+                ).group_by(InstructorEarnings.status)
+            )
+        ).all()
+        escrow_by_status = {
+            str(r[0]): {
+                "count": int(r[1]),
+                "instructor_amount": float(r[2] or 0),
+                "platform_amount": float(r[3] or 0),
+            }
+            for r in escrow_rows
+        }
+
+        holding_rows = (
+            await self.db.execute(
+                select(InstructorEarnings, User.fullname, User.email)
+                .outerjoin(User, User.id == InstructorEarnings.instructor_id)
+                .where(InstructorEarnings.status == "holding")
+                .order_by(InstructorEarnings.hold_until.asc().nulls_last(), InstructorEarnings.created_at.desc())
+                .limit(6)
+            )
+        ).all()
+        holding_items = [
+            {
+                "id": str(e.id),
+                "transaction_id": str(e.transaction_id) if e.transaction_id else None,
+                "instructor_id": str(e.instructor_id),
+                "instructor_name": fullname or "Giảng viên",
+                "instructor_email": email,
+                "amount_instructor": float(e.amount_instructor or 0),
+                "amount_platform": float(e.amount_platform or 0),
+                "hold_until": e.hold_until.isoformat() if e.hold_until else None,
+                "created_at": e.created_at.isoformat() if e.created_at else None,
+            }
+            for e, fullname, email in holding_rows
+        ]
+
+        # 6) Đối soát kế toán
+        balance = float(wallet.balance or 0)
+        total_in = float(wallet.total_in or 0)
+        total_out = float(wallet.total_out or 0)
+        holding_amount = float(wallet.holding_amount or 0)
+        expected_balance = total_in - total_out
+        delta = round(balance - expected_balance, 2)
+        available_balance = max(0.0, balance - holding_amount)
+
         return {
             "wallet": {
                 "id": str(wallet.id),
-                "balance": float(wallet.balance),
-                "total_in": float(wallet.total_in),
-                "total_out": float(wallet.total_out),
-                "holding_amount": float(wallet.holding_amount),
-                "platform_fee_total": float(wallet.platform_fee_total),
+                "balance": balance,
+                "total_in": total_in,
+                "total_out": total_out,
+                "holding_amount": holding_amount,
+                "platform_fee_total": float(wallet.platform_fee_total or 0),
                 "currency": wallet.currency,
                 "updated_at": wallet.updated_at,
             },
@@ -74,6 +202,19 @@ class PlatformWalletService:
                 }
                 for h in history
             ],
+            "type_breakdown": type_breakdown,
+            "daily_cashflow": daily_cashflow,
+            "escrow_summary": {
+                "by_status": escrow_by_status,
+                "holding_items": holding_items,
+            },
+            "reconciliation": {
+                "expected_balance": expected_balance,
+                "delta": delta,
+                "available_balance": available_balance,
+                "is_balanced": abs(delta) < 1.0,
+                "total_logs": total_logs,
+            },
         }
 
     async def get_platform_wallet_transaction_detail_admin_async(
@@ -364,10 +505,17 @@ class PlatformWalletService:
             filters.append(PlatformWalletHistory.created_at <= date_to)
 
         if search:
-            kw = f"%{search.lower()}%"
+            kw = f"%{search.strip().lower()}%"
             filters.append(
                 or_(
-                    func.lower(PlatformWalletHistory.note).ilike(kw),
+                    func.lower(func.coalesce(PlatformWalletHistory.note, "")).ilike(kw),
+                    func.lower(cast(PlatformWalletHistory.id, String)).ilike(kw),
+                    func.lower(
+                        func.coalesce(
+                            cast(PlatformWalletHistory.related_transaction_id, String),
+                            "",
+                        )
+                    ).ilike(kw),
                 )
             )
 
@@ -375,13 +523,56 @@ class PlatformWalletService:
             base_stmt = base_stmt.where(and_(*filters))
 
         # ============================
-        # TOTAL COUNT
+        # TOTAL COUNT & FILTERED SUMMARY
         # ============================
-        total = (
+        filtered_subq = base_stmt.subquery()
+        summary_row = (
             await self.db.execute(
-                select(func.count()).select_from(base_stmt.subquery())
+                select(
+                    func.count().label("total"),
+                    func.coalesce(
+                        func.sum(
+                            case(
+                                (filtered_subq.c.type == "in", filtered_subq.c.amount),
+                                else_=0,
+                            )
+                        ),
+                        0,
+                    ).label("total_in"),
+                    func.coalesce(
+                        func.sum(
+                            case(
+                                (
+                                    filtered_subq.c.type.in_(["out", "refund"]),
+                                    func.abs(filtered_subq.c.amount),
+                                ),
+                                else_=0,
+                            )
+                        ),
+                        0,
+                    ).label("total_out"),
+                    func.coalesce(
+                        func.sum(
+                            case(
+                                (filtered_subq.c.type == "fee", filtered_subq.c.amount),
+                                else_=0,
+                            )
+                        ),
+                        0,
+                    ).label("total_fee"),
+                    func.coalesce(
+                        func.sum(
+                            case(
+                                (filtered_subq.c.type == "hold", filtered_subq.c.amount),
+                                else_=0,
+                            )
+                        ),
+                        0,
+                    ).label("total_hold"),
+                ).select_from(filtered_subq)
             )
-        ).scalar_one()
+        ).one()
+        total = int(summary_row.total or 0)
 
         # ============================
         # PAGINATION
@@ -390,4 +581,15 @@ class PlatformWalletService:
         stmt = base_stmt.order_by(sort_order).limit(limit).offset(offset)
 
         items = (await self.db.execute(stmt)).scalars().all()
-        return {"total": total, "page": page, "limit": limit, "items": items}
+        return {
+            "total": total,
+            "page": page,
+            "limit": limit,
+            "items": items,
+            "summary": {
+                "total_in": float(summary_row.total_in or 0),
+                "total_out": float(summary_row.total_out or 0),
+                "total_fee": float(summary_row.total_fee or 0),
+                "total_hold": float(summary_row.total_hold or 0),
+            },
+        }

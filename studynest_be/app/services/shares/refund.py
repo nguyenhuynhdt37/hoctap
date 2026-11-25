@@ -1224,3 +1224,39 @@ class RefundService:
         except Exception as e:
             print("[ERR get_all_refund_status_async]", e)
             raise HTTPException(500, "Không thể lấy danh sách hoàn tiền.")
+
+    async def get_admin_refund_stats_async(self):
+        rows = (
+            await self.db.execute(
+                select(
+                    RefundRequests.status,
+                    func.count(RefundRequests.id),
+                    func.coalesce(func.sum(RefundRequests.refund_amount), 0),
+                ).group_by(RefundRequests.status)
+            )
+        ).all()
+        by_status = {
+            str(r[0]): {"count": int(r[1]), "amount": float(r[2] or 0)}
+            for r in rows
+            if r[0]
+        }
+        total = sum(v["count"] for v in by_status.values())
+        total_amount = sum(v["amount"] for v in by_status.values())
+        needs_admin_action = (
+            by_status.get("requested", {}).get("count", 0)
+            + by_status.get("instructor_rejected", {}).get("count", 0)
+        )
+        approved_total = (
+            by_status.get("instructor_approved", {}).get("count", 0)
+            + by_status.get("admin_approved", {}).get("count", 0)
+            + by_status.get("refunded", {}).get("count", 0)
+        )
+        return {
+            "total": total,
+            "total_amount": total_amount,
+            "needs_admin_action": needs_admin_action,
+            "approved_total": approved_total,
+            "refunded_count": by_status.get("refunded", {}).get("count", 0),
+            "rejected_count": by_status.get("admin_rejected", {}).get("count", 0),
+            "by_status": by_status,
+        }

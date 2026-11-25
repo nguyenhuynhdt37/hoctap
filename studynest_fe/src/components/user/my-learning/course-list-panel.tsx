@@ -4,18 +4,18 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
 import {
   ArrowUpDown,
-  Filter,
   RotateCcw,
   Search,
   SlidersHorizontal,
   X,
 } from "pulsoicon-react";
 import { Button, Card, Input, Select } from "@/components/ui";
+import { useDebouncedUrlSearch, useUrlQueryState } from "@/hooks/useUrlQueryState";
 import api from "@/lib/utils/fetcher/client/axios";
 import { showToast } from "@/lib/utils/helpers/toast";
+import type { CatalogOptions } from "@/types/catalog";
 import GiftTransferDialog from "../learning_detail/header/gift-transfer-dialog";
 import type {
-  CoursesMeCategory,
   CoursesMeItem,
   CoursesMeResponse,
   CoursesMeSortField,
@@ -32,8 +32,8 @@ const fetchCourses = async (url: string) => {
   return response.data;
 };
 
-const fetchCategories = async () => {
-  const response = await api.get<CoursesMeCategory[]>("categories/all");
+const fetchCatalogFilters = async () => {
+  const response = await api.get<CatalogOptions>("/catalog/filters");
   return response.data;
 };
 
@@ -67,6 +67,46 @@ const LANGUAGE_OPTIONS = [
 const BASE_PATH = "purchases/courses";
 const VARIANT: CoursesMeVariant = "purchased";
 
+const COURSE_LIST_QUERY_SCHEMA = {
+  page: { type: "number", default: 1, min: 1 },
+  size: { type: "number", default: 9, min: 1, max: 100 },
+  sort_by: {
+    type: "string",
+    default: "enrolled_at" as CoursesMeSortField,
+    allowed: [
+      "enrolled_at",
+      "progress",
+      "title",
+      "created_at",
+      "rating_avg",
+      "views",
+    ] as const,
+  },
+  order: {
+    type: "string",
+    default: "desc" as "asc" | "desc",
+    allowed: ["asc", "desc"] as const,
+  },
+  search: { type: "string", default: "" as string, trim: true },
+  subject: { type: "string", default: "" as string },
+  grade: { type: "string", default: "" as string },
+  level: {
+    type: "string",
+    default: "" as "" | LevelKey,
+    allowed: ["", "beginner", "intermediate", "advanced"] as const,
+  },
+  language: {
+    type: "string",
+    default: "",
+    allowed: ["", "vi", "en"] as const,
+  },
+  status: {
+    type: "string",
+    default: "all" as StatusFilterTab,
+    allowed: ["all", "in_progress", "completed", "not_started"] as const,
+  },
+} as const;
+
 interface CourseListPanelProps {
   archived?: boolean;
   selectedListId?: string | null;
@@ -93,43 +133,56 @@ export const CourseListPanel = ({
   onArchiveMutated,
   onCockpitRefresh,
 }: CourseListPanelProps) => {
-  const [page, setPage] = useState(1);
-  const [size, setSize] = useState<number>(9);
-  const [sortBy, setSortBy] = useState<CoursesMeSortField>("enrolled_at");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-  const [keyword, setKeyword] = useState("");
-  const [debouncedKeyword, setDebouncedKeyword] = useState("");
-  const [categoryId, setCategoryId] = useState("");
-  const [level, setLevel] = useState<"" | LevelKey>("");
-  const [language, setLanguage] = useState("");
-  const [statusTab, setStatusTab] = useState<StatusFilterTab>("all");
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const { values, setParam, resetParams } = useUrlQueryState(
+    COURSE_LIST_QUERY_SCHEMA,
+  );
+  const {
+    page,
+    size,
+    sort_by: sortBy,
+    order: sortOrder,
+    search: debouncedKeyword,
+    subject: subjectId,
+    grade: gradeId,
+    level,
+    language,
+    status: statusTab,
+  } = values;
+
+  const {
+    inputValue: keyword,
+    setInputValue: setKeyword,
+    commitNow: commitKeywordNow,
+  } = useDebouncedUrlSearch(debouncedKeyword, (val) => setParam("search", val));
+
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(() =>
+    Boolean(subjectId || gradeId || level || language),
+  );
   const [archivingId, setArchivingId] = useState<string | null>(null);
   const [pinningId, setPinningId] = useState<string | null>(null);
   const [giftCourse, setGiftCourse] = useState<CoursesMeItem | null>(null);
 
-  // Lấy danh mục khóa học
-  const { data: categoriesData, isLoading: isLoadingCategories } = useSWR<
-    CoursesMeCategory[]
-  >("categories/all", fetchCategories, {
-    revalidateOnFocus: false,
-  });
+  // Lấy danh sách Môn học & Khối lớp chuẩn hóa
+  const { data: catalogFilters, isLoading: isLoadingCatalogFilters } =
+    useSWR<CatalogOptions>("/catalog/filters", fetchCatalogFilters, {
+      revalidateOnFocus: false,
+    });
 
-  const categoryOptions = useMemo(() => {
-    if (!categoriesData) return [];
-    return categoriesData.map((cat) => ({ value: cat.id, label: cat.name }));
-  }, [categoriesData]);
+  const subjectOptions = useMemo(() => {
+    if (!catalogFilters?.subjects) return [];
+    return catalogFilters.subjects.map((sub) => ({
+      value: sub.id,
+      label: sub.name,
+    }));
+  }, [catalogFilters?.subjects]);
 
-  // Debounce ô tìm kiếm
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedKeyword(keyword.trim()), 350);
-    return () => clearTimeout(timer);
-  }, [keyword]);
-
-  // Tự động về trang 1 khi thay đổi bất kỳ bộ lọc nào
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedKeyword, sortBy, sortOrder, size, categoryId, level, language, statusTab]);
+  const gradeOptions = useMemo(() => {
+    if (!catalogFilters?.grades) return [];
+    return catalogFilters.grades.map((grade) => ({
+      value: grade.id,
+      label: grade.name,
+    }));
+  }, [catalogFilters?.grades]);
 
   // Query Key cho SWR
   const swrKey = useMemo(() => {
@@ -142,11 +195,24 @@ export const CourseListPanel = ({
     });
     if (selectedListId && !archived) params.set("list_id", selectedListId);
     if (debouncedKeyword) params.set("keyword", debouncedKeyword);
-    if (categoryId) params.set("category_id", categoryId);
+    if (subjectId) params.set("subject_id", subjectId);
+    if (gradeId) params.set("grade_id", gradeId);
     if (level) params.set("level", level);
     if (language) params.set("language", language);
     return `${BASE_PATH}?${params.toString()}`;
-  }, [page, size, sortBy, sortOrder, archived, selectedListId, debouncedKeyword, categoryId, level, language]);
+  }, [
+    page,
+    size,
+    sortBy,
+    sortOrder,
+    archived,
+    selectedListId,
+    debouncedKeyword,
+    subjectId,
+    gradeId,
+    level,
+    language,
+  ]);
 
   const { data, error, isLoading, isValidating, mutate } =
     useSWR<CoursesMeResponse>(swrKey, fetchCourses, {
@@ -295,26 +361,26 @@ export const CourseListPanel = ({
   }, [error]);
 
   const toggleSortOrder = useCallback(() => {
-    setSortOrder((prev) => (prev === "desc" ? "asc" : "desc"));
-  }, []);
+    setParam("order", sortOrder === "desc" ? "asc" : "desc");
+  }, [setParam, sortOrder]);
 
   const hasActiveFilters = Boolean(
-    keyword || categoryId || level || language || statusTab !== "all"
+    keyword ||
+      debouncedKeyword ||
+      subjectId ||
+      gradeId ||
+      level ||
+      language ||
+      statusTab !== "all"
   );
 
   const clearFilters = useCallback(() => {
     setKeyword("");
-    setDebouncedKeyword("");
-    setCategoryId("");
-    setLevel("");
-    setLanguage("");
-    setStatusTab("all");
-    setSortBy("enrolled_at");
-    setSortOrder("desc");
-  }, []);
+    resetParams();
+  }, [resetParams, setKeyword]);
 
   const handlePageChange = (newPage: number) => {
-    setPage(newPage);
+    setParam("page", newPage);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -329,7 +395,7 @@ export const CourseListPanel = ({
             <Button
               variant={statusTab === "all" ? "primary" : "ghost"}
               size="sm"
-              onClick={() => setStatusTab("all")}
+              onClick={() => setParam("status", "all")}
               className="rounded-full text-xs"
             >
               Tất cả khóa học
@@ -337,7 +403,7 @@ export const CourseListPanel = ({
             <Button
               variant={statusTab === "in_progress" ? "primary" : "ghost"}
               size="sm"
-              onClick={() => setStatusTab("in_progress")}
+              onClick={() => setParam("status", "in_progress")}
               className="rounded-full text-xs"
             >
               Đang học
@@ -345,7 +411,7 @@ export const CourseListPanel = ({
             <Button
               variant={statusTab === "completed" ? "primary" : "ghost"}
               size="sm"
-              onClick={() => setStatusTab("completed")}
+              onClick={() => setParam("status", "completed")}
               className="rounded-full text-xs"
             >
               Đã hoàn thành
@@ -353,7 +419,7 @@ export const CourseListPanel = ({
             <Button
               variant={statusTab === "not_started" ? "primary" : "ghost"}
               size="sm"
-              onClick={() => setStatusTab("not_started")}
+              onClick={() => setParam("status", "not_started")}
               className="rounded-full text-xs"
             >
               Chưa bắt đầu
@@ -399,7 +465,7 @@ export const CourseListPanel = ({
                 keyword ? (
                   <button
                     type="button"
-                    onClick={() => setKeyword("")}
+                    onClick={() => commitKeywordNow("")}
                     className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-primary-light/50 transition-colors"
                     aria-label="Xóa từ khóa tìm kiếm"
                   >
@@ -416,7 +482,10 @@ export const CourseListPanel = ({
               <Select
                 value={sortBy}
                 onChange={(e) =>
-                  setSortBy(e.target.value as CoursesMeSortField)
+                  setParam(
+                    "sort_by",
+                    e.target.value as (typeof COURSE_LIST_QUERY_SCHEMA.sort_by.allowed)[number]
+                  )
                 }
                 aria-label="Tiêu chí sắp xếp"
               >
@@ -456,7 +525,7 @@ export const CourseListPanel = ({
           <div className="md:col-span-2">
             <Select
               value={size}
-              onChange={(e) => setSize(Number(e.target.value))}
+              onChange={(e) => setParam("size", Number(e.target.value))}
               aria-label="Số khóa học mỗi trang"
             >
               {PAGE_SIZE_OPTIONS.map((opt) => (
@@ -470,22 +539,44 @@ export const CourseListPanel = ({
 
         {/* Hàng 3: Bộ lọc chi tiết (Collapsible) */}
         {showAdvancedFilters && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 mt-4 pt-4 border-t border-border/70 animate-in fade-in duration-200">
-            {/* Lọc Danh mục */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 mt-4 pt-4 border-t border-border/70 animate-in fade-in duration-200">
+            {/* Lọc Môn học */}
             <div>
               <label className="block text-xs font-medium text-muted-foreground mb-1">
-                Danh mục môn học
+                Môn học
               </label>
               <Select
-                value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
+                value={subjectId}
+                onChange={(e) => setParam("subject", e.target.value)}
               >
                 <option value="">
-                  {isLoadingCategories
-                    ? "Đang tải danh mục..."
-                    : "Tất cả danh mục"}
+                  {isLoadingCatalogFilters
+                    ? "Đang tải môn học..."
+                    : "Tất cả môn học"}
                 </option>
-                {categoryOptions.map((opt) => (
+                {subjectOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </Select>
+            </div>
+
+            {/* Lọc Khối lớp */}
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">
+                Khối lớp
+              </label>
+              <Select
+                value={gradeId}
+                onChange={(e) => setParam("grade", e.target.value)}
+              >
+                <option value="">
+                  {isLoadingCatalogFilters
+                    ? "Đang tải khối lớp..."
+                    : "Tất cả khối lớp"}
+                </option>
+                {gradeOptions.map((opt) => (
                   <option key={opt.value} value={opt.value}>
                     {opt.label}
                   </option>
@@ -500,7 +591,7 @@ export const CourseListPanel = ({
               </label>
               <Select
                 value={level}
-                onChange={(e) => setLevel(e.target.value as "" | LevelKey)}
+                onChange={(e) => setParam("level", e.target.value as "" | LevelKey)}
               >
                 {LEVEL_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -517,7 +608,9 @@ export const CourseListPanel = ({
               </label>
               <Select
                 value={language}
-                onChange={(e) => setLanguage(e.target.value)}
+                onChange={(e) =>
+                  setParam("language", e.target.value as "" | "vi" | "en")
+                }
               >
                 {LANGUAGE_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>

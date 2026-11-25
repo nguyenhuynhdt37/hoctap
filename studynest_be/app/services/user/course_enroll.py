@@ -7,6 +7,7 @@ from sqlalchemy import asc, case, desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.embedding import EmbeddingService, get_embedding_service
+from app.db.models.catalog import course_grades
 from app.db.models.database import (
     Categories,
     CourseEnrollments,
@@ -58,6 +59,8 @@ class CourseEnrolls:
         order: str = "desc",
         archived: bool = False,
         list_id: Optional[uuid.UUID] = None,
+        subject_id: Optional[uuid.UUID] = None,
+        grade_id: Optional[uuid.UUID] = None,
     ):
         valid_sort_fields = {
             "title": Courses.title,
@@ -204,6 +207,16 @@ class CourseEnrolls:
 
         if category_id:
             query = query.where(Courses.category_id == category_id)
+        if subject_id:
+            query = query.where(Courses.subject_id == subject_id)
+        if grade_id:
+            query = query.where(
+                Courses.id.in_(
+                    select(course_grades.c.course_id).where(
+                        course_grades.c.grade_id == grade_id
+                    )
+                )
+            )
         if level:
             query = query.where(Courses.level == level)
         if language:
@@ -228,6 +241,16 @@ class CourseEnrolls:
             total_query = total_query.where(Courses.id.in_(list_course_ids))
         if category_id:
             total_query = total_query.where(Courses.category_id == category_id)
+        if subject_id:
+            total_query = total_query.where(Courses.subject_id == subject_id)
+        if grade_id:
+            total_query = total_query.where(
+                Courses.id.in_(
+                    select(course_grades.c.course_id).where(
+                        course_grades.c.grade_id == grade_id
+                    )
+                )
+            )
         if level:
             total_query = total_query.where(Courses.level == level)
         if language:

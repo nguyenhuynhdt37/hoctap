@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   CheckCircle2,
@@ -14,6 +14,10 @@ import useSWR from "swr";
 import ContextMenu from "@/components/shared/context-menu";
 import Pagination from "@/components/shared/pagination";
 import { Button } from "@/components/ui";
+import {
+  useDebouncedUrlSearch,
+  useUrlQueryState,
+} from "@/hooks/useUrlQueryState";
 import { formatVndAsCoin } from "@/lib/learning-hub/coin-logic";
 import api from "@/lib/utils/fetcher/client/axios";
 import type {
@@ -30,55 +34,82 @@ import { RefundRequestsTable } from "./refund-table";
 
 const DEFAULT_LIMIT = 10;
 
+const LECTURER_REFUNDS_QUERY_SCHEMA = {
+  page: { type: "number", default: 1, min: 1 },
+  limit: { type: "number", default: DEFAULT_LIMIT, min: 1, max: 100 },
+  search: { type: "string", default: "" as string },
+  refund_status: {
+    type: "string",
+    default: "",
+    allowed: [
+      "",
+      "requested",
+      "instructor_approved",
+      "instructor_rejected",
+      "admin_approved",
+      "admin_rejected",
+      "refunded",
+    ] as const,
+  },
+  course_id: { type: "string", default: "" as string },
+  student_id: { type: "string", default: "" as string },
+  date_from: { type: "string", default: "" as string },
+  date_to: { type: "string", default: "" as string },
+  order_by: {
+    type: "string",
+    default: "created_at",
+    allowed: ["created_at", "refund_amount", "status"] as const,
+  },
+  order_dir: {
+    type: "string",
+    default: "desc",
+    allowed: ["asc", "desc"] as const,
+  },
+  view: {
+    type: "string",
+    default: "cards",
+    allowed: ["cards", "table"] as const,
+  },
+} as const;
+
 export default function LecturerRefundRequests() {
-  const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
   const [reviewTarget, setReviewTarget] = useState<{
     item: LecturerRefundRequestItem;
     action: "approve" | "reject";
   } | null>(null);
-
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: DEFAULT_LIMIT,
-  });
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [status, setStatus] =
-    useState<LecturerRefundRequestsQuery["refund_status"]>("");
-  const [courseId, setCourseId] = useState("");
-  const [studentId, setStudentId] = useState("");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-  const [sortBy, setSortBy] =
-    useState<LecturerRefundRequestsQuery["order_by"]>("created_at");
-  const [orderDir, setOrderDir] = useState<"asc" | "desc">("desc");
   const [contextMenu, setContextMenu] = useState<{
     x: number;
     y: number;
     refundId: string;
   } | null>(null);
 
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPagination((prev) => ({ ...prev, page: 1 }));
-    }, 300);
-    return () => clearTimeout(timeout);
-  }, [search]);
+  const { values, setParam, setParams, resetParams } = useUrlQueryState(
+    LECTURER_REFUNDS_QUERY_SCHEMA,
+  );
+  const page = values.page;
+  const limit = values.limit;
+  const search = values.search;
+  const status = values.refund_status;
+  const courseId = values.course_id;
+  const studentId = values.student_id;
+  const dateFrom = values.date_from;
+  const dateTo = values.date_to;
+  const sortBy = values.order_by;
+  const orderDir = values.order_dir;
+  const viewMode = values.view;
 
-  useEffect(() => {
-    setPagination((prev) => ({ ...prev, page: 1 }));
-  }, [status, courseId, studentId, dateFrom, dateTo, sortBy, orderDir]);
+  const { inputValue: searchInput, setInputValue: setSearchInput } =
+    useDebouncedUrlSearch(search, (val) => setParam("search", val));
 
   const buildQueryParams = useCallback((): LecturerRefundRequestsQuery => {
     const params: LecturerRefundRequestsQuery = {
-      page: pagination.page,
-      limit: pagination.limit,
+      page,
+      limit,
       order_by: sortBy,
       order_dir: orderDir,
     };
 
-    if (debouncedSearch.trim()) params.search = debouncedSearch.trim();
+    if (search.trim()) params.search = search.trim();
     if (status) params.refund_status = status;
     if (courseId) params.course_id = courseId;
     if (studentId) params.student_id = studentId;
@@ -96,9 +127,9 @@ export default function LecturerRefundRequests() {
 
     return params;
   }, [
-    pagination.page,
-    pagination.limit,
-    debouncedSearch,
+    page,
+    limit,
+    search,
     status,
     courseId,
     studentId,
@@ -124,33 +155,24 @@ export default function LecturerRefundRequests() {
   );
 
   const handlePageChange = (newPage: number) => {
-    setPagination((prev) => ({ ...prev, page: newPage }));
+    setParam("page", newPage);
   };
 
   const handleLimitChange = (newLimit: number) => {
-    setPagination((prev) => ({ ...prev, limit: newLimit, page: 1 }));
+    setParam("limit", newLimit);
   };
 
   const handleSort = (column: LecturerRefundRequestsQuery["order_by"]) => {
     if (sortBy === column) {
-      setOrderDir(orderDir === "asc" ? "desc" : "asc");
+      setParam("order_dir", orderDir === "asc" ? "desc" : "asc");
     } else {
-      setSortBy(column);
-      setOrderDir("desc");
+      setParams({ order_by: column, order_dir: "desc" });
     }
   };
 
   const handleResetFilters = () => {
-    setSearch("");
-    setDebouncedSearch("");
-    setStatus("");
-    setCourseId("");
-    setStudentId("");
-    setDateFrom("");
-    setDateTo("");
-    setSortBy("created_at");
-    setOrderDir("desc");
-    setPagination({ page: 1, limit: DEFAULT_LIMIT });
+    setSearchInput("");
+    resetParams();
   };
 
   const handleRowContextMenu = useCallback(
@@ -180,8 +202,8 @@ export default function LecturerRefundRequests() {
   const items = data?.items ?? [];
   const totalPages = useMemo(() => {
     if (!data) return 0;
-    return Math.ceil(data.total / pagination.limit);
-  }, [data, pagination.limit]);
+    return Math.ceil(data.total / limit);
+  }, [data, limit]);
 
   const pendingItems = useMemo(
     () => items.filter((item) => item.status === "requested"),
@@ -296,7 +318,9 @@ export default function LecturerRefundRequests() {
           <div className="mt-6 grid grid-cols-2 gap-3 border-t border-border/70 pt-5 lg:grid-cols-4">
             <button
               type="button"
-              onClick={() => setStatus(status === "requested" ? "" : "requested")}
+              onClick={() =>
+                setParam("refund_status", status === "requested" ? "" : "requested")
+              }
               className="rounded-2xl border border-accent-vanilla-border bg-accent-vanilla/65 p-3.5 text-left transition-all hover:bg-accent-vanilla cursor-pointer"
             >
               <p className="text-[11px] font-bold tracking-wider text-accent-vanilla-foreground uppercase">
@@ -342,25 +366,27 @@ export default function LecturerRefundRequests() {
 
         {/* ── 2. THANH LỌC KÍNH MỜ 2 TẦNG ── */}
         <RefundRequestsFilters
-          search={search}
-          onSearchChange={setSearch}
+          search={searchInput}
+          onSearchChange={setSearchInput}
           status={status}
-          onStatusChange={setStatus}
+          onStatusChange={(val) => setParam("refund_status", val ?? "")}
           courseId={courseId}
-          onCourseIdChange={setCourseId}
+          onCourseIdChange={(val) => setParam("course_id", val)}
           studentId={studentId}
-          onStudentIdChange={setStudentId}
+          onStudentIdChange={(val) => setParam("student_id", val)}
           dateFrom={dateFrom}
-          onDateFromChange={setDateFrom}
+          onDateFromChange={(val) => setParam("date_from", val)}
           dateTo={dateTo}
-          onDateToChange={setDateTo}
+          onDateToChange={(val) => setParam("date_to", val)}
           sortBy={sortBy}
-          onSortByChange={setSortBy}
+          onSortByChange={(val) => setParam("order_by", val)}
           orderDir={orderDir}
-          onOrderDirChange={setOrderDir}
+          onOrderDirChange={(val) => setParam("order_dir", val)}
           onReset={handleResetFilters}
           viewMode={viewMode}
-          onViewModeChange={setViewMode}
+          onViewModeChange={(mode) =>
+            setParam("view", mode, { resetPage: false })
+          }
         />
 
         {/* ── 3. DANH SÁCH HỒ SƠ (THẺ HỒ SƠ HOẶC BẢNG) ── */}
@@ -390,10 +416,10 @@ export default function LecturerRefundRequests() {
 
             {data && data.total > 0 && (
               <Pagination
-                currentPage={pagination.page}
+                currentPage={page}
                 totalPages={totalPages}
                 totalItems={data.total}
-                pageSize={pagination.limit}
+                pageSize={limit}
                 onPageChange={handlePageChange}
                 onPageSizeChange={handleLimitChange}
                 showPageSizeSelector={true}

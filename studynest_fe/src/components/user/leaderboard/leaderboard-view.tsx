@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -20,6 +20,7 @@ import {
   type PulsoIcon,
 } from "pulsoicon-react";
 import { useAuthedSWR } from "@/hooks/auth/useAuthedSWR";
+import { useDebouncedUrlSearch, useUrlQueryState } from "@/hooks/useUrlQueryState";
 import { CoinBadge, Skeleton } from "@/components/ui";
 import { HubLoadError } from "@/components/learning-hub/hub-page-state";
 import { EmblemIcon, FramedAvatar, TitleBadge } from "@/components/learning-hub/shop/item-art";
@@ -358,9 +359,22 @@ function LeaderboardRow({
   );
 }
 
+const LEADERBOARD_QUERY_SCHEMA = {
+  category: {
+    type: "string",
+    default: "xp" as LeaderboardCategory,
+    allowed: ["xp", "streak", "coins", "lessons", "quiz"] as const,
+  },
+  search: { type: "string", default: "" as string, trim: true },
+} as const;
+
 export function LeaderboardView() {
-  const [category, setCategory] = useState<LeaderboardCategory>("xp");
-  const [query, setQuery] = useState("");
+  const { values, setParam } = useUrlQueryState(LEADERBOARD_QUERY_SCHEMA);
+  const { category } = values;
+  const { inputValue: query, setInputValue: setQuery } = useDebouncedUrlSearch(
+    values.search,
+    (val) => setParam("search", val),
+  );
 
   const activeTheme = useMemo(
     () => CATEGORIES.find((item) => item.id === category) ?? CATEGORIES[0],
@@ -524,7 +538,7 @@ export function LeaderboardView() {
                 type="button"
                 role="tab"
                 aria-selected={selected}
-                onClick={() => setCategory(item.id)}
+                onClick={() => setParam("category", item.id)}
                 className={cn(
                   "inline-flex min-h-10 items-center gap-2 rounded-full px-3.5 py-2 text-xs font-bold transition-all sm:text-sm motion-reduce:transition-none",
                   selected

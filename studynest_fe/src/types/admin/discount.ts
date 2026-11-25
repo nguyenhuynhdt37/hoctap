@@ -1,5 +1,12 @@
 // Admin Discount Types (extended from lecturer types)
 
+export interface DiscountCreator {
+  id: string;
+  fullname: string;
+  email: string | null;
+  avatar: string | null;
+}
+
 export interface Discount {
   id: string;
   name: string;
@@ -17,8 +24,10 @@ export interface Discount {
   is_active: boolean;
   description: string | null;
   created_at: string;
-  created_by: string;
-  created_role: string;
+  created_by: string | null;
+  created_role: "ADMIN" | "LECTURER" | string;
+  creator?: DiscountCreator | null;
+  target_count?: number;
 }
 
 export interface DiscountsResponse {
@@ -35,6 +44,8 @@ export interface DiscountsQueryParams {
   discount_type?: "percent" | "fixed";
   is_active?: boolean | null;
   validity?: "expired" | "running" | "upcoming";
+  created_role?: "ADMIN" | "LECTURER";
+  creator_id?: string;
   sort_by?: string;
   order_dir?: "asc" | "desc";
 }
@@ -128,6 +139,9 @@ export interface DiscountDetailDiscount {
   end_at: string;
   is_active: boolean;
   is_hidden: boolean;
+  created_by?: string | null;
+  created_role?: "ADMIN" | "LECTURER" | string;
+  creator?: DiscountCreator | null;
 }
 
 export interface DiscountDetailTarget {

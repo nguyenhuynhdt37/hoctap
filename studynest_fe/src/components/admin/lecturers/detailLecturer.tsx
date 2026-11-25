@@ -1,1060 +1,469 @@
 "use client";
 
-import MarkdownRenderer from "@/components/shared/markdown-renderer";
-import Pagination from "@/components/shared/pagination";
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import useSWR from "swr";
+import toast from "react-hot-toast";
+import {
+  ArrowLeft,
+  Ban,
+  BookOpen,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Coins,
+  Copy,
+  Mail,
+  Pencil,
+  Receipt,
+  ShieldCheck,
+  Star,
+  Unlock,
+  UserMinus,
+  Users,
+  Wallet,
+} from "pulsoicon-react";
+import { Button } from "@/components/ui";
+import {
+  DEFAULT_COIN_VND_RATE,
+  formatCoin,
+  formatVndAsCoin,
+} from "@/lib/learning-hub/coin-logic";
 import api from "@/lib/utils/fetcher/client/axios";
 import { getImageUrl } from "@/lib/utils/helpers/image";
-import { showToast } from "@/lib/utils/helpers/toast";
-import {
+import type {
   LecturerCoursesResponse,
   LecturerDetailResponse,
 } from "@/types/admin/lecturer-detail";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { createPortal } from "react-dom";
-import {
-  GraduationCap,
-  ArrowLeft,
-  Ban,
-  CircleCheck,
-  CircleDollarSign,
-  Eye,
-  Pencil,
-  Star,
-  Trash2,
-  User,
-  UserMinus,
-  Users,
-  X,
-  CircleX,
-} from "pulsoicon-react";
-import useSWR from "swr";
+import LecturerDrawer from "./lecturer-drawer";
 
-const formatDate = (dateString: string) =>
-  new Date(dateString).toLocaleDateString("vi-VN", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
-import { formatVndAsCoin } from "@/lib/learning-hub/coin-logic";
-
-const formatCurrency = (amount: number) => formatVndAsCoin(amount);
-
-const handleError = (error: any, defaultMsg: string) => {
-  const status = error.response?.status;
-  const detail = error.response?.data?.detail || error.message;
-  const messages: Record<number, string> = {
-    403: detail || "Bạn không có quyền thực hiện hành động này.",
-    404: detail || "Không tìm thấy dữ liệu.",
-    409: detail || "Hành động không thể thực hiện.",
-    400: detail || "Thông tin không hợp lệ.",
-    500: detail || "Có lỗi xảy ra trên server.",
-  };
-  return messages[status] || detail || defaultMsg;
+const formatDateTime = (val?: string | null) => {
+  if (!val) return "—";
+  try {
+    return new Intl.DateTimeFormat("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).format(new Date(val));
+  } catch {
+    return "—";
+  }
 };
 
 export default function DetailLecturer({ lecturerId }: { lecturerId: string }) {
   const router = useRouter();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showBanModal, setShowBanModal] = useState(false);
-  const [banType, setBanType] = useState<"permanent" | "temporary">(
-    "temporary"
-  );
-  const [banReason, setBanReason] = useState("");
-  const [banUntilDate, setBanUntilDate] = useState("");
-  const [banUntilTime, setBanUntilTime] = useState("");
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deleteReason, setDeleteReason] = useState("");
-  const [showCourseModal, setShowCourseModal] = useState(false);
-  const [selectedCourse, setSelectedCourse] = useState<any>(null);
-
   const [coursesPage, setCoursesPage] = useState(1);
-  const [coursesSize, setCoursesSize] = useState(4);
-  const [coursesSortBy, setCoursesSortBy] = useState("created_at");
-  const [coursesOrder, setCoursesOrder] = useState<"asc" | "desc">("desc");
-  const [transactionsPage, setTransactionsPage] = useState(1);
-  const [transactionsSize, setTransactionsSize] = useState(5);
+  const [txPage, setTxPage] = useState(1);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   const { data, error, isLoading, mutate } = useSWR<LecturerDetailResponse>(
-    `/admin/lecturers/${lecturerId}?page=${transactionsPage}&size=${transactionsSize}`,
-    (url) => api.get(url).then((res) => res.data),
-    { revalidateOnFocus: false }
+    `/admin/lecturers/${lecturerId}?page=${txPage}&size=6`,
+    async (url: string) => (await api.get(url)).data,
+    { revalidateOnFocus: false },
   );
 
-  const { data: coursesData, isLoading: isLoadingCourses } =
-    useSWR<LecturerCoursesResponse>(
-      `/admin/lecturers/${lecturerId}/courses?page=${coursesPage}&size=${coursesSize}&sort_by=${coursesSortBy}&order=${coursesOrder}`,
-      (url) => api.get(url).then((res) => res.data),
-      { revalidateOnFocus: false }
-    );
+  const { data: coursesData } = useSWR<LecturerCoursesResponse>(
+    `/admin/lecturers/${lecturerId}/courses?page=${coursesPage}&size=6&sort_by=created_at&order=desc`,
+    async (url: string) => (await api.get(url)).data,
+    { revalidateOnFocus: false },
+  );
 
-  const handleUnban = async () => {
-    if (!data || !window.confirm(`Xác nhận mở chặn "${data.fullname}"?`))
-      return;
-    setIsSubmitting(true);
+  async function handleUnban() {
+    setBusy(true);
     try {
-      await api.post(`/admin/lecturers/${data.id}/unban`);
-      showToast.success("Đã mở chặn giảng viên thành công");
+      await api.post(`/admin/lecturers/${lecturerId}/unban`);
+      toast.success("Đã mở khóa giảng viên!");
       await mutate();
-    } catch (error: any) {
-      showToast.error(handleError(error, "Có lỗi xảy ra khi mở chặn"));
+    } catch {
+      toast.error("Không thể mở khóa giảng viên.");
     } finally {
-      setIsSubmitting(false);
+      setBusy(false);
     }
-  };
+  }
 
-  const handleConfirmBan = async () => {
-    if (!banReason.trim()) {
-      showToast.error("Vui lòng nhập lý do cấm!");
-      return;
-    }
-    if (banType === "temporary" && (!banUntilDate || !banUntilTime)) {
-      showToast.error("Vui lòng chọn ngày và giờ kết thúc cấm!");
-      return;
-    }
-    setIsSubmitting(true);
-    try {
-      let bannedUntil = null;
-      if (banType === "temporary") {
-        bannedUntil = new Date(`${banUntilDate}T${banUntilTime}`);
-        if (bannedUntil <= new Date()) {
-          showToast.error("Ngày kết thúc cấm phải sau thời điểm hiện tại!");
-          setIsSubmitting(false);
-          return;
-        }
-      }
-      await api.post(`/admin/lecturers/${lecturerId}/ban`, {
-        is_block_permanently: banType === "permanent",
-        banned_reason: banReason.trim(),
-        banned_until: bannedUntil ? bannedUntil.toISOString() : null,
-      });
-      showToast.success("Cấm giảng viên thành công!");
-      setShowBanModal(false);
-      setBanReason("");
-      setBanUntilDate("");
-      setBanUntilTime("");
-      await mutate();
-    } catch (error: any) {
-      showToast.error(handleError(error, "Có lỗi xảy ra khi cấm giảng viên"));
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!data) return;
-    if (data.is_verified_email) {
-      showToast.error("Không thể xóa giảng viên đã xác thực email");
-      return;
-    }
-    setShowDeleteModal(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!data || !deleteReason.trim()) {
-      showToast.error("Vui lòng nhập lý do xóa!");
-      return;
-    }
-    if (prompt(`Nhập "XÓA" để xác nhận xóa "${data.fullname}":`) !== "XÓA") {
-      showToast.error("Đã hủy thao tác xóa");
-      setShowDeleteModal(false);
-      setDeleteReason("");
-      return;
-    }
-    setIsSubmitting(true);
-    try {
-      await api.delete(`/admin/lecturers/${lecturerId}`, {
-        params: { reason: deleteReason.trim() },
-      });
-      showToast.success("Xóa giảng viên thành công");
-      router.push("/admin/lecturers");
-    } catch (error: any) {
-      showToast.error(handleError(error, "Có lỗi xảy ra khi xóa giảng viên"));
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleRemoveRole = async () => {
+  async function handleRemoveRole() {
     if (
-      !data ||
-      !window.confirm(`Xác nhận gỡ quyền giảng viên của "${data.fullname}"?`)
-    )
+      !window.confirm(
+        "Gỡ quyền Giảng viên của tài khoản này? Tài khoản vẫn giữ vai trò Học viên.",
+      )
+    ) {
       return;
-    setIsSubmitting(true);
+    }
+    setBusy(true);
     try {
       await api.delete(`/admin/lecturers/${lecturerId}/remove_role_lecturer`);
-      showToast.success("Đã gỡ quyền giảng viên thành công");
-      router.push("/admin/users");
-    } catch (error: any) {
-      showToast.error(handleError(error, "Có lỗi xảy ra khi gỡ quyền"));
+      toast.success("Đã gỡ quyền giảng viên.");
+      router.push("/admin/lecturers");
+    } catch {
+      toast.error("Không thể gỡ quyền giảng viên.");
     } finally {
-      setIsSubmitting(false);
+      setBusy(false);
     }
-  };
+  }
 
-  if (isLoading && !data) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
-        <div className="animate-pulse space-y-6">
-          <div className="h-12 bg-gray-200 rounded w-1/3"></div>
-          <div className="h-64 bg-gray-200 rounded-xl"></div>
-          <div className="grid grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-24 bg-gray-200 rounded-xl"></div>
-            ))}
-          </div>
-        </div>
-      </div>
+      <main className="mx-auto max-w-[1440px] space-y-6 p-6">
+        <div className="h-48 animate-pulse rounded-[2.5rem] border border-border bg-surface" />
+      </main>
     );
   }
 
   if (error || !data) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-        <div className="text-center">
-          <CircleX solid className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            Không tìm thấy giảng viên
-          </h2>
-          <button
-            onClick={() => router.push("/admin/lecturers")}
-            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors"
-          >
+      <main className="mx-auto max-w-[1440px] p-6">
+        <div className="rounded-3xl border border-destructive-border bg-destructive-bg p-6 text-sm text-destructive-foreground">
+          Không tải được hồ sơ giảng viên.{" "}
+          <Link href="/admin/lecturers" className="underline">
             Quay lại danh sách
-          </button>
+          </Link>
         </div>
-      </div>
+      </main>
     );
   }
 
-  const totalStudents =
-    coursesData?.items?.reduce((sum, c) => sum + c.total_enrolls, 0) || 0;
-  const avgRating = coursesData?.items?.length
-    ? (
-        coursesData.items.reduce((sum, c) => sum + c.rating_avg, 0) /
-        coursesData.items.length
-      ).toFixed(1)
-    : "0";
-  const totalViews =
-    coursesData?.items?.reduce((sum, c) => sum + c.views, 0) || 0;
+  const courses = coursesData?.items ?? [];
+  const transactions = data.transactions ?? [];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        {/* Header */}
-        <div className="mb-6 flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-4">
-            <button
-              aria-label="Quay lại"
-              onClick={() => router.back()}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <ArrowLeft className="w-6 h-6 text-gray-600" />
-            </button>
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-emerald-600 bg-clip-text text-transparent">
-                Chi tiết giảng viên
-              </h1>
-              <p className="text-gray-600 mt-1">{data.fullname}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            {data.is_banned ? (
-              <button
-                onClick={handleUnban}
-                disabled={isSubmitting}
-                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover disabled:opacity-50 flex items-center gap-2 transition-colors"
-              >
-                <Ban className="w-4 h-4" />
-                Mở chặn
-              </button>
-            ) : (
-              <button
-                onClick={() => setShowBanModal(true)}
-                disabled={isSubmitting}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 flex items-center gap-2 transition-colors"
-              >
-                <Ban className="w-4 h-4" />
-                Cấm giảng viên
-              </button>
-            )}
-            <button
-              onClick={handleRemoveRole}
-              disabled={isSubmitting}
-              className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 disabled:opacity-50 flex items-center gap-2 transition-colors"
-            >
-              <UserMinus className="w-4 h-4" />
-              Gỡ quyền GV
-            </button>
-            <button
-              onClick={() => router.push(`/admin/lecturers/${lecturerId}/edit`)}
-              className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover flex items-center gap-2 transition-colors"
-            >
-              <Pencil className="w-4 h-4" />
-              Chỉnh sửa
-            </button>
-            <button
-              onClick={handleDelete}
-              disabled={isSubmitting || data.is_verified_email}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 flex items-center gap-2 transition-colors"
-            >
-              <Trash2 className="w-4 h-4" />
-              Xóa
-            </button>
-          </div>
-        </div>
+    <main className="mx-auto max-w-[1440px] space-y-6 p-4 text-foreground sm:p-6 lg:p-8">
+      {/* Top Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Link
+          href="/admin/lecturers"
+          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-4 py-2 text-xs font-semibold text-foreground hover:border-primary hover:text-primary"
+        >
+          <ArrowLeft size={14} />
+          Đội ngũ Giảng viên
+        </Link>
 
-        {/* Profile Header Card */}
-        <div className="bg-gradient-to-r from-primary to-emerald-600 rounded-xl shadow-lg p-6 mb-6 text-white">
-          <div className="flex items-center gap-6 flex-wrap">
-            <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-3xl font-bold">
-              {data.fullname.charAt(0).toUpperCase()}
-            </div>
-            <div className="flex-1 min-w-0">
-              <h2 className="text-2xl font-bold mb-2">{data.fullname}</h2>
-              <p className="text-white/90 mb-3">{data.email}</p>
-              <div className="flex items-center gap-4 flex-wrap">
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`w-2 h-2 rounded-full ${
-                      data.is_verified_email ? "bg-green-300" : "bg-yellow-300"
-                    }`}
-                  />
-                  <span className="text-sm">
-                    {data.is_verified_email
-                      ? "Email đã xác thực"
-                      : "Email chưa xác thực"}
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setDrawerOpen(true)}
+          >
+            <Pencil size={14} />
+            Chỉnh sửa hồ sơ
+          </Button>
+          {data.is_banned && (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={busy}
+              onClick={() => void handleUnban()}
+            >
+              <Unlock size={14} />
+              Mở khóa
+            </Button>
+          )}
+          <Button
+            variant="destructive"
+            size="sm"
+            disabled={busy}
+            onClick={() => void handleRemoveRole()}
+          >
+            <UserMinus size={14} />
+            Gỡ quyền GV
+          </Button>
+        </div>
+      </div>
+
+      {/* Cloud Identity Hero */}
+      <section className="relative overflow-hidden rounded-[2.5rem] border border-white/90 bg-gradient-to-br from-primary-light/95 via-surface/95 to-accent-vanilla/45 p-6 shadow-[0_24px_56px_-18px_rgba(53,111,167,0.18)] sm:p-8">
+        <div className="relative z-10 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            {data.avatar ? (
+              <img
+                src={getImageUrl(data.avatar)}
+                alt={data.fullname}
+                className="h-20 w-20 rounded-3xl border-2 border-surface object-cover shadow-md"
+              />
+            ) : (
+              <div className="flex h-20 w-20 items-center justify-center rounded-3xl border border-accent-vanilla-border bg-accent-vanilla text-2xl font-bold text-accent-vanilla-foreground">
+                {(data.fullname || data.email).slice(0, 1).toUpperCase()}
+              </div>
+            )}
+
+            <div className="space-y-1.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="font-display text-2xl font-bold text-foreground">
+                  {data.fullname}
+                </h1>
+                {data.is_verified_email && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-success-border bg-success-bg px-2.5 py-0.5 text-xs font-semibold text-success-foreground">
+                    <ShieldCheck size={12} animated={false} />
+                    Email đã xác thực
                   </span>
-                </div>
+                )}
                 {data.is_banned && (
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-red-300" />
-                    <span className="text-sm">Bị cấm</span>
-                  </div>
+                  <span className="inline-flex items-center gap-1 rounded-full border border-destructive-border bg-destructive-bg px-2.5 py-0.5 text-xs font-semibold text-destructive-foreground">
+                    <Ban size={12} animated={false} />
+                    Đang bị khóa
+                  </span>
                 )}
               </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <StatCard
-            icon={GraduationCap}
-            label="Tổng khóa học"
-            value={coursesData?.total_items || 0}
-          />
-          <StatCard
-            icon={Users}
-            label="Tổng học viên"
-            value={totalStudents}
-          />
-          <StatCard icon={Star} label="Đánh giá TB" value={avgRating} />
-          <StatCard icon={Eye} label="Tổng lượt xem" value={totalViews} />
-        </div>
-
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-          {/* Personal Info */}
-          <div className="bg-white rounded-xl shadow-sm border border-green-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <User className="w-5 h-5 text-primary" />
-              Thông tin cá nhân
-            </h3>
-            <div className="space-y-3">
-              <InfoRow label="ID" value={data.id} />
-              <InfoRow label="Họ và tên" value={data.fullname} />
-              <InfoRow label="Email" value={data.email} />
-              <div>
-                <label className="text-sm text-gray-600 mb-1 block">
-                  Giới thiệu
-                </label>
-                <div className="text-sm text-gray-900">
-                  {data.bio ? (
-                    <MarkdownRenderer content={data.bio} />
-                  ) : (
-                    <span className="text-gray-400">Chưa cập nhật</span>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Wallet Info */}
-          <div className="bg-white rounded-xl shadow-sm border border-green-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <CircleDollarSign className="w-5 h-5 text-primary" />
-              Thông tin ví
-            </h3>
-            <div className="space-y-3">
-              <InfoRow
-                label="Số dư"
-                value={formatCurrency(data.wallet.balance)}
-                highlight
-              />
-              <InfoRow
-                label="Tổng nạp"
-                value={formatCurrency(data.wallet.total_in)}
-              />
-              <InfoRow
-                label="Tổng chi"
-                value={formatCurrency(data.wallet.total_out)}
-              />
-              <InfoRow
-                label="Giao dịch cuối"
-                value={formatDate(data.wallet.last_transaction_at)}
-              />
-            </div>
-          </div>
-
-          {/* Upgrade Payment */}
-          <div className="bg-white rounded-xl shadow-sm border border-green-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <CircleCheck solid className="w-5 h-5 text-primary" />
-              Nâng cấp giảng viên
-            </h3>
-            <div className="space-y-3">
-              <InfoRow
-                label="Phí nâng cấp"
-                value={formatCurrency(data.upgrade_payment.amount)}
-                highlight
-              />
-              <InfoRow
-                label="Thời gian thanh toán"
-                value={formatDate(data.upgrade_payment.paid_time)}
-              />
-              <InfoRow
-                label="Trạng thái"
-                value={data.upgrade_payment.payment_status}
-              />
-              <InfoRow
-                label="Ghi chú"
-                value={data.upgrade_payment.note || "Không có"}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Courses & Transactions */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Courses */}
-          <div className="bg-white rounded-xl shadow-sm border border-green-200 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                <GraduationCap className="w-5 h-5 text-primary" />
-                Khóa học
-              </h3>
-              <span className="text-sm text-gray-600">
-                Tổng: {coursesData?.total_items || 0}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-3 mb-4">
-              <select
-                value={coursesSortBy}
-                onChange={(e) => {
-                  setCoursesSortBy(e.target.value);
-                  setCoursesPage(1);
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(data.email);
+                  toast.success("Đã sao chép Email");
                 }}
-                className="flex-1 px-3 py-2 text-sm border-2 border-green-200 rounded-lg focus:border-primary focus:outline-none focus:ring-2 focus:ring-green-500/20"
+                className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary"
               >
-                <option value="created_at">Ngày tạo</option>
-                <option value="title">Tên</option>
-                <option value="views">Lượt xem</option>
-                <option value="price">Giá</option>
-              </select>
-              <select
-                value={coursesOrder}
-                onChange={(e) => {
-                  setCoursesOrder(e.target.value as "asc" | "desc");
-                  setCoursesPage(1);
-                }}
-                className="px-3 py-2 text-sm border-2 border-green-200 rounded-lg focus:border-primary focus:outline-none focus:ring-2 focus:ring-green-500/20"
-              >
-                <option value="desc">Giảm dần</option>
-                <option value="asc">Tăng dần</option>
-              </select>
-            </div>
+                <Mail size={14} animated={false} />
+                <span>{data.email}</span>
+                <Copy size={12} animated={false} />
+              </button>
 
-            {isLoadingCourses && !coursesData ? (
-              <div className="animate-pulse space-y-3">
-                {[...Array(4)].map((_, i) => (
-                  <div key={i} className="h-24 bg-gray-200 rounded-lg"></div>
-                ))}
-              </div>
-            ) : coursesData?.items?.length ? (
-              <>
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                  {coursesData.items.map((course) => (
-                    <div
-                      key={course.id}
-                      onClick={() => {
-                        setSelectedCourse(course);
-                        setShowCourseModal(true);
-                      }}
-                      className="bg-gray-50 rounded-lg p-3 cursor-pointer hover:bg-green-50 hover:border-green-200 border border-transparent transition-all"
-                    >
+              {data.bio && (
+                <p className="max-w-2xl text-xs leading-relaxed text-foreground/80">
+                  {data.bio}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* 4 Wallet & Revenue KPIs */}
+        <div className="relative z-10 mt-6 grid grid-cols-2 gap-3.5 lg:grid-cols-4">
+          <div className="rounded-2xl border border-white/80 bg-surface/85 p-4 backdrop-blur-sm">
+            <p className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+              <Wallet size={13} className="text-primary" />
+              Số dư Coin thật
+            </p>
+            <p className="mt-1 text-xl font-bold text-primary">
+              {formatCoin(data.wallet?.paid_coins ?? data.wallet?.balance ?? 0)}
+            </p>
+            {(data.wallet?.bonus_coins ?? 0) > 0 && (
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                +{formatCoin(data.wallet?.bonus_coins)} Coin thưởng
+              </p>
+            )}
+          </div>
+          <div className="rounded-2xl border border-white/80 bg-surface/85 p-4 backdrop-blur-sm">
+            <p className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+              <Coins size={13} className="text-success-foreground" />
+              Tổng thu nhập khóa học
+            </p>
+            <p className="mt-1 text-xl font-bold text-success-foreground">
+              +
+              {formatVndAsCoin(
+                Math.round(
+                  (data.wallet?.total_earnings_vnd || 0) > 0
+                    ? data.wallet?.total_earnings_vnd || 0
+                    : data.wallet?.total_in || 0,
+                ),
+                data.wallet?.coin_vnd_rate || DEFAULT_COIN_VND_RATE,
+              )}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-white/80 bg-surface/85 p-4 backdrop-blur-sm">
+            <p className="text-xs font-medium text-muted-foreground">
+              Tổng đã rút ra
+            </p>
+            <p className="mt-1 text-xl font-bold text-foreground">
+              -
+              {formatVndAsCoin(
+                Math.round(data.wallet?.total_out || 0),
+                data.wallet?.coin_vnd_rate || DEFAULT_COIN_VND_RATE,
+              )}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-white/80 bg-surface/85 p-4 backdrop-blur-sm">
+            <p className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+              <Clock size={13} animated={false} />
+              Giao dịch ví cuối
+            </p>
+            <p className="mt-1 text-sm font-bold text-foreground">
+              {formatDateTime(data.wallet?.last_transaction_at)}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Courses & Transactions 2-Column */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        {/* Courses List */}
+        <section className="rounded-[2rem] border border-primary-pastel/60 bg-surface/95 p-6 shadow-[0_14px_36px_-16px_rgba(53,111,167,0.14)] lg:col-span-7">
+          <div className="flex items-center justify-between">
+            <h2 className="flex items-center gap-2 text-base font-bold text-foreground">
+              <BookOpen size={18} className="text-primary" />
+              Khóa học Giảng dạy ({coursesData?.total_items ?? courses.length})
+            </h2>
+          </div>
+
+          {courses.length === 0 ? (
+            <div className="mt-4 rounded-2xl border border-dashed border-border p-10 text-center text-xs text-muted-foreground">
+              Giảng viên chưa xuất bản khóa học nào.
+            </div>
+          ) : (
+            <div className="mt-4 space-y-3">
+              {courses.map((c) => (
+                <div
+                  key={c.id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/80 bg-background/50 p-3.5"
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    {c.thumbnail ? (
                       <img
-                        src={getImageUrl(course.thumbnail)}
-                        alt={course.title}
-                        className="aspect-video rounded-lg mb-2 object-cover w-full"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = "";
-                          (e.target as HTMLImageElement).style.display = "none";
-                        }}
+                        src={getImageUrl(c.thumbnail)}
+                        alt={c.title}
+                        className="h-12 w-16 shrink-0 rounded-xl border border-border object-cover"
                       />
-                      <h4 className="font-medium text-sm text-gray-900 line-clamp-2 mb-2">
-                        {course.title}
-                      </h4>
-                      <div className="flex items-center justify-between text-xs text-gray-600">
-                        <span>{course.total_enrolls} học viên</span>
-                        <span className="font-bold text-primary">
-                          {formatCurrency(course.price)}
+                    ) : (
+                      <div className="flex h-12 w-16 shrink-0 items-center justify-center rounded-xl bg-primary-light text-primary">
+                        <BookOpen size={16} />
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-foreground">
+                        {c.title}
+                      </p>
+                      <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                        <span className="inline-flex items-center gap-0.5 text-accent-vanilla-foreground">
+                          <Star size={11} animated={false} />
+                          {(c.rating_avg ?? 0).toFixed(1)}
+                        </span>
+                        <span className="inline-flex items-center gap-0.5">
+                          <Users size={11} animated={false} />
+                          {c.total_enrolls ?? 0} HV
+                        </span>
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                            c.is_published
+                              ? "bg-success-bg text-success-foreground"
+                              : "bg-accent-vanilla text-accent-vanilla-foreground"
+                          }`}
+                        >
+                          {c.is_published ? "Đã xuất bản" : "Nháp"}
                         </span>
                       </div>
                     </div>
-                  ))}
-                </div>
-                <Pagination
-                  currentPage={coursesData.page}
-                  totalPages={coursesData.total_pages}
-                  totalItems={coursesData.total_items}
-                  pageSize={coursesData.size}
-                  onPageChange={setCoursesPage}
-                  onPageSizeChange={(size) => {
-                    setCoursesSize(size);
-                    setCoursesPage(1);
-                  }}
-                  pageSizeOptions={[4, 8, 12, 16]}
-                />
-              </>
-            ) : (
-              <div className="text-center py-8">
-                <GraduationCap className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-500 text-sm">Chưa có khóa học</p>
-              </div>
-            )}
-          </div>
-
-          {/* Transactions */}
-          <div className="bg-white rounded-xl shadow-sm border border-green-200 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                <CircleDollarSign className="w-5 h-5 text-primary" />
-                Giao dịch
-              </h3>
-              <span className="text-sm text-gray-600">
-                Tổng: {data.pagination.total}
-              </span>
-            </div>
-
-            {data.transactions?.length ? (
-              <>
-                <div className="space-y-3 mb-4">
-                  {data.transactions.map((txn) => (
-                    <div
-                      key={txn.id}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-green-50 transition-colors"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">
-                          {txn.description}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {txn.transaction_code} • {formatDate(txn.created_at)}
-                        </p>
-                      </div>
-                      <div className="text-right ml-4">
-                        <p
-                          className={`text-sm font-semibold ${
-                            txn.amount > 0 ? "text-primary" : "text-red-600"
-                          }`}
-                        >
-                          {txn.amount > 0 ? "+" : ""}
-                          {formatCurrency(txn.amount)}
-                        </p>
-                        <p className="text-xs text-gray-500">{txn.method}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <Pagination
-                  currentPage={data.pagination.page}
-                  totalPages={data.pagination.total_pages}
-                  totalItems={data.pagination.total}
-                  pageSize={data.pagination.page_size}
-                  onPageChange={setTransactionsPage}
-                  onPageSizeChange={(size) => {
-                    setTransactionsSize(size);
-                    setTransactionsPage(1);
-                  }}
-                  pageSizeOptions={[5, 10, 15, 20]}
-                />
-              </>
-            ) : (
-              <div className="text-center py-8">
-                <CircleDollarSign className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-500 text-sm">Chưa có giao dịch</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Modals */}
-        {showBanModal && (
-          <BanModal
-            banType={banType}
-            setBanType={setBanType}
-            banReason={banReason}
-            setBanReason={setBanReason}
-            banUntilDate={banUntilDate}
-            setBanUntilDate={setBanUntilDate}
-            banUntilTime={banUntilTime}
-            setBanUntilTime={setBanUntilTime}
-            onConfirm={handleConfirmBan}
-            onCancel={() => {
-              setShowBanModal(false);
-              setBanReason("");
-              setBanUntilDate("");
-              setBanUntilTime("");
-            }}
-            isSubmitting={isSubmitting}
-          />
-        )}
-
-        {showDeleteModal && (
-          <DeleteModal
-            deleteReason={deleteReason}
-            setDeleteReason={setDeleteReason}
-            onConfirm={handleConfirmDelete}
-            onCancel={() => {
-              setShowDeleteModal(false);
-              setDeleteReason("");
-            }}
-            isSubmitting={isSubmitting}
-          />
-        )}
-
-        {showCourseModal && selectedCourse && (
-          <CourseModal
-            course={selectedCourse}
-            onClose={() => {
-              setShowCourseModal(false);
-              setSelectedCourse(null);
-            }}
-          />
-        )}
-      </div>
-    </div>
-  );
-}
-
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: any;
-  label: string;
-  value: string | number;
-}) {
-  return (
-    <div className="bg-white rounded-xl shadow-sm border border-green-200 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-gray-600 mb-1">{label}</p>
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
-        </div>
-        <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-          <Icon className="w-6 h-6 text-primary" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function InfoRow({
-  label,
-  value,
-  highlight,
-}: {
-  label: string;
-  value: string;
-  highlight?: boolean;
-}) {
-  return (
-    <div>
-      <label className="text-sm text-gray-600 mb-1 block">{label}</label>
-      <p
-        className={`text-sm ${
-          highlight
-            ? "font-bold text-primary text-lg"
-            : "text-gray-900 font-mono"
-        }`}
-      >
-        {value}
-      </p>
-    </div>
-  );
-}
-
-function BanModal({
-  banType,
-  setBanType,
-  banReason,
-  setBanReason,
-  banUntilDate,
-  setBanUntilDate,
-  banUntilTime,
-  setBanUntilTime,
-  onConfirm,
-  onCancel,
-  isSubmitting,
-}: {
-  banType: "permanent" | "temporary";
-  setBanType: (type: "permanent" | "temporary") => void;
-  banReason: string;
-  setBanReason: (reason: string) => void;
-  banUntilDate: string;
-  setBanUntilDate: (date: string) => void;
-  banUntilTime: string;
-  setBanUntilTime: (time: string) => void;
-  onConfirm: () => void;
-  onCancel: () => void;
-  isSubmitting: boolean;
-}) {
-  return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onCancel}
-      />
-      <div className="relative bg-white rounded-xl shadow-lg max-w-md w-full p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">
-            Cấm giảng viên
-          </h3>
-          <button
-            aria-label="Hủy"
-            onClick={onCancel}
-            className="p-1 hover:bg-gray-100 rounded transition-colors"
-          >
-            <X className="w-5 h-5 text-gray-600" />
-          </button>
-        </div>
-
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Loại cấm
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => setBanType("temporary")}
-                className={`px-4 py-2 rounded-lg border-2 transition-all ${
-                  banType === "temporary"
-                    ? "border-yellow-500 bg-yellow-50 text-yellow-700"
-                    : "border-gray-200 hover:border-yellow-300"
-                }`}
-              >
-                Tạm thời
-              </button>
-              <button
-                onClick={() => setBanType("permanent")}
-                className={`px-4 py-2 rounded-lg border-2 transition-all ${
-                  banType === "permanent"
-                    ? "border-red-500 bg-red-50 text-red-700"
-                    : "border-gray-200 hover:border-red-300"
-                }`}
-              >
-                Vĩnh viễn
-              </button>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Lý do cấm
-            </label>
-            <textarea
-              value={banReason}
-              onChange={(e) => setBanReason(e.target.value)}
-              className="w-full px-3 py-2 border-2 border-green-200 rounded-lg focus:border-primary focus:outline-none focus:ring-2 focus:ring-green-500/20"
-              rows={3}
-              placeholder="Nhập lý do cấm..."
-            />
-          </div>
-
-          {banType === "temporary" && (
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Ngày
-                </label>
-                <input
-                  type="date"
-                  value={banUntilDate}
-                  onChange={(e) => setBanUntilDate(e.target.value)}
-                  min={new Date().toISOString().split("T")[0]}
-                  className="w-full px-3 py-2 border-2 border-green-200 rounded-lg focus:border-primary focus:outline-none focus:ring-2 focus:ring-green-500/20"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Giờ
-                </label>
-                <input
-                  type="time"
-                  value={banUntilTime}
-                  onChange={(e) => setBanUntilTime(e.target.value)}
-                  className="w-full px-3 py-2 border-2 border-green-200 rounded-lg focus:border-primary focus:outline-none focus:ring-2 focus:ring-green-500/20"
-                />
-              </div>
-            </div>
-          )}
-
-          <div className="flex items-center justify-end gap-3 pt-4">
-            <button
-              onClick={onCancel}
-              disabled={isSubmitting}
-              className="px-4 py-2 text-gray-600 border-2 border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
-            >
-              Hủy
-            </button>
-            <button
-              onClick={onConfirm}
-              disabled={isSubmitting || !banReason.trim()}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
-            >
-              Xác nhận
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>,
-    document.body
-  );
-}
-
-function DeleteModal({
-  deleteReason,
-  setDeleteReason,
-  onConfirm,
-  onCancel,
-  isSubmitting,
-}: {
-  deleteReason: string;
-  setDeleteReason: (reason: string) => void;
-  onConfirm: () => void;
-  onCancel: () => void;
-  isSubmitting: boolean;
-}) {
-  return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onCancel}
-      />
-      <div className="relative bg-white rounded-xl shadow-lg max-w-md w-full p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">
-            Xóa giảng viên
-          </h3>
-          <button
-            aria-label="Hủy"
-            onClick={onCancel}
-            className="p-1 hover:bg-gray-100 rounded transition-colors"
-          >
-            <X className="w-5 h-5 text-gray-600" />
-          </button>
-        </div>
-
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Lý do xóa
-            </label>
-            <textarea
-              value={deleteReason}
-              onChange={(e) => setDeleteReason(e.target.value)}
-              className="w-full px-3 py-2 border-2 border-green-200 rounded-lg focus:border-primary focus:outline-none focus:ring-2 focus:ring-green-500/20"
-              rows={3}
-              placeholder="Nhập lý do xóa..."
-            />
-          </div>
-
-          <div className="p-3 bg-red-50 border-2 border-red-200 rounded-lg">
-            <p className="text-sm text-red-800">
-              Cảnh báo: Hành động này không thể hoàn tác!
-            </p>
-          </div>
-
-          <div className="flex items-center justify-end gap-3 pt-4">
-            <button
-              onClick={onCancel}
-              disabled={isSubmitting}
-              className="px-4 py-2 text-gray-600 border-2 border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
-            >
-              Hủy
-            </button>
-            <button
-              onClick={onConfirm}
-              disabled={isSubmitting || !deleteReason.trim()}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
-            >
-              Xác nhận
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>,
-    document.body
-  );
-}
-
-function CourseModal({
-  course,
-  onClose,
-}: {
-  course: any;
-  onClose: () => void;
-}) {
-  return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      <div className="relative bg-white rounded-xl shadow-lg max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <div className="flex-1">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">
-              {course.title}
-            </h3>
-            <div className="flex items-center gap-4 text-sm text-gray-600">
-              <span className="flex items-center gap-1">
-                <Star solid className="w-4 h-4 text-yellow-500" />
-                {course.rating_avg}
-              </span>
-              <span className="flex items-center gap-1">
-                <Users className="w-4 h-4" />
-                {course.total_enrolls} học viên
-              </span>
-              <span className="flex items-center gap-1">
-                <Eye className="w-4 h-4" />
-                {course.views} lượt xem
-              </span>
-            </div>
-          </div>
-          <button
-            aria-label="Đóng"
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded transition-colors"
-          >
-            <X className="w-5 h-5 text-gray-600" />
-          </button>
-        </div>
-
-        <div className="p-6 overflow-y-auto flex-1">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <img
-              src={getImageUrl(course.thumbnail)}
-              alt={course.title}
-              className="rounded-lg w-full aspect-video object-cover"
-            />
-            <div className="md:col-span-2 space-y-2">
-              <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                <span className="text-sm text-gray-600">Giá</span>
-                <span className="font-bold text-primary">
-                  {formatCurrency(course.price)}
-                </span>
-              </div>
-              <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                <span className="text-sm text-gray-600">Ngôn ngữ</span>
-                <span className="text-sm text-gray-900 capitalize">
-                  {course.language}
-                </span>
-              </div>
-              <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                <span className="text-sm text-gray-600">Cấp độ</span>
-                <span className="text-sm text-gray-900 capitalize">
-                  {course.level}
-                </span>
-              </div>
-              <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                <span className="text-sm text-gray-600">Trạng thái</span>
-                <span
-                  className={`text-xs px-2 py-1 rounded ${
-                    course.is_published
-                      ? "bg-green-100 text-green-800"
-                      : "bg-gray-100 text-gray-800"
-                  }`}
-                >
-                  {course.is_published ? "Đã xuất bản" : "Nháp"}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {course.sections?.length ? (
-            <div className="space-y-3">
-              <h4 className="font-semibold text-gray-900">Chương và bài học</h4>
-              {course.sections.map((section: any, idx: number) => (
-                <div
-                  key={section.id || idx}
-                  className="border border-green-200 rounded-lg"
-                >
-                  <div className="px-4 py-3 bg-green-50 border-b border-green-200">
-                    <h5 className="font-medium text-gray-900">
-                      Chương {idx + 1}: {section.title || `Chương ${idx + 1}`}
-                    </h5>
-                    <p className="text-xs text-gray-600 mt-1">
-                      {section.lessons?.length || 0} bài học
-                    </p>
                   </div>
-                  {section.lessons?.length ? (
-                    <div className="p-3 space-y-2">
-                      {section.lessons.map((lesson: any, lidx: number) => (
-                        <div
-                          key={lesson.id || lidx}
-                          className="flex items-center gap-3 p-2 bg-gray-50 rounded"
-                        >
-                          <div className="w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-xs font-bold">
-                            {lidx + 1}
-                          </div>
-                          <div className="flex-1">
-                            <p className="text-sm font-medium text-gray-900">
-                              {lesson.title || `Bài ${lidx + 1}`}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : null}
+                  <span className="font-bold text-primary">
+                    {formatVndAsCoin(Math.round(c.price || 0))}
+                  </span>
                 </div>
               ))}
             </div>
-          ) : (
-            <div className="text-center py-8 text-gray-500">
-              Chưa có nội dung khóa học
+          )}
+
+          {coursesData && coursesData.total_pages > 1 && (
+            <div className="mt-4 flex items-center justify-between border-t border-border/60 pt-3 text-xs">
+              <span className="text-muted-foreground">
+                Trang {coursesPage} / {coursesData.total_pages}
+              </span>
+              <div className="flex gap-1.5">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={coursesPage <= 1}
+                  onClick={() => setCoursesPage((p) => p - 1)}
+                >
+                  <ChevronLeft size={13} />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={coursesPage >= coursesData.total_pages}
+                  onClick={() => setCoursesPage((p) => p + 1)}
+                >
+                  <ChevronRight size={13} />
+                </Button>
+              </div>
             </div>
           )}
-        </div>
+        </section>
 
-        <div className="p-6 border-t border-gray-200 flex justify-end">
-          <button
-            onClick={onClose}
-            className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors"
-          >
-            Đóng
-          </button>
-        </div>
+        {/* Transactions */}
+        <section className="rounded-[2rem] border border-primary-pastel/60 bg-surface/95 p-6 shadow-[0_14px_36px_-16px_rgba(53,111,167,0.14)] lg:col-span-5">
+          <h2 className="flex items-center gap-2 text-base font-bold text-foreground">
+            <Receipt size={18} className="text-primary" />
+            Giao dịch Gần đây ({data.pagination?.total ?? transactions.length})
+          </h2>
+
+          {transactions.length === 0 ? (
+            <div className="mt-4 rounded-2xl border border-dashed border-border p-10 text-center text-xs text-muted-foreground">
+              Chưa có giao dịch nào.
+            </div>
+          ) : (
+            <div className="mt-4 space-y-2.5">
+              {transactions.map((t) => (
+                <Link
+                  key={t.id}
+                  href={`/admin/transactions/${t.id}`}
+                  className="block rounded-2xl border border-border/80 bg-background/50 p-3.5 text-xs transition-colors hover:border-primary-pastel hover:bg-surface"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-semibold uppercase text-primary">
+                      {t.type}
+                    </span>
+                    <span className="font-bold text-foreground">
+                      {formatVndAsCoin(Math.round(t.amount || 0))}
+                    </span>
+                  </div>
+                  <p className="mt-1 truncate text-muted-foreground">
+                    {t.description || t.transaction_code || "Giao dịch hệ thống"}
+                  </p>
+                  <div className="mt-1 flex items-center justify-between text-[11px] text-muted-foreground">
+                    <span>{t.status}</span>
+                    <span>{formatDateTime(t.created_at)}</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+
+          {data.pagination && data.pagination.total_pages > 1 && (
+            <div className="mt-4 flex items-center justify-between border-t border-border/60 pt-3 text-xs">
+              <span className="text-muted-foreground">
+                Trang {txPage} / {data.pagination.total_pages}
+              </span>
+              <div className="flex gap-1.5">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={txPage <= 1}
+                  onClick={() => setTxPage((p) => p - 1)}
+                >
+                  <ChevronLeft size={13} />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={txPage >= data.pagination.total_pages}
+                  onClick={() => setTxPage((p) => p + 1)}
+                >
+                  <ChevronRight size={13} />
+                </Button>
+              </div>
+            </div>
+          )}
+        </section>
       </div>
-    </div>,
-    document.body
+
+      {/* Edit Drawer */}
+      <LecturerDrawer
+        open={drawerOpen}
+        editing={{
+          id: data.id,
+          fullname: data.fullname,
+          email: data.email,
+          bio: data.bio,
+          is_verified_email: data.is_verified_email,
+        }}
+        onClose={() => setDrawerOpen(false)}
+        onSaved={async () => {
+          await mutate();
+        }}
+      />
+    </main>
   );
 }

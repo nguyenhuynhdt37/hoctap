@@ -257,6 +257,7 @@ class PayoutService:
         paypal: PayPalService,
         user: User,
         state: str | None,
+        return_url: str | None = None,
     ):
         """
         Xử lý callback PayPal OAuth (style try-escape):
@@ -265,7 +266,8 @@ class PayoutService:
         - Nếu ok -> lưu vào DB rồi redirect FE với status success
         """
 
-        redirect_uri = f"{settings.BACKEND_URL}/api/v1/lecturer/payout/callback"
+        redirect_uri = settings.PAYPAL_REDIRECT_URI or f"{settings.BACKEND_URL}/api/v1/lecturer/payout/callback"
+        target_base = return_url or f"{settings.FRONTEND_URL}/lecturer/profile"
 
         # ==========================================
         # 1) SAFE TRY: đổi code -> userinfo (id_token hoặc userinfo API)
@@ -274,52 +276,60 @@ class PayoutService:
             token_data = await paypal.get_userinfo_from_code(code, redirect_uri)
         except Exception as e:
             print(f"❌ [PayPal Callback Error]: {e}")
-            # Escape yên lặng, không crash
             return RedirectResponse(
-                f"{settings.FRONTEND_URL}/lecturer/profile?paypal=connected&error=exchange"
+                f"{target_base}?paypal=connected&error=exchange"
             )
 
         # ==========================================
-        # 2) Check data hợp lệ
+        # 2) Check data hợp lệ (chấp nhận có email hoặc payer_id khi scope=openid)
         # ==========================================
         email = token_data.get("email")
-        payer_id = token_data.get("payer_id")
-        payer_id = payer_id.split("/")[-1] if payer_id else None
-        if not email or not payer_id:
+        raw_payer_id = (
+            token_data.get("payer_id")
+            or (token_data.get("raw_payload") or {}).get("sub")
+        )
+        payer_id = raw_payer_id.split("/")[-1] if raw_payer_id else None
+        if not email and not payer_id:
             return RedirectResponse(
-                f"{settings.FRONTEND_URL}/lecturer/profile?paypal=connected&error=missing_info"
+                f"{target_base}?paypal=connected&error=missing_info"
             )
 
         # ==========================================
-        # 3) Lưu vào DB
+        # 3) Lưu vào DB (chỉ ghi đè các trường PayPal trả về có giá trị)
         # ==========================================
+        update_values = {}
+        if email:
+            update_values["paypal_email"] = email
+        if payer_id:
+            update_values["paypal_payer_id"] = payer_id
+
         try:
             await self.db.execute(
                 update(User)
                 .where(User.id == user.id)
-                .values(
-                    paypal_email=email,
-                    paypal_payer_id=payer_id,
-                )
+                .values(**update_values)
             )
             await self.db.commit()
         except Exception:
             await self.db.rollback()
             return RedirectResponse(
-                f"{settings.FRONTEND_URL}/lecturer/profile?paypal=connected&error=db"
+                f"{target_base}?paypal=connected&error=db"
             )
 
         # ==========================================
-        # 4) Redirect FE (ưu tiên state)
+        # 4) Redirect FE (ưu tiên return_url từ signed state)
         # ==========================================
+        if return_url:
+            return RedirectResponse(f"{return_url}?paypal=connected&status=success")
+
         if state:
             try:
                 decoded = base64.urlsafe_b64decode(state).decode("utf-8")
-                return RedirectResponse(f"{decoded}?status=success")
+                if decoded.startswith(("http://", "https://")):
+                    return RedirectResponse(f"{decoded}?status=success")
             except Exception:
                 pass
 
-        # Fallback cuối
         return RedirectResponse(
             f"{settings.FRONTEND_URL}/lecturer/profile?paypal=connected&status=success"
         )

@@ -1,85 +1,113 @@
-"use client"
+"use client";
 
-import ContextMenu from "@/components/shared/context-menu";
-import DataTable, { Column } from "@/components/shared/data-table";
-import ExportButton from "@/components/shared/export-button";
-import Pagination from "@/components/shared/pagination";
-import api from "@/lib/utils/fetcher/client/axios";
-import { Role, RolesQueryParams, RolesResponse } from "@/types/admin/role";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
+import useSWR from "swr";
+import toast from "react-hot-toast";
 import {
-  GraduationCap,
-  CircleCheck,
-  Settings,
-  Eye,
-  Key,
+  Check,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Grid3x3,
+  LayoutGrid,
+  Lock,
   Pencil,
   Plus,
+  RefreshCw,
   Search,
   ShieldCheck,
+  Table2,
   Trash2,
   Users,
   X,
 } from "pulsoicon-react";
-import useSWR from "swr";
+import ContextMenu from "@/components/shared/context-menu";
+import { Button, Input } from "@/components/ui";
+import {
+  useDebouncedUrlSearch,
+  useUrlQueryState,
+} from "@/hooks/useUrlQueryState";
+import api from "@/lib/utils/fetcher/client/axios";
+import type { Role, RolesQueryParams, RolesResponse } from "@/types/admin/role";
+import {
+  CAPABILITY_MATRIX_ROWS,
+  ROLE_PRESETS,
+  RoleAvatarIcon,
+  SYSTEM_CORE_ROLES,
+  exportRolesCsv,
+  getRoleVisual,
+  validateRoleNameCode,
+} from "./role-visuals";
 
-interface PaginationInfo {
-  page: number;
-  size: number;
-  total_items: number;
-  total_pages: number;
-  has_next: boolean;
-  has_previous: boolean;
-  operational_roles?: number;
-}
+const ROLES_QUERY_SCHEMA = {
+  page: { type: "number", default: 1, min: 1 },
+  size: { type: "number", default: 12, min: 1, max: 100 },
+  search: { type: "string", default: "" },
+  sort_by: {
+    type: "string",
+    default: "role_name" as "role_name" | "details" | "total_users",
+    allowed: ["role_name", "details", "total_users"] as const,
+  },
+  order: {
+    type: "string",
+    default: "asc" as "asc" | "desc",
+    allowed: ["asc", "desc"] as const,
+  },
+} as const;
+
+type RoleViewMode = "cards" | "matrix" | "table";
 
 export default function RolesManagement() {
   const router = useRouter();
-  const [pagination, setPagination] = useState<PaginationInfo>({
-    page: 1,
-    size: 10,
-    total_items: 0,
-    total_pages: 0,
-    has_next: false,
-    has_previous: false,
-  });
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState("role_name");
-  const [order, setOrder] = useState<"asc" | "desc">("desc");
+  const [viewMode, setViewMode] = useState<RoleViewMode>("cards");
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [editingRole, setEditingRole] = useState<Role | null>(null);
+  const [roleName, setRoleName] = useState("");
+  const [details, setDetails] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  // Các trường có thể sắp xếp
-  const sortableFields = {
-    role_name: "Tên vai trò",
-    details: "Mô tả",
-    total_users: "Số người dùng",
-  };
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [menuPos, setMenuPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
-  const [menuRole, setMenuRole] = useState<Role | null>(null);
-  const openContextMenuAtEvent = (e: React.MouseEvent, role: Role) => {
-    e.preventDefault();
-    setMenuRole(role);
-    setMenuPos({ x: e.clientX, y: e.clientY });
-    setMenuOpen(true);
-  };
-  const openContextMenuNearEl = (el: HTMLElement, role: Role) => {
-    const rect = el.getBoundingClientRect();
-    setMenuRole(role);
-    setMenuPos({ x: rect.left + rect.width / 2, y: rect.bottom + 8 });
-    setMenuOpen(true);
-  };
+  const [menuState, setMenuState] = useState<{
+    x: number;
+    y: number;
+    role: Role;
+  } | null>(null);
+
+  const { values, setParam, setParams } = useUrlQueryState(ROLES_QUERY_SCHEMA);
+  const { page, size, search: searchQuery, sort_by: sortBy, order } = values;
+
+  const { inputValue: searchInput, setInputValue: setSearchInput } =
+    useDebouncedUrlSearch(searchQuery, (val) => setParam("search", val));
+
+  const queryParams = useMemo<RolesQueryParams>(
+    () => ({
+      page,
+      size,
+      sort_by: sortBy,
+      order,
+      ...(searchQuery.trim() ? { search: searchQuery.trim() } : {}),
+    }),
+    [page, size, sortBy, order, searchQuery],
+  );
+
+  const { data, error, isLoading, isValidating, mutate } =
+    useSWR<RolesResponse>(
+      ["/admin/roles", queryParams],
+      async ([url, params]: [string, RolesQueryParams]) => {
+        const res = await api.get(url, { params });
+        return res.data;
+      },
+      { revalidateOnFocus: false },
+    );
+
   useEffect(() => {
-    if (!menuOpen) return;
-    const close = () => setMenuOpen(false);
+    if (!menuState) return;
+    const close = () => setMenuState(null);
     const onEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMenuOpen(false);
+      if (e.key === "Escape") setMenuState(null);
     };
     document.addEventListener("click", close);
     document.addEventListener("contextmenu", close);
@@ -89,983 +117,837 @@ export default function RolesManagement() {
       document.removeEventListener("contextmenu", close);
       document.removeEventListener("keydown", onEsc);
     };
-  }, [menuOpen]);
+  }, [menuState]);
 
-  // SWR key với các tham số phân trang, tìm kiếm, sắp xếp
-  const swrKey = [
-    "/admin/roles",
-    {
-      search: searchQuery || undefined,
-      sort_by: sortBy,
-      order: order,
-      page: pagination.page,
-      size: pagination.size,
-    },
-  ];
-
-  const {
-    data: rolesResponse,
-    error,
-    isLoading,
-    mutate,
-  } = useSWR<RolesResponse>(
-    swrKey,
-    async ([url, params]: [string, RolesQueryParams]) => {
-      console.log("🔍 SWR Fetching:", { url, params });
-
-      const response = await api.get(url, { params });
-      console.log("📊 SWR Response:", response.data);
-      return response.data;
-    },
-    {
-      // Tối ưu để giảm nháy khi chuyển trang
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      dedupingInterval: 2000,
-      // Giữ data cũ khi đang fetch data mới
-      keepPreviousData: true,
-      // Không hiển thị loading khi mutate
-      revalidateIfStale: false,
-    }
+  const items = data?.items ?? [];
+  const totalItems = data?.total_items ?? 0;
+  const totalPages = Math.max(1, data?.total_pages ?? 1);
+  const operationalRoles = data?.operational_roles ?? totalItems;
+  const totalAssignedUsers = useMemo(
+    () => items.reduce((sum, r) => sum + Number(r.total_users || 0), 0),
+    [items],
   );
 
-  // Extract roles và pagination từ response
-  const roles = rolesResponse?.items || [];
-  const paginationData = rolesResponse
-    ? {
-        page: rolesResponse.page,
-        size: rolesResponse.size,
-        total_items: rolesResponse.total_items,
-        total_pages: rolesResponse.total_pages,
-        has_next: rolesResponse.has_next,
-        has_previous: rolesResponse.has_previous,
-        operational_roles: rolesResponse.operational_roles,
+  const openCreateDrawer = () => {
+    setEditingRole(null);
+    setRoleName("");
+    setDetails("");
+    setDrawerOpen(true);
+  };
+
+  const openEditDrawer = (role: Role) => {
+    setEditingRole(role);
+    setRoleName(role.role_name);
+    setDetails(role.details || "");
+    setDrawerOpen(true);
+  };
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    const cleaned = roleName.trim().toUpperCase();
+    const nameErr = validateRoleNameCode(cleaned);
+    if (nameErr) {
+      toast.error(nameErr);
+      return;
+    }
+    if (!details.trim()) {
+      toast.error("Vui lòng nhập mô tả phạm vi quyền hạn.");
+      return;
+    }
+    setSaving(true);
+    try {
+      if (editingRole) {
+        await api.put(`/admin/roles/${editingRole.id}`, {
+          role_name: cleaned,
+          details: details.trim(),
+        });
+        toast.success(`Đã cập nhật vai trò ${cleaned}`);
+      } else {
+        await api.post("/admin/roles", {
+          role_name: cleaned,
+          details: details.trim(),
+        });
+        toast.success(`Đã tạo vai trò mới ${cleaned}`);
       }
-    : pagination;
-
-  // Debug pagination data
-  console.log("📊 Pagination Data:", paginationData);
-  console.log("📋 Roles:", roles);
-  console.log("🔄 Loading:", isLoading);
-  console.log("❌ Error:", error);
-  console.log("🔀 Sort:", { sortBy, order });
-  // Update pagination state when SWR data changes
-  useEffect(() => {
-    if (rolesResponse) {
-      setPagination({
-        page: rolesResponse.page,
-        size: rolesResponse.size,
-        total_items: rolesResponse.total_items,
-        total_pages: rolesResponse.total_pages,
-        has_next: rolesResponse.has_next,
-        has_previous: rolesResponse.has_previous,
-      });
-    }
-  }, [rolesResponse]);
-
-  const handleSort = (column: string) => {
-    if (sortBy === column) {
-      setOrder(order === "asc" ? "desc" : "asc");
-    } else {
-      setSortBy(column);
-      setOrder("asc");
-    }
-  };
-
-  const handlePageChange = (newPage: number) => {
-    console.log("📄 Page change:", newPage);
-    // Sử dụng mutate để cập nhật data mà không gây nháy
-    setPagination((prev) => ({ ...prev, page: newPage }));
-  };
-
-  const handleSizeChange = (newSize: number) => {
-    console.log("📏 Size change:", newSize);
-    setPagination((prev) => ({ ...prev, size: newSize, page: 1 }));
-  };
-
-  const handleExportExcel = async () => {
-    try {
-      const params: RolesQueryParams = {
-        search: searchQuery || undefined,
-        sort_by: sortBy,
-        order: order,
-      };
-
-      const response = await api.get("/admin/roles/export", {
-        params,
-        responseType: "blob",
-      });
-
-      // Download file
-      const blob = response.data;
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `roles_${new Date().toISOString().split("T")[0]}.xlsx`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      // Suppress console error để không ảnh hưởng UX
-      // console.error("Error exporting roles:", error);
-    }
-  };
-
-  const handleEditRole = async (roleData: {
-    role_name: string;
-    details: string;
-  }) => {
-    if (!selectedRole) return;
-
-    setIsSubmitting(true);
-    try {
-      await api.put(`/admin/roles/${selectedRole.id}`, roleData);
-      mutate(); // Refresh data
-      setShowEditModal(false);
-      setSelectedRole(null);
-    } catch (error) {
-      // Suppress console error để không ảnh hưởng UX
-      // console.error("Error updating role:", error);
+      setDrawerOpen(false);
+      await mutate();
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { detail?: string; message?: string } } })
+          ?.response?.data?.detail ||
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ||
+        "Không thể lưu vai trò.";
+      toast.error(msg);
     } finally {
-      setIsSubmitting(false);
+      setSaving(false);
     }
-  };
+  }
 
-  const handleDeleteRole = async () => {
-    if (!selectedRole) return;
-
-    setIsSubmitting(true);
+  async function handleDelete(role: Role) {
+    if (SYSTEM_CORE_ROLES.has(role.role_name.toUpperCase())) {
+      toast.error("Không thể xóa vai trò cốt lõi của hệ thống.");
+      return;
+    }
+    if (
+      !window.confirm(
+        `Xóa vai trò “${role.role_name}”? Hành động này không thể hoàn tác.`,
+      )
+    ) {
+      return;
+    }
+    setDeletingId(role.id);
     try {
-      await api.delete(`/admin/roles/${selectedRole.id}`);
-      mutate(); // Refresh data
-      setShowDeleteModal(false);
-      setSelectedRole(null);
-    } catch (error) {
-      // Suppress console error để không ảnh hưởng UX
-      // console.error("Error deleting role:", error);
+      await api.delete(`/admin/roles/${role.id}`);
+      toast.success(`Đã xóa vai trò ${role.role_name}`);
+      await mutate();
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { detail?: string } } })?.response?.data
+          ?.detail || "Không thể xóa vai trò đang có người dùng.";
+      toast.error(msg);
     } finally {
-      setIsSubmitting(false);
+      setDeletingId(null);
     }
-  };
+  }
 
-  const getRoleIcon = (roleName: string) => {
-    switch (roleName.toLowerCase()) {
-      case "admin":
-      case "quản trị viên":
-        return <ShieldCheck className="w-5 h-5" />;
-      case "teacher":
-      case "giảng viên":
-        return <GraduationCap className="w-5 h-5" />;
-      case "student":
-      case "học viên":
-        return <Users className="w-5 h-5" />;
-      case "moderator":
-        return <Settings className="w-5 h-5" />;
-      default:
-        return <Key className="w-5 h-5" />;
-    }
-  };
-
-  const getRoleColor = (roleName: string) => {
-    // Hệ thống chỉ dùng xanh (green) làm chủ đạo; không phân màu theo vai trò
-        return "bg-gradient-to-r from-green-500 to-green-600";
-  };
-
-  // Define table columns
-  const columns: Column<Role>[] = [
-    {
-      key: "role_name",
-      title: "Vai trò",
-      sortable: true,
-      render: (value: string, record: Role) => (
-        <div
-          className="flex items-center space-x-3"
-          onContextMenu={(e) => openContextMenuAtEvent(e, record)}
-        >
-          <div
-            className={`p-2 rounded-lg ${getRoleColor(
-              record.role_name
-            )} text-white`}
-          >
-            {getRoleIcon(record.role_name)}
-          </div>
-          <div>
-            <div className="font-semibold text-gray-900">{value}</div>
-            <div className="text-sm text-gray-500">ID: {record.id}</div>
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: "details",
-      title: "Mô tả",
-      sortable: true,
-      render: (value: string) => (
-        <div className="text-gray-700 max-w-xs truncate">{value}</div>
-      ),
-    },
-    {
-      key: "total_users",
-      title: "Người dùng",
-      sortable: true,
-      render: (value: number) => (
-        <div className="flex items-center space-x-2">
-          <Users className="w-4 h-4 text-gray-400" />
-          <span className="font-medium text-gray-900">{value}</span>
-        </div>
-      ),
-    },
-    {
-      key: "actions",
-      title: "Thao tác",
-      className: "text-center sm:hidden",
-      render: (_, record: Role) => {
-        const hasUsers = record.total_users > 0;
-
-        return (
-          <div className="flex items-center space-x-1">
-            {/* View Button - Always visible */}
-            <button
-              aria-label="Xem chi tiết"
-              onClick={() => {
-                setSelectedRole(record);
-                setShowEditModal(true);
-              }}
-              className="p-2 hover:bg-green-50 rounded-lg transition-all duration-200 hover:scale-105 group"
-              title="Xem chi tiết"
-            >
-              <Eye className="w-4 h-4 text-gray-500 group-hover:text-green-600 transition-colors duration-200" />
-            </button>
-
-            {/* Edit Button - Always show but with different behavior */}
-            <button
-              aria-label={ hasUsers ? "Chỉnh sửa mô tả (đang được sử dụng)" : "Chỉnh sửa vai trò" }
-              onClick={() => {
-                setSelectedRole(record);
-                setShowEditModal(true);
-              }}
-              className={`p-2 rounded-lg transition-all duration-200 hover:scale-105 group ${
-                hasUsers ? "hover:bg-yellow-50" : "hover:bg-green-50"
-              }`}
-              title={
-                hasUsers
-                  ? "Chỉnh sửa mô tả (đang được sử dụng)"
-                  : "Chỉnh sửa vai trò"
-              }
-            >
-              <Pencil
-                className={`w-4 h-4 transition-colors duration-200 ${
-                  hasUsers
-                    ? "text-gray-500 group-hover:text-yellow-600"
-                    : "text-gray-500 group-hover:text-green-600"
-                }`}
-              />
-            </button>
-
-            {/* Delete Button - Only show if no users */}
-            {!hasUsers && (
-              <button
-                aria-label="Xóa vai trò"
-                onClick={() => {
-                  setSelectedRole(record);
-                  setShowDeleteModal(true);
-                }}
-                className="p-2 hover:bg-red-50 rounded-lg transition-all duration-200 hover:scale-105 group"
-                title="Xóa vai trò"
-              >
-                <Trash2 className="w-4 h-4 text-gray-500 group-hover:text-red-600 transition-colors duration-200" />
-              </button>
-            )}
-
-            {/* Info badge if has users */}
-            {hasUsers && (
-              <div className="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs rounded-full font-medium">
-                Có {record.total_users} người dùng
-              </div>
-            )}
-
-            {/* Mobile 3-dot trigger */}
-            <button
-              type="button"
-              className="p-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors sm:hidden"
-              title="Thao tác"
-              onClick={(e) => openContextMenuNearEl(e.currentTarget as HTMLElement, record)}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                className="w-4 h-4"
-              >
-                <path d="M10 4a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 20a2 2 0 110-4 2 2 0 010 4z" />
-              </svg>
-            </button>
-          </div>
-        );
-      },
-    },
-  ];
+  const previewVisual = getRoleVisual(roleName || "CUSTOM");
 
   return (
-    <div className="p-6 min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-4">
-        <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent">
-            Quản lý quyền hạn
-          </h1>
-              <p className="text-gray-600 mt-1">
-                {paginationData.total_items} vai trò
+    <main className="relative mx-auto max-w-[1440px] space-y-6 p-4 text-foreground sm:p-6 lg:p-8">
+      {/* Ambient Cloud Layers */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
+      >
+        <div className="absolute -left-24 top-20 h-96 w-96 rounded-full bg-primary-light/55 blur-3xl" />
+        <div className="absolute right-0 top-1/4 h-80 w-80 rounded-full bg-accent/35 blur-3xl" />
+        <div className="absolute bottom-0 left-1/3 h-72 w-72 rounded-full bg-accent-vanilla/35 blur-3xl" />
+      </div>
+
+      {/* Cloud Architecture Hero Banner */}
+      <section className="relative overflow-hidden rounded-[2.5rem] border border-white/90 bg-gradient-to-br from-primary-light/95 via-surface/95 to-accent/40 p-6 shadow-[0_28px_64px_-22px_rgba(53,111,167,0.20)] backdrop-blur-md sm:p-8">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -right-14 -top-14 h-56 w-56 rounded-full bg-white/85 blur-3xl"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -bottom-16 left-1/4 h-44 w-64 rounded-full bg-primary-pastel/35 blur-3xl"
+        />
+
+        <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-2.5">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-primary-pastel bg-surface/95 px-3.5 py-1 text-xs font-semibold text-primary shadow-2xs">
+              <ShieldCheck size={13} animated={false} />
+              Mây Mây Access &amp; Role Architecture
+            </span>
+            <h1 className="font-display text-2xl font-bold tracking-tight text-foreground sm:text-4xl">
+              Kiến trúc Vai trò &amp; Phân quyền
+            </h1>
+            <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
+              Trực quan hóa phân tầng quyền hạn giữa Quản trị viên, Giảng viên, Học viên và các vai trò vận hành mở rộng trên toàn hệ sinh thái Mây Mây.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={isValidating}
+              onClick={() => void mutate()}
+            >
+              <RefreshCw
+                size={14}
+                className={isValidating ? "animate-spin" : ""}
+              />
+              Làm mới
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={items.length === 0}
+              onClick={() => {
+                exportRolesCsv(items);
+                toast.success(`Đã xuất ${items.length} vai trò ra file CSV`);
+              }}
+            >
+              <Download size={14} />
+              Xuất CSV
+            </Button>
+            <Button size="sm" onClick={openCreateDrawer}>
+              <Plus size={15} />
+              Tạo vai trò mới
+            </Button>
+          </div>
+        </div>
+
+        {/* Role Distribution Sky Bar + KPIs */}
+        <div className="relative z-10 mt-6 grid grid-cols-1 gap-4 lg:grid-cols-12">
+          <div className="grid grid-cols-3 gap-3 lg:col-span-5">
+            <div className="rounded-2xl border border-white/80 bg-surface/85 p-4 backdrop-blur-sm">
+              <p className="text-[11px] font-medium text-muted-foreground">
+                Tổng vai trò
+              </p>
+              <p className="mt-1 text-2xl font-bold text-foreground">
+                {totalItems}
+              </p>
+              <p className="mt-0.5 text-[11px] text-primary">
+                {operationalRoles} đang vận hành
               </p>
             </div>
-            {isLoading && (
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-lg animate-pulse">
-                <div className="w-3 h-3 border-2 border-green-500 border-t-transparent rounded-full animate-spin"></div>
-                <span className="text-sm text-green-700 font-medium">
-                  Đang tải...
-                </span>
-              </div>
-            )}
-        </div>
-        <button
-          onClick={() => router.push("/admin/roles/create")}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-            <Plus className="w-5 h-5" />
-            Thêm vai trò
-        </button>
-      </div>
-
-        {/* Filters */}
-        <div className="bg-white rounded-xl shadow-sm border-2 border-gray-200 p-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Search */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Tìm kiếm
-              </label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Tìm theo tên hoặc mô tả..."
-                  className="w-full pl-10 pr-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-500/20"
-                />
-              </div>
+            <div className="rounded-2xl border border-white/80 bg-surface/85 p-4 backdrop-blur-sm">
+              <p className="text-[11px] font-medium text-muted-foreground">
+                Lượt gán quyền
+              </p>
+              <p className="mt-1 text-2xl font-bold text-primary">
+                {totalAssignedUsers}
+              </p>
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                Tài khoản đã phân vai
+              </p>
             </div>
-
-            {/* Sort */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Sắp xếp theo
-              </label>
-              <div className="flex gap-2">
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                  className="flex-1 px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-500/20"
-                  >
-                    {Object.entries(sortableFields).map(([key, label]) => (
-                      <option key={key} value={key}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
-                <button
-                  onClick={() => setOrder((prev) => (prev === "asc" ? "desc" : "asc"))}
-                  className="px-4 py-2 border-2 border-gray-300 rounded-lg hover:bg-gray-50 font-semibold"
-                  >
-                  {order === "asc" ? "↑" : "↓"}
-                </button>
-              </div>
+            <div className="rounded-2xl border border-white/80 bg-surface/85 p-4 backdrop-blur-sm">
+              <p className="text-[11px] font-medium text-muted-foreground">
+                Vai trò cốt lõi
+              </p>
+              <p className="mt-1 text-2xl font-bold text-accent-foreground">
+                3 tầng
+              </p>
+              <p className="mt-0.5 text-[11px] text-success-foreground">
+                Được khóa bảo vệ
+              </p>
             </div>
           </div>
 
-          {/* Status + Export */}
-          <div className="mt-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-              <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-lg">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-green-800">
-                    Sắp xếp:{" "}
-                    <strong>
-                      {sortableFields[sortBy as keyof typeof sortableFields]}
-                  </strong>{" "}
-                  <span className="ml-1">{order === "asc" ? "↑" : "↓"}</span>
+          <div className="flex flex-col justify-between rounded-2xl border border-white/80 bg-surface/85 p-4 backdrop-blur-sm lg:col-span-7">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+              <span className="font-semibold text-foreground">
+                Cơ cấu Phân bổ Nhân sự theo Vai trò
+              </span>
+              <Link
+                href="/admin/users"
+                className="font-semibold text-primary hover:underline"
+              >
+                Quản lý thành viên →
+              </Link>
+            </div>
+
+            <div className="my-3 flex h-3.5 w-full overflow-hidden rounded-full bg-background">
+              {items.map((r) => {
+                const vis = getRoleVisual(r.role_name);
+                const w =
+                  totalAssignedUsers > 0
+                    ? Math.max(
+                        4,
+                        Math.round((r.total_users / totalAssignedUsers) * 100),
+                      )
+                    : 0;
+                if (!w) return null;
+                return (
+                  <div
+                    key={r.id}
+                    title={`${r.role_name}: ${r.total_users} người`}
+                    className={`h-full transition-all duration-500 ${vis.barClass}`}
+                    style={{ width: `${w}%` }}
+                  />
+                );
+              })}
+            </div>
+
+            <div className="flex flex-wrap gap-3 text-[11px]">
+              {items.map((r) => {
+                const vis = getRoleVisual(r.role_name);
+                const pct =
+                  totalAssignedUsers > 0
+                    ? Math.round((r.total_users / totalAssignedUsers) * 100)
+                    : 0;
+                return (
+                  <span
+                    key={r.id}
+                    className="inline-flex items-center gap-1.5 font-medium text-foreground"
+                  >
+                    <span className={`h-2.5 w-2.5 rounded-full ${vis.barClass}`} />
+                    <strong>{r.role_name}</strong>: {r.total_users} ({pct}%)
                   </span>
-                </div>
-                {searchQuery && (
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-lg">
-                  <span className="text-sm text-green-700">
-                      Tìm: <strong>"{searchQuery}"</strong>
-                    </span>
-                    <button
-                      onClick={() => setSearchQuery("")}
-                    className="text-green-600 hover:text-green-800 text-sm font-bold"
-                    title="Xóa tìm"
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Workspace Mode Switcher + Search */}
+      <section className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-primary-pastel/60 bg-surface/90 p-4 shadow-[0_12px_32px_-16px_rgba(53,111,167,0.14)] backdrop-blur-md">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1 rounded-2xl border border-border bg-background p-1">
+            {(
+              [
+                ["cards", "Thẻ Quyền Lực", LayoutGrid],
+                ["matrix", "Ma trận Phân quyền", Grid3x3],
+                ["table", "Bảng gọn", Table2],
+              ] as const
+            ).map(([mode, label, Icon]) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => setViewMode(mode)}
+                className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${
+                  viewMode === mode
+                    ? "bg-primary text-primary-foreground shadow-2xs"
+                    : "text-muted-foreground hover:text-primary"
+                }`}
+              >
+                <Icon size={14} animated={false} />
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="relative">
+            <Search
+              size={15}
+              animated={false}
+              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+            />
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Tìm mã vai trò hoặc mô tả..."
+              className="h-9 w-56 rounded-xl border border-border bg-background pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+            />
+          </div>
+
+          <select
+            aria-label="Sắp xếp"
+            value={`${sortBy}:${order}`}
+            onChange={(e) => {
+              const [sb, od] = e.target.value.split(":") as [
+                typeof sortBy,
+                "asc" | "desc",
+              ];
+              setParams({ sort_by: sb, order: od, page: 1 });
+            }}
+            className="h-9 rounded-xl border border-border bg-background px-3 text-xs font-medium text-foreground focus:border-primary focus:outline-none"
+          >
+            <option value="total_users:desc">Nhiều thành viên nhất</option>
+            <option value="role_name:asc">Tên A → Z</option>
+            <option value="role_name:desc">Tên Z → A</option>
+          </select>
+
+          <Link
+            href="/admin/roles/create"
+            className="rounded-xl border border-primary-pastel bg-primary-light/60 px-3 py-2 text-xs font-semibold text-primary hover:bg-primary hover:text-primary-foreground"
+          >
+            Trang tạo đầy đủ →
+          </Link>
+        </div>
+      </section>
+
+      {error && (
+        <div
+          role="alert"
+          className="flex items-center justify-between rounded-2xl border border-destructive-border bg-destructive-bg p-4 text-sm text-destructive-foreground"
+        >
+          <span>Không tải được danh sách vai trò.</span>
+          <Button variant="outline" size="sm" onClick={() => void mutate()}>
+            Thử lại
+          </Button>
+        </div>
+      )}
+
+      {/* VIEW 1: POWER ROLE CARDS */}
+      {viewMode === "cards" && (
+        isLoading ? (
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="h-72 animate-pulse rounded-[2rem] border border-border bg-surface p-6"
+              />
+            ))}
+          </div>
+        ) : items.length === 0 ? (
+          <div className="rounded-3xl border border-dashed border-border bg-surface p-14 text-center text-sm text-muted-foreground">
+            Chưa có vai trò nào khớp với từ khóa tìm kiếm.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+            {items.map((role) => {
+              const vis = getRoleVisual(role.role_name);
+              const isCore = SYSTEM_CORE_ROLES.has(role.role_name.toUpperCase());
+              const pct =
+                totalAssignedUsers > 0
+                  ? Math.round((role.total_users / totalAssignedUsers) * 100)
+                  : 0;
+              return (
+                <article
+                  key={role.id}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setMenuState({ x: e.clientX, y: e.clientY, role });
+                  }}
+                  className={`group flex flex-col justify-between overflow-hidden rounded-[2rem] border bg-surface/95 shadow-[0_18px_42px_-18px_rgba(53,111,167,0.16)] backdrop-blur-md transition-all hover:-translate-y-1 hover:shadow-[0_24px_54px_-18px_rgba(53,111,167,0.22)] ${vis.border}`}
+                >
+                  <div>
+                    {/* Pastel Sky Header */}
+                    <div className={`p-5 ${vis.softBg}`}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3.5">
+                          <span
+                            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border bg-surface/95 shadow-xs ${vis.border} ${vis.text}`}
+                          >
+                            <RoleAvatarIcon roleName={role.role_name} size={22} />
+                          </span>
+                          <div>
+                            <span className="block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                              {vis.tier}
+                            </span>
+                            <h2 className="mt-0.5 text-lg font-bold text-foreground">
+                              {role.role_name}
+                            </h2>
+                          </div>
+                        </div>
+
+                        {isCore ? (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-white/80 bg-surface/90 px-2.5 py-1 text-[10px] font-bold text-foreground">
+                            <Lock size={10} animated={false} />
+                            Core
+                          </span>
+                        ) : (
+                          <span className="rounded-full bg-surface/90 px-2.5 py-1 text-[10px] font-semibold text-primary">
+                            Tùy chỉnh
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Body */}
+                    <div className="space-y-4 p-5">
+                      <p className="text-sm leading-relaxed text-muted-foreground">
+                        {role.details || "Chưa có mô tả chi tiết cho vai trò này."}
+                      </p>
+
+                      {/* Capabilities Pills */}
+                      <div className="space-y-2">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                          Phạm vi quyền hạn tiêu biểu
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {vis.capabilities.map((cap) => (
+                            <span
+                              key={cap}
+                              className="inline-flex items-center gap-1 rounded-xl border border-border/80 bg-background/70 px-2.5 py-1 text-[11px] font-medium text-foreground"
+                            >
+                              <CheckCircle2
+                                size={11}
+                                animated={false}
+                                className="text-primary"
+                              />
+                              {cap}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Member Share Bar */}
+                      <div className="rounded-2xl bg-background/70 p-3.5">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="inline-flex items-center gap-1.5 font-medium text-muted-foreground">
+                            <Users size={13} animated={false} />
+                            Thành viên sở hữu
+                          </span>
+                          <span className="font-bold text-foreground">
+                            {role.total_users} ({pct}%)
+                          </span>
+                        </div>
+                        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-surface">
+                          <div
+                            className={`h-full rounded-full ${vis.barClass}`}
+                            style={{ width: `${Math.max(4, pct)}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card Footer */}
+                  <div className="flex items-center justify-between border-t border-border/70 bg-background/40 px-5 py-3">
+                    <code className="text-[11px] text-muted-foreground">
+                      #{role.id.slice(0, 8)}
+                    </code>
+                    <div className="flex items-center gap-1.5">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openEditDrawer(role)}
+                      >
+                        <Pencil size={13} />
+                        Chỉnh sửa
+                      </Button>
+                      <button
+                        type="button"
+                        disabled={isCore || deletingId === role.id}
+                        onClick={() => void handleDelete(role)}
+                        title={
+                          isCore
+                            ? "Vai trò cốt lõi được hệ thống bảo vệ"
+                            : "Xóa vai trò"
+                        }
+                        aria-label={`Xóa vai trò ${role.role_name}`}
+                        className="flex h-8 w-8 items-center justify-center rounded-xl text-muted-foreground hover:bg-destructive-bg hover:text-destructive-foreground disabled:opacity-35"
+                      >
+                        <Trash2 size={14} animated={false} />
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )
+      )}
+
+      {/* VIEW 2: CAPABILITY MATRIX */}
+      {viewMode === "matrix" && (
+        <section className="overflow-x-auto rounded-[2rem] border border-primary-pastel/60 bg-surface/95 shadow-[0_18px_42px_-18px_rgba(53,111,167,0.16)] backdrop-blur-md">
+          <div className="border-b border-border px-6 py-4">
+            <h2 className="text-base font-bold text-foreground">
+              Ma trận Phạm vi Quyền hạn Theo Miền Chức năng
+            </h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Bản đồ đối chiếu nhanh phạm vi thao tác của 3 tầng vai trò cốt lõi trên hệ sinh thái Mây Mây.
+            </p>
+          </div>
+          <table className="w-full min-w-[640px] text-left text-sm">
+            <thead className="border-b border-border bg-primary-light/55 text-xs font-semibold text-foreground">
+              <tr>
+                <th className="px-6 py-3.5">Miền chức năng</th>
+                <th className="px-6 py-3.5 text-center">ADMIN</th>
+                <th className="px-6 py-3.5 text-center">LECTURER</th>
+                <th className="px-6 py-3.5 text-center">USER</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/70">
+              {CAPABILITY_MATRIX_ROWS.map((row) => {
+                const renderCell = (level: string) => {
+                  if (level === "full") {
+                    return (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-success-border bg-success-bg px-3 py-1 text-xs font-semibold text-success-foreground">
+                        <Check size={12} animated={false} />
+                        Toàn quyền
+                      </span>
+                    );
+                  }
+                  if (level === "self") {
+                    return (
+                      <span className="inline-flex rounded-full border border-primary-pastel bg-primary-light px-3 py-1 text-xs font-semibold text-primary">
+                        Cá nhân
+                      </span>
+                    );
+                  }
+                  if (level === "partial") {
+                    return (
+                      <span className="inline-flex rounded-full border border-accent-vanilla-border bg-accent-vanilla px-3 py-1 text-xs font-semibold text-accent-vanilla-foreground">
+                        Phối hợp
+                      </span>
+                    );
+                  }
+                  if (level === "read") {
+                    return (
+                      <span className="inline-flex rounded-full border border-info-border bg-info-bg px-3 py-1 text-xs font-semibold text-info-foreground">
+                        Xem / Tra cứu
+                      </span>
+                    );
+                  }
+                  return (
+                    <span className="text-xs text-muted-foreground/50">—</span>
+                  );
+                };
+                return (
+                  <tr
+                    key={row.domain}
+                    className="transition-colors hover:bg-primary-light/20"
+                  >
+                    <td className="px-6 py-4 font-semibold text-foreground">
+                      {row.domain}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      {renderCell(row.ADMIN)}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      {renderCell(row.LECTURER)}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      {renderCell(row.USER)}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </section>
+      )}
+
+      {/* VIEW 3: COMPACT TABLE */}
+      {viewMode === "table" && (
+        <section className="overflow-x-auto rounded-[2rem] border border-primary-pastel/60 bg-surface/95 shadow-[0_18px_42px_-18px_rgba(53,111,167,0.16)] backdrop-blur-md">
+          <table className="w-full text-left text-sm">
+            <thead className="border-b border-border bg-primary-light/60 text-xs font-semibold text-foreground">
+              <tr>
+                <th className="px-5 py-3.5">Mã vai trò</th>
+                <th className="px-5 py-3.5">Mô tả</th>
+                <th className="px-5 py-3.5">Thành viên</th>
+                <th className="px-5 py-3.5 text-right">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/70">
+              {items.map((role) => {
+                const vis = getRoleVisual(role.role_name);
+                const isCore = SYSTEM_CORE_ROLES.has(
+                  role.role_name.toUpperCase(),
+                );
+                return (
+                  <tr
+                    key={role.id}
+                    className="transition-colors hover:bg-primary-light/20"
+                  >
+                    <td className="px-5 py-3.5">
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold ${vis.badgeClass}`}
+                      >
+                        <RoleAvatarIcon roleName={role.role_name} size={13} />
+                        {role.role_name}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3.5 text-foreground">
+                      {role.details}
+                    </td>
+                    <td className="px-5 py-3.5 font-bold text-primary">
+                      {role.total_users}
+                    </td>
+                    <td className="px-5 py-3.5 text-right">
+                      <div className="inline-flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openEditDrawer(role)}
+                        >
+                          Sửa
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={isCore}
+                          onClick={() => void handleDelete(role)}
+                        >
+                          Xóa
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </section>
+      )}
+
+      {/* Pagination */}
+      {totalItems > size && (
+        <div className="flex items-center justify-between rounded-2xl border border-border bg-surface px-5 py-3 text-xs">
+          <span className="text-muted-foreground">
+            Trang <strong className="text-foreground">{page}</strong> /{" "}
+            <strong className="text-foreground">{totalPages}</strong> · Tổng{" "}
+            <strong className="text-foreground">{totalItems}</strong> vai trò
+          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page <= 1}
+              onClick={() => setParam("page", page - 1)}
+            >
+              <ChevronLeft size={14} />
+              Trước
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page >= totalPages}
+              onClick={() => setParam("page", page + 1)}
+            >
+              Sau
+              <ChevronRight size={14} />
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Slide-over Create / Edit Drawer */}
+      {drawerOpen && (
+        <div
+          className="fixed inset-0 z-50 flex justify-end bg-foreground/20 backdrop-blur-[2px]"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="flex-1" onClick={() => setDrawerOpen(false)} />
+          <div className="flex h-full w-full max-w-lg flex-col border-l border-border bg-surface shadow-[0_24px_64px_-16px_rgba(53,111,167,0.28)]">
+            <div className="flex items-center justify-between border-b border-border px-6 py-4">
+              <div>
+                <span className="text-xs font-semibold uppercase tracking-wide text-primary">
+                  Role Inspector
+                </span>
+                <h2 className="text-lg font-bold text-foreground">
+                  {editingRole
+                    ? `Chỉnh sửa vai trò ${editingRole.role_name}`
+                    : "Khởi tạo Vai trò mới"}
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDrawerOpen(false)}
+                aria-label="Đóng"
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-border text-muted-foreground hover:border-primary hover:text-primary"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form
+              onSubmit={handleSave}
+              className="flex flex-1 flex-col overflow-hidden"
+            >
+              <div className="flex-1 space-y-5 overflow-y-auto p-6">
+                {/* Live Preview Card */}
+                <div
+                  className={`rounded-3xl border p-4 ${previewVisual.softBg} ${previewVisual.border}`}
+                >
+                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    Xem trước Thẻ Vai trò
+                  </p>
+                  <div className="flex items-center gap-3 rounded-2xl border border-white/80 bg-surface p-3.5 shadow-2xs">
+                    <span
+                      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border ${previewVisual.softBg} ${previewVisual.border} ${previewVisual.text}`}
                     >
-                      ✕
-                    </button>
+                      <RoleAvatarIcon
+                        roleName={roleName || "CUSTOM"}
+                        size={20}
+                      />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate font-bold text-foreground">
+                        {roleName.trim().toUpperCase() || "TEN_VAI_TRO"}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {details.trim() || "Mô tả phạm vi quyền hạn của vai trò..."}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {!editingRole && (
+                  <div className="space-y-2">
+                    <span className="text-xs font-semibold text-muted-foreground">
+                      Mẫu gợi ý nhanh (1 chạm):
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {ROLE_PRESETS.map((p) => (
+                        <button
+                          key={p.role_name}
+                          type="button"
+                          onClick={() => {
+                            setRoleName(p.role_name);
+                            setDetails(p.details);
+                          }}
+                          className="rounded-xl border border-primary-pastel bg-primary-light/60 px-2.5 py-1 text-[11px] font-semibold text-primary hover:bg-primary hover:text-primary-foreground"
+                        >
+                          +{p.role_name}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
+
+                <Input
+                  label="Mã vai trò (VIẾT_HOA_KHÔNG_DẤU)"
+                  required
+                  readOnly={Boolean(
+                    editingRole &&
+                      SYSTEM_CORE_ROLES.has(editingRole.role_name.toUpperCase()),
+                  )}
+                  value={roleName}
+                  onChange={(e) =>
+                    setRoleName(
+                      e.target.value.toUpperCase().replace(/\s+/g, "_"),
+                    )
+                  }
+                  placeholder="VD: CONTENT_REVIEWER"
+                />
+
+                <label className="block space-y-1.5 text-sm">
+                  <span className="font-medium text-foreground">
+                    Mô tả phạm vi quyền hạn
+                  </span>
+                  <textarea
+                    rows={4}
+                    required
+                    value={details}
+                    onChange={(e) => setDetails(e.target.value)}
+                    placeholder="Mô tả rõ vai trò này chịu trách nhiệm và thao tác được những gì..."
+                    className="w-full rounded-2xl border border-border bg-background px-3.5 py-2.5 text-sm text-foreground focus:border-primary focus:outline-none"
+                  />
+                </label>
               </div>
-            <ExportButton onExport={handleExportExcel} variant="primary" size="md">
-                  📊 Xuất Excel
-                </ExportButton>
+
+              <div className="flex items-center justify-end gap-2.5 border-t border-border bg-background/50 px-6 py-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setDrawerOpen(false)}
+                >
+                  Hủy
+                </Button>
+                <Button type="submit" disabled={saving}>
+                  {saving
+                    ? "Đang lưu..."
+                    : editingRole
+                      ? "Lưu thay đổi"
+                      : "Khởi tạo vai trò"}
+                </Button>
+              </div>
+            </form>
           </div>
         </div>
-      </div>
-
-      {/* Error Message */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-          <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 bg-red-500 rounded-full"></div>
-            <span className="text-red-700 font-medium">Lỗi tải dữ liệu</span>
-          </div>
-          <p className="text-red-600 text-sm mt-1">
-            Không thể tải danh sách vai trò. Vui lòng thử lại sau.
-          </p>
-        </div>
       )}
 
-      {/* Roles Table */}
-      <DataTable
-        data={roles}
-        columns={columns}
-        loading={isLoading}
-        emptyMessage="Không tìm thấy vai trò nào"
-        sortBy={sortBy}
-        order={order}
-        onSort={handleSort}
-      />
-
-      {/* Pagination - hiển thị khi có dữ liệu */}
-      {/* {paginationData.total_items > 0 && ( */}
-      <Pagination
-        currentPage={paginationData.page}
-        totalPages={paginationData.total_pages}
-        totalItems={paginationData.total_items}
-        pageSize={paginationData.size}
-        onPageChange={handlePageChange}
-        onPageSizeChange={handleSizeChange}
-        showPageSizeSelector={true}
-        pageSizeOptions={[5, 10, 20, 50]}
-      />
-      {/* )} */}
-
-      {/* Edit Role Modal */}
-      {showEditModal && selectedRole && (
-        <EditRoleModal
-          role={selectedRole}
-          onClose={() => {
-            setShowEditModal(false);
-            setSelectedRole(null);
-          }}
-          onSave={handleEditRole}
-          isSubmitting={isSubmitting}
-        />
-      )}
-
-      {/* Delete Role Modal */}
-      {showDeleteModal && selectedRole && (
-        <DeleteRoleModal
-          role={selectedRole}
-          onClose={() => {
-            setShowDeleteModal(false);
-            setSelectedRole(null);
-          }}
-          onConfirm={handleDeleteRole}
-          isSubmitting={isSubmitting}
-        />
-      )}
-
-      {/* Context Menu */}
-      {menuOpen && menuRole && (
+      {menuState && (
         <ContextMenu
-          x={menuPos.x}
-          y={menuPos.y}
-          onClose={() => setMenuOpen(false)}
+          x={menuState.x}
+          y={menuState.y}
+          onClose={() => setMenuState(null)}
           items={[
             {
-              label: "Xem chi tiết",
+              label: "Chỉnh sửa vai trò",
               onClick: () => {
-                setSelectedRole(menuRole);
-                setShowEditModal(true);
-                setMenuOpen(false);
+                openEditDrawer(menuState.role);
+                setMenuState(null);
               },
             },
             {
-              label: menuRole.total_users > 0 ? "Chỉnh sửa mô tả" : "Chỉnh sửa vai trò",
+              label: "Sao chép mã vai trò",
               onClick: () => {
-                setSelectedRole(menuRole);
-                setShowEditModal(true);
-                setMenuOpen(false);
+                navigator.clipboard.writeText(menuState.role.role_name);
+                toast.success("Đã sao chép mã vai trò");
+                setMenuState(null);
               },
             },
-            ...(menuRole.total_users === 0
-              ? [
-                  {
-                    label: "Xóa vai trò",
-                    onClick: () => {
-                      setSelectedRole(menuRole);
-                      setShowDeleteModal(true);
-                      setMenuOpen(false);
-                    },
-                  },
-                ]
-              : []),
           ]}
         />
       )}
-    </div>
+    </main>
   );
-}
-
-// Edit Role Modal Component
-function EditRoleModal({
-  role,
-  onClose,
-  onSave,
-  isSubmitting,
-}: {
-  role: Role;
-  onClose: () => void;
-  onSave: (data: { role_name: string; details: string }) => void;
-  isSubmitting: boolean;
-}) {
-  const hasUsers = role.total_users > 0;
-  const [formData, setFormData] = useState({
-    role_name: role.role_name,
-    details: role.details,
-  });
-
-  // Kiểm tra có thay đổi không
-  const hasChanges = hasUsers
-    ? formData.details !== role.details
-    : formData.role_name !== role.role_name ||
-      formData.details !== role.details;
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!hasChanges) return;
-
-    // Nếu có người dùng, chỉ gửi details
-    const dataToSave = hasUsers
-      ? { role_name: role.role_name, details: formData.details }
-      : formData;
-    onSave(dataToSave);
-  };
-
-  const modalContent = (
-    <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        width: "100vw",
-        height: "100vh",
-        zIndex: 9999,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "1rem",
-      }}
-    >
-      {/* Backdrop */}
-      <div
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          width: "100vw",
-          height: "100vh",
-          backgroundColor: "rgba(0, 0, 0, 0.6)",
-          backdropFilter: "blur(8px)",
-        }}
-        onClick={onClose}
-      />
-
-      {/* Modal Container */}
-      <div
-        style={{
-          position: "relative",
-          width: "100%",
-          maxWidth: "28rem",
-          transform: "scale(1)",
-          opacity: 1,
-          transition: "all 300ms ease-out",
-        }}
-      >
-        <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
-          {/* Header với gradient */}
-          <div className="bg-gradient-to-r from-green-500 to-green-600 px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                  <Pencil className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-white">
-                    Chỉnh sửa vai trò
-                  </h3>
-                  <p className="text-teal-100 text-sm">
-                    Cập nhật thông tin vai trò
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Role Info Section */}
-          <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-green-50/50">
-            <div className="flex items-center space-x-4">
-              <div className="w-14 h-14 bg-gradient-to-br from-green-500 via-green-600 to-green-700 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                <Key className="w-7 h-7" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="font-semibold text-gray-900 text-lg truncate">
-                  {role.role_name}
-                </h4>
-                <p className="text-gray-600 text-sm truncate">{role.details}</p>
-                <div className="flex items-center space-x-3 mt-2">
-                  <div className="flex items-center space-x-1">
-                    <div className="w-2 h-2 bg-green-500 rounded-full" />
-                    <span className="text-xs font-medium text-green-700">
-                      {role.total_users} người dùng
-                    </span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <div
-                      className={`w-2 h-2 rounded-full ${
-                        hasUsers ? "bg-yellow-500" : "bg-green-500"
-                      }`}
-                    />
-                    <span
-                      className={`text-xs font-medium ${
-                        hasUsers ? "text-yellow-700" : "text-green-700"
-                      }`}
-                    >
-                      {hasUsers ? "Đang sử dụng" : "Có thể chỉnh sửa"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Form */}
-          <div className="px-6 py-4">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Warning for roles with users */}
-              {hasUsers && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4">
-                  <div className="flex items-start space-x-3">
-                    <div className="w-5 h-5 bg-yellow-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <X className="w-3 h-3 text-white" />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-yellow-800 text-sm">
-                        Cảnh báo!
-                      </div>
-                      <div className="text-sm text-yellow-700 mt-1">
-                        Vai trò này đang được sử dụng bởi {role.total_users}{" "}
-                        người dùng. Bạn chỉ có thể chỉnh sửa mô tả.
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Role Name Field */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">
-                  📝 Tên vai trò
-                  {hasUsers && (
-                    <span className="text-yellow-600 ml-2 text-xs">
-                      (Không thể chỉnh sửa)
-                    </span>
-                  )}
-                </label>
-                <input
-                  type="text"
-                  value={formData.role_name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, role_name: e.target.value })
-                  }
-                  disabled={hasUsers}
-                  className={`w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:bg-white transition-all duration-200 ${
-                    hasUsers
-                      ? "bg-gray-100 text-gray-500 cursor-not-allowed"
-                      : ""
-                  }`}
-                  placeholder="Nhập tên vai trò..."
-                  required
-                />
-              </div>
-
-              {/* Description Field */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">
-                  📄 Mô tả vai trò
-                  {hasUsers && (
-                    <span className="text-green-600 ml-2 text-xs">
-                      (Có thể chỉnh sửa)
-                    </span>
-                  )}
-                </label>
-                <textarea
-                  value={formData.details}
-                  onChange={(e) =>
-                    setFormData({ ...formData, details: e.target.value })
-                  }
-                  rows={3}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 focus:bg-white transition-all duration-200 resize-none"
-                  placeholder="Mô tả chi tiết về vai trò này..."
-                  required
-                />
-              </div>
-
-              {/* Change Status Indicator */}
-              {hasChanges && (
-                <div className="bg-green-50 border border-green-200 rounded-2xl p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
-                      <CircleCheck solid className="w-3 h-3 text-white" />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-green-800 text-sm">
-                        Có thay đổi chưa được lưu
-                      </div>
-                      <div className="text-green-700 text-xs">
-                        Nhấn "Lưu thay đổi" để cập nhật vai trò
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </form>
-          </div>
-
-          {/* Footer */}
-          <div className="px-6 py-4 bg-gray-50/50 border-t border-gray-100">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-600">
-                ID: <span className="font-mono text-gray-800">{role.id}</span>
-              </div>
-              <div className="text-sm text-gray-500">
-                {role.total_users} người dùng
-              </div>
-            </div>
-            <div className="flex items-center justify-end space-x-3 mt-4">
-              <button
-                onClick={onClose}
-                disabled={isSubmitting}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-200 font-medium disabled:opacity-50"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={handleSubmit}
-                disabled={isSubmitting || !hasChanges}
-                className="px-6 py-2 rounded-lg transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed bg-green-600 hover:bg-green-700 text-white"
-              >
-                {isSubmitting ? "Đang lưu..." : "Lưu thay đổi"}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  // Sử dụng Portal để render modal ở root level
-  return createPortal(modalContent, document.body);
-}
-
-// Delete Role Modal Component
-function DeleteRoleModal({
-  role,
-  onClose,
-  onConfirm,
-  isSubmitting,
-}: {
-  role: Role;
-  onClose: () => void;
-  onConfirm: () => void;
-  isSubmitting: boolean;
-}) {
-  const modalContent = (
-    <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        width: "100vw",
-        height: "100vh",
-        zIndex: 9999,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "1rem",
-      }}
-    >
-      {/* Backdrop */}
-      <div
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          width: "100vw",
-          height: "100vh",
-          backgroundColor: "rgba(0, 0, 0, 0.6)",
-          backdropFilter: "blur(8px)",
-        }}
-        onClick={onClose}
-      />
-
-      {/* Modal Container */}
-      <div
-        style={{
-          position: "relative",
-          width: "100%",
-          maxWidth: "28rem",
-          transform: "scale(1)",
-          opacity: 1,
-          transition: "all 300ms ease-out",
-        }}
-      >
-        <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
-          {/* Header với gradient */}
-          <div className="bg-gradient-to-r from-red-500 to-red-600 px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                  <Trash2 className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-white">
-                    Xóa vai trò
-                  </h3>
-                  <p className="text-red-100 text-sm">
-                    Xóa vĩnh viễn vai trò khỏi hệ thống
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Role Info Section */}
-          <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-red-50/50">
-            <div className="flex items-center space-x-4">
-              <div className="w-14 h-14 bg-gradient-to-br from-red-400 to-red-500 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                <Key className="w-7 h-7" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="font-semibold text-gray-900 text-lg truncate">
-                  {role.role_name}
-                </h4>
-                <p className="text-gray-600 text-sm truncate">{role.details}</p>
-                <div className="flex items-center space-x-3 mt-2">
-                  <div className="flex items-center space-x-1">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full" />
-                    <span className="text-xs font-medium text-blue-700">
-                      {role.total_users} người dùng
-                    </span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <div className="w-2 h-2 bg-red-500 rounded-full" />
-                    <span className="text-xs font-medium text-red-700">
-                      Sẽ bị xóa vĩnh viễn
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Content */}
-          <div className="px-6 py-4">
-            <div className="text-center mb-4">
-              <h4 className="text-xl font-bold text-gray-900 mb-2">
-                Bạn có chắc chắn muốn xóa vai trò này?
-              </h4>
-              <p className="text-gray-600 text-sm">
-                Hành động này không thể hoàn tác và sẽ xóa vĩnh viễn vai trò
-                khỏi hệ thống.
-              </p>
-            </div>
-
-            {/* Warning */}
-            <div className="bg-red-50 border border-red-200 rounded-2xl p-4 mb-4">
-              <div className="flex items-start space-x-3">
-                <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <X className="w-3 h-3 text-white" />
-                </div>
-                <div>
-                  <div className="font-semibold text-red-800 text-sm">
-                    Cảnh báo!
-                  </div>
-                  <div className="text-sm text-red-700 mt-1 space-y-1">
-                    <div>• Vai trò sẽ bị xóa vĩnh viễn khỏi hệ thống</div>
-                    <div>• Tất cả quyền hạn liên quan sẽ bị mất</div>
-                    <div>• Hành động này không thể hoàn tác</div>
-                    {role.total_users > 0 && (
-                      <div className="font-semibold">
-                        • {role.total_users} người dùng sẽ bị ảnh hưởng
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div className="px-6 py-4 bg-gray-50/50 border-t border-gray-100">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-600">
-                ID: <span className="font-mono text-gray-800">{role.id}</span>
-              </div>
-              <div className="text-sm text-gray-500">
-                {role.total_users} người dùng
-              </div>
-            </div>
-            <div className="flex items-center justify-end space-x-3 mt-4">
-              <button
-                onClick={onClose}
-                disabled={isSubmitting}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-200 font-medium disabled:opacity-50"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={onConfirm}
-                disabled={isSubmitting}
-                className="px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSubmitting ? "Đang xóa..." : "Xóa vai trò"}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  // Sử dụng Portal để render modal ở root level
-  return createPortal(modalContent, document.body);
 }

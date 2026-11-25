@@ -1,6 +1,10 @@
 "use client";
 
 import Pagination from "@/components/shared/pagination";
+import {
+  useDebouncedUrlSearch,
+  useUrlQueryState,
+} from "@/hooks/useUrlQueryState";
 import api from "@/lib/utils/fetcher/client/axios";
 import { showToast } from "@/lib/utils/helpers/toast";
 import { useRealtimeNotiStore } from "@/stores/notifications";
@@ -9,19 +13,53 @@ import {
   NotificationsResponse,
 } from "@/types/user/notification";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Bell, CircleAlert } from "pulsoicon-react";
 import { NotificationCard } from "./notification-card";
 import { Toolbar } from "./toolbar";
 
+const NOTIFICATIONS_QUERY_SCHEMA = {
+  page: { type: "number", default: 1, min: 1 },
+  limit: { type: "number", default: 20, min: 1, max: 100 },
+  search: { type: "string", default: "" },
+  type: {
+    type: "string",
+    default: "" as "" | "wallet" | "course" | "system" | "learning",
+    allowed: ["", "wallet", "course", "system", "learning"] as const,
+  },
+  read: {
+    type: "string",
+    default: "" as "" | "true" | "false",
+    allowed: ["", "true", "false"] as const,
+  },
+  sort_by: {
+    type: "string",
+    default: "created_at" as "created_at" | "title" | "type" | "is_read",
+    allowed: ["created_at", "title", "type", "is_read"] as const,
+  },
+  order_dir: {
+    type: "string",
+    default: "desc" as "asc" | "desc",
+    allowed: ["asc", "desc"] as const,
+  },
+} as const;
+
 export default function Notifications() {
-  const [search, setSearch] = useState("");
-  const [type, setType] = useState("");
-  const [read, setRead] = useState("");
-  const [sortBy, setSortBy] = useState("created_at");
-  const [orderDir, setOrderDir] = useState<"asc" | "desc">("desc");
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(20);
+  const { values, setParam, setParams } = useUrlQueryState(
+    NOTIFICATIONS_QUERY_SCHEMA
+  );
+  const {
+    page,
+    limit,
+    search,
+    type,
+    read,
+    sort_by: sortBy,
+    order_dir: orderDir,
+  } = values;
+
+  const { inputValue: searchInput, setInputValue: setSearchInput } =
+    useDebouncedUrlSearch(search, (val) => setParam("search", val));
 
   const queryClient = useQueryClient();
   const markAllAsRead = useRealtimeNotiStore((s) => s.markAllRead);
@@ -69,8 +107,6 @@ export default function Notifications() {
     },
   });
 
-  useEffect(() => setPage(1), [search, type, read, sortBy, orderDir]);
-
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="mx-auto max-w-7xl">
@@ -111,16 +147,28 @@ export default function Notifications() {
 
         <div className="mb-6">
           <Toolbar
-            search={search}
-            onSearchChange={setSearch}
+            search={searchInput}
+            onSearchChange={setSearchInput}
             type={type}
-            onTypeChange={setType}
+            onTypeChange={(val) =>
+              setParam(
+                "type",
+                val as "" | "wallet" | "course" | "system" | "learning"
+              )
+            }
             read={read}
-            onReadChange={setRead}
+            onReadChange={(val) =>
+              setParam("read", val as "" | "true" | "false")
+            }
             sortBy={sortBy}
-            onSortByChange={setSortBy}
+            onSortByChange={(val) =>
+              setParam(
+                "sort_by",
+                val as "created_at" | "title" | "type" | "is_read"
+              )
+            }
             orderDir={orderDir}
-            onOrderDirChange={setOrderDir}
+            onOrderDirChange={(val) => setParam("order_dir", val)}
           />
         </div>
 
@@ -173,8 +221,10 @@ export default function Notifications() {
                       totalPages={Math.ceil(data.total / limit)}
                       totalItems={data.total}
                       pageSize={limit}
-                      onPageChange={setPage}
-                      onPageSizeChange={setLimit}
+                      onPageChange={(newPage) => setParam("page", newPage)}
+                      onPageSizeChange={(newLimit) =>
+                        setParams({ limit: newLimit, page: 1 })
+                      }
                       showPageSizeSelector={true}
                       pageSizeOptions={[10, 20, 50]}
                     />

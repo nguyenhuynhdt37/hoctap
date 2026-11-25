@@ -1,6 +1,10 @@
 # app/core/embedding.py
 import asyncio
+import base64
 import mimetypes
+import os
+import shutil
+import tempfile
 import uuid
 from math import exp
 from urllib.parse import unquote
@@ -22,6 +26,8 @@ from app.libs.formats.datetime import now as get_now
 
 class EmbeddingService:
     BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models"
+    MAX_BATCH_SIZE = 64
+    _shared_client: httpx.AsyncClient | None = None
 
     def __init__(self):
         self.llm_service = LLMService()
@@ -29,6 +35,15 @@ class EmbeddingService:
         self.EMBED_MODEL = "models/gemini-embedding-001"
         self.EMBED_DIM = settings.EMBEDDING_DIMENSIONS
         self.API_KEY = settings.GOOGLE_API_KEY
+
+    @classmethod
+    def _get_client(cls) -> httpx.AsyncClient:
+        if cls._shared_client is None or cls._shared_client.is_closed:
+            cls._shared_client = httpx.AsyncClient(
+                timeout=httpx.Timeout(120.0, connect=15.0),
+                limits=httpx.Limits(max_connections=20, max_keepalive_connections=10),
+            )
+        return cls._shared_client
 
     async def embed_google_normalized(self, text: str) -> list[float]:
         """Compatibility entry point; the configured provider performs embedding."""
@@ -38,47 +53,110 @@ class EmbeddingService:
         """Search queries must be paired with RETRIEVAL_DOCUMENT vectors."""
         return (await self.embed_texts([text], task_type="RETRIEVAL_QUERY"))[0]
 
+    async def _embed_sub_batch(
+        self,
+        batch_texts: list[str],
+        *,
+        model: str,
+        task_type: str,
+    ) -> list[list[float]]:
+        requests = [
+            {
+                "model": "models/" + model,
+                "content": {"parts": [{"text": text.strip()}]},
+                "taskType": task_type,
+                "outputDimensionality": self.EMBED_DIM,
+            }
+            for text in batch_texts
+        ]
+        client = self._get_client()
+        for attempt in range(5):
+            try:
+                response = await client.post(
+                    f"{self.BASE_URL}/{model}:batchEmbedContents",
+                    headers={"x-goog-api-key": settings.GOOGLE_API_KEY},
+                    json={"requests": requests},
+                )
+                response.raise_for_status()
+                embeddings = response.json()["embeddings"]
+                if not isinstance(embeddings, list) or len(embeddings) != len(batch_texts):
+                    raise ValueError("Wrong Gemini embedding batch size")
+                return [
+                    self._normalize_embedding(item["values"]) for item in embeddings
+                ]
+            except httpx.HTTPStatusError as exc:
+                status = exc.response.status_code
+                if status < 500 and status != 429:
+                    raise HTTPException(
+                        503,
+                        f"Gemini embedding chưa sẵn sàng (HTTP {status}). Kiểm tra API key và project Google.",
+                    ) from None
+                logger.warning(
+                    "Gemini embedding transient HTTP {} (attempt {})",
+                    status,
+                    attempt + 1,
+                )
+            except httpx.RequestError:
+                pass
+            except (ValueError, KeyError, TypeError):
+                raise HTTPException(
+                    502, "Gemini trả về vector embedding không hợp lệ."
+                ) from None
+            if attempt < 4:
+                await asyncio.sleep(min(5 * (attempt + 1), 20))
+        raise HTTPException(
+            503, "Không kết nối được Gemini embedding. Vui lòng thử lại."
+        )
+
     async def embed_texts(
         self, texts: list[str], *, task_type: str = "RETRIEVAL_DOCUMENT"
     ) -> list[list[float]]:
         if not texts or any(not text.strip() for text in texts):
             raise ValueError("Embedding input must contain nonempty text")
         if settings.EMBEDDING_PROVIDER.strip().lower() != "gemini":
-            raise ValueError("Embedding uses Gemini directly; 9Router is reserved for chat")
+            raise ValueError(
+                "Embedding uses Gemini directly; 9Router is reserved for chat"
+            )
         if not settings.GOOGLE_API_KEY:
             raise HTTPException(503, "Chưa cấu hình API key Gemini cho embedding.")
         model = settings.EMBEDDING_MODEL.removeprefix("models/")
-        requests = [{
-            "model": "models/" + model,
-            "content": {"parts": [{"text": text.strip()}]},
-            "taskType": task_type,
-            "outputDimensionality": self.EMBED_DIM,
-        } for text in texts]
-        async with httpx.AsyncClient(timeout=120) as client:
-            for attempt in range(5):
-                try:
-                    response = await client.post(
-                        f"{self.BASE_URL}/{model}:batchEmbedContents",
-                        headers={"x-goog-api-key": settings.GOOGLE_API_KEY},
-                        json={"requests": requests},
-                    )
-                    response.raise_for_status()
-                    embeddings = response.json()["embeddings"]
-                    if not isinstance(embeddings, list) or len(embeddings) != len(texts):
-                        raise ValueError("Wrong Gemini embedding batch size")
-                    return [self._normalize_embedding(item["values"]) for item in embeddings]
-                except httpx.HTTPStatusError as exc:
-                    status = exc.response.status_code
-                    if status < 500 and status != 429:
-                        raise HTTPException(503, f"Gemini embedding chưa sẵn sàng (HTTP {status}). Kiểm tra API key và project Google.") from None
-                    logger.warning("Gemini embedding transient HTTP {} (attempt {})", status, attempt + 1)
-                except httpx.RequestError:
-                    pass
-                except (ValueError, KeyError, TypeError):
-                    raise HTTPException(502, "Gemini trả về vector embedding không hợp lệ.") from None
-                if attempt < 4:
-                    await asyncio.sleep(min(5 * (attempt + 1), 20))
-        raise HTTPException(503, "Không kết nối được Gemini embedding. Vui lòng thử lại.")
+
+        if len(texts) <= self.MAX_BATCH_SIZE:
+            return await self._embed_sub_batch(
+                texts, model=model, task_type=task_type
+            )
+
+        sub_batches = [
+            texts[i : i + self.MAX_BATCH_SIZE]
+            for i in range(0, len(texts), self.MAX_BATCH_SIZE)
+        ]
+        sem = asyncio.Semaphore(3)
+
+        async def _run_batch(batch: list[str]) -> list[list[float]]:
+            async with sem:
+                return await self._embed_sub_batch(
+                    batch, model=model, task_type=task_type
+                )
+
+        batch_results = await asyncio.gather(*(_run_batch(b) for b in sub_batches))
+        merged: list[list[float]] = []
+        for res in batch_results:
+            merged.extend(res)
+        return merged
+
+    def mean_pool_normalized(
+        self, vectors: list[list[float]], weights: list[float] | None = None
+    ) -> list[float]:
+        """Tính vector trung bình cộng có trọng số rồi chuẩn hóa L2 từ các chunk vectors."""
+        if not vectors:
+            raise ValueError("Cannot mean-pool empty vector list")
+        arr = np.asarray(vectors, dtype=np.float32)
+        if weights and len(weights) == len(vectors):
+            w = np.asarray([max(float(x), 1.0) for x in weights], dtype=np.float32)
+            pooled = np.average(arr, axis=0, weights=w)
+        else:
+            pooled = np.mean(arr, axis=0)
+        return self._normalize_embedding(pooled)
 
     def _normalize_embedding(self, vector) -> list[float]:
         vector = np.asarray(vector, dtype=np.float32)
@@ -161,6 +239,101 @@ class EmbeddingService:
         except Exception as e:
             raise HTTPException(500, f"Lỗi khi phân tích video: {e}")
 
+    async def extract_audio_context_from_file(self, video_path: str) -> str:
+        """
+        Tách track âm thanh nhẹ (16kHz mono 32kbps MP3) bằng ffmpeg rồi gửi trực tiếp
+        lên Gemini 2.5 Flash để trích xuất transcript có mốc thời gian cho RAG.
+        Trả về chuỗi rỗng nếu không có ffmpeg hoặc video không có audio.
+        """
+        ffmpeg_bin = shutil.which("ffmpeg")
+        if not ffmpeg_bin or not os.path.exists(video_path):
+            return ""
+        if not settings.GOOGLE_API_KEY:
+            return ""
+
+        audio_fd, audio_path = tempfile.mkstemp(suffix=".mp3", prefix="sn_audio_")
+        os.close(audio_fd)
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                ffmpeg_bin,
+                "-y",
+                "-i",
+                video_path,
+                "-vn",
+                "-ac",
+                "1",
+                "-ar",
+                "16000",
+                "-b:a",
+                "32k",
+                audio_path,
+                stdout=asyncio.subprocess.DEVNULL,
+                stderr=asyncio.subprocess.DEVNULL,
+            )
+            await asyncio.wait_for(proc.wait(), timeout=180)
+            if proc.returncode != 0 or not os.path.exists(audio_path):
+                return ""
+            audio_size = os.path.getsize(audio_path)
+            if audio_size == 0 or audio_size > 18 * 1024 * 1024:
+                # Giới hạn inline_data an toàn (~18MB ≈ 75 phút âm thanh 32kbps)
+                return ""
+
+            with open(audio_path, "rb") as f:
+                audio_b64 = base64.b64encode(f.read()).decode("ascii")
+
+            prompt = (
+                "Bạn là trợ lý AI trích xuất nội dung bài giảng cho hệ thống RAG. "
+                "Hãy nghe đoạn âm thanh bài giảng sau và xuất ra bản chép lời/tóm tắt chi tiết bằng Markdown, "
+                "giữ nguyên ngôn ngữ gốc (thường là tiếng Việt), ghi rõ mốc thời gian `- `mm:ss` ...` cho từng ý chính, "
+                "công thức, khái niệm và ví dụ giảng viên nêu. Nếu âm thanh không có lời giảng, trả về chuỗi rỗng. "
+                "Chỉ trả về nội dung Markdown, không thêm lời dẫn."
+            )
+
+            payload = {
+                "contents": [
+                    {
+                        "parts": [
+                            {"text": prompt},
+                            {
+                                "inline_data": {
+                                    "mime_type": "audio/mpeg",
+                                    "data": audio_b64,
+                                }
+                            },
+                        ]
+                    }
+                ]
+            }
+
+            client = self._get_client()
+            res = await client.post(
+                f"{self.BASE_URL}/gemini-2.5-flash:generateContent",
+                headers={
+                    "Content-Type": "application/json",
+                    "x-goog-api-key": settings.GOOGLE_API_KEY,
+                },
+                json=payload,
+                timeout=300.0,
+            )
+            res.raise_for_status()
+            data = res.json()
+            text = (
+                data.get("candidates", [{}])[0]
+                .get("content", {})
+                .get("parts", [{}])[0]
+                .get("text", "")
+            )
+            return (text or "").strip()
+        except Exception as exc:
+            logger.warning("Audio AI extraction skipped/failed: {}", exc)
+            return ""
+        finally:
+            try:
+                if os.path.exists(audio_path):
+                    os.remove(audio_path)
+            except OSError:
+                pass
+
     # ========== TOKENIZER ==========
     def estimate_tokens(self, text: str) -> int:
         if not text:
@@ -185,20 +358,16 @@ class EmbeddingService:
         - chunk_size: số token tối đa cho mỗi chunk
         - overlap: số token trùng lặp giữa hai chunk liên tiếp
         """
-        import tiktoken
-
-        # 1️⃣ Chuẩn hóa giá trị overlap (phòng lỗi)
         if overlap >= chunk_size:
-            overlap = max(0, chunk_size // 5)  # overlap không thể lớn hơn chunk_size
+            overlap = max(0, chunk_size // 5)
 
-        enc = tiktoken.get_encoding("cl100k_base")
+        enc = self._enc
         tokens = enc.encode(text)
         total_tokens = len(tokens)
 
         chunks = []
         step = chunk_size - overlap
 
-        # 2️⃣ Chia theo bước, đảm bảo không dư token cuối
         for i in range(0, total_tokens, step):
             end = min(i + chunk_size, total_tokens)
             chunk_tokens = tokens[i:end]

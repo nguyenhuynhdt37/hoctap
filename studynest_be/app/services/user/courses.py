@@ -14,6 +14,7 @@ from sqlalchemy.orm import selectinload
 
 from app.core.deps import AuthorizationService
 from app.core.embedding import EmbeddingService, get_embedding_service
+from app.core.llm import LLMService, get_llm_service
 from app.db.models.database import (
     Categories,
     CourseEnrollments,
@@ -40,9 +41,11 @@ class CoursePublicService:
         self,
         db: AsyncSession = Depends(get_session),
         embedding: EmbeddingService = Depends(get_embedding_service),
+        llm: LLMService = Depends(get_llm_service),
     ):
         self.db = db
         self.embedding = embedding
+        self.llm = llm if isinstance(llm, LLMService) else LLMService()
 
     async def _public_instructor_stats(self, instructor_id):
         """Public profile metrics come from records, excluding private drafts."""
@@ -135,34 +138,78 @@ class CoursePublicService:
             )
             if schema.content:
                 # 🧩 Embedding (chuyển văn bản thành vector)
-                new_course_review.embedding = (
-                    await self.embedding.embed_google_normalized(schema.content)
-                )
-
-                # 💬 Sentiment
-                sentiment_prompt = (
-                    f"Phân tích cảm xúc đoạn văn sau và trả về 1 trong 3 giá trị: "
-                    f"positive, neutral, negative:\n\n{schema.content}"
-                )
-                sentiment_result = await self.embedding.call_model(sentiment_prompt)
-                new_course_review.sentiment = sentiment_result.strip().lower()
-
-                # 🧠 Topics
-                topics_prompt = f"""
-                Trích xuất tối đa 5 chủ đề chính (topics) từ đoạn đánh giá sau.
-                Chỉ trả về danh sách dạng JSON mảng string, không giải thích thêm.
-
-                Đánh giá:
-                {schema.content}
-                """
-                topics_text = await self.embedding.call_model(topics_prompt)
-
                 try:
-                    topics = json.loads(topics_text)
+                    new_course_review.embedding = (
+                        await self.embedding.embed_google_normalized(schema.content)
+                    )
+                except Exception as embed_err:
+                    logger.warning(
+                        f"Không thể tạo embedding cho review khóa học {course_id}: {embed_err}"
+                    )
+
+                # 💬 Sentiment (dùng LLMService, fallback theo rating nếu AI lỗi)
+                fallback_sentiment = (
+                    "positive"
+                    if schema.rating >= 4
+                    else ("neutral" if schema.rating == 3 else "negative")
+                )
+                try:
+                    sentiment_prompt = (
+                        "Phân tích cảm xúc đoạn đánh giá sau và chỉ trả về đúng 1 trong 3 từ: "
+                        f"positive, neutral, negative.\n\n{schema.content}"
+                    )
+                    sentiment_raw = await self.llm.call_model(
+                        sentiment_prompt,
+                        retries=1,
+                        mime_type="text/plain",
+                        temperature=0,
+                        max_output_tokens=32,
+                    )
+                    normalized_sentiment = (sentiment_raw or "").strip().lower()
+                    matched_sentiment = next(
+                        (
+                            label
+                            for label in ("positive", "neutral", "negative")
+                            if label in normalized_sentiment
+                        ),
+                        fallback_sentiment,
+                    )
+                    new_course_review.sentiment = matched_sentiment
+                except Exception as sentiment_err:
+                    logger.warning(
+                        f"Không thể phân tích cảm xúc review khóa học {course_id}: {sentiment_err}"
+                    )
+                    new_course_review.sentiment = fallback_sentiment
+
+                # 🧠 Topics (dùng LLMService, fallback [] nếu AI lỗi)
+                try:
+                    topics_prompt = (
+                        "Trích xuất tối đa 5 chủ đề chính (topics) từ đoạn đánh giá sau. "
+                        "Chỉ trả về mảng JSON các chuỗi ngắn gọn, không giải thích thêm.\n\n"
+                        f"Đánh giá:\n{schema.content}"
+                    )
+                    topics_text = await self.llm.call_model(
+                        topics_prompt,
+                        retries=1,
+                        mime_type="application/json",
+                        temperature=0.2,
+                        max_output_tokens=256,
+                    )
+                    cleaned_topics = (topics_text or "").strip()
+                    if cleaned_topics.startswith("```"):
+                        cleaned_topics = cleaned_topics.strip("`").lstrip("json").strip()
+                    topics = json.loads(cleaned_topics)
                     if isinstance(topics, list):
-                        new_course_review.topics = topics
-                except json.JSONDecodeError:
-                    new_course_review.topics = []  # fallback nếu AI trả về lỗi
+                        new_course_review.topics = [
+                            str(t).strip() for t in topics if str(t).strip()
+                        ][:5]
+                    else:
+                        new_course_review.topics = []
+                except Exception as topics_err:
+                    logger.warning(
+                        f"Không thể trích xuất topics cho review khóa học {course_id}: {topics_err}"
+                    )
+                    new_course_review.topics = []
 
             # 6️⃣ Lưu vào DB
             self.db.add(new_course_review)
@@ -387,11 +434,26 @@ class CoursePublicService:
                 )
                 video_map = {r.lesson_id: r for r in result_videos.fetchall()}
 
+            # Kiểm tra người dùng hiện tại đã sở hữu (active) khóa học này chưa
+            is_enrolled = False
+            if user is not None:
+                enrolled_id = await self.db.scalar(
+                    select(CourseEnrollments.id)
+                    .where(
+                        CourseEnrollments.user_id == user.id,
+                        CourseEnrollments.course_id == course.id,
+                        CourseEnrollments.status == "active",
+                    )
+                    .limit(1)
+                )
+                is_enrolled = enrolled_id is not None
+
             # 6️⃣ Kiểm tra nếu chưa có bài học nào
             has_lessons = any(section.lessons for section in course.course_sections)
             if not has_lessons:
                 return {
                     "status": "empty",
+                    "is_enrolled": is_enrolled,
                     "message": "Khóa học này chưa có bài học nào. Hãy quay lại sau!",
                     "course": {
                         "id": str(course.id),
@@ -419,6 +481,7 @@ class CoursePublicService:
             )
             return {
                 "status": "ok",
+                "is_enrolled": is_enrolled,
                 "course": {
                     "id": str(course.id),
                     "title": course.title,

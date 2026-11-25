@@ -383,8 +383,8 @@ export default function LecturerRefundDetail({
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Số Coin yêu cầu hoàn
               </p>
-              <div className="mt-1 inline-flex items-center gap-2 font-display text-3xl font-bold tabular-nums text-primary sm:text-4xl">
-                <Coins animated={false} className="h-7 w-7 shrink-0" aria-hidden="true" />
+              <div className="mt-1 inline-flex items-center gap-2 font-display text-3xl font-bold tabular-nums text-warning-foreground sm:text-4xl">
+                <Coins animated={false} className="h-7 w-7 shrink-0 text-[#C98A2C]" aria-hidden="true" />
                 <span>{formatCurrency(data.refund.amount)}</span>
               </div>
               <p className="mt-1 text-xs text-muted-foreground tabular-nums">

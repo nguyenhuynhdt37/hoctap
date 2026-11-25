@@ -1,16 +1,18 @@
 "use client";
 
 import { Alert } from "@/components/ui";
+import { useDebouncedUrlSearch, useUrlQueryState } from "@/hooks/useUrlQueryState";
 import { useCoinBalances, useCoinRate } from "@/lib/learning-hub/shop-hooks";
 import api from "@/lib/utils/fetcher/client/axios";
 import type {
   WalletDatePreset,
   WalletTransaction,
+  WalletTransactionOrderBy,
   WalletTransactionsQuery,
   WalletTransactionsResponse,
   WalletTransactionSummary,
 } from "@/types/user/wallet";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
 import { CashflowHero } from "./cashflow-hero";
 import {
@@ -57,18 +59,90 @@ const buildSummaryKey = (query: WalletTransactionsQuery) => {
   return qs ? `/user/transaction/summary?${qs}` : "/user/transaction/summary";
 };
 
+const WALLET_TRANSACTIONS_QUERY_SCHEMA = {
+  page: { type: "number", default: 1, min: 1 },
+  limit: { type: "number", default: 10, min: 1, max: 100 },
+  search: { type: "string", default: "" as string, trim: true },
+  status: {
+    type: "string",
+    default: "all" as WalletTransactionsQuery["status"],
+    allowed: [
+      "all",
+      "pending",
+      "completed",
+      "canceled",
+      "refunded",
+      "failed",
+    ] as const,
+  },
+  type: { type: "string", default: "all" as string },
+  method: { type: "string", default: "all" as string },
+  direction: {
+    type: "string",
+    default: "all" as "all" | "in" | "out",
+    allowed: ["all", "in", "out"] as const,
+  },
+  order_by: {
+    type: "string",
+    default: "created_at" as WalletTransactionOrderBy,
+    allowed: ["created_at", "amount", "status"] as const,
+  },
+  order_dir: {
+    type: "string",
+    default: "desc" as "asc" | "desc",
+    allowed: ["asc", "desc"] as const,
+  },
+  date_preset: {
+    type: "string",
+    default: "all" as WalletDatePreset,
+    allowed: ["all", "7d", "30d", "month", "90d"] as const,
+  },
+  date_from: { type: "string", default: "" as string },
+  date_to: { type: "string", default: "" as string },
+  view: {
+    type: "string",
+    default: "timeline" as TransactionsViewMode,
+    allowed: ["timeline", "table"] as const,
+  },
+} as const;
+
 export default function WalletTransactions({
   initialData,
   initialQuery,
   initialError,
 }: Props) {
-  const [filters, setFilters] = useState<WalletTransactionsQuery>({
-    ...initialQuery,
-    direction: initialQuery.direction ?? "all",
-    datePreset: initialQuery.datePreset ?? "all",
-  });
-  const [searchValue, setSearchValue] = useState(initialQuery.search);
-  const [viewMode, setViewMode] = useState<TransactionsViewMode>("timeline");
+  const { values, setParam, setParams, resetParams } = useUrlQueryState(
+    WALLET_TRANSACTIONS_QUERY_SCHEMA,
+  );
+  const {
+    inputValue: searchValue,
+    setInputValue: setSearchValue,
+    commitNow: commitSearchNow,
+  } = useDebouncedUrlSearch(values.search, (val) => setParam("search", val));
+
+  const filters = useMemo<WalletTransactionsQuery>(() => {
+    const resolvedRange =
+      values.date_preset !== "all" && !values.date_from && !values.date_to
+        ? resolveDatePresetRange(values.date_preset)
+        : null;
+
+    return {
+      page: values.page,
+      limit: values.limit,
+      search: values.search,
+      status: values.status,
+      type: values.type,
+      method: values.method,
+      direction: values.direction,
+      orderBy: values.order_by,
+      orderDir: values.order_dir,
+      datePreset: values.date_preset,
+      dateFrom: values.date_from || resolvedRange?.dateFrom || null,
+      dateTo: values.date_to || resolvedRange?.dateTo || null,
+    };
+  }, [values]);
+
+  const viewMode = values.view;
   const [selectedTx, setSelectedTx] = useState<WalletTransaction | null>(null);
   const [error, setError] = useState(initialError || "");
   const [success, setSuccess] = useState("");
@@ -78,6 +152,10 @@ export default function WalletTransactions({
   const publicRateVnd = useCoinRate();
   const coinRateVnd = coins.data?.rateVnd ?? publicRateVnd;
 
+  const initialQueryString = useMemo(
+    () => buildQueryString(initialQuery),
+    [initialQuery],
+  );
   const queryString = buildQueryString(filters);
   const swrKey = `/user/transaction?${queryString}`;
   const summaryKey = buildSummaryKey(filters);
@@ -94,7 +172,7 @@ export default function WalletTransactions({
       return res.data;
     },
     {
-      fallbackData: initialData,
+      fallbackData: queryString === initialQueryString ? initialData : undefined,
       revalidateOnFocus: false,
       keepPreviousData: true,
     },
@@ -126,20 +204,27 @@ export default function WalletTransactions({
   const updateFilters = (updates: Partial<WalletTransactionsQuery>) => {
     setError("");
     setSuccess("");
-    setFilters((prev) => ({ ...prev, ...updates }));
+    const patch: Partial<Record<keyof typeof WALLET_TRANSACTIONS_QUERY_SCHEMA, unknown>> = {};
+    if (updates.page !== undefined) patch.page = updates.page;
+    if (updates.limit !== undefined) patch.limit = updates.limit;
+    if (updates.search !== undefined) patch.search = updates.search;
+    if (updates.status !== undefined) patch.status = updates.status;
+    if (updates.type !== undefined) patch.type = updates.type;
+    if (updates.method !== undefined) patch.method = updates.method;
+    if (updates.direction !== undefined) patch.direction = updates.direction;
+    if (updates.orderBy !== undefined) patch.order_by = updates.orderBy;
+    if (updates.orderDir !== undefined) patch.order_dir = updates.orderDir;
+    if (updates.datePreset !== undefined) patch.date_preset = updates.datePreset;
+    if (updates.dateFrom !== undefined) patch.date_from = updates.dateFrom ?? "";
+    if (updates.dateTo !== undefined) patch.date_to = updates.dateTo ?? "";
+    setParams(patch as Parameters<typeof setParams>[0]);
   };
 
   const resetAllFilters = () => {
-    setSearchValue(initialQuery.search);
+    setSearchValue("");
     setError("");
     setSuccess("");
-    setFilters({
-      ...initialQuery,
-      direction: "all",
-      datePreset: "all",
-      dateFrom: null,
-      dateTo: null,
-    });
+    resetParams();
   };
 
   const handleDatePresetChange = (preset: WalletDatePreset) => {
@@ -249,11 +334,11 @@ export default function WalletTransactions({
         filters={filters}
         viewMode={viewMode}
         isLoading={isLoading}
-        onViewModeChange={setViewMode}
-        onSearchChange={setSearchValue}
-        onSearchSubmit={() =>
-          updateFilters({ page: 1, search: searchValue.trim() })
+        onViewModeChange={(mode) =>
+          setParam("view", mode, { resetPage: false })
         }
+        onSearchChange={setSearchValue}
+        onSearchSubmit={() => commitSearchNow(searchValue.trim())}
         onStatusChange={(status) => updateFilters({ status, page: 1 })}
         onMethodChange={(method) => updateFilters({ method, page: 1 })}
         onDirectionChange={(direction) => updateFilters({ direction, page: 1 })}

@@ -91,8 +91,8 @@ export type PlatformWalletDiscount = {
 export type PlatformWalletHistoryDetail = {
   log: PlatformWalletLog;
   wallet: PlatformWallet;
-  transaction: PlatformWalletTransaction;
-  user: PlatformWalletUserSummary;
+  transaction: PlatformWalletTransaction | null;
+  user: PlatformWalletUserSummary | null;
   courses: PlatformWalletCourseSummary[];
   purchase_items: PlatformWalletPurchaseItem[];
   instructor_earnings: PlatformWalletInstructorEarning[];

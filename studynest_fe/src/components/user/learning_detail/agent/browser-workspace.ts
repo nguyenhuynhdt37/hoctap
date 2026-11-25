@@ -3,7 +3,18 @@ import type { ActionRegistry } from './action-registry';
 import type { TelekinesisAction } from './contracts';
 
 const privateArea = '[data-agent-private], [data-agent-exclude], [aria-hidden="true"], script, style, [hidden], [role="dialog"]';
-const dangerous = /xóa|xoá|delete|remove|thanh toán|mua(?: ngay| khóa| hàng)|payment|purchase|checkout|chuyển tiền|nộp|submit|hoàn thành|đăng xuất|đăng nhập|login|logout|lưu|save|xác nhận|confirm|ngắt liên kết|disconnect|oauth|token|password|mật khẩu|bí mật|secret|api.?key|credit|thẻ tín dụng/i;
+// Mirror of backend app/agent/policy.py: only money, purchase, unlock, progress and credentials are refused.
+const sensitive = /thanh toan|mua (?:ngay|khoa|combo|goi|hang|them|lo trinh|bundle)|nap (?:coin|tien|xu|them|ngay)|rut (?:tien|coin|xu)|doi (?:coin|xu|qua|thuong|diem|voucher)|quy doi|chuyen (?:coin|tien|xu)|\btang (?:coin|xu|qua|khoa)|dang ky (?:hoc|khoa|ngay|mien phi)|ghi danh|vao hoc ngay|nhan (?:thuong|qua|coin|xu)|diem danh|mo khoa|unlock|claim|redeem|enroll|checkout|payment|purchase|\bbuy\b|\bpay\b|top.?up|withdraw|transfer|gift|subscribe|nang cap|gia han|hoan tien|refund|ap dung ma|coupon|hoan thanh bai|danh dau (?:da )?hoan thanh|hoan thanh khoa|nop bai|nop quiz|nop code|\bsubmit\b|\\bxoa\\b|delete|remove|dang xuat|log.?out|ngat lien ket|disconnect|oauth|mat khau|password|\btoken\b|api.?key|secret|\bcvv\b|\botp\b|the tin dung|credit card/;
+const moneyPath = /^\/(?:wallets?|coins?|shop|gifts|vouchers|refunds|checkout|payment|combo\/(?:don-hang|orders|thanh-toan)|lecturer\/(?:wallet|withdraw))(?:\/|$)/;
+const fold = (text: string) =>
+  text.toLowerCase().replace(/đ/g, 'd').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
+const dangerous = { test: (text: string) => sensitive.test(fold(text)) };
+const onMoneyPage = () => moneyPath.test(location.pathname);
+// Mirror of backend policy: trang có nút mua/đăng ký/mở khóa/hoàn thành chỉ cho bấm nút an toàn (liên kết vẫn mở).
+const guardedPath = /^\/(?:course|combo|learning-paths|lo-trinh|learning)(?:\/|$)/;
+const safeButton = /^(?:xem|mo|dong|thu gon|mo rong|tiep|truoc|sau|tim|loc|sap xep|chia se|phat|dung|tam dung|toc do|toan man hinh|bai tiep|bai truoc|muc luc|ghi chu|tong quan|cong cu|bai giang|hien|an|chi tiet|doc them|quay lai|tro lai|yeu thich|hoi may|tai them|thu lai|tab|chuong|danh sach|noi dung|tai lieu|binh luan|danh gia|cuon)\b/;
+const safeField = /tim|search|ghi chu|note|binh luan|comment|tin nhan|message|hoi/;
+const onGuardedPage = () => guardedPath.test(location.pathname);
 
 const visible = (el: HTMLElement) => {
   const r = el.getBoundingClientRect();
@@ -35,6 +46,8 @@ const isField = (el: HTMLElement): el is HTMLInputElement | HTMLTextAreaElement 
 
 const editable = (el: HTMLElement) =>
   isField(el) &&
+  !onMoneyPage() &&
+  (!onGuardedPage() || safeField.test(fold(nameOf(el)))) &&
   !el.disabled &&
   !el.readOnly &&
   !el.closest('.monaco-editor') &&
@@ -43,7 +56,14 @@ const editable = (el: HTMLElement) =>
 const clickable = (el: HTMLElement) => {
   if (dangerous.test(nameOf(el)) || el.getAttribute('aria-disabled') === 'true' || (el as HTMLButtonElement).disabled)
     return false;
-  if (el instanceof HTMLButtonElement && el.type === 'submit' && el.closest('form')) return false;
+  if (onMoneyPage() && !(el instanceof HTMLAnchorElement)) return false;
+  if (
+    onGuardedPage() &&
+    !(el instanceof HTMLAnchorElement) &&
+    !el.matches('[role="tab"], [role="link"], [data-icon-trigger]') &&
+    !safeButton.test(fold(nameOf(el)))
+  )
+    return false;
   if (el instanceof HTMLAnchorElement) {
     try {
       const url = new URL(el.href, location.href);

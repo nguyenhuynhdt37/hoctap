@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, Coins, FileText, ShieldCheck } from "pulsoicon-react";
 import { Alert, EmptyState } from "@/components/ui";
+import { useDebouncedUrlSearch, useUrlQueryState } from "@/hooks/useUrlQueryState";
 import api from "@/lib/utils/fetcher/client/axios";
 import type {
   RefundRequestsQuery,
@@ -58,13 +59,57 @@ const buildQueryString = (query: RefundRequestsQuery) => {
   return params.toString();
 };
 
+const MY_REFUNDS_QUERY_SCHEMA = {
+  page: { type: "number", default: 1, min: 1 },
+  limit: { type: "number", default: 10, min: 1, max: 100 },
+  search: { type: "string", default: "" as string, trim: true },
+  refund_status: { type: "string", default: "all" as string },
+  course_id: { type: "string", default: "" as string },
+  instructor_id: { type: "string", default: "" as string },
+  date_from: { type: "string", default: "" as string },
+  date_to: { type: "string", default: "" as string },
+  order_by: {
+    type: "string",
+    default: "created_at" as RefundRequestsQuery["order_by"],
+    allowed: ["created_at", "refund_amount", "refund_status"] as const,
+  },
+  order_dir: {
+    type: "string",
+    default: "desc" as RefundRequestsQuery["order_dir"],
+    allowed: ["asc", "desc"] as const,
+  },
+} as const;
+
 export default function MyRefundRequests({
   initialData = defaultData,
-  initialQuery = defaultQuery,
   initialError = null,
 }: MyRefundRequestsProps) {
-  const [filters, setFilters] = useState<RefundRequestsQuery>(initialQuery);
-  const [searchValue, setSearchValue] = useState(initialQuery.search || "");
+  const { values, setParam, setParams, resetParams } = useUrlQueryState(
+    MY_REFUNDS_QUERY_SCHEMA,
+  );
+  const {
+    inputValue: searchValue,
+    setInputValue: setSearchValue,
+    commitNow: commitSearchNow,
+  } = useDebouncedUrlSearch(values.search, (val) => setParam("search", val));
+
+  const filters = useMemo<RefundRequestsQuery>(
+    () => ({
+      page: values.page,
+      limit: values.limit,
+      search: values.search,
+      refund_status: values.refund_status,
+      course_id: values.course_id,
+      instructor_id: values.instructor_id,
+      date_from: values.date_from,
+      date_to: values.date_to,
+      order_by: values.order_by,
+      order_dir: values.order_dir,
+    }),
+    [values],
+  );
+
+  const queryString = useMemo(() => buildQueryString(filters), [filters]);
   const [data, setData] = useState<RefundRequestsResponse>(initialData);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(initialError);
@@ -75,7 +120,6 @@ export default function MyRefundRequests({
       setError(null);
 
       try {
-        const queryString = buildQueryString(filters);
         const response = await api.get(`/users/refunds/my-requests?${queryString}`);
         setData(response.data);
       } catch (err: unknown) {
@@ -91,39 +135,37 @@ export default function MyRefundRequests({
     };
 
     void fetchData();
-  }, [filters]);
+  }, [queryString]);
 
   const handleSearch = () => {
-    setFilters((prev) => ({ ...prev, page: 1, search: searchValue.trim() }));
+    commitSearchNow(searchValue.trim());
   };
 
   const handlePageChange = (page: number) => {
-    setFilters((prev) => ({ ...prev, page }));
+    setParam("page", page);
   };
 
   const handleLimitChange = (limit: number) => {
-    setFilters((prev) => ({ ...prev, limit, page: 1 }));
+    setParam("limit", limit);
   };
 
   const handleStatusChange = (status: RefundRequestsQuery["refund_status"]) => {
-    setFilters((prev) => ({ ...prev, refund_status: status, page: 1 }));
+    setParam("refund_status", status);
   };
 
   const handleOrderChange = (
     orderBy: RefundRequestsQuery["order_by"],
     orderDir: RefundRequestsQuery["order_dir"],
   ) => {
-    setFilters((prev) => ({
-      ...prev,
+    setParams({
       order_by: orderBy,
       order_dir: orderDir,
-      page: 1,
-    }));
+    });
   };
 
   const handleResetFilters = () => {
     setSearchValue("");
-    setFilters({ ...defaultQuery });
+    resetParams();
   };
 
   const items = data?.items || [];

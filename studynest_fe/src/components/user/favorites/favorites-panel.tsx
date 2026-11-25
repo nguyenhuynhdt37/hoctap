@@ -1,7 +1,10 @@
 "use client";
 
+import { Button, Card, Input, Select } from "@/components/ui";
 import api from "@/lib/utils/fetcher/client/axios";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useDebouncedUrlSearch, useUrlQueryState } from "@/hooks/useUrlQueryState";
+import type { CatalogOptions } from "@/types/catalog";
+import { useCallback, useEffect, useMemo } from "react";
 import useSWR from "swr";
 import {
   SlidersHorizontal,
@@ -17,7 +20,6 @@ import { CourseSkeletonGrid } from "../my-learning/course-skeleton-grid";
 import { CourseEmptyState, CourseErrorState } from "../my-learning/empty-states";
 import type {
   FavouriteCoursesResponse,
-  FavouriteCourseItem,
   FavouriteLevel,
   FavouriteSortField,
 } from "@/types/user/favourites";
@@ -50,41 +52,81 @@ const fetchFavourites = async (url: string) => {
   return response.data;
 };
 
-const fetchCategories = async () => {
-  const response = await api.get<{ id: string; name: string }[]>("categories/all");
+const fetchCatalogFilters = async () => {
+  const response = await api.get<CatalogOptions>("/catalog/filters");
   return response.data;
 };
 
+const FAVORITES_QUERY_SCHEMA = {
+  page: { type: "number", default: 1, min: 1 },
+  size: { type: "number", default: 10, min: 1, max: 100 },
+  sort_by: {
+    type: "string",
+    default: "created_at" as FavouriteSortField,
+    allowed: ["created_at", "title", "rating_avg", "views"] as const,
+  },
+  order: {
+    type: "string",
+    default: "desc" as "asc" | "desc",
+    allowed: ["asc", "desc"] as const,
+  },
+  search: { type: "string", default: "" as string, trim: true },
+  subject: { type: "string", default: "" as string },
+  grade: { type: "string", default: "" as string },
+  level: {
+    type: "string",
+    default: "" as "" | FavouriteLevel,
+    allowed: ["", "beginner", "intermediate", "advanced"] as const,
+  },
+  language: {
+    type: "string",
+    default: "",
+    allowed: ["", "vi", "en"] as const,
+  },
+} as const;
+
 export const FavoritesPanel = () => {
-  const [page, setPage] = useState(1);
-  const [size, setSize] = useState(10);
-  const [sortBy, setSortBy] = useState<FavouriteSortField>("created_at");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-  const [keyword, setKeyword] = useState("");
-  const [debouncedKeyword, setDebouncedKeyword] = useState("");
-  const [categoryId, setCategoryId] = useState("");
-  const [level, setLevel] = useState<"" | FavouriteLevel>("");
-  const [language, setLanguage] = useState("");
-
-  const { data: categoriesData, isLoading: isLoadingCategories } = useSWR<{ id: string; name: string }[]>(
-    "categories/all",
-    fetchCategories,
-    { revalidateOnFocus: false }
+  const { values, setParam, resetParams } = useUrlQueryState(
+    FAVORITES_QUERY_SCHEMA,
   );
+  const {
+    page,
+    size,
+    sort_by: sortBy,
+    order: sortOrder,
+    search: debouncedKeyword,
+    subject: subjectId,
+    grade: gradeId,
+    level,
+    language,
+  } = values;
 
-  const categoryOptions = useMemo(() => {
-    if (!categoriesData) return [];
-    return categoriesData.map((cat) => ({ value: cat.id, label: cat.name }));
-  }, [categoriesData]);
+  const {
+    inputValue: keyword,
+    setInputValue: setKeyword,
+    commitNow: commitKeywordNow,
+  } = useDebouncedUrlSearch(debouncedKeyword, (val) => setParam("search", val));
 
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedKeyword(keyword.trim()), 350);
-    return () => clearTimeout(timer);
-  }, [keyword]);
+  const { data: catalogFilters, isLoading: isLoadingCatalogFilters } =
+    useSWR<CatalogOptions>("/catalog/filters", fetchCatalogFilters, {
+      revalidateOnFocus: false,
+    });
 
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedKeyword, sortBy, sortOrder, size, categoryId, level, language]);
+  const subjectOptions = useMemo(() => {
+    if (!catalogFilters?.subjects) return [];
+    return catalogFilters.subjects.map((sub) => ({
+      value: sub.id,
+      label: sub.name,
+    }));
+  }, [catalogFilters?.subjects]);
+
+  const gradeOptions = useMemo(() => {
+    if (!catalogFilters?.grades) return [];
+    return catalogFilters.grades.map((grade) => ({
+      value: grade.id,
+      label: grade.name,
+    }));
+  }, [catalogFilters?.grades]);
 
   const swrKey = useMemo(() => {
     const params = new URLSearchParams({
@@ -94,11 +136,22 @@ export const FavoritesPanel = () => {
       order: sortOrder,
     });
     if (debouncedKeyword) params.set("keyword", debouncedKeyword);
-    if (categoryId) params.set("category_id", categoryId);
+    if (subjectId) params.set("subject_id", subjectId);
+    if (gradeId) params.set("grade_id", gradeId);
     if (level) params.set("level", level);
     if (language) params.set("language", language);
     return `favourites?${params.toString()}`;
-  }, [page, size, sortBy, sortOrder, debouncedKeyword, categoryId, level, language]);
+  }, [
+    page,
+    size,
+    sortBy,
+    sortOrder,
+    debouncedKeyword,
+    subjectId,
+    gradeId,
+    level,
+    language,
+  ]);
 
   const { data, error, isLoading, isValidating, mutate } = useSWR<FavouriteCoursesResponse>(swrKey, fetchFavourites, {
     keepPreviousData: true,
@@ -113,8 +166,8 @@ export const FavoritesPanel = () => {
   useEffect(() => {
     if (!total) return;
     const maxPage = Math.max(1, Math.ceil(total / size));
-    if (page > maxPage) setPage(maxPage);
-  }, [total, size, page]);
+    if (page > maxPage) setParam("page", maxPage);
+  }, [total, size, page, setParam]);
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / size)), [total, size]);
 
@@ -126,151 +179,173 @@ export const FavoritesPanel = () => {
   }, [error]);
 
   const toggleSortOrder = useCallback(() => {
-    setSortOrder((prev) => (prev === "desc" ? "asc" : "desc"));
-  }, []);
+    setParam("order", sortOrder === "desc" ? "asc" : "desc");
+  }, [setParam, sortOrder]);
 
   const clearFilters = useCallback(() => {
-    setCategoryId("");
-    setLevel("");
-    setLanguage("");
     setKeyword("");
-  }, []);
+    resetParams();
+  }, [resetParams, setKeyword]);
 
   const handlePageChange = (newPage: number) => {
-    setPage(newPage);
+    setParam("page", newPage);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
     <>
       {/* Filters */}
-      <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm mb-6">
-        <div className="flex flex-col md:flex-row gap-4">
+      <Card className="rounded-[24px] p-5 md:p-6 border-border bg-surface shadow-xs mb-6">
+        <div className="flex flex-col md:flex-row gap-3.5">
           {/* Search */}
           <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <input
-                type="text"
-                value={keyword}
-                onChange={(e) => setKeyword(e.target.value)}
-                placeholder="Tìm kiếm khóa học..."
-                className="w-full pl-10 pr-10 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              />
-              {keyword && (
-                <button
-                  aria-label="Xóa nội dung tìm kiếm"
-                  onClick={() => setKeyword("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              )}
-            </div>
+            <Input
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+              placeholder="Tìm kiếm khóa học..."
+              leftIcon={<Search className="h-4 w-4 text-muted-foreground" />}
+              rightIcon={
+                keyword ? (
+                  <button
+                    type="button"
+                    aria-label="Xóa nội dung tìm kiếm"
+                    onClick={() => commitKeywordNow("")}
+                    className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-primary-light/50 transition-colors cursor-pointer"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                ) : null
+              }
+            />
           </div>
 
           {/* Sort */}
           <div className="flex items-center gap-2">
-            <select
+            <Select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as FavouriteSortField)}
-              className="px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+              onChange={(e) => setParam("sort_by", e.target.value as FavouriteSortField)}
+              aria-label="Tiêu chí sắp xếp"
             >
               {SORT_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {opt.label}
                 </option>
               ))}
-            </select>
-            <button
+            </Select>
+            <Button
               type="button"
+              variant="outline"
+              size="md"
               onClick={toggleSortOrder}
               disabled={isBusy}
-              className="px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
+              className="shrink-0 px-3"
               aria-label="Đổi chiều sắp xếp"
             >
-              <ArrowUpDown className="h-5 w-5 text-gray-600" />
-            </button>
+              <ArrowUpDown
+                className={`h-4 w-4 transition-transform ${
+                  sortOrder === "asc" ? "rotate-180 text-primary" : "text-muted-foreground"
+                }`}
+              />
+            </Button>
           </div>
 
           {/* Page Size */}
-          <select
+          <Select
             value={size}
-            onChange={(e) => setSize(Number(e.target.value))}
-            className="px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+            onChange={(e) => setParam("size", Number(e.target.value))}
+            aria-label="Số khóa học mỗi trang"
           >
             {PAGE_SIZE_OPTIONS.map((opt) => (
               <option key={opt} value={opt}>
                 {opt}/trang
               </option>
             ))}
-          </select>
+          </Select>
         </div>
 
-        <div className="grid gap-3 md:grid-cols-3 mt-4 pt-4 border-t border-gray-100">
-          <label className="flex flex-col gap-1 text-sm font-medium text-gray-600">
-            <span className="flex items-center gap-1">
-              <SlidersHorizontal className="h-4 w-4 text-green-600" />
-              Danh mục
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 mt-4 pt-4 border-t border-border/70">
+          <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
+            <span className="flex items-center gap-1.5">
+              <SlidersHorizontal className="h-3.5 w-3.5 text-primary" />
+              Môn học
             </span>
-            <select
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
-              className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white text-sm"
+            <Select
+              value={subjectId}
+              onChange={(e) => setParam("subject", e.target.value)}
             >
-              <option value="">{isLoadingCategories ? "Đang tải..." : "Tất cả danh mục"}</option>
-              {categoryOptions.map((opt) => (
+              <option value="">
+                {isLoadingCatalogFilters ? "Đang tải..." : "Tất cả môn học"}
+              </option>
+              {subjectOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {opt.label}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
 
-          <label className="flex flex-col gap-1 text-sm font-medium text-gray-600">
+          <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
+            <span>Khối lớp</span>
+            <Select
+              value={gradeId}
+              onChange={(e) => setParam("grade", e.target.value)}
+            >
+              <option value="">
+                {isLoadingCatalogFilters ? "Đang tải..." : "Tất cả khối lớp"}
+              </option>
+              {gradeOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </Select>
+          </label>
+
+          <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
             <span>Cấp độ</span>
-            <select
+            <Select
               value={level}
-              onChange={(e) => setLevel(e.target.value as "" | FavouriteLevel)}
-              className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white text-sm"
+              onChange={(e) => setParam("level", e.target.value as "" | FavouriteLevel)}
             >
               {LEVEL_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {opt.label}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
 
-          <label className="flex flex-col gap-1 text-sm font-medium text-gray-600">
+          <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
             <span>Ngôn ngữ</span>
-            <select
+            <Select
               value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-              className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white text-sm"
+              onChange={(e) =>
+                setParam("language", e.target.value as "" | "vi" | "en")
+              }
             >
               {LANGUAGE_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {opt.label}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
         </div>
 
-        {(categoryId || level || language || keyword) && (
-          <div className="mt-4 pt-4 border-t border-gray-100">
-            <button
+        {(subjectId || gradeId || level || language || keyword || debouncedKeyword) && (
+          <div className="mt-4 pt-4 border-t border-border/70">
+            <Button
               type="button"
+              variant="pastel"
+              size="sm"
               onClick={clearFilters}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-yellow-600 bg-yellow-50 border border-yellow-200 rounded-lg hover:bg-yellow-100 transition-colors cursor-pointer"
+              leftIcon={<RefreshCw className="h-3.5 w-3.5" />}
             >
-              <RefreshCw className="h-4 w-4" />
               Xóa bộ lọc
-            </button>
+            </Button>
           </div>
         )}
-      </div>
+      </Card>
 
       {/* Loading State */}
       {isInitialLoading && <CourseSkeletonGrid count={Math.min(size, 6)} />}
@@ -332,10 +407,10 @@ export const FavoritesPanel = () => {
               <button
                 key={i}
                 onClick={() => handlePageChange(pageNum)}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors cursor-pointer ${
+                className={`px-4 py-2 rounded-xl font-medium transition-colors cursor-pointer ${
                   page === pageNum
-                    ? "bg-green-600 text-white"
-                    : "border border-gray-200 hover:bg-gray-50"
+                    ? "bg-primary text-primary-foreground shadow-2xs"
+                    : "border border-border bg-surface text-foreground hover:bg-primary-light/60"
                 }`}
               >
                 {pageNum}

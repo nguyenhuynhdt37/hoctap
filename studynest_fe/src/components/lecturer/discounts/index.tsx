@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   Cloud,
   Layers,
@@ -14,6 +14,10 @@ import {
 import useSWR from "swr";
 import Pagination from "@/components/shared/pagination";
 import { Button } from "@/components/ui";
+import {
+  useDebouncedUrlSearch,
+  useUrlQueryState,
+} from "@/hooks/useUrlQueryState";
 import api from "@/lib/utils/fetcher/client/axios";
 import { showToast } from "@/lib/utils/helpers/toast";
 import type {
@@ -33,62 +37,84 @@ import { VoucherCardGrid } from "./voucher-card-grid";
 
 const DEFAULT_LIMIT = 10;
 
-type DiscountSpaceTab = "courses" | "combos";
+const LECTURER_DISCOUNTS_QUERY_SCHEMA = {
+  tab: {
+    type: "string",
+    default: "courses",
+    allowed: ["courses", "combos"] as const,
+  },
+  view: {
+    type: "string",
+    default: "cards",
+    allowed: ["cards", "table"] as const,
+  },
+  page: { type: "number", default: 1, min: 1 },
+  limit: { type: "number", default: DEFAULT_LIMIT, min: 1, max: 100 },
+  search: { type: "string", default: "" as string },
+  discount_type: {
+    type: "string",
+    default: "",
+    allowed: ["", "percent", "fixed"] as const,
+  },
+  is_active: {
+    type: "string",
+    default: "",
+    allowed: ["", "true", "false"] as const,
+  },
+  validity: {
+    type: "string",
+    default: "",
+    allowed: ["", "expired", "running", "upcoming"] as const,
+  },
+  sort_by: { type: "string", default: "created_at" as string },
+  order_dir: {
+    type: "string",
+    default: "desc",
+    allowed: ["asc", "desc"] as const,
+  },
+} as const;
 
 export default function DiscountsManagement() {
   const router = useRouter();
-  const [spaceTab, setSpaceTab] = useState<DiscountSpaceTab>("courses");
-  const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
   const [comboCreateSignal, setComboCreateSignal] = useState(0);
 
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: DEFAULT_LIMIT,
-  });
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [discountType, setDiscountType] = useState<"percent" | "fixed" | "">("");
-  const [isActive, setIsActive] = useState<boolean | null>(null);
-  const [validity, setValidity] = useState<"expired" | "running" | "upcoming" | "">("");
-  const [sortBy, setSortBy] = useState("created_at");
-  const [orderDir, setOrderDir] = useState<"asc" | "desc">("desc");
+  const { values, setParam, setParams, resetParams } = useUrlQueryState(
+    LECTURER_DISCOUNTS_QUERY_SCHEMA,
+  );
+  const spaceTab = values.tab;
+  const viewMode = values.view;
+  const page = values.page;
+  const limit = values.limit;
+  const search = values.search;
+  const discountType = values.discount_type;
+  const isActive: boolean | null =
+    values.is_active === "true"
+      ? true
+      : values.is_active === "false"
+        ? false
+        : null;
+  const validity = values.validity;
+  const sortBy = values.sort_by;
+  const orderDir = values.order_dir;
 
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPagination((prev) => ({ ...prev, page: 1 }));
-    }, 300);
-    return () => clearTimeout(timeout);
-  }, [search]);
-
-  useEffect(() => {
-    setPagination((prev) => ({ ...prev, page: 1 }));
-  }, [discountType, isActive, validity, sortBy, orderDir]);
+  const { inputValue: searchInput, setInputValue: setSearchInput } =
+    useDebouncedUrlSearch(search, (val) => setParam("search", val));
 
   const buildQueryParams = useCallback((): DiscountsQueryParams => {
     const params: DiscountsQueryParams = {
-      page: pagination.page,
-      limit: pagination.limit,
+      page,
+      limit,
       sort_by: sortBy,
       order_dir: orderDir,
     };
 
-    if (debouncedSearch.trim()) params.search = debouncedSearch.trim();
+    if (search.trim()) params.search = search.trim();
     if (discountType) params.discount_type = discountType;
     if (isActive !== null) params.is_active = isActive;
     if (validity) params.validity = validity;
 
     return params;
-  }, [
-    pagination.page,
-    pagination.limit,
-    debouncedSearch,
-    discountType,
-    isActive,
-    validity,
-    sortBy,
-    orderDir,
-  ]);
+  }, [page, limit, search, discountType, isActive, validity, sortBy, orderDir]);
 
   const { data, isLoading, mutate } = useSWR<DiscountsResponse>(
     ["/lecturer/discounts", buildQueryParams()],
@@ -150,39 +176,32 @@ export default function DiscountsManagement() {
   };
 
   const handlePageChange = (newPage: number) => {
-    setPagination((prev) => ({ ...prev, page: newPage }));
+    setParam("page", newPage);
   };
 
   const handleLimitChange = (newLimit: number) => {
-    setPagination((prev) => ({ ...prev, limit: newLimit, page: 1 }));
+    setParam("limit", newLimit);
   };
 
   const handleSort = (column: string) => {
     if (sortBy === column) {
-      setOrderDir(orderDir === "asc" ? "desc" : "asc");
+      setParam("order_dir", orderDir === "asc" ? "desc" : "asc");
     } else {
-      setSortBy(column);
-      setOrderDir("asc");
+      setParams({ sort_by: column, order_dir: "asc" });
     }
   };
 
   const handleResetFilters = () => {
-    setSearch("");
-    setDebouncedSearch("");
-    setDiscountType("");
-    setIsActive(null);
-    setValidity("");
-    setSortBy("created_at");
-    setOrderDir("desc");
-    setPagination({ page: 1, limit: DEFAULT_LIMIT });
+    setSearchInput("");
+    resetParams();
   };
 
   const items = data?.items ?? [];
   const bundles = bundlesData?.items ?? [];
   const totalPages = useMemo(() => {
     if (!data) return 0;
-    return Math.ceil(data.total / pagination.limit);
-  }, [data, pagination.limit]);
+    return Math.ceil(data.total / limit);
+  }, [data, limit]);
 
   const activeCourseDiscounts = items.filter((d) => d.is_active).length;
   const totalUsageOnPage = items.reduce((sum, d) => sum + (d.usage_count || 0), 0);
@@ -277,7 +296,7 @@ export default function DiscountsManagement() {
                 variant="pastel"
                 size="sm"
                 onClick={() => {
-                  setSpaceTab("combos");
+                  setParam("tab", "combos", { resetPage: false });
                   setComboCreateSignal((prev) => prev + 1);
                 }}
                 className="min-h-11 rounded-full border border-accent-vanilla-border bg-accent-vanilla/85 px-5 font-bold text-accent-vanilla-foreground hover:bg-accent-vanilla"
@@ -346,7 +365,7 @@ export default function DiscountsManagement() {
             type="button"
             role="tab"
             aria-selected={spaceTab === "courses"}
-            onClick={() => setSpaceTab("courses")}
+            onClick={() => setParam("tab", "courses", { resetPage: false })}
             className={cn(
               "inline-flex min-h-10 items-center gap-2 rounded-full px-5 text-xs font-bold transition-all cursor-pointer",
               spaceTab === "courses"
@@ -372,7 +391,7 @@ export default function DiscountsManagement() {
             type="button"
             role="tab"
             aria-selected={spaceTab === "combos"}
-            onClick={() => setSpaceTab("combos")}
+            onClick={() => setParam("tab", "combos", { resetPage: false })}
             className={cn(
               "inline-flex min-h-10 items-center gap-2 rounded-full px-5 text-xs font-bold transition-all cursor-pointer",
               spaceTab === "combos"
@@ -399,21 +418,28 @@ export default function DiscountsManagement() {
         {spaceTab === "courses" ? (
           <div className="space-y-5">
             <DiscountsFilters
-              search={search}
-              onSearchChange={setSearch}
+              search={searchInput}
+              onSearchChange={setSearchInput}
               discountType={discountType}
-              onDiscountTypeChange={setDiscountType}
+              onDiscountTypeChange={(val) => setParam("discount_type", val)}
               isActive={isActive}
-              onIsActiveChange={setIsActive}
+              onIsActiveChange={(val) =>
+                setParam(
+                  "is_active",
+                  val === null ? "" : val ? "true" : "false",
+                )
+              }
               validity={validity}
-              onValidityChange={setValidity}
+              onValidityChange={(val) => setParam("validity", val)}
               sortBy={sortBy}
-              onSortByChange={setSortBy}
+              onSortByChange={(val) => setParam("sort_by", val)}
               orderDir={orderDir}
-              onOrderDirChange={setOrderDir}
+              onOrderDirChange={(val) => setParam("order_dir", val)}
               onReset={handleResetFilters}
               viewMode={viewMode}
-              onViewModeChange={setViewMode}
+              onViewModeChange={(mode) =>
+                setParam("view", mode, { resetPage: false })
+              }
             />
 
             {isInitialLoading ? (
@@ -441,10 +467,10 @@ export default function DiscountsManagement() {
 
                 {data && data.total > 0 && (
                   <Pagination
-                    currentPage={pagination.page}
+                    currentPage={page}
                     totalPages={totalPages}
                     totalItems={data.total}
-                    pageSize={pagination.limit}
+                    pageSize={limit}
                     onPageChange={handlePageChange}
                     onPageSizeChange={handleLimitChange}
                     showPageSizeSelector={true}

@@ -4,9 +4,9 @@ from unittest.mock import AsyncMock,patch
 import httpx
 import pytest
 from fastapi import HTTPException
-from app.agent.workspace_mcp import exchange,run_bash
+from app.agent.workspace_mcp import exchange, run_bash
 from app.core.settings import settings
-from app.agent.runtime import navigation_requested
+
 
 
 @pytest.mark.asyncio
@@ -57,9 +57,3 @@ async def test_unconfigured_sandbox_never_uses_host_shell(monkeypatch):
         with pytest.raises(HTTPException):await run_bash('printf hello',[],1000)
 
 
-@pytest.mark.parametrize('message,expected',[
-    ('Nhấn nút Ghi chú trên màn hình',True),('Click the tab',True),
-    ('Đừng nhấn nút đó',False),('README nói "nhấn nút đó"',False),
-])
-def test_generic_browser_click_requires_real_user_action_intent(message,expected):
-    assert navigation_requested(message,'mcp.browser_click')==expected

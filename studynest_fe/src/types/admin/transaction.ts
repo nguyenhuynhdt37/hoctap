@@ -1,20 +1,25 @@
 export interface AdminTransaction {
   id: string;
   ref_id: string | null;
-  direction: "in" | "out";
+  direction: "in" | "out" | string;
   confirmed_at: string | null;
   user_id: string | null;
-  method: "wallet" | "paypal" | "momo" | "vnpay" | "bank_transfer" | string;
+  method: "wallet" | "paypal" | "momo" | "vnpay" | "bank_transfer" | string | null;
   updated_at: string;
-  gateway: "internal_wallet" | "paypal" | "momo" | "stripe" | string;
+  gateway: "internal_wallet" | "paypal" | "momo" | "stripe" | "wallet" | "internal" | string | null;
   return_pathname: string | null;
   order_id: string | null;
   return_origin: string | null;
   type:
+    | "deposit"
     | "topup"
     | "purchase"
+    | "income"
     | "withdraw"
+    | "withdraw_hold"
+    | "withdraw_reject_refund"
     | "refund"
+    | "fee"
     | "upgrade"
     | "payout"
     | string;
@@ -44,6 +49,8 @@ export interface AdminTransactionsSummary {
   total_amount: string;
   total_in: string;
   total_out: string;
+  status_counts?: Record<string, number>;
+  success_rate?: number;
 }
 
 export interface AdminTransactionsResponse {
@@ -70,5 +77,3 @@ export interface AdminTransactionsQuery {
   sort_by?: string;
   order_dir?: "asc" | "desc";
 }
-
-

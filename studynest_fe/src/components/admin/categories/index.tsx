@@ -1,15 +1,23 @@
 "use client";
 
 import ContextMenu from "@/components/shared/context-menu";
+import { Alert } from "@/components/ui";
+import {
+  useDebouncedUrlSearch,
+  useUrlQueryState,
+} from "@/hooks/useUrlQueryState";
 import api from "@/lib/utils/fetcher/client/axios";
 import { showToast } from "@/lib/utils/helpers/toast";
 import { Category } from "@/types/admin/category";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import {
+  ArrowRight,
   ChevronDown,
   ChevronUp,
+  Info,
   Pencil,
   Plus,
   Search,
@@ -27,18 +35,47 @@ interface PaginatedResponse {
   };
 }
 
+const CATEGORIES_QUERY_SCHEMA = {
+  page: { type: "number", default: 1, min: 1 },
+  page_size: { type: "number", default: 10, min: 1, max: 100 },
+  search: { type: "string", default: "" },
+  parent_id: { type: "string", default: "" },
+  level: {
+    type: "string",
+    default: "" as "" | "0" | "1" | "2",
+    allowed: ["", "0", "1", "2"] as const,
+  },
+  sort_by: {
+    type: "string",
+    default: "order_index" as
+      | "name"
+      | "order_index"
+      | "course_count"
+      | "created_at",
+    allowed: ["name", "order_index", "course_count", "created_at"] as const,
+  },
+  sort_order: {
+    type: "string",
+    default: "asc" as "asc" | "desc",
+    allowed: ["asc", "desc"] as const,
+  },
+} as const;
+
 const Categories = () => {
   const router = useRouter();
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [searchInput, setSearchInput] = useState(""); // Input value trực tiếp
-  const [search, setSearch] = useState(""); // Giá trị sau debounce
-  const [parentId, setParentId] = useState<string>("");
-  const [level, setLevel] = useState<string>(""); // Filter by level
-  const [sortBy, setSortBy] = useState<
-    "name" | "order_index" | "course_count" | "created_at"
-  >("order_index");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const { values, setParam } = useUrlQueryState(CATEGORIES_QUERY_SCHEMA);
+  const {
+    page,
+    page_size: pageSize,
+    search,
+    parent_id: parentId,
+    level,
+    sort_by: sortBy,
+    sort_order: sortOrder,
+  } = values;
+
+  const { inputValue: searchInput, setInputValue: setSearchInput } =
+    useDebouncedUrlSearch(search, (val) => setParam("search", val));
 
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [editName, setEditName] = useState("");
@@ -46,16 +83,6 @@ const Categories = () => {
   const [editOrderIndex, setEditOrderIndex] = useState<number>(1);
   const [isSaving, setIsSaving] = useState(false); // Chống spam click
   const [isDeleting, setIsDeleting] = useState(false); // Chống spam delete
-
-  // Debounce search input - chống nháy
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setSearch(searchInput);
-      setPage(1); // Reset về trang 1 khi search
-    }, 500); // Đợi 500ms sau khi user ngừng gõ
-
-    return () => clearTimeout(timer);
-  }, [searchInput]);
 
   // Build query params
   const buildQuery = () => {
@@ -249,6 +276,27 @@ const Categories = () => {
 
   return (
     <div className="p-6 min-h-screen bg-gray-50">
+      {/* Unified Catalog Notice Banner */}
+      <Alert
+        variant="info"
+        className="mb-6"
+        icon={<Info className="h-5 w-5" aria-hidden="true" />}
+      >
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm font-medium text-info-foreground">
+            Hệ thống đã chuyển sang quản lý phân loại thống nhất theo Cấp học ·
+            Khối lớp · Môn học · Kỳ thi.
+          </p>
+          <Link
+            href="/admin/catalog"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-primary px-3.5 py-2 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            Mở Khối lớp &amp; Môn học
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
+        </div>
+      </Alert>
+
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
@@ -317,8 +365,7 @@ const Categories = () => {
               <select
                 value={parentId}
                 onChange={(e) => {
-                  setParentId(e.target.value);
-                  setPage(1);
+                  setParam("parent_id", e.target.value);
                 }}
                 disabled={isValidating}
                 className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
@@ -340,8 +387,7 @@ const Categories = () => {
               <select
                 value={level}
                 onChange={(e) => {
-                  setLevel(e.target.value);
-                  setPage(1);
+                  setParam("level", e.target.value as "" | "0" | "1" | "2");
                 }}
                 disabled={isValidating}
                 className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
@@ -362,7 +408,8 @@ const Categories = () => {
                 <select
                   value={sortBy}
                   onChange={(e) =>
-                    setSortBy(
+                    setParam(
+                      "sort_by",
                       e.target.value as
                         | "name"
                         | "order_index"
@@ -380,7 +427,7 @@ const Categories = () => {
                 </select>
                 <button
                   onClick={() =>
-                    setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))
+                    setParam("sort_order", sortOrder === "asc" ? "desc" : "asc")
                   }
                   disabled={isValidating}
                   className="px-4 py-2 border-2 border-gray-300 rounded-lg hover:bg-gray-50 font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all"
@@ -525,7 +572,7 @@ const Categories = () => {
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                onClick={() => setParam("page", Math.max(1, page - 1))}
                 disabled={page === 1 || isValidating}
                 className="px-4 py-2 border-2 border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-semibold transition-all"
               >
@@ -538,7 +585,7 @@ const Categories = () => {
                 ).map((p) => (
                   <button
                     key={p}
-                    onClick={() => setPage(p)}
+                    onClick={() => setParam("page", p)}
                     disabled={isValidating}
                     className={`px-4 py-2 rounded-lg font-semibold transition-all ${
                       p === page
@@ -552,7 +599,7 @@ const Categories = () => {
               </div>
               <button
                 onClick={() =>
-                  setPage((p) => Math.min(data.pagination.total_pages, p + 1))
+                  setParam("page", Math.min(data.pagination.total_pages, page + 1))
                 }
                 disabled={page === data.pagination.total_pages || isValidating}
                 className="px-4 py-2 border-2 border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-semibold transition-all"

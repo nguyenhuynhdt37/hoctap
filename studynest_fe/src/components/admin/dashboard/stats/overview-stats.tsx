@@ -1,120 +1,142 @@
 "use client";
 
-import api from "@/lib/utils/fetcher/client/axios";
-import { OverviewResponse } from "@/types/admin/statistics";
-import {
-  Users,
-  BookOpen,
-  GraduationCap,
-  CircleDollarSign,
-  Banknote,
-  ArrowUp,
-  RefreshCw,
-} from "pulsoicon-react";
+import Link from "next/link";
 import useSWR from "swr";
-
+import {
+  ArrowUpRight,
+  BookOpen,
+  Coins,
+  GraduationCap,
+  RotateCcw,
+  TrendingUp,
+  Users,
+} from "pulsoicon-react";
+import api from "@/lib/utils/fetcher/client/axios";
 import { formatVndAsCoin } from "@/lib/learning-hub/coin-logic";
+import type { OverviewResponse } from "@/types/admin/statistics";
 
-const formatCurrency = (value: number | null | undefined) => formatVndAsCoin(value);
-
-interface StatCardProps {
-  title: string;
-  value: string;
-  icon: React.ElementType;
-  color: string;
-  isLoading?: boolean;
-}
-
-function StatCard({
-  title,
-  value,
-  icon: Icon,
-  color,
-  isLoading,
-}: StatCardProps) {
-  return (
-    <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/30 p-5 hover:shadow-xl transition-all duration-300 hover:scale-[1.02] group">
-      <div className="flex items-center justify-between">
-        <div className="flex-1 min-w-0">
-          <p className="text-gray-600 text-sm font-medium truncate">{title}</p>
-          {isLoading ? (
-            <div className="h-8 w-24 bg-gray-200 rounded-lg animate-pulse mt-1" />
-          ) : (
-            <p className="text-2xl font-bold text-gray-900 mt-1 group-hover:text-green-600 transition-colors truncate">
-              {value}
-            </p>
-          )}
-        </div>
-        <div
-          className={`p-3 rounded-xl ${color} shadow-lg group-hover:scale-110 transition-transform flex-shrink-0`}
-        >
-          <Icon className="w-5 h-5 text-white" />
-        </div>
-      </div>
-    </div>
-  );
-}
+const formatCurrency = (value: number | null | undefined) =>
+  formatVndAsCoin(Math.round(value || 0));
 
 export default function OverviewStats() {
   const { data, isLoading } = useSWR<OverviewResponse>(
     "/admin/statistics/overview",
-    async (url) => {
-      const res = await api.get(url);
-      return res.data;
-    },
-    { revalidateOnFocus: false }
+    async (url: string) => (await api.get(url)).data,
+    { revalidateOnFocus: false },
   );
 
-  const stats = [
+  const cards = [
     {
-      title: "Tổng người dùng",
+      href: "/admin/users",
+      title: "Tổng thành viên",
       value: (data?.total_users ?? 0).toLocaleString("vi-VN"),
+      sub: "Học viên & tài khoản hệ thống",
       icon: Users,
-      color: "bg-green-500",
+      iconCls: "border-primary-pastel bg-primary-light text-primary",
+      valueCls: "text-foreground",
     },
     {
+      href: "/admin/catalog",
       title: "Tổng khóa học",
       value: (data?.total_courses ?? 0).toLocaleString("vi-VN"),
+      sub: "Chương trình & học liệu",
       icon: BookOpen,
-      color: "bg-emerald-500",
+      iconCls: "border-info-border bg-info-bg text-info-foreground",
+      valueCls: "text-foreground",
     },
     {
+      href: "/admin/instructors",
       title: "Giảng viên",
       value: (data?.total_instructors ?? 0).toLocaleString("vi-VN"),
+      sub: "Đội ngũ đối tác giảng dạy",
       icon: GraduationCap,
-      color: "bg-teal-500",
+      iconCls: "border-accent-border bg-accent text-accent-foreground",
+      valueCls: "text-foreground",
     },
     {
+      href: "/admin/wallets",
       title: "Tổng doanh thu",
       value: formatCurrency(data?.total_revenue),
-      icon: CircleDollarSign,
-      color: "bg-green-600",
+      sub: "Tích lũy toàn nền tảng",
+      icon: Coins,
+      iconCls: "border-success-border bg-success-bg text-success-foreground",
+      valueCls: "text-primary",
     },
     {
+      href: "/admin/transactions",
       title: "Doanh thu hôm nay",
       value: formatCurrency(data?.today_revenue),
-      icon: Banknote,
-      color: "bg-emerald-600",
+      sub: "Phát sinh trong ngày",
+      icon: TrendingUp,
+      iconCls:
+        "border-accent-vanilla-border bg-accent-vanilla text-accent-vanilla-foreground",
+      valueCls: "text-success-foreground",
     },
     {
+      href: "/admin/withdraws",
       title: "Chờ rút tiền",
-      value: (data?.pending_withdrawals ?? 0).toLocaleString("vi-VN"),
-      icon: ArrowUp,
-      color: "bg-yellow-500",
+      value: `${data?.pending_withdrawals ?? 0} lệnh`,
+      sub: "Cần Admin xét duyệt",
+      icon: ArrowUpRight,
+      iconCls: "border-warning-border bg-warning-bg text-warning-foreground",
+      valueCls:
+        (data?.pending_withdrawals ?? 0) > 0
+          ? "text-warning-foreground"
+          : "text-foreground",
     },
     {
+      href: "/admin/refunds",
       title: "Chờ hoàn tiền",
-      value: (data?.pending_refunds ?? 0).toLocaleString("vi-VN"),
-      icon: RefreshCw,
-      color: "bg-red-500",
+      value: `${data?.pending_refunds ?? 0} hồ sơ`,
+      sub: "Yêu cầu đang mở",
+      icon: RotateCcw,
+      iconCls:
+        "border-secondary-pastel bg-secondary-light text-secondary-foreground",
+      valueCls:
+        (data?.pending_refunds ?? 0) > 0
+          ? "text-secondary-foreground"
+          : "text-foreground",
     },
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4">
-      {stats.map((stat, idx) => (
-        <StatCard key={idx} {...stat} isLoading={isLoading} />
+    <section
+      aria-label="Chỉ số tổng quan hệ thống"
+      className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7"
+    >
+      {cards.map(({ href, title, value, sub, icon: Icon, iconCls, valueCls }) => (
+        <Link
+          key={title}
+          href={href}
+          className="group flex flex-col justify-between rounded-3xl border border-border bg-surface p-4 shadow-[0_10px_28px_-14px_rgba(53,111,167,0.12)] transition-all hover:-translate-y-0.5 hover:border-primary-pastel hover:shadow-[0_18px_36px_-14px_rgba(53,111,167,0.18)]"
+        >
+          <div className="flex items-center justify-between gap-2">
+            <span className="truncate text-xs font-medium text-muted-foreground">
+              {title}
+            </span>
+            <span
+              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border ${iconCls}`}
+            >
+              <Icon size={16} />
+            </span>
+          </div>
+
+          <div className="mt-3">
+            {isLoading ? (
+              <div className="h-7 w-24 animate-pulse rounded-lg bg-background" />
+            ) : (
+              <p
+                className={`truncate text-lg font-bold transition-colors group-hover:text-primary ${valueCls}`}
+              >
+                {value}
+              </p>
+            )}
+            <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+              {sub}
+            </p>
+          </div>
+        </Link>
       ))}
-    </div>
+    </section>
   );
 }

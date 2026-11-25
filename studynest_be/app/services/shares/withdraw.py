@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.db.models.database import (
+    InstructorEarnings,
     PlatformSettings,
     PlatformWalletHistory,
     PlatformWallets,
@@ -507,10 +508,68 @@ class WithdrawService:
             lecturer = await self.db.get(User, withdraw.lecturer_id)
             if not lecturer:
                 raise HTTPException(404, "Không tìm thấy giảng viên.")
+
+            # Lấy số dư Coin thực tế + tổng thu nhập khóa học + tổng đã giải ngân
+            coin_balances = await CoinService(self.db).get_balances_async(
+                withdraw.lecturer_id
+            )
+            ps = (await self.db.execute(select(PlatformSettings))).scalars().first()
+            coin_vnd_rate = int(getattr(ps, "coin_vnd_rate", 10000) or 10000)
+
+            total_earnings_vnd = float(
+                await self.db.scalar(
+                    select(
+                        func.coalesce(func.sum(InstructorEarnings.amount_instructor), 0)
+                    ).where(InstructorEarnings.instructor_id == withdraw.lecturer_id)
+                )
+                or 0
+            )
+            total_paid_withdraw_vnd = float(
+                await self.db.scalar(
+                    select(
+                        func.coalesce(func.sum(WithdrawalRequests.amount), 0)
+                    ).where(
+                        WithdrawalRequests.lecturer_id == withdraw.lecturer_id,
+                        WithdrawalRequests.status == "paid",
+                    )
+                )
+                or 0
+            )
+
+            wallet_total_in = max(
+                float(wallets.total_in or 0) if wallets else 0.0,
+                total_earnings_vnd,
+            )
+            wallet_total_out = max(
+                float(wallets.total_out or 0) if wallets else 0.0,
+                total_paid_withdraw_vnd,
+            )
+            paid_coins = int(coin_balances.paid or 0)
+            bonus_coins = int(coin_balances.bonus or 0)
+
+            wallet_payload = {
+                "id": str(wallets.id) if wallets else str(withdraw.lecturer_id),
+                "balance": float(paid_coins * coin_vnd_rate),
+                "paid_coins": paid_coins,
+                "bonus_coins": bonus_coins,
+                "coin_vnd_rate": coin_vnd_rate,
+                "total_in": round(wallet_total_in, 2),
+                "total_out": round(wallet_total_out, 2),
+                "currency": wallets.currency if wallets else "VND",
+                "is_locked": bool(wallets.is_locked) if wallets else False,
+                "kyc_verified": bool(wallets.kyc_verified) if wallets else False,
+                "created_at": wallets.created_at if wallets else None,
+                "updated_at": wallets.updated_at if wallets else None,
+                "last_transaction_at": wallets.last_transaction_at if wallets else None,
+            }
+
             return {
                 "id": str(withdraw.id),
                 "lecturer_id": str(withdraw.lecturer_id),
                 "amount": float(withdraw.amount),
+                "coin_amount": int(withdraw.coin_amount)
+                if getattr(withdraw, "coin_amount", None) is not None
+                else None,
                 "currency": withdraw.currency,
                 "status": withdraw.status,
                 "requested_at": withdraw.requested_at,
@@ -524,7 +583,7 @@ class WithdrawService:
                     "email": lecturer.email,
                     "avatar": lecturer.avatar,
                 },
-                "wallets": wallets,
+                "wallets": wallet_payload,
             }
         except Exception as e:
             await self.db.rollback()
@@ -1015,3 +1074,34 @@ class WithdrawService:
             except Exception as e:
                 await self.db.rollback()
                 print(f"❌ Error: {e}")
+
+    async def get_admin_withdraw_stats_async(self):
+        rows = (
+            await self.db.execute(
+                select(
+                    WithdrawalRequests.status,
+                    func.count(WithdrawalRequests.id),
+                    func.coalesce(func.sum(WithdrawalRequests.amount), 0),
+                ).group_by(WithdrawalRequests.status)
+            )
+        ).all()
+        by_status = {
+            str(r[0]): {"count": int(r[1]), "amount": float(r[2] or 0)}
+            for r in rows
+            if r[0]
+        }
+        total = sum(v["count"] for v in by_status.values())
+        pending_count = by_status.get("pending", {}).get("count", 0) + by_status.get("payout_pending", {}).get("count", 0)
+        pending_amount = by_status.get("pending", {}).get("amount", 0) + by_status.get("payout_pending", {}).get("amount", 0)
+        paid_count = by_status.get("paid", {}).get("count", 0) + by_status.get("approved", {}).get("count", 0)
+        paid_amount = by_status.get("paid", {}).get("amount", 0) + by_status.get("approved", {}).get("amount", 0)
+        rejected_count = by_status.get("rejected", {}).get("count", 0) + by_status.get("failed", {}).get("count", 0)
+        return {
+            "total": total,
+            "pending_count": pending_count,
+            "pending_amount": pending_amount,
+            "paid_count": paid_count,
+            "paid_amount": paid_amount,
+            "rejected_count": rejected_count,
+            "by_status": by_status,
+        }

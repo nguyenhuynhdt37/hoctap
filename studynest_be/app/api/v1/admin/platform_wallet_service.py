@@ -34,7 +34,9 @@ async def admin_get_platform_wallet_history(
     sort_by: str = "created_at",
     order_dir: str = "desc",
     service: PlatformWalletService = Depends(),
+    authorization: AuthorizationService = Depends(AuthorizationService),
 ):
+    await authorization.require_role(["ADMIN"])
     # chuẩn hóa datetime (UTC+7 naive)
     date_from = await to_vietnam_naive(date_from)
     date_to = await to_vietnam_naive(date_to)
@@ -56,5 +58,7 @@ async def admin_get_platform_wallet_history(
 async def admin_get_platform_wallet_transaction_detail(
     history_id: uuid.UUID,
     service: PlatformWalletService = Depends(),
+    authorization: AuthorizationService = Depends(AuthorizationService),
 ):
+    await authorization.require_role(["ADMIN"])
     return await service.get_platform_wallet_transaction_detail_admin_async(history_id)

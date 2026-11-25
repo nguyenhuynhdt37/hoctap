@@ -1,76 +1,200 @@
-"use client"
+"use client";
 
-import ContextMenu from "@/components/shared/context-menu";
-import { formatVndAsCoin } from "@/lib/learning-hub/coin-logic";
-import api from "@/lib/utils/fetcher/client/axios";
-import { showToast } from "@/lib/utils/helpers/toast";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import useSWR from "swr";
+import toast from "react-hot-toast";
 import {
+  Ban,
+  BookOpen,
+  ChevronLeft,
+  ChevronRight,
+  Coins,
+  Download,
+  Eye,
+  GraduationCap,
+  LayoutGrid,
+  Mail,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Search,
+  ShieldCheck,
+  Star,
+  Table2,
+  Trash2,
+  Unlock,
+  UserMinus,
+  Users,
+  X,
+} from "pulsoicon-react";
+import ContextMenu from "@/components/shared/context-menu";
+import { Button, Pagination } from "@/components/ui";
+import {
+  useDebouncedUrlSearch,
+  useUrlQueryState,
+} from "@/hooks/useUrlQueryState";
+import { formatCoin } from "@/lib/learning-hub/coin-logic";
+import api from "@/lib/utils/fetcher/client/axios";
+import { getImageUrl } from "@/lib/utils/helpers/image";
+import type {
   Lecturer,
   LecturersQueryParams,
   LecturersResponse,
 } from "@/types/admin/lecturer";
-import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
-import {
-  GraduationCap,
-  Ban,
-  CircleCheck,
-  Clock,
-  Settings,
-  Eye,
-  Pencil,
-  Search,
-  ShieldCheck,
-  Star,
-  Trash2,
-  UserMinus,
-  Users,
-  X,
-  CircleX,
-} from "pulsoicon-react";
-import useSWR from "swr";
+import LecturerDrawer from "./lecturer-drawer";
+
+const LECTURERS_QUERY_SCHEMA = {
+  page: { type: "number", default: 1, min: 1 },
+  size: { type: "number", default: 12, min: 1, max: 100 },
+  search: { type: "string", default: "" },
+  sort_by: {
+    type: "string",
+    default: "create_at" as
+      | "fullname"
+      | "email"
+      | "create_at"
+      | "update_at"
+      | "course_count"
+      | "student_count"
+      | "rating_avg"
+      | "wallet_balance",
+    allowed: [
+      "fullname",
+      "email",
+      "create_at",
+      "update_at",
+      "course_count",
+      "student_count",
+      "rating_avg",
+      "wallet_balance",
+    ] as const,
+  },
+  order: {
+    type: "string",
+    default: "desc" as "asc" | "desc",
+    allowed: ["asc", "desc"] as const,
+  },
+  is_verified_email: {
+    type: "string",
+    default: "" as "" | "true" | "false",
+    allowed: ["", "true", "false"] as const,
+  },
+  is_banned: {
+    type: "string",
+    default: "" as "" | "true" | "false",
+    allowed: ["", "true", "false"] as const,
+  },
+} as const;
+
+function exportLecturersCsv(items: Lecturer[]) {
+  const header = [
+    "ID",
+    "Họ và tên",
+    "Email",
+    "Khóa học",
+    "Học viên",
+    "Đánh giá TB",
+    "Số dư ví",
+    "Trạng thái",
+  ];
+  const esc = (v: string) => `"${v.replace(/"/g, '""')}"`;
+  const lines = [
+    header.map(esc).join(","),
+    ...items.map((l) =>
+      [
+        l.id,
+        l.fullname,
+        l.email,
+        String(l.course_count ?? 0),
+        String(l.student_count ?? 0),
+        String(l.rating_avg ?? 0),
+        String(l.wallet_balance ?? 0),
+        l.is_banned ? "Đã khóa" : "Hoạt động",
+      ]
+        .map(esc)
+        .join(","),
+    ),
+  ];
+  const blob = new Blob(["\uFEFF" + lines.join("\n")], {
+    type: "text/csv;charset=utf-8;",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `may-may-lecturers-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 
 export default function LecturersManagement() {
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [searchInput, setSearchInput] = useState(""); // Input value trực tiếp
-  const [search, setSearch] = useState(""); // Giá trị sau debounce
-  const [sortBy, setSortBy] = useState<
-    "fullname" | "email" | "create_at" | "update_at" | "course_count" | "student_count" | "rating_avg" | "wallet_balance"
-  >("create_at");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-  const [emailVerificationFilter, setEmailVerificationFilter] = useState<
-    boolean | null
-  >(null);
-  const [bannedFilter, setBannedFilter] = useState<boolean | null>(null);
-  const [showActionsModal, setShowActionsModal] = useState(false);
-  const [selectedLecturer, setSelectedLecturer] = useState<Lecturer | null>(
-    null
-  );
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showBanModal, setShowBanModal] = useState(false);
-  const [banType, setBanType] = useState<"permanent" | "temporary">(
-    "temporary"
-  );
-  const [banReason, setBanReason] = useState("");
-  const [banUntilDate, setBanUntilDate] = useState("");
-  const [banUntilTime, setBanUntilTime] = useState("");
+  const router = useRouter();
+  const [layout, setLayout] = useState<"cards" | "table">("cards");
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [editingLecturer, setEditingLecturer] = useState<Lecturer | null>(null);
 
-  // Context menu
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [menuPos, setMenuPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
-  const [menuLecturer, setMenuLecturer] = useState<Lecturer | null>(null);
-  const openContextMenu = (e: React.MouseEvent, lecturer: Lecturer) => {
-    e.preventDefault();
-    setMenuLecturer(lecturer);
-    setMenuPos({ x: e.clientX, y: e.clientY });
-    setMenuOpen(true);
-  };
+  const [banTarget, setBanTarget] = useState<Lecturer | null>(null);
+  const [banPermanent, setBanPermanent] = useState(false);
+  const [banReason, setBanReason] = useState("");
+  const [banUntil, setBanUntil] = useState("");
+
+  const [deleteTarget, setDeleteTarget] = useState<Lecturer | null>(null);
+  const [deleteReason, setDeleteReason] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const [menuState, setMenuState] = useState<{
+    x: number;
+    y: number;
+    lecturer: Lecturer;
+  } | null>(null);
+
+  const { values, setParam, setParams, resetParams } = useUrlQueryState(
+    LECTURERS_QUERY_SCHEMA,
+  );
+  const {
+    page,
+    size: pageSize,
+    search,
+    sort_by: sortBy,
+    order: sortOrder,
+    is_verified_email: emailParam,
+    is_banned: bannedParam,
+  } = values;
+
+  const { inputValue: searchInput, setInputValue: setSearchInput } =
+    useDebouncedUrlSearch(search, (val) => setParam("search", val));
+
+  const queryParams = useMemo<LecturersQueryParams>(() => {
+    const p: LecturersQueryParams = {
+      page,
+      size: pageSize,
+      sort_by: sortBy,
+      order: sortOrder,
+    };
+    if (search.trim()) p.search = search.trim();
+    if (emailParam !== "") p.is_verified_email = emailParam === "true";
+    if (bannedParam !== "") p.is_banned = bannedParam === "true";
+    return p;
+  }, [page, pageSize, sortBy, sortOrder, search, emailParam, bannedParam]);
+
+  const { data, error, isLoading, isValidating, mutate } =
+    useSWR<LecturersResponse>(
+      ["/admin/lecturers", queryParams],
+      async ([url, params]: [string, LecturersQueryParams]) => {
+        const res = await api.get(url, { params });
+        return res.data;
+      },
+      { revalidateOnFocus: false },
+    );
+
   useEffect(() => {
-    if (!menuOpen) return;
-    const close = () => setMenuOpen(false);
+    if (!menuState) return;
+    const close = () => setMenuState(null);
     const onEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMenuOpen(false);
+      if (e.key === "Escape") setMenuState(null);
     };
     document.addEventListener("click", close);
     document.addEventListener("contextmenu", close);
@@ -80,1506 +204,853 @@ export default function LecturersManagement() {
       document.removeEventListener("contextmenu", close);
       document.removeEventListener("keydown", onEsc);
     };
-  }, [menuOpen]);
+  }, [menuState]);
 
-  // Ngăn scroll của body khi modal mở
-  useEffect(() => {
-    if (showActionsModal || showBanModal) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-    }
+  const items = data?.items ?? [];
+  const totalItems = data?.total_items ?? 0;
+  const totalPages = Math.max(1, data?.total_pages ?? 1);
 
-    // Cleanup khi component unmount
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [showActionsModal, showBanModal]);
-
-  // Debounce search input - chống nháy
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setSearch(searchInput);
-      setPage(1); // Reset về trang 1 khi search
-    }, 500); // Đợi 500ms sau khi user ngừng gõ
-
-    return () => clearTimeout(timer);
-  }, [searchInput]);
-
-  // Build query parameters
-  const buildQueryParams = (): LecturersQueryParams => {
-    const params: LecturersQueryParams = {
-      page: page,
-      size: pageSize,
-      sort_by: sortBy,
-      order: sortOrder,
-    };
-
-    if (search.trim()) {
-      params.search = search.trim();
-    }
-
-    if (emailVerificationFilter !== null) {
-      params.is_verified_email = emailVerificationFilter;
-    }
-
-    if (bannedFilter !== null) {
-      params.is_banned = bannedFilter;
-    }
-
-    return params;
-  };
-
-  // Fetch lecturers data
-  const { data, error, mutate, isValidating } = useSWR<LecturersResponse>(
-    ["/admin/lecturers", buildQueryParams()],
-    async ([url, params]: [string, LecturersQueryParams]) => {
-      const response = await api.get(url, { params });
-      return response.data;
-    },
-    {
-      keepPreviousData: true, // Giữ data cũ khi fetch data mới
-      revalidateOnFocus: false,
-    }
+  const pageTotalCourses = items.reduce((s, l) => s + (l.course_count ?? 0), 0);
+  const pageTotalStudents = items.reduce(
+    (s, l) => s + (l.student_count ?? 0),
+    0,
+  );
+  const pageTotalPaidCoins = items.reduce(
+    (s, l) => s + (l.paid_coins ?? l.wallet_balance ?? 0),
+    0,
+  );
+  const pageTotalBonusCoins = items.reduce(
+    (s, l) => s + (l.bonus_coins ?? 0),
+    0,
   );
 
-  // Các trường có thể sắp xếp
-  const sortableFields = {
-    fullname: "Họ tên",
-    email: "Email",
-    create_at: "Ngày tạo",
-    update_at: "Ngày cập nhật",
-    course_count: "Số khóa học",
-    student_count: "Số học viên",
-    rating_avg: "Đánh giá",
-    wallet_balance: "Số dư Coin vàng",
-  };
-
-  const clearFilters = () => {
-    setSearchInput("");
-    setSearch("");
-    setEmailVerificationFilter(null);
-    setBannedFilter(null);
-    setPage(1);
-  };
-
-  const handleLecturerAction = (lecturer: Lecturer) => {
-    setSelectedLecturer(lecturer);
-    setShowActionsModal(true);
-  };
-
-  const handleDeleteLecturer = async () => {
-    if (!selectedLecturer) return;
-
-    // Kiểm tra điều kiện xóa
-    if (selectedLecturer.is_verified_email) {
-      showToast.error(
-        "KHÔNG THỂ XÓA! Giảng viên đã xác thực email không thể xóa. Chỉ có thể xóa tài khoản chưa xác thực email."
-      );
-      return;
-    }
-
-    // Cảnh báo chi tiết và yêu cầu nhập lý do
-    const reason = prompt(`🚨 CẢNH BÁO NGHIÊM TRỌNG! 🚨
-
-Bạn đang chuẩn bị XÓA VĨNH VIỄN giảng viên:
-
-👤 Tên: ${selectedLecturer.fullname}
-📧 Email: ${selectedLecturer.email}
-🆔 ID: ${selectedLecturer.id}
-📅 Ngày tạo: ${formatDate(selectedLecturer.create_at)}
-📊 Số khóa học: ${selectedLecturer.course_count}
-👥 Số học viên: ${selectedLecturer.student_count}
-
-⚠️  HÀNH ĐỘNG NÀY KHÔNG THỂ HOÀN TÁC!
-
-Tất cả dữ liệu sẽ bị xóa vĩnh viễn:
-• Thông tin cá nhân
-• Khóa học đã tạo
-• Lịch sử giảng dạy
-• Tất cả hoạt động liên quan
-
-VUI LÒNG NHẬP LÝ DO XÓA:`);
-
-    if (!reason || !reason.trim()) {
-      showToast.error("Đã hủy thao tác xóa. Vui lòng nhập lý do xóa giảng viên.");
-      return;
-    }
-
-    // Xác nhận cuối cùng
-    const finalConfirm = confirm(`🔥 XÁC NHẬN CUỐI CÙNG 🔥
-
-Bạn có THỰC SỰ muốn xóa giảng viên "${selectedLecturer.fullname}"?
-
-Lý do: ${reason.trim()}
-
-Đây là lần cảnh báo cuối cùng!
-Sau khi nhấn OK, giảng viên sẽ bị xóa VĨNH VIỄN!`);
-
-    if (!finalConfirm) {
-      showToast.error("Đã hủy thao tác xóa. Giảng viên vẫn an toàn.");
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const response = await api.delete(
-        `/admin/lecturers/${selectedLecturer.id}`,
-        {
-          params: {
-            reason: reason.trim(),
-          },
-        }
-      );
-
-      // Xử lý response mới từ API
-      const { message, lecturer_id, deleted_at, deleted_until } = response.data;
-
-      showToast.success(
-        `XÓA THÀNH CÔNG! ${message} - Giảng viên: ${selectedLecturer.fullname}`
-      );
-
-      mutate(); // Refresh data
-      setShowActionsModal(false);
-      setSelectedLecturer(null);
-    } catch (error: any) {
-      // Suppress console error để không ảnh hưởng UX
-      // console.error("Error deleting lecturer:", error);
-
-      const status = error.response?.status;
-      const detail = error.response?.data?.detail || error.message;
-
-      let errorMessage = "";
-
-      switch (status) {
-        case 403:
-          errorMessage =
-            detail ||
-            "Bạn không có quyền xóa giảng viên hoặc đây không phải là giảng viên.";
-          break;
-        case 404:
-          errorMessage = detail || "Giảng viên không tồn tại hoặc đã bị xóa.";
-          break;
-        case 409:
-          errorMessage =
-            detail ||
-            "Không thể xóa giảng viên này. Có thể giảng viên đang có dữ liệu liên quan.";
-          break;
-        case 400:
-          errorMessage = detail || "Lý do xóa không hợp lệ. Vui lòng kiểm tra lại.";
-          break;
-        case 500:
-          errorMessage =
-            detail || "Có lỗi xảy ra trên server. Vui lòng thử lại sau.";
-          break;
-        default:
-          errorMessage = detail || "Có lỗi xảy ra khi xóa giảng viên!";
-      }
-
-      showToast.error(errorMessage);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleBanLecturer = async () => {
-    if (!selectedLecturer) return;
-
-    if (selectedLecturer.is_banned) {
-      // Unban lecturer
-      const confirm = window.confirm(
-        `🔓 XÁC NHẬN MỞ CHẶN\n\nBạn có chắc chắn muốn mở chặn giảng viên "${selectedLecturer.fullname}"?\n\nGiảng viên sẽ có thể đăng nhập và hoạt động trở lại.`
-      );
-
-      if (!confirm) return;
-
-      setIsSubmitting(true);
-      try {
-        const response = await api.post(
-          `/admin/lecturers/${selectedLecturer.id}/unban`
-        );
-
-        showToast.success(
-          `✅ ${response.data.message || "Đã mở chặn giảng viên thành công"}`
-        );
-
-        mutate(); // Refresh data
-        setShowActionsModal(false);
-        setSelectedLecturer(null);
-      } catch (error: any) {
-        // Suppress console error để không ảnh hưởng UX
-        // console.error("Error unbanning lecturer:", error);
-
-        const status = error.response?.status;
-        const detail = error.response?.data?.detail || error.message;
-
-        let errorMessage = "";
-
-        switch (status) {
-          case 403:
-            errorMessage =
-              detail ||
-              "Bạn không có quyền mở chặn giảng viên hoặc đây không phải là giảng viên.";
-            break;
-          case 404:
-            errorMessage = detail || "Giảng viên không tồn tại hoặc đã bị xóa.";
-            break;
-          case 409:
-            errorMessage =
-              detail ||
-              "Giảng viên chưa từng bị chặn hoặc không thể tự mở chặn chính mình.";
-            break;
-          case 500:
-            errorMessage =
-              detail || "Có lỗi xảy ra trên server. Vui lòng thử lại sau.";
-            break;
-          default:
-            errorMessage = detail || "Có lỗi xảy ra khi mở chặn giảng viên!";
-        }
-
-        showToast.error(errorMessage);
-      } finally {
-        setIsSubmitting(false);
-      }
-    } else {
-      // Show ban modal
-      setShowBanModal(true);
-    }
-  };
-
-  const handleRemoveRoleLecturer = async () => {
-    if (!selectedLecturer) return;
-
-    const confirm = window.confirm(
-      `⚠️ XÁC NHẬN GỠ QUYỀN GIẢNG VIÊN\n\nBạn có chắc chắn muốn gỡ quyền giảng viên của "${selectedLecturer.fullname}"?\n\n⚠️ Sau khi gỡ quyền:\n• Người dùng sẽ mất quyền giảng viên\n• Không thể tạo hoặc quản lý khóa học\n• Tài khoản sẽ trở thành người dùng thông thường\n\nĐây là hành động quan trọng, vui lòng xác nhận!`
-    );
-
-    if (!confirm) return;
-
-    setIsSubmitting(true);
-    try {
-      const response = await api.delete(
-        `/admin/lecturers/${selectedLecturer.id}/remove_role_lecturer`
-      );
-
-      showToast.success(
-        response.data.message || "Đã gỡ quyền giảng viên thành công"
-      );
-
-      mutate(); // Refresh data
-      setShowActionsModal(false);
-      setSelectedLecturer(null);
-    } catch (error: any) {
-      // Suppress console error để không ảnh hưởng UX
-      // console.error("Error removing lecturer role:", error);
-
-      const status = error.response?.status;
-      const detail = error.response?.data?.detail || error.message;
-
-      let errorMessage = "";
-
-      switch (status) {
-        case 403:
-          errorMessage =
-            detail ||
-            "Bạn không có quyền gỡ quyền giảng viên hoặc đây không phải là giảng viên.";
-          break;
-        case 404:
-          errorMessage = detail || "Giảng viên không tồn tại hoặc đã bị xóa.";
-          break;
-        case 409:
-          errorMessage =
-            detail ||
-            "Không thể gỡ quyền giảng viên này. Có thể người dùng chưa có quyền giảng viên hoặc đang có khóa học đang hoạt động.";
-          break;
-        case 400:
-          errorMessage = detail || "Yêu cầu không hợp lệ. Vui lòng kiểm tra lại.";
-          break;
-        case 500:
-          errorMessage =
-            detail || "Có lỗi xảy ra trên server. Vui lòng thử lại sau.";
-          break;
-        default:
-          errorMessage = detail || "Có lỗi xảy ra khi gỡ quyền giảng viên!";
-      }
-
-      showToast.error(errorMessage);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleConfirmBan = async () => {
-    if (!selectedLecturer) return;
-
+  async function submitBan() {
+    if (!banTarget) return;
     if (!banReason.trim()) {
-      showToast.error("Vui lòng nhập lý do cấm!");
+      toast.error("Vui lòng nhập lý do khóa giảng viên.");
       return;
     }
-
-    if (banType === "temporary" && (!banUntilDate || !banUntilTime)) {
-      showToast.error("Vui lòng chọn ngày và giờ kết thúc cấm!");
+    if (!banPermanent && !banUntil) {
+      toast.error("Vui lòng chọn thời hạn khóa tạm thời.");
       return;
     }
-
-    setIsSubmitting(true);
+    setBusy(true);
     try {
-      const isPermanent = banType === "permanent";
-      let bannedUntil = null;
-
-      if (!isPermanent) {
-        bannedUntil = new Date(`${banUntilDate}T${banUntilTime}`);
-        // Kiểm tra ngày không được trong quá khứ
-        if (bannedUntil <= new Date()) {
-          showToast.error("Ngày kết thúc cấm phải sau thời điểm hiện tại!");
-          setIsSubmitting(false);
-          return;
-        }
-      }
-
-      const response = await api.post(
-        `/admin/lecturers/${selectedLecturer.id}/ban`,
-        {
-          is_block_permanently: isPermanent,
-          banned_reason: banReason.trim(),
-          banned_until: bannedUntil ? bannedUntil.toISOString() : null,
-        }
-      );
-
-      const banTypeText = isPermanent ? "vĩnh viễn" : "tạm thời";
-      const successMessage =
-        response.data?.message || `Cấm giảng viên ${banTypeText} thành công!`;
-      showToast.success(successMessage);
-
-      // Reset form
-      setShowBanModal(false);
-      setBanReason("");
-      setBanUntilDate("");
-      setBanUntilTime("");
-
-      // Refresh data
-      mutate();
-      setShowActionsModal(false);
-      setSelectedLecturer(null);
-    } catch (error: any) {
-      // Suppress console error để không ảnh hưởng UX
-      // console.error("Error banning lecturer:", error);
-
-      const status = error.response?.status;
-      const detail = error.response?.data?.detail || error.message;
-
-      let errorMessage = "";
-
-      switch (status) {
-        case 403:
-          errorMessage =
-            detail ||
-            "Bạn không có quyền chặn giảng viên hoặc đây không phải là giảng viên.";
-          break;
-        case 404:
-          errorMessage = detail || "Giảng viên không tồn tại hoặc đã bị xóa.";
-          break;
-        case 409:
-          errorMessage =
-            detail ||
-            "Giảng viên đang bị chặn hoặc không thể tự chặn chính mình.";
-          break;
-        case 400:
-          errorMessage = detail || "Thông tin cấm không hợp lệ. Vui lòng kiểm tra lại.";
-          break;
-        case 500:
-          errorMessage =
-            detail || "Có lỗi xảy ra trên server. Vui lòng thử lại sau.";
-          break;
-        default:
-          errorMessage = detail || "Có lỗi xảy ra khi cấm giảng viên!";
-      }
-
-      showToast.error(errorMessage);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("vi-VN", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
-  const formatCurrency = (amount: number) => formatVndAsCoin(amount);
-
-  const handleExportExcel = async () => {
-    try {
-      const response = await api.get("/admin/lecturers/export", {
-        responseType: "blob",
+      await api.post(`/admin/lecturers/${banTarget.id}/ban`, {
+        is_block_permanently: banPermanent,
+        banned_reason: banReason.trim(),
+        banned_until: banPermanent ? null : new Date(banUntil).toISOString(),
       });
-
-      // Download file
-      const blob = response.data;
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `lecturers_${
-        new Date().toISOString().split("T")[0]
-      }.xlsx`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      showToast.error("Lỗi khi xuất Excel");
+      toast.success(`Đã khóa giảng viên ${banTarget.fullname}`);
+      setBanTarget(null);
+      setBanReason("");
+      setBanUntil("");
+      await mutate();
+    } catch {
+      toast.error("Không thể khóa giảng viên.");
+    } finally {
+      setBusy(false);
     }
-  };
-
-  if (error) {
-    return (
-      <div className="p-6 text-center py-12">
-        <div className="text-red-500 text-xl mb-4">❌ Lỗi tải dữ liệu</div>
-          <button
-          onClick={() => mutate()}
-          className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700"
-          >
-          Thử lại
-          </button>
-        </div>
-    );
   }
 
+  async function handleUnban(l: Lecturer) {
+    setBusy(true);
+    try {
+      await api.post(`/admin/lecturers/${l.id}/unban`);
+      toast.success(`Đã mở khóa giảng viên ${l.fullname}`);
+      await mutate();
+    } catch {
+      toast.error("Không thể mở khóa giảng viên.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleRemoveRole(l: Lecturer) {
+    if (
+      !window.confirm(
+        `Gỡ quyền Giảng viên của “${l.fullname}”? Tài khoản vẫn được giữ lại ở vai trò Học viên.`,
+      )
+    ) {
+      return;
+    }
+    setBusy(true);
+    try {
+      await api.delete(`/admin/lecturers/${l.id}/remove_role_lecturer`);
+      toast.success(`Đã gỡ quyền giảng viên của ${l.fullname}`);
+      await mutate();
+    } catch {
+      toast.error("Không thể gỡ quyền giảng viên.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function submitDelete() {
+    if (!deleteTarget) return;
+    if (!deleteReason.trim()) {
+      toast.error("Vui lòng nhập lý do xóa tài khoản giảng viên.");
+      return;
+    }
+    setBusy(true);
+    try {
+      await api.delete(`/admin/lecturers/${deleteTarget.id}`, {
+        params: { reason: deleteReason.trim() },
+      });
+      toast.success(`Đã xóa mềm giảng viên ${deleteTarget.fullname}`);
+      setDeleteTarget(null);
+      setDeleteReason("");
+      await mutate();
+    } catch {
+      toast.error("Không thể xóa giảng viên.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const hasFilter = Boolean(search || emailParam || bannedParam);
+
   return (
-    <div className="p-6 min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                Quản lý Giảng viên
-          </h1>
-              <p className="text-gray-600 mt-1">
-                {data?.total_items || 0} giảng viên
-          </p>
-        </div>
-            {/* Loading indicator khi đang fetch data mới */}
-            {isValidating && (
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-lg animate-pulse">
-                <div className="w-3 h-3 border-2 border-green-500 border-t-transparent rounded-full animate-spin"></div>
-                <span className="text-sm text-green-700 font-medium">
-                  Đang tải...
-                </span>
-              </div>
-            )}
-          </div>
-          <button
-            onClick={handleExportExcel}
-            disabled={isValidating}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            📊 Xuất Excel
-          </button>
+    <main className="relative mx-auto max-w-[1440px] space-y-6 p-4 text-foreground sm:p-6 lg:p-8">
+      {/* Ambient Cloud Layers */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
+      >
+        <div className="absolute -left-24 top-16 h-96 w-96 rounded-full bg-primary-light/55 blur-3xl" />
+        <div className="absolute right-0 top-1/3 h-80 w-80 rounded-full bg-accent-vanilla/40 blur-3xl" />
+        <div className="absolute bottom-10 left-1/3 h-80 w-80 rounded-full bg-accent/30 blur-3xl" />
       </div>
 
-        {/* Filters */}
-        <div className="bg-white rounded-xl shadow-sm border-2 border-gray-200 p-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Search */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Tìm kiếm
-              </label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  placeholder="Tìm theo họ tên hoặc email..."
-                  className="w-full pl-10 pr-4 py-2 border-2 border-gray-300 rounded-lg focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
-                />
-                {searchInput && searchInput !== search && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin"></div>
-                      <span className="text-xs text-gray-500">Đang tìm...</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+      {/* Cloud Hero Banner */}
+      <section className="relative overflow-hidden rounded-[2.5rem] border border-white/90 bg-gradient-to-br from-primary-light/95 via-surface/95 to-accent-vanilla/45 p-6 shadow-[0_28px_64px_-22px_rgba(53,111,167,0.20)] backdrop-blur-md sm:p-8">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -right-14 -top-14 h-56 w-56 rounded-full bg-white/85 blur-3xl"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -bottom-16 left-1/3 h-48 w-64 rounded-full bg-primary-pastel/35 blur-3xl"
+        />
 
-            {/* Filter by Email Verification */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Xác thực email
-                  </label>
-                  <select
-                value={emailVerificationFilter === null ? "" : emailVerificationFilter ? "true" : "false"}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setEmailVerificationFilter(value === "" ? null : value === "true");
-                  setPage(1);
-                }}
-                disabled={isValidating}
-                className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-              >
-                <option value="">Tất cả</option>
-                <option value="true">Đã xác thực</option>
-                <option value="false">Chưa xác thực</option>
-                  </select>
-                </div>
-
-            {/* Filter by Banned Status */}
-                <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Trạng thái bị cấm
-                  </label>
-                  <select
-                value={bannedFilter === null ? "" : bannedFilter ? "true" : "false"}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setBannedFilter(value === "" ? null : value === "true");
-                  setPage(1);
-                }}
-                disabled={isValidating}
-                className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-              >
-                <option value="">Tất cả</option>
-                <option value="false">Bình thường</option>
-                <option value="true">Bị cấm</option>
-                  </select>
+        <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-2.5">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-accent-vanilla-border bg-surface/95 px-3.5 py-1 text-xs font-semibold text-accent-vanilla-foreground shadow-2xs">
+              <GraduationCap size={13} animated={false} />
+              Mây Mây Faculty &amp; Lecturer Studio
+            </span>
+            <h1 className="font-display text-2xl font-bold tracking-tight text-foreground sm:text-4xl">
+              Đội ngũ Giảng viên &amp; Đối tác
+            </h1>
+            <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
+              Quản trị trọn vòng đời giảng viên: tạo mới, thăng cấp 1 chạm từ thành viên, chỉnh sửa hồ sơ chuyên môn, theo dõi doanh thu ví và kiểm soát quyền hạn.
+            </p>
           </div>
 
-            {/* Sort */}
-                  <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Sắp xếp theo
-                    </label>
-              <div className="flex gap-2">
-                <select
-                  value={sortBy}
-                  onChange={(e) =>
-                    setSortBy(
-                      e.target.value as
-                        | "fullname"
-                        | "email"
-                        | "create_at"
-                        | "update_at"
-                        | "course_count"
-                        | "student_count"
-                        | "rating_avg"
-                        | "wallet_balance"
-                    )
-                  }
-                  disabled={isValidating}
-                  className="flex-1 px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                >
-                  {Object.entries(sortableFields).map(([key, label]) => (
-                    <option key={key} value={key}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-                      <button
-                  onClick={() =>
-                    setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))
-                  }
-                  disabled={isValidating}
-                  className="px-4 py-2 border-2 border-gray-300 rounded-lg hover:bg-gray-50 font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                >
-                  {sortOrder === "asc" ? "↑" : "↓"}
-                      </button>
-                    </div>
-                  </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={isValidating}
+              onClick={() => void mutate()}
+            >
+              <RefreshCw
+                size={14}
+                className={isValidating ? "animate-spin" : ""}
+              />
+              Làm mới
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={items.length === 0}
+              onClick={() => {
+                exportLecturersCsv(items);
+                toast.success(`Đã xuất ${items.length} giảng viên ra CSV`);
+              }}
+            >
+              <Download size={14} />
+              Xuất CSV
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => {
+                setEditingLecturer(null);
+                setDrawerOpen(true);
+              }}
+            >
+              <Plus size={15} />
+              Thêm Giảng viên
+            </Button>
           </div>
-                    </div>
-                  </div>
+        </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-xl shadow-sm border-2 border-gray-200 overflow-hidden relative">
-        {/* Overlay mờ khi đang fetch - không block UI */}
-        {isValidating && data && (
-          <div className="absolute inset-0 bg-white/40 backdrop-blur-[1px] z-10 pointer-events-none flex items-start justify-center pt-8 transition-opacity duration-200">
-            <div className="bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 animate-pulse">
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              <span className="font-semibold">Đang cập nhật...</span>
-                </div>
-              </div>
+        {/* 4 Floating Glass KPIs */}
+        <div className="relative z-10 mt-6 grid grid-cols-2 gap-3.5 lg:grid-cols-4">
+          <div className="rounded-2xl border border-white/80 bg-surface/85 p-4 backdrop-blur-sm">
+            <p className="text-xs font-medium text-muted-foreground">
+              Tổng giảng viên
+            </p>
+            <p className="mt-1 text-2xl font-bold text-foreground">
+              {totalItems} giảng viên
+            </p>
+            <p className="mt-0.5 text-[11px] text-primary">
+              Đội ngũ giảng dạy trên Mây Mây
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-white/80 bg-surface/85 p-4 backdrop-blur-sm">
+            <p className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+              <BookOpen size={13} className="text-primary" />
+              Khóa học đang sở hữu
+            </p>
+            <p className="mt-1 text-2xl font-bold text-primary">
+              {pageTotalCourses} khóa
+            </p>
+            <p className="mt-0.5 text-[11px] text-muted-foreground">
+              Tổng trên trang hiện tại
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-white/80 bg-surface/85 p-4 backdrop-blur-sm">
+            <p className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+              <Users size={13} className="text-info-foreground" />
+              Học viên theo học
+            </p>
+            <p className="mt-1 text-2xl font-bold text-info-foreground">
+              {pageTotalStudents.toLocaleString("vi-VN")} HV
+            </p>
+            <p className="mt-0.5 text-[11px] text-muted-foreground">
+              Tổng lượt ghi danh
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-white/80 bg-surface/85 p-4 backdrop-blur-sm">
+            <p className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+              <Coins size={13} className="text-accent-vanilla-foreground" />
+              Tổng số dư Coin GV
+            </p>
+            <p className="mt-1 text-2xl font-bold text-accent-vanilla-foreground">
+              {formatCoin(pageTotalPaidCoins)}
+            </p>
+            <p className="mt-0.5 text-[11px] text-muted-foreground">
+              +{formatCoin(pageTotalBonusCoins)} Coin thưởng
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Filters & View Mode Toolbar */}
+      <section className="space-y-4 rounded-3xl border border-primary-pastel/60 bg-surface/90 p-4 shadow-[0_12px_32px_-16px_rgba(53,111,167,0.14)] backdrop-blur-md sm:p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() =>
+                setParams({ is_verified_email: "", is_banned: "", page: 1 })
+              }
+              className={`rounded-2xl border px-3.5 py-1.5 text-xs font-semibold transition-all ${
+                emailParam === "" && bannedParam === ""
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border bg-background text-muted-foreground hover:border-primary-pastel hover:text-primary"
+              }`}
+            >
+              Tất cả
+            </button>
+            <button
+              type="button"
+              onClick={() => setParams({ is_verified_email: "true", page: 1 })}
+              className={`rounded-2xl border px-3.5 py-1.5 text-xs font-semibold transition-all ${
+                emailParam === "true"
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-success-border bg-success-bg text-success-foreground"
+              }`}
+            >
+              Email đã xác thực
+            </button>
+            <button
+              type="button"
+              onClick={() => setParams({ is_verified_email: "false", page: 1 })}
+              className={`rounded-2xl border px-3.5 py-1.5 text-xs font-semibold transition-all ${
+                emailParam === "false"
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-accent-vanilla-border bg-accent-vanilla text-accent-vanilla-foreground"
+              }`}
+            >
+              Chưa xác thực
+            </button>
+            <button
+              type="button"
+              onClick={() => setParams({ is_banned: "true", page: 1 })}
+              className={`rounded-2xl border px-3.5 py-1.5 text-xs font-semibold transition-all ${
+                bannedParam === "true"
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-destructive-border bg-destructive-bg text-destructive-foreground"
+              }`}
+            >
+              Đang bị khóa
+            </button>
+          </div>
+
+          <div className="flex items-center gap-1 rounded-xl border border-border bg-background p-1">
+            <button
+              type="button"
+              onClick={() => setLayout("cards")}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
+                layout === "cards"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <LayoutGrid size={14} animated={false} />
+              Thẻ Giảng viên
+            </button>
+            <button
+              type="button"
+              onClick={() => setLayout("table")}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
+                layout === "table"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Table2 size={14} animated={false} />
+              Bảng
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-12">
+          <div className="relative md:col-span-7">
+            <Search
+              size={15}
+              animated={false}
+              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+            />
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Tìm tên giảng viên hoặc email..."
+              className="h-10 w-full rounded-xl border border-border bg-background pl-10 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+            />
+          </div>
+
+          <div className="flex gap-2 md:col-span-5">
+            <select
+              aria-label="Sắp xếp"
+              value={`${sortBy}:${sortOrder}`}
+              onChange={(e) => {
+                const [sb, od] = e.target.value.split(":") as [
+                  typeof sortBy,
+                  "asc" | "desc",
+                ];
+                setParams({ sort_by: sb, order: od, page: 1 });
+              }}
+              className="h-10 flex-1 rounded-xl border border-border bg-background px-3 text-xs font-medium text-foreground focus:border-primary focus:outline-none"
+            >
+              <option value="create_at:desc">Mới tham gia nhất</option>
+              <option value="course_count:desc">Nhiều khóa học nhất</option>
+              <option value="student_count:desc">Nhiều học viên nhất</option>
+              <option value="rating_avg:desc">Đánh giá cao nhất</option>
+              <option value="wallet_balance:desc">Số dư ví cao nhất</option>
+            </select>
+
+            {hasFilter && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSearchInput("");
+                  resetParams();
+                }}
+              >
+                Đặt lại
+              </Button>
             )}
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b-2 border-gray-200">
+          </div>
+        </div>
+      </section>
+
+      {error && (
+        <div
+          role="alert"
+          className="flex items-center justify-between rounded-2xl border border-destructive-border bg-destructive-bg p-4 text-sm text-destructive-foreground"
+        >
+          <span>Không tải được danh sách giảng viên.</span>
+          <Button variant="outline" size="sm" onClick={() => void mutate()}>
+            Thử lại
+          </Button>
+        </div>
+      )}
+
+      {/* Main Content */}
+      {isLoading ? (
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div
+              key={i}
+              className="h-60 animate-pulse rounded-[2rem] border border-border bg-surface p-5"
+            />
+          ))}
+        </div>
+      ) : items.length === 0 ? (
+        <div className="rounded-3xl border border-dashed border-border bg-surface p-14 text-center">
+          <p className="text-sm font-semibold text-foreground">
+            Chưa có giảng viên nào khớp bộ lọc
+          </p>
+          <Button
+            className="mt-4"
+            onClick={() => {
+              setEditingLecturer(null);
+              setDrawerOpen(true);
+            }}
+          >
+            <Plus size={15} />
+            Thêm Giảng viên đầu tiên
+          </Button>
+        </div>
+      ) : layout === "cards" ? (
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+          {items.map((l) => (
+            <article
+              key={l.id}
+              onClick={() => router.push(`/admin/lecturers/${l.id}`)}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                setMenuState({ x: e.clientX, y: e.clientY, lecturer: l });
+              }}
+              className={`group flex cursor-pointer flex-col justify-between overflow-hidden rounded-[2rem] border bg-surface/95 p-5 shadow-[0_14px_36px_-16px_rgba(53,111,167,0.16)] backdrop-blur-md transition-all hover:-translate-y-1 hover:shadow-[0_22px_48px_-16px_rgba(53,111,167,0.22)] ${
+                l.is_banned
+                  ? "border-destructive-border"
+                  : "border-primary-pastel/60 hover:border-primary"
+              }`}
+            >
+              <div>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-3.5">
+                    {l.avatar ? (
+                      <img
+                        src={getImageUrl(l.avatar)}
+                        alt={l.fullname}
+                        className="h-14 w-14 shrink-0 rounded-2xl border border-border object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-accent-vanilla-border bg-accent-vanilla text-lg font-bold text-accent-vanilla-foreground">
+                        {(l.fullname || l.email).slice(0, 1).toUpperCase()}
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <h3 className="truncate text-base font-bold text-foreground group-hover:text-primary">
+                        {l.fullname || "Chưa đặt tên"}
+                      </h3>
+                      <p className="flex items-center gap-1 truncate text-xs text-muted-foreground">
+                        <Mail size={11} animated={false} />
+                        <span className="truncate">{l.email}</span>
+                      </p>
+                      <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px]">
+                        <span
+                          className={`inline-flex items-center gap-0.5 rounded-full border px-2 py-0.5 font-semibold ${
+                            l.is_banned
+                              ? "border-destructive-border bg-destructive-bg text-destructive-foreground"
+                              : "border-success-border bg-success-bg text-success-foreground"
+                          }`}
+                        >
+                          {l.is_banned ? "Đã khóa" : "Hoạt động"}
+                        </span>
+                        {l.is_verified_email && (
+                          <span className="inline-flex items-center gap-0.5 rounded-full border border-info-border bg-info-bg px-2 py-0.5 font-semibold text-info-foreground">
+                            <ShieldCheck size={10} animated={false} />
+                            Verified
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <span className="inline-flex shrink-0 items-center gap-1 rounded-xl border border-accent-vanilla-border bg-accent-vanilla/70 px-2.5 py-1 text-xs font-bold text-accent-vanilla-foreground">
+                    <Star size={12} animated={false} />
+                    {(l.rating_avg ?? 0).toFixed(1)}
+                  </span>
+                </div>
+
+                {l.bio && (
+                  <p className="mt-3 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                    {l.bio}
+                  </p>
+                )}
+
+                {/* 3 Compact Metrics */}
+                <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
+                  <div className="rounded-2xl bg-background/70 p-2.5">
+                    <p className="text-[10px] text-muted-foreground">Khóa học</p>
+                    <p className="mt-0.5 font-bold text-foreground">
+                      {l.course_count ?? 0}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl bg-background/70 p-2.5">
+                    <p className="text-[10px] text-muted-foreground">Học viên</p>
+                    <p className="mt-0.5 font-bold text-primary">
+                      {l.student_count ?? 0}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl bg-primary-light/50 p-2.5">
+                    <p className="text-[10px] text-muted-foreground">Ví Coin</p>
+                    <p className="mt-0.5 truncate font-bold text-primary">
+                      {formatCoin(l.paid_coins ?? l.wallet_balance ?? 0)}
+                    </p>
+                    {(l.bonus_coins ?? 0) > 0 && (
+                      <p className="truncate text-[10px] font-medium text-muted-foreground">
+                        +{formatCoin(l.bonus_coins)} thưởng
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Full CRUD Action Strip */}
+              <div
+                className="mt-4 flex items-center justify-between border-t border-border/70 pt-3"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Link
+                  href={`/admin/lecturers/${l.id}`}
+                  className="inline-flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary-light"
+                >
+                  <Eye size={13} animated={false} />
+                  Hồ sơ 360°
+                </Link>
+
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingLecturer(l);
+                      setDrawerOpen(true);
+                    }}
+                    title="Chỉnh sửa hồ sơ"
+                    aria-label={`Sửa ${l.fullname}`}
+                    className="flex h-8 w-8 items-center justify-center rounded-xl text-muted-foreground hover:bg-primary-light hover:text-primary"
+                  >
+                    <Pencil size={14} animated={false} />
+                  </button>
+                  {l.is_banned ? (
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => void handleUnban(l)}
+                      title="Mở khóa giảng viên"
+                      aria-label={`Mở khóa ${l.fullname}`}
+                      className="flex h-8 w-8 items-center justify-center rounded-xl text-success-foreground hover:bg-success-bg"
+                    >
+                      <Unlock size={14} animated={false} />
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => setBanTarget(l)}
+                      title="Khóa giảng viên"
+                      aria-label={`Khóa ${l.fullname}`}
+                      className="flex h-8 w-8 items-center justify-center rounded-xl text-muted-foreground hover:bg-warning-bg hover:text-warning-foreground"
+                    >
+                      <Ban size={14} animated={false} />
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void handleRemoveRole(l)}
+                    title="Gỡ quyền Giảng viên (giữ tài khoản Học viên)"
+                    aria-label={`Gỡ quyền giảng viên ${l.fullname}`}
+                    className="flex h-8 w-8 items-center justify-center rounded-xl text-muted-foreground hover:bg-accent-vanilla hover:text-accent-vanilla-foreground"
+                  >
+                    <UserMinus size={14} animated={false} />
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => setDeleteTarget(l)}
+                    title="Xóa mềm tài khoản"
+                    aria-label={`Xóa ${l.fullname}`}
+                    className="flex h-8 w-8 items-center justify-center rounded-xl text-muted-foreground hover:bg-destructive-bg hover:text-destructive-foreground"
+                  >
+                    <Trash2 size={14} animated={false} />
+                  </button>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <div className="overflow-x-auto rounded-[2rem] border border-primary-pastel/60 bg-surface/95 shadow-[0_14px_36px_-14px_rgba(53,111,167,0.12)]">
+          <table className="w-full text-left text-sm">
+            <thead className="border-b border-border bg-primary-light/60 text-xs font-semibold text-foreground">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  #
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  Họ tên
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  Email
-                </th>
-                <th className="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  Khóa học
-                </th>
-                <th className="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  Học viên
-                </th>
-                <th className="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  Đánh giá
-                </th>
-                <th className="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  Số dư Coin vàng
-                </th>
-                <th className="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  Trạng thái
-                </th>
-                <th className="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider sm:hidden">
-                  Thao tác
-                </th>
+                <th className="px-5 py-3.5">Giảng viên</th>
+                <th className="px-5 py-3.5">Khóa / HV</th>
+                <th className="px-5 py-3.5">Đánh giá</th>
+                <th className="px-5 py-3.5">Số dư ví</th>
+                <th className="px-5 py-3.5">Trạng thái</th>
+                <th className="px-5 py-3.5 text-right">Thao tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
-              {!data ? (
-                <tr>
-                  <td colSpan={9} className="px-6 py-12 text-center">
-                    <div className="animate-spin h-12 w-12 border-4 border-teal-500 border-t-transparent rounded-full mx-auto mb-4" />
-                    <p className="text-gray-600">Đang tải dữ liệu...</p>
+            <tbody className="divide-y divide-border/70">
+              {items.map((l) => (
+                <tr
+                  key={l.id}
+                  onClick={() => router.push(`/admin/lecturers/${l.id}`)}
+                  className="cursor-pointer transition-colors hover:bg-primary-light/25"
+                >
+                  <td className="px-5 py-3.5">
+                    <p className="font-semibold text-foreground">{l.fullname}</p>
+                    <p className="text-xs text-muted-foreground">{l.email}</p>
                   </td>
-                </tr>
-              ) : data.items.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="px-6 py-12 text-center">
-                    <p className="text-gray-500 text-lg">
-                      Không tìm thấy giảng viên nào
+                  <td className="px-5 py-3.5 text-xs">
+                    <strong>{l.course_count}</strong> khóa ·{" "}
+                    <strong className="text-primary">{l.student_count}</strong>{" "}
+                    HV
+                  </td>
+                  <td className="px-5 py-3.5 font-semibold text-accent-vanilla-foreground">
+                    ★ {(l.rating_avg ?? 0).toFixed(1)}
+                  </td>
+                  <td className="px-5 py-3.5">
+                    <p className="font-bold text-primary">
+                      {formatCoin(l.paid_coins ?? l.wallet_balance ?? 0)}
                     </p>
+                    {(l.bonus_coins ?? 0) > 0 && (
+                      <p className="text-[11px] text-muted-foreground">
+                        +{formatCoin(l.bonus_coins)} thưởng
+                      </p>
+                    )}
+                  </td>
+                  <td className="px-5 py-3.5">
+                    <span
+                      className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-semibold ${
+                        l.is_banned
+                          ? "border-destructive-border bg-destructive-bg text-destructive-foreground"
+                          : "border-success-border bg-success-bg text-success-foreground"
+                      }`}
+                    >
+                      {l.is_banned ? "Đã khóa" : "Hoạt động"}
+                    </span>
+                  </td>
+                  <td
+                    className="px-5 py-3.5 text-right"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="inline-flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setEditingLecturer(l);
+                          setDrawerOpen(true);
+                        }}
+                      >
+                        Sửa
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDeleteTarget(l)}
+                      >
+                        Xóa
+                      </Button>
+                    </div>
                   </td>
                 </tr>
-              ) : (
-                data.items.map((lecturer, idx) => (
-                  <tr
-                    key={lecturer.id}
-                    className="hover:bg-gray-50 transition-colors"
-                    onContextMenu={(e) => openContextMenu(e, lecturer)}
-                  >
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {(page - 1) * pageSize + idx + 1}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-green-500 via-emerald-500 to-emerald-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                          {lecturer.fullname.charAt(0).toUpperCase()}
-          </div>
-                        <div className="font-semibold text-gray-900">
-                          {lecturer.fullname}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-600">{lecturer.email}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center">
-                      <span className="px-3 py-1 bg-green-100 text-green-700 text-sm font-semibold rounded-full">
-                        {lecturer.course_count}
-                    </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center">
-                      <span className="px-3 py-1 bg-blue-100 text-blue-700 text-sm font-semibold rounded-full">
-                        {lecturer.student_count}
-                  </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center">
-                      <div className="flex items-center justify-center space-x-1">
-                        <Star solid animated={false} className="w-4 h-4 text-yellow-400" />
-                        <span className="font-medium">{lecturer.rating_avg}</span>
-                </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center">
-                      <div className="text-sm text-gray-900 font-medium">
-                        {formatCurrency(lecturer.wallet_balance)}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center">
-                      <div className="flex items-center justify-center space-x-1">
-                        {lecturer.is_verified_email ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-blue-100 text-blue-800">
-                            ✓ Email
-                    </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-orange-100 text-orange-800">
-                            ⚠ Chưa xác thực
-                          </span>
-                        )}
-                        {lecturer.is_banned && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-red-100 text-red-800">
-                            🚫 Bị cấm
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center sm:hidden">
-                      <div className="flex items-center justify-center gap-2">
-                    <button
-                          onClick={(e) => {
-                            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                            setMenuLecturer(lecturer);
-                            setMenuPos({ x: rect.left + rect.width / 2, y: rect.bottom + 8 });
-                            setMenuOpen(true);
-                          }}
-                          className="p-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors sm:hidden"
-                          title="Thao tác"
-                    >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                            className="w-5 h-5"
-                          >
-                            <path d="M10 4a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 20a2 2 0 110-4 2 2 0 010 4z" />
-                          </svg>
-                    </button>
-                  </div>
-                    </td>
-                  </tr>
-                ))
-              )}
+              ))}
             </tbody>
           </table>
         </div>
+      )}
 
-        {/* Pagination */}
-        {data && data.total_pages > 1 && (
-          <div className="px-6 py-4 border-t-2 border-gray-200 flex items-center justify-between">
-            <div className="text-sm text-gray-600">
-              Hiển thị {(page - 1) * pageSize + 1} -{" "}
-              {Math.min(page * pageSize, data.total_items)} trong{" "}
-              {data.total_items} giảng viên
-            </div>
-            <div className="flex items-center gap-2">
-                    <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1 || isValidating}
-                className="px-4 py-2 border-2 border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-semibold transition-all"
-                    >
-                Trước
-                    </button>
-              <div className="flex items-center gap-1">
-                {Array.from(
-                  { length: data.total_pages },
-                  (_, i) => i + 1
-                ).map((p) => (
-                    <button
-                    key={p}
-                    onClick={() => setPage(p)}
-                    disabled={isValidating}
-                    className={`px-4 py-2 rounded-lg font-semibold transition-all ${
-                      p === page
-                        ? "bg-teal-600 text-white"
-                        : "border-2 border-gray-300 hover:bg-gray-50"
-                    } disabled:opacity-50 disabled:cursor-not-allowed`}
-                  >
-                    {p}
-                    </button>
-                ))}
-                  </div>
-                <button
-                onClick={() =>
-                  setPage((p) => Math.min(data.total_pages, p + 1))
-                }
-                disabled={page === data.total_pages || isValidating}
-                className="px-4 py-2 border-2 border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-semibold transition-all"
-                >
-                Sau
-                </button>
-              </div>
-            </div>
-        )}
-      </div>
+      {/* Pagination */}
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        totalItems={totalItems}
+        pageSize={pageSize}
+        itemLabel="giảng viên"
+        disabled={isValidating}
+        onPageChange={(nextPage) => setParam("page", nextPage)}
+        onPageSizeChange={(nextSize) =>
+          setParams({ size: nextSize, page: 1 })
+        }
+      />
 
-      {/* Context Menu */}
-      {menuOpen && menuLecturer && (
+      {/* Create / Edit / Promote Drawer */}
+      <LecturerDrawer
+        open={drawerOpen}
+        editing={editingLecturer}
+        onClose={() => setDrawerOpen(false)}
+        onSaved={async () => {
+          await mutate();
+        }}
+      />
+
+      {/* Ban Modal */}
+      {banTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/25 p-4 backdrop-blur-[2px]"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="w-full max-w-md space-y-4 rounded-3xl border border-border bg-surface p-6 shadow-xl">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-foreground">
+                Khóa tài khoản Giảng viên
+              </h2>
+              <button
+                type="button"
+                onClick={() => setBanTarget(null)}
+                className="flex h-8 w-8 items-center justify-center rounded-xl text-muted-foreground hover:bg-background"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Giảng viên:{" "}
+              <strong className="text-foreground">{banTarget.fullname}</strong>
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setBanPermanent(false)}
+                className={`flex-1 rounded-xl border py-2 text-xs font-semibold ${
+                  !banPermanent
+                    ? "border-primary bg-primary-light text-primary"
+                    : "border-border bg-background text-muted-foreground"
+                }`}
+              >
+                Khóa tạm thời
+              </button>
+              <button
+                type="button"
+                onClick={() => setBanPermanent(true)}
+                className={`flex-1 rounded-xl border py-2 text-xs font-semibold ${
+                  banPermanent
+                    ? "border-destructive-border bg-destructive-bg text-destructive-foreground"
+                    : "border-border bg-background text-muted-foreground"
+                }`}
+              >
+                Khóa vĩnh viễn
+              </button>
+            </div>
+            {!banPermanent && (
+              <input
+                type="datetime-local"
+                value={banUntil}
+                onChange={(e) => setBanUntil(e.target.value)}
+                className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm text-foreground"
+              />
+            )}
+            <textarea
+              rows={3}
+              value={banReason}
+              onChange={(e) => setBanReason(e.target.value)}
+              placeholder="Nhập lý do khóa giảng viên..."
+              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground"
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setBanTarget(null)}>
+                Hủy
+              </Button>
+              <Button
+                variant="destructive"
+                disabled={busy}
+                onClick={() => void submitBan()}
+              >
+                {busy ? "Đang khóa..." : "Xác nhận khóa"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Modal */}
+      {deleteTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/25 p-4 backdrop-blur-[2px]"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="w-full max-w-md space-y-4 rounded-3xl border border-border bg-surface p-6 shadow-xl">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-foreground">
+                Xóa tài khoản Giảng viên
+              </h2>
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                className="flex h-8 w-8 items-center justify-center rounded-xl text-muted-foreground hover:bg-background"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Chuyển giảng viên{" "}
+              <strong className="text-foreground">
+                {deleteTarget.fullname}
+              </strong>{" "}
+              vào thùng rác (soft delete).
+            </p>
+            <textarea
+              rows={3}
+              value={deleteReason}
+              onChange={(e) => setDeleteReason(e.target.value)}
+              placeholder="Nhập lý do xóa..."
+              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground"
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setDeleteTarget(null)}>
+                Hủy
+              </Button>
+              <Button
+                variant="destructive"
+                disabled={busy}
+                onClick={() => void submitDelete()}
+              >
+                {busy ? "Đang xóa..." : "Xác nhận xóa"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {menuState && (
         <ContextMenu
-          x={menuPos.x}
-          y={menuPos.y}
-          onClose={() => setMenuOpen(false)}
+          x={menuState.x}
+          y={menuState.y}
+          onClose={() => setMenuState(null)}
           items={[
             {
-              label: "Mở hành động",
+              label: "Xem hồ sơ 360°",
               onClick: () => {
-                setSelectedLecturer(menuLecturer);
-                setShowActionsModal(true);
-                setMenuOpen(false);
+                router.push(`/admin/lecturers/${menuState.lecturer.id}`);
+                setMenuState(null);
               },
             },
             {
-              label: "Xem chi tiết",
+              label: "Chỉnh sửa hồ sơ",
               onClick: () => {
-                window.location.href = `/admin/lecturers/${menuLecturer.id}`;
-                setMenuOpen(false);
+                setEditingLecturer(menuState.lecturer);
+                setDrawerOpen(true);
+                setMenuState(null);
               },
             },
             {
-              label: "Chỉnh sửa",
+              label: "Sao chép Email",
               onClick: () => {
-                window.location.href = `/admin/lecturers/${menuLecturer.id}/edit`;
-                setMenuOpen(false);
+                navigator.clipboard.writeText(menuState.lecturer.email);
+                toast.success("Đã sao chép Email");
+                setMenuState(null);
               },
             },
           ]}
         />
       )}
-
-      {/* Lecturer Actions Modal */}
-      {showActionsModal && selectedLecturer && (
-        <LecturerActionsModal
-          lecturer={selectedLecturer}
-          onClose={() => {
-            setShowActionsModal(false);
-            setSelectedLecturer(null);
-          }}
-          onDelete={handleDeleteLecturer}
-          onBan={handleBanLecturer}
-          onRemoveRole={handleRemoveRoleLecturer}
-          isSubmitting={isSubmitting}
-        />
-      )}
-
-      {/* Ban Lecturer Modal */}
-      {showBanModal && selectedLecturer && (
-        <BanLecturerModal
-          banType={banType}
-          setBanType={setBanType}
-          banReason={banReason}
-          setBanReason={setBanReason}
-          banUntilDate={banUntilDate}
-          setBanUntilDate={setBanUntilDate}
-          banUntilTime={banUntilTime}
-          setBanUntilTime={setBanUntilTime}
-          onConfirm={handleConfirmBan}
-          onCancel={() => {
-            setShowBanModal(false);
-            setBanReason("");
-            setBanUntilDate("");
-            setBanUntilTime("");
-          }}
-          isSubmitting={isSubmitting}
-        />
-      )}
-    </div>
+    </main>
   );
-}
-
-// Lecturer Actions Modal Component
-function LecturerActionsModal({
-  lecturer,
-  onClose,
-  onDelete,
-  onBan,
-  onRemoveRole,
-  isSubmitting,
-}: {
-  lecturer: Lecturer;
-  onClose: () => void;
-  onDelete: () => void;
-  onBan: () => void;
-  onRemoveRole: () => void;
-  isSubmitting: boolean;
-}) {
-  const canDelete = !lecturer.is_verified_email;
-  const isBanned = lecturer.is_banned;
-
-  const modalContent = (
-    <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        width: "100vw",
-        height: "100vh",
-        zIndex: 9999,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "1rem",
-      }}
-    >
-      {/* Backdrop với animation */}
-      <div
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          width: "100vw",
-          height: "100vh",
-          backgroundColor: "rgba(0, 0, 0, 0.6)",
-          backdropFilter: "blur(8px)",
-          transition: "opacity 300ms ease-out",
-        }}
-        onClick={onClose}
-      />
-
-      {/* Modal Container với animation */}
-      <div
-        style={{
-          position: "relative",
-          width: "100%",
-          maxWidth: "28rem",
-          transform: "scale(1)",
-          opacity: 1,
-          transition: "all 300ms ease-out",
-        }}
-      >
-        <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
-          {/* Header với gradient */}
-          <div className="bg-gradient-to-r from-green-500 to-emerald-600 px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                  <Settings className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-white">
-                    Thao tác giảng viên
-                  </h3>
-                  <p className="text-purple-100 text-sm">
-                    Chọn hành động cần thực hiện
-                  </p>
-                </div>
-              </div>
-              <button
-                aria-label="Đóng"
-                onClick={onClose}
-                className="p-2 hover:bg-white/20 rounded-full transition-all duration-200 group"
-              >
-                <X className="w-5 h-5 text-white group-hover:rotate-90 transition-transform duration-200" />
-              </button>
-            </div>
-          </div>
-
-          {/* Lecturer Info Section */}
-          <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-emerald-50/50">
-            <div className="flex items-center space-x-4">
-              <div className="w-14 h-14 bg-gradient-to-br from-green-500 via-emerald-500 to-emerald-500 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                {lecturer.fullname.charAt(0).toUpperCase()}
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="font-semibold text-gray-900 text-lg truncate">
-                  {lecturer.fullname}
-                </h4>
-                <p className="text-gray-600 text-sm truncate">
-                  {lecturer.email}
-                </p>
-                <div className="flex items-center space-x-3 mt-2">
-                  {/* Email Verification Status */}
-                  <div className="flex items-center space-x-1">
-                    <div
-                      className={`w-2 h-2 rounded-full ${
-                        lecturer.is_verified_email
-                          ? "bg-green-500"
-                          : "bg-orange-500"
-                      }`}
-                    />
-                    <span
-                      className={`text-xs font-medium ${
-                        lecturer.is_verified_email
-                          ? "text-green-700"
-                          : "text-orange-700"
-                      }`}
-                    >
-                      {lecturer.is_verified_email
-                        ? "Đã xác thực"
-                        : "Chưa xác thực"}
-                    </span>
-                  </div>
-
-                  {/* Banned Status */}
-                  <div className="flex items-center space-x-1">
-                    <div
-                      className={`w-2 h-2 rounded-full ${
-                        lecturer.is_banned ? "bg-red-500" : "bg-green-500"
-                      }`}
-                    />
-                    <span
-                      className={`text-xs font-medium ${
-                        lecturer.is_banned ? "text-red-700" : "text-green-700"
-                      }`}
-                    >
-                      {lecturer.is_banned ? "Bị cấm" : "Bình thường"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Actions Section */}
-          <div className="px-6 py-4">
-            <div className="space-y-3">
-              {/* View Details */}
-              <button
-                className="w-full flex items-center space-x-4 p-4 text-left hover:bg-blue-50 rounded-2xl transition-all duration-200 group border border-transparent hover:border-blue-200 hover:shadow-md"
-                onClick={() => {
-                  window.location.href = `/admin/lecturers/${lecturer.id}`;
-                }}
-              >
-                <div className="p-3 bg-blue-100 rounded-xl group-hover:bg-blue-200 transition-colors duration-200">
-                  <Eye className="w-5 h-5 text-blue-600" />
-                </div>
-                <div className="flex-1">
-                  <div className="font-semibold text-gray-900">
-                    Xem chi tiết
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    Xem thông tin đầy đủ của giảng viên
-                  </div>
-                </div>
-                <div className="text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  →
-                </div>
-              </button>
-
-              {/* Edit Lecturer */}
-              <button
-                className="w-full flex items-center space-x-4 p-4 text-left hover:bg-green-50 rounded-2xl transition-all duration-200 group border border-transparent hover:border-green-200 hover:shadow-md"
-                onClick={() => {
-                  window.location.href = `/admin/lecturers/${lecturer.id}/edit`;
-                }}
-              >
-                <div className="p-3 bg-green-100 rounded-xl group-hover:bg-green-200 transition-colors duration-200">
-                  <Pencil className="w-5 h-5 text-green-600" />
-                </div>
-                <div className="flex-1">
-                  <div className="font-semibold text-gray-900">
-                    Chỉnh sửa thông tin
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    Cập nhật thông tin cá nhân và mô tả
-                  </div>
-                </div>
-                <div className="text-green-500 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  →
-                </div>
-              </button>
-
-              {/* Ban/Unban */}
-              <button
-                onClick={onBan}
-                disabled={isSubmitting}
-                className={`w-full flex items-center space-x-4 p-4 text-left rounded-2xl transition-all duration-200 group border border-transparent hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed ${
-                  isBanned
-                    ? "hover:bg-green-50 hover:border-green-200"
-                    : "hover:bg-red-50 hover:border-red-200"
-                }`}
-              >
-                <div
-                  className={`p-3 rounded-xl transition-colors duration-200 ${
-                    isBanned
-                      ? "bg-green-100 group-hover:bg-green-200"
-                      : "bg-red-100 group-hover:bg-red-200"
-                  }`}
-                >
-                  {isBanned ? (
-                    <ShieldCheck className="w-5 h-5 text-green-600" />
-                  ) : (
-                    <Ban className="w-5 h-5 text-red-600" />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <div className="font-semibold text-gray-900">
-                    {isBanned ? "Bỏ cấm giảng viên" : "Cấm giảng viên"}
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    {isBanned
-                      ? "Khôi phục quyền truy cập của giảng viên"
-                      : "Tạm thời vô hiệu hóa tài khoản"}
-                  </div>
-                </div>
-                <div
-                  className={`opacity-0 group-hover:opacity-100 transition-opacity duration-200 ${
-                    isBanned ? "text-green-500" : "text-red-500"
-                  }`}
-                >
-                  {isSubmitting ? "..." : "→"}
-                </div>
-              </button>
-
-              {/* Remove Lecturer Role */}
-              <button
-                onClick={onRemoveRole}
-                disabled={isSubmitting}
-                className="w-full flex items-center space-x-4 p-4 text-left hover:bg-orange-50 rounded-2xl transition-all duration-200 group border border-transparent hover:border-orange-200 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <div className="p-3 bg-orange-100 rounded-xl group-hover:bg-orange-200 transition-colors duration-200">
-                  <UserMinus className="w-5 h-5 text-orange-600" />
-                </div>
-                <div className="flex-1">
-                  <div className="font-semibold text-gray-900">
-                    Gỡ quyền giảng viên
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    Thu hồi quyền giảng viên, chuyển về người dùng thông thường
-                  </div>
-                </div>
-                <div className="text-orange-500 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  {isSubmitting ? "..." : "→"}
-                </div>
-              </button>
-
-              {/* Delete Lecturer */}
-              <button
-                onClick={onDelete}
-                disabled={isSubmitting || !canDelete}
-                className={`w-full flex items-center space-x-4 p-4 text-left rounded-2xl transition-all duration-200 group border border-transparent ${
-                  canDelete
-                    ? "hover:bg-red-50 hover:border-red-200 hover:shadow-md"
-                    : "opacity-50 cursor-not-allowed"
-                }`}
-                title={
-                  !canDelete ? "Không thể xóa giảng viên đã xác thực email" : ""
-                }
-              >
-                <div
-                  className={`p-3 rounded-xl transition-colors duration-200 ${
-                    canDelete
-                      ? "bg-red-100 group-hover:bg-red-200"
-                      : "bg-gray-100"
-                  }`}
-                >
-                  <Trash2
-                    className={`w-5 h-5 ${
-                      canDelete ? "text-red-600" : "text-gray-400"
-                    }`}
-                  />
-                </div>
-                <div className="flex-1">
-                  <div
-                    className={`font-semibold ${
-                      canDelete ? "text-red-900" : "text-gray-500"
-                    }`}
-                  >
-                    🗑️ XÓA VĨNH VIỄN
-                  </div>
-                  <div
-                    className={`text-sm ${
-                      canDelete ? "text-red-700" : "text-gray-400"
-                    }`}
-                  >
-                    {canDelete
-                      ? "⚠️ XÓA VĨNH VIỄN - KHÔNG THỂ HOÀN TÁC!"
-                      : "❌ Chỉ có thể xóa tài khoản chưa xác thực email"}
-                  </div>
-                </div>
-                <div
-                  className={`opacity-0 group-hover:opacity-100 transition-opacity duration-200 ${
-                    canDelete ? "text-red-500" : "text-gray-400"
-                  }`}
-                >
-                  {isSubmitting ? "..." : "→"}
-                </div>
-              </button>
-            </div>
-
-            {/* Warning for delete action */}
-            {canDelete && (
-              <div className="mt-4 p-4 bg-red-50 border-2 border-red-300 rounded-2xl">
-                <div className="flex items-start space-x-3">
-                  <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <X className="w-4 h-4 text-white font-bold" />
-                  </div>
-                  <div>
-                    <div className="font-bold text-red-900 text-sm">
-                      🚨 CẢNH BÁO NGHIÊM TRỌNG! 🚨
-                    </div>
-                    <div className="text-sm text-red-800 mt-2 space-y-1">
-                      <div className="font-semibold">
-                        Hành động này KHÔNG THỂ HOÀN TÁC!
-                      </div>
-                      <div>• Tất cả thông tin cá nhân sẽ bị xóa vĩnh viễn</div>
-                      <div>• Khóa học đã tạo sẽ bị xóa</div>
-                      <div>• Lịch sử giảng dạy sẽ mất</div>
-                      <div>• Không thể khôi phục sau khi xóa</div>
-                    </div>
-                    <div className="mt-2 p-2 bg-red-100 border border-red-300 rounded-lg">
-                      <div className="text-xs font-bold text-red-900">
-                        ⚠️ Chỉ xóa khi CHẮC CHẮN không cần dữ liệu này!
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Footer */}
-          <div className="px-6 py-4 bg-gray-50/50 border-t border-gray-100">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-600">
-                ID:{" "}
-                <span className="font-mono text-gray-800">{lecturer.id}</span>
-              </div>
-              <div className="text-sm text-gray-500">
-                {lecturer.course_count.toLocaleString("en-US")} khóa học
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  // Sử dụng Portal để render modal ở root level
-  return createPortal(modalContent, document.body);
-}
-
-// Ban Lecturer Modal Component
-function BanLecturerModal({
-  banType,
-  setBanType,
-  banReason,
-  setBanReason,
-  banUntilDate,
-  setBanUntilDate,
-  banUntilTime,
-  setBanUntilTime,
-  onConfirm,
-  onCancel,
-  isSubmitting,
-}: {
-  banType: "permanent" | "temporary";
-  setBanType: (type: "permanent" | "temporary") => void;
-  banReason: string;
-  setBanReason: (reason: string) => void;
-  banUntilDate: string;
-  setBanUntilDate: (date: string) => void;
-  banUntilTime: string;
-  setBanUntilTime: (time: string) => void;
-  onConfirm: () => void;
-  onCancel: () => void;
-  isSubmitting: boolean;
-}) {
-  const modalContent = (
-    <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        width: "100vw",
-        height: "100vh",
-        zIndex: 9999,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "1rem",
-      }}
-    >
-      {/* Backdrop */}
-      <div
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          width: "100vw",
-          height: "100vh",
-          backgroundColor: "rgba(0, 0, 0, 0.6)",
-          backdropFilter: "blur(8px)",
-        }}
-        onClick={onCancel}
-      />
-
-      {/* Modal Container */}
-      <div
-        style={{
-          position: "relative",
-          width: "100%",
-          maxWidth: "32rem",
-          transform: "scale(1)",
-          opacity: 1,
-          transition: "all 300ms ease-out",
-        }}
-      >
-        <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
-          {/* Header */}
-          <div className="bg-gradient-to-r from-red-500 to-red-600 px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                  <Ban className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-white">
-                    Cấm giảng viên
-                  </h3>
-                  <p className="text-red-100 text-sm">
-                    Chọn loại cấm và nhập thông tin
-                  </p>
-                </div>
-              </div>
-              <button
-                aria-label="Hủy"
-                onClick={onCancel}
-                className="p-2 hover:bg-white/20 rounded-full transition-all duration-200 group"
-              >
-                <CircleX solid className="w-5 h-5 text-white group-hover:rotate-90 transition-transform duration-200" />
-              </button>
-            </div>
-          </div>
-
-          {/* Content */}
-          <div className="p-6 space-y-6">
-            {/* Ban Type Selection */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-3">
-                🚫 Loại cấm
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={() => setBanType("temporary")}
-                  className={`px-4 py-3 rounded-lg border-2 transition-all duration-200 font-medium ${
-                    banType === "temporary"
-                      ? "border-orange-500 bg-orange-50 text-orange-700"
-                      : "border-gray-200 bg-white text-gray-700 hover:border-orange-300 hover:bg-orange-25"
-                  }`}
-                >
-                  <div className="flex items-center justify-center space-x-2">
-                    <Clock className="w-4 h-4" />
-                    <span>Cấm tạm thời</span>
-                  </div>
-                </button>
-                <button
-                  onClick={() => setBanType("permanent")}
-                  className={`px-4 py-3 rounded-lg border-2 transition-all duration-200 font-medium ${
-                    banType === "permanent"
-                      ? "border-red-500 bg-red-50 text-red-700"
-                      : "border-gray-200 bg-white text-gray-700 hover:border-red-300 hover:bg-red-25"
-                  }`}
-                >
-                  <div className="flex items-center justify-center space-x-2">
-                    <Ban className="w-4 h-4" />
-                    <span>Cấm vĩnh viễn</span>
-                  </div>
-                </button>
-              </div>
-            </div>
-
-            {/* Ban Reason */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-3">
-                📝 Lý do cấm
-              </label>
-              <textarea
-                value={banReason}
-                onChange={(e) => setBanReason(e.target.value)}
-                placeholder="Nhập lý do cấm giảng viên..."
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:bg-white transition-all duration-200 placeholder-gray-500 resize-none"
-                rows={3}
-              />
-            </div>
-
-            {/* Time Settings (only for temporary ban) */}
-            {banType === "temporary" && (
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">
-                  📅 Thời gian kết thúc cấm
-                </label>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-2">
-                      Ngày kết thúc
-                    </label>
-                    <input
-                      type="date"
-                      value={banUntilDate}
-                      onChange={(e) => setBanUntilDate(e.target.value)}
-                      min={new Date().toISOString().split("T")[0]}
-                      className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:bg-white transition-all duration-200"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-2">
-                      Giờ kết thúc
-                    </label>
-                    <input
-                      type="time"
-                      value={banUntilTime}
-                      onChange={(e) => setBanUntilTime(e.target.value)}
-                      className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:bg-white transition-all duration-200"
-                    />
-                  </div>
-                </div>
-                {banUntilDate && banUntilTime && (
-                  <div className="mt-2 text-sm text-gray-600">
-                    Cấm đến:{" "}
-                    {new Date(`${banUntilDate}T${banUntilTime}`).toLocaleString(
-                      "vi-VN"
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Warning */}
-            <div className="p-4 bg-red-50 border border-red-200 rounded-2xl">
-              <div className="flex items-start space-x-3">
-                <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <Ban className="w-3 h-3 text-white" />
-                </div>
-                <div>
-                  <div className="font-semibold text-red-800 text-sm">
-                    Cảnh báo!
-                  </div>
-                  <div className="text-sm text-red-700 mt-1">
-                    {banType === "permanent"
-                      ? "Giảng viên sẽ bị cấm vĩnh viễn và không thể đăng nhập."
-                      : banUntilDate && banUntilTime
-                      ? `Giảng viên sẽ bị cấm đến ${new Date(
-                          `${banUntilDate}T${banUntilTime}`
-                        ).toLocaleString("vi-VN")}.`
-                      : "Vui lòng chọn ngày và giờ kết thúc cấm."}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div className="px-6 py-4 bg-gray-50/50 border-t border-gray-100">
-            <div className="flex items-center justify-end space-x-3">
-              <button
-                onClick={onCancel}
-                disabled={isSubmitting}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-200 font-medium disabled:opacity-50"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={onConfirm}
-                disabled={isSubmitting || !banReason.trim()}
-                className={`px-6 py-2 rounded-lg transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed ${
-                  banType === "permanent"
-                    ? "bg-red-500 hover:bg-red-600 text-white"
-                    : "bg-orange-500 hover:bg-orange-600 text-white"
-                }`}
-              >
-                {isSubmitting ? "Đang xử lý..." : "Xác nhận cấm"}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  // Sử dụng Portal để render modal ở root level
-  return createPortal(modalContent, document.body);
 }

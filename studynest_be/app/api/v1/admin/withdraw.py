@@ -55,6 +55,15 @@ async def approve_or_deny_withdraw_request(
     )
 
 
+@router.get("/stats")
+async def get_admin_withdraw_stats(
+    auth: AuthorizationService = Depends(AuthorizationService),
+    service: WithdrawService = Depends(WithdrawService),
+):
+    await auth.require_role(["ADMIN"])
+    return await service.get_admin_withdraw_stats_async()
+
+
 @router.get("/lecturers")
 async def search_withdraw_lecturers(
     q: str | None = None,

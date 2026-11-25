@@ -1,105 +1,82 @@
 "use client";
 
-import api from "@/lib/utils/fetcher/client/axios";
-import { ActivityStatsResponse } from "@/types/admin/statistics";
-import {
-  Eye,
-  CircleCheck,
-  MessageCircle,
-  Pencil,
-  ClipboardCheck,
-} from "pulsoicon-react";
 import useSWR from "swr";
+import { Zap } from "pulsoicon-react";
+import api from "@/lib/utils/fetcher/client/axios";
+import type { ActivityStatsResponse } from "@/types/admin/statistics";
 
 export default function ActivityStats() {
   const { data, isLoading } = useSWR<ActivityStatsResponse>(
     "/admin/statistics/activity?period=month",
-    async (url) => {
-      const res = await api.get(url);
-      return res.data;
-    },
-    { revalidateOnFocus: false }
+    async (url: string) => (await api.get(url)).data,
+    { revalidateOnFocus: false },
   );
 
-  const activities = [
+  const metrics = [
     {
-      title: "Lượt xem bài học",
+      label: "Lượt xem bài giảng",
       value: data?.lesson_views ?? 0,
-      icon: Eye,
-      color: "text-green-600",
-      bg: "bg-green-50",
+      bar: "bg-primary",
     },
     {
-      title: "Hoàn thành bài học",
+      label: "Bài học hoàn thành",
       value: data?.lesson_completions ?? 0,
-      icon: CircleCheck,
-      color: "text-emerald-600",
-      bg: "bg-emerald-50",
+      bar: "bg-success-border",
     },
     {
-      title: "Bình luận",
-      value: data?.comments ?? 0,
-      icon: MessageCircle,
-      color: "text-teal-600",
-      bg: "bg-teal-50",
-    },
-    {
-      title: "Ghi chú tạo mới",
-      value: data?.notes_created ?? 0,
-      icon: Pencil,
-      color: "text-green-700",
-      bg: "bg-green-100",
-    },
-    {
-      title: "Lượt làm quiz",
+      label: "Lượt làm bài kiểm tra",
       value: data?.quiz_attempts ?? 0,
-      icon: ClipboardCheck,
-      color: "text-emerald-700",
-      bg: "bg-emerald-100",
+      bar: "bg-accent-border",
+    },
+    {
+      label: "Bình luận & Hỏi đáp",
+      value: data?.comments ?? 0,
+      bar: "bg-secondary-pastel",
+    },
+    {
+      label: "Ghi chú học tập mới",
+      value: data?.notes_created ?? 0,
+      bar: "bg-accent-vanilla-border",
     },
   ];
-
-  if (isLoading) {
-    return (
-      <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/30 p-6">
-        <div className="h-6 w-32 bg-gray-200 rounded animate-pulse mb-6" />
-        <div className="space-y-3">
-          {[...Array(5)].map((_, i) => (
-            <div
-              key={i}
-              className="h-14 bg-gray-100 rounded-xl animate-pulse"
-            />
-          ))}
-        </div>
-      </div>
-    );
-  }
+  const maxVal = Math.max(1, ...metrics.map((m) => m.value));
 
   return (
-    <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/30 p-6">
-      <h3 className="text-xl font-bold text-gray-900 mb-6">Hoạt động</h3>
+    <section className="flex h-full flex-col justify-between rounded-[2rem] border border-primary-pastel/60 bg-surface/90 p-6 shadow-[0_18px_42px_-18px_rgba(53,111,167,0.16)] backdrop-blur-md">
+      <div>
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-info-bg px-2.5 py-0.5 text-[11px] font-semibold text-info-foreground">
+          <Zap size={12} animated={false} />
+          Nhịp học tập 30 ngày
+        </span>
+        <h3 className="mt-1.5 text-base font-bold text-foreground">
+          Tương tác Học viên
+        </h3>
+      </div>
 
-      <div className="space-y-3">
-        {activities.map((activity, idx) => {
-          const Icon = activity.icon;
-          return (
-            <div
-              key={idx}
-              className={`flex items-center justify-between p-3 rounded-xl ${activity.bg} transition-all hover:scale-[1.02]`}
-            >
-              <div className="flex items-center gap-3">
-                <Icon className={`w-5 h-5 ${activity.color}`} />
-                <span className="text-gray-700 text-sm font-medium">
-                  {activity.title}
+      {isLoading ? (
+        <div className="mt-4 h-40 animate-pulse rounded-2xl bg-background" />
+      ) : (
+        <div className="mt-4 space-y-3">
+          {metrics.map((m) => (
+            <div key={m.label} className="space-y-1">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-medium text-foreground">{m.label}</span>
+                <span className="font-bold text-primary">
+                  {m.value.toLocaleString("vi-VN")}
                 </span>
               </div>
-              <span className={`font-bold ${activity.color}`}>
-                {activity.value.toLocaleString("vi-VN")}
-              </span>
+              <div className="h-2 w-full overflow-hidden rounded-full bg-background">
+                <div
+                  className={`h-full rounded-full ${m.bar}`}
+                  style={{
+                    width: `${Math.max(4, Math.round((m.value / maxVal) * 100))}%`,
+                  }}
+                />
+              </div>
             </div>
-          );
-        })}
-      </div>
-    </div>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }

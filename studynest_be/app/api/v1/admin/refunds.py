@@ -12,6 +12,15 @@ from app.services.shares.refund import RefundService
 router = APIRouter(prefix="/admin/refunds", tags=["admin • Refunds"])
 
 
+@router.get("/stats")
+async def get_admin_refund_stats(
+    service: RefundService = Depends(),
+    auth: AuthorizationService = Depends(),
+):
+    await auth.require_role(["ADMIN"])
+    return await service.get_admin_refund_stats_async()
+
+
 @router.get("/requests")
 async def list_refund_requests(
     page: int = 1,
@@ -28,7 +37,7 @@ async def list_refund_requests(
     service: RefundService = Depends(),
     auth: AuthorizationService = Depends(),
 ):
-    reviewer = await auth.require_role(["LECTURER"])
+    reviewer = await auth.require_role(["ADMIN"])
     # chuẩn hóa datetime (UTC+7 naive)
     date_from = await to_vietnam_naive(date_from)
     date_to = await to_vietnam_naive(date_to)

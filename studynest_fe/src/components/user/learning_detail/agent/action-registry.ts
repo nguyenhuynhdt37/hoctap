@@ -21,9 +21,16 @@ export function applyEditorPatches(files: Record<string, string>, patches: unkno
   for (const raw of patches) {
     if (!plainObject(raw) || typeof raw.file_id !== 'string' || !Object.prototype.hasOwnProperty.call(files, raw.file_id) ||
       !Number.isInteger(raw.start) || !Number.isInteger(raw.end) || typeof raw.expected_text !== 'string' || typeof raw.replacement !== 'string') throw new Error('Vùng sửa không hợp lệ.');
-    const patch = raw as unknown as EditorPatch;
-    if (patch.start < 0 || patch.end < patch.start || patch.end > files[patch.file_id].length || patch.replacement.length > 100000 ||
-      files[patch.file_id].slice(patch.start, patch.end) !== patch.expected_text) throw new Error('Code đã thay đổi. Hãy tạo lại bản sửa.');
+    let patch = raw as unknown as EditorPatch;
+    const source = files[patch.file_id];
+    const inRange = patch.start >= 0 && patch.end >= patch.start && patch.end <= source.length;
+    if (!inRange || source.slice(patch.start, patch.end) !== patch.expected_text) {
+      // Model offsets are often off by a few characters; relocate by exact text when it is unambiguous.
+      const first = patch.expected_text ? source.indexOf(patch.expected_text) : -1;
+      if (first < 0 || source.indexOf(patch.expected_text, first + 1) !== -1) throw new Error('Code đã thay đổi. Hãy tạo lại bản sửa.');
+      patch = { ...patch, start: first, end: first + patch.expected_text.length };
+    }
+    if (patch.replacement.length > 100000) throw new Error('Code đã thay đổi. Hãy tạo lại bản sửa.');
     groups.set(patch.file_id, [...(groups.get(patch.file_id) || []), patch]);
   }
   const result = { ...files };

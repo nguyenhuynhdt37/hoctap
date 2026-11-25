@@ -28,10 +28,12 @@ async def admin_get_transactions(
     sort_by: str = "created_at",
     order_dir: str = "desc",
     service: TransactionsService = Depends(),
+    auth: AuthorizationService = Depends(AuthorizationService),
 ):
     """
     Admin lấy danh sách giao dịch đầy đủ (lọc + tìm kiếm + phân trang).
     """
+    await auth.require_role(["ADMIN"])
     # chuẩn hóa datetime (UTC+7 naive)
     date_from = await to_vietnam_naive(date_from)
     date_to = await to_vietnam_naive(date_to)
@@ -147,5 +149,7 @@ async def get_instructor_holding_earnings(
 async def admin_get_transaction_detail(
     transaction_id: uuid.UUID,
     service: TransactionsService = Depends(),
+    auth: AuthorizationService = Depends(AuthorizationService),
 ):
+    await auth.require_role(["ADMIN"])
     return await service.get_transaction_detail_admin_async(transaction_id)

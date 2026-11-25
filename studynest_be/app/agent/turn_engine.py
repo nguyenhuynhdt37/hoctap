@@ -113,6 +113,7 @@ class TurnToolRuntime:
         self.write_denied: set[str] = set()
         self.stagnant_rounds: int = 0
         self.executed_calls: int = 0
+        self.action_counts: dict[str, int] = {}
 
     @staticmethod
     def is_parallel_read(tool_def: Any) -> bool:
@@ -135,6 +136,11 @@ class TurnToolRuntime:
         sig = f"{name}:{canonical_json(arguments)}"
         if risk == "write" and sig in self.write_denied:
             return "Thao tác ghi này vừa bị từ chối trong lượt hiện tại; không tự động thử lại khi chưa có yêu cầu mới."
+        # Không giới hạn số lần gọi tool, nhưng chặn vòng lặp vô nghĩa: cùng một thao tác đã hoàn tất và được xác minh
+        # hai lần thì lần thứ ba không chạy lại. Cuộn trang là ngoại lệ vì mỗi lần cuộn đổi trạng thái.
+        if risk != "read" and not name.endswith("scroll") and self.action_counts.get(sig, 0) >= 2:
+            return ("Thao tác này đã hoàn tất và được xác minh nhiều lần với cùng tham số; đừng lặp lại. "
+                    "Hãy chuyển sang bước tiếp theo hoặc trả lời người dùng bằng kết quả đã có.")
         return None
 
     def record_outcome(
@@ -155,6 +161,8 @@ class TurnToolRuntime:
             return result, False
 
         if risk != "read":
+            sig = f"{name}:{canonical_json(arguments)}"
+            self.action_counts[sig] = self.action_counts.get(sig, 0) + 1
             # Navigation or write changes screen/domain state -> invalidate cached client reads
             if name.startswith(("video.", "ui.", "learning.", "editor.", "quiz.", "mcp.browser_")):
                 self.seen_reads.clear()

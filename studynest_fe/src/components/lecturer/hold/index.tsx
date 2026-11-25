@@ -2,6 +2,10 @@
 
 import Pagination from "@/components/shared/pagination";
 import { Alert, Button } from "@/components/ui";
+import {
+  useDebouncedUrlSearch,
+  useUrlQueryState,
+} from "@/hooks/useUrlQueryState";
 import { formatVndAsCoin } from "@/lib/learning-hub/coin-logic";
 import api from "@/lib/utils/fetcher/client/axios";
 import { HoldEarningsQuery, HoldEarningsResponse } from "@/types/lecturer/hold";
@@ -15,7 +19,7 @@ import {
   Wallet,
 } from "pulsoicon-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import useSWR from "swr";
 import { getHoldProgressInfo, HoldCardGrid } from "./hold-card-grid";
 import { HoldEarningsEmpty } from "./hold-empty";
@@ -25,48 +29,68 @@ import { HoldEarningsTable } from "./hold-table";
 
 const DEFAULT_LIMIT = 10;
 
+const HOLD_EARNINGS_QUERY_SCHEMA = {
+  page: { type: "number", default: 1, min: 1 },
+  limit: { type: "number", default: DEFAULT_LIMIT, min: 1, max: 100 },
+  search: { type: "string", default: "" as string },
+  status: {
+    type: "string",
+    default: "",
+    allowed: ["", "holding", "freeze"] as const,
+  },
+  course_id: { type: "string", default: "" as string },
+  student_id: { type: "string", default: "" as string },
+  date_from: { type: "string", default: "" as string },
+  date_to: { type: "string", default: "" as string },
+  order_by: {
+    type: "string",
+    default: "hold_until",
+    allowed: ["hold_until", "created_at", "amount_instructor", "status"] as const,
+  },
+  order_dir: {
+    type: "string",
+    default: "asc",
+    allowed: ["asc", "desc"] as const,
+  },
+  view: {
+    type: "string",
+    default: "grid",
+    allowed: ["grid", "table"] as const,
+  },
+} as const;
+
 const formatVndApprox = (vnd: number) =>
   new Intl.NumberFormat("vi-VN").format(Math.round(vnd || 0)) + " đ";
 
 export default function HoldEarningsManagement() {
   const router = useRouter();
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: DEFAULT_LIMIT,
-  });
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [status, setStatus] = useState<"holding" | "freeze" | "">("");
-  const [courseId, setCourseId] = useState("");
-  const [studentId, setStudentId] = useState("");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-  const [sortBy, setSortBy] =
-    useState<HoldEarningsQuery["order_by"]>("hold_until");
-  const [orderDir, setOrderDir] = useState<"asc" | "desc">("asc");
-  const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
+  const { values, setParam, setParams, resetParams } = useUrlQueryState(
+    HOLD_EARNINGS_QUERY_SCHEMA,
+  );
+  const page = values.page;
+  const limit = values.limit;
+  const search = values.search;
+  const status = values.status;
+  const courseId = values.course_id;
+  const studentId = values.student_id;
+  const dateFrom = values.date_from;
+  const dateTo = values.date_to;
+  const sortBy = values.order_by;
+  const orderDir = values.order_dir;
+  const viewMode = values.view;
 
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPagination((prev) => ({ ...prev, page: 1 }));
-    }, 300);
-    return () => clearTimeout(timeout);
-  }, [search]);
-
-  useEffect(() => {
-    setPagination((prev) => ({ ...prev, page: 1 }));
-  }, [status, courseId, studentId, dateFrom, dateTo, sortBy, orderDir]);
+  const { inputValue: searchInput, setInputValue: setSearchInput } =
+    useDebouncedUrlSearch(search, (val) => setParam("search", val));
 
   const buildQueryParams = useCallback((): HoldEarningsQuery => {
     const params: HoldEarningsQuery = {
-      page: pagination.page,
-      limit: pagination.limit,
+      page,
+      limit,
       order_by: sortBy,
       order_dir: orderDir,
     };
 
-    if (debouncedSearch.trim()) params.search = debouncedSearch.trim();
+    if (search.trim()) params.search = search.trim();
     if (status) params.status = status;
     if (courseId) params.course_id = courseId;
     if (studentId) params.student_id = studentId;
@@ -84,9 +108,9 @@ export default function HoldEarningsManagement() {
 
     return params;
   }, [
-    pagination.page,
-    pagination.limit,
-    debouncedSearch,
+    page,
+    limit,
+    search,
     status,
     courseId,
     studentId,
@@ -168,28 +192,19 @@ export default function HoldEarningsManagement() {
 
   const handleSort = (column: HoldEarningsQuery["order_by"]) => {
     if (sortBy === column) {
-      setOrderDir(orderDir === "asc" ? "desc" : "asc");
+      setParam("order_dir", orderDir === "asc" ? "desc" : "asc");
     } else {
-      setSortBy(column);
-      setOrderDir("asc");
+      setParams({ order_by: column, order_dir: "asc" });
     }
   };
 
   const handleResetFilters = () => {
-    setSearch("");
-    setDebouncedSearch("");
-    setStatus("");
-    setCourseId("");
-    setStudentId("");
-    setDateFrom("");
-    setDateTo("");
-    setSortBy("hold_until");
-    setOrderDir("asc");
-    setPagination({ page: 1, limit: DEFAULT_LIMIT });
+    setSearchInput("");
+    resetParams();
   };
 
   const hasActiveFilters =
-    search.trim() !== "" ||
+    searchInput.trim() !== "" ||
     status !== "" ||
     courseId !== "" ||
     studentId !== "" ||
@@ -200,8 +215,8 @@ export default function HoldEarningsManagement() {
 
   const totalPages = useMemo(() => {
     if (!data) return 0;
-    return Math.ceil(data.total / pagination.limit);
-  }, [data, pagination.limit]);
+    return Math.ceil(data.total / limit);
+  }, [data, limit]);
 
   const isInitialLoading = isLoading && !data;
   const isEmpty = !isInitialLoading && data && data.items.length === 0;
@@ -369,24 +384,26 @@ export default function HoldEarningsManagement() {
 
         {/* Bộ lọc kính mờ 2 tầng */}
         <HoldEarningsFilters
-          search={search}
-          onSearchChange={setSearch}
+          search={searchInput}
+          onSearchChange={setSearchInput}
           status={status}
-          onStatusChange={setStatus}
+          onStatusChange={(val) => setParam("status", val)}
           courseId={courseId}
-          onCourseIdChange={setCourseId}
+          onCourseIdChange={(val) => setParam("course_id", val)}
           studentId={studentId}
-          onStudentIdChange={setStudentId}
+          onStudentIdChange={(val) => setParam("student_id", val)}
           dateFrom={dateFrom}
-          onDateFromChange={setDateFrom}
+          onDateFromChange={(val) => setParam("date_from", val)}
           dateTo={dateTo}
-          onDateToChange={setDateTo}
+          onDateToChange={(val) => setParam("date_to", val)}
           sortBy={sortBy}
-          onSortByChange={setSortBy}
+          onSortByChange={(val) => setParam("order_by", val)}
           orderDir={orderDir}
-          onOrderDirChange={setOrderDir}
+          onOrderDirChange={(val) => setParam("order_dir", val)}
           viewMode={viewMode}
-          onViewModeChange={setViewMode}
+          onViewModeChange={(mode) =>
+            setParam("view", mode, { resetPage: false })
+          }
           onReset={handleResetFilters}
         />
 
@@ -420,16 +437,12 @@ export default function HoldEarningsManagement() {
 
             {data && data.total > 0 && (
               <Pagination
-                currentPage={pagination.page}
+                currentPage={page}
                 totalPages={totalPages}
                 totalItems={data.total}
-                pageSize={pagination.limit}
-                onPageChange={(newPage) =>
-                  setPagination((prev) => ({ ...prev, page: newPage }))
-                }
-                onPageSizeChange={(newLimit) =>
-                  setPagination({ page: 1, limit: newLimit })
-                }
+                pageSize={limit}
+                onPageChange={(newPage) => setParam("page", newPage)}
+                onPageSizeChange={(newLimit) => setParam("limit", newLimit)}
                 showPageSizeSelector={true}
                 pageSizeOptions={[5, 10, 20, 50]}
               />

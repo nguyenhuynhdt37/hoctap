@@ -11,7 +11,11 @@ import {
   Clock,
   Code,
   FileText,
+  Headphones,
+  Layers,
   Lock,
+  Mic,
+  Pencil,
   Search,
   X,
 } from "pulsoicon-react";
@@ -263,6 +267,14 @@ export default function Sidebar(props: SidebarProps) {
                                       <CircleHelp solid animated={false} className="size-4" />
                                     ) : lesson.lesson_type === "code" ? (
                                       <Code animated={false} className="size-4" />
+                                    ) : lesson.lesson_type === "flashcard" ? (
+                                      <Layers animated={false} className="size-4" />
+                                    ) : lesson.lesson_type === "listening" ? (
+                                      <Headphones animated={false} className="size-4" />
+                                    ) : lesson.lesson_type === "fill_blank" ? (
+                                      <Pencil animated={false} className="size-4" />
+                                    ) : lesson.lesson_type === "speaking" ? (
+                                      <Mic animated={false} className="size-4" />
                                     ) : lesson.lesson_type === "info" ? (
                                       <FileText animated={false} className="size-4" />
                                     ) : (

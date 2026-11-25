@@ -38,6 +38,17 @@ class TaxonomyMixin:
     is_active: Mapped[bool] = mapped_column(
         Boolean, default=True, server_default="true"
     )
+    icon: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    color_token: Mapped[str] = mapped_column(
+        String(32), default="primary", server_default="primary"
+    )
+    tagline: Mapped[str | None] = mapped_column(String(240), nullable=True)
+    is_featured: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="false"
+    )
+    extra_metadata: Mapped[dict] = mapped_column(
+        "metadata", JSONB, default=dict, server_default=text("'{}'::jsonb")
+    )
 
 
 class EducationLevel(TaxonomyMixin, Base):

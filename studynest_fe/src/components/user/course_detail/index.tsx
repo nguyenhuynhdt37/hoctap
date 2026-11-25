@@ -6,6 +6,7 @@ import { useCoinRate } from "@/lib/learning-hub/shop-hooks";
 import api from "@/lib/utils/fetcher/client/axios";
 import { showToast } from "@/lib/utils/helpers/toast";
 import { useUserStore } from "@/stores/user";
+import type { CourseEducation } from "@/types/catalog";
 import { CourseDetailData } from "@/types/user/course_detail";
 import { useParams, useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
@@ -58,12 +59,35 @@ const CourseDetail = () => {
     error,
     isLoading: loading,
   } = useSWR<any>(
-    slug ? [`/courses/${slug}/detail-info-by-slug`] : null,
+    slug ? [`/courses/${slug}/detail-info-by-slug`, user?.id ?? "guest"] : null,
     async ([url]) => {
       const response = await api.get(url);
       return response.data;
     }
   );
+
+  const isEnrolled = Boolean(data?.is_enrolled);
+  const learningHref = `/learning/${data?.course?.slug || slug}`;
+
+  // Nếu người dùng đã sở hữu khóa học này thì chuyển thẳng vào lớp học, không cho ở lại trang bán khóa học
+  useEffect(() => {
+    if (isEnrolled && slug) {
+      router.replace(learningHref);
+    }
+  }, [isEnrolled, slug, learningHref, router]);
+
+  // Lấy phân loại chương trình học (SWR dùng chung cache key với CourseEducationInfo)
+  const { data: taxonomyData } = useSWR<CourseEducation>(
+    data?.course?.id ? `/catalog/courses/${data.course.id}/taxonomy` : null,
+    async (url: string) => {
+      const response = await api.get<CourseEducation>(url);
+      return response.data;
+    },
+    { revalidateOnFocus: false }
+  );
+
+  const courseEducation: CourseEducation | null =
+    data?.course?.education ?? data?.education ?? taxonomyData ?? null;
 
   // Only fetch favourite status when user is authenticated to avoid 401 -> /login redirect
   const { data: favouriteData, mutate: mutateFavourite } = useSWR(
@@ -325,6 +349,17 @@ const CourseDetail = () => {
     }
   };
 
+  if (isEnrolled) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="flex items-center gap-3 rounded-full border border-primary-pastel bg-surface px-6 py-3.5 text-sm font-semibold text-primary shadow-sm">
+          <span className="size-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <span>Bạn đã sở hữu khóa học này · Đang chuyển vào lớp học...</span>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -439,6 +474,7 @@ const CourseDetail = () => {
       <CourseHeader
         course={course}
         categoryChain={category_chain}
+        education={courseEducation}
         totalDurationSeconds={totalDurationSeconds}
         formatDate={formatDate}
         formatSecondsToHms={formatSecondsToHms}
@@ -465,7 +501,10 @@ const CourseDetail = () => {
             <DescriptionSection description={course.description} />
             <RequirementsSection requirements={course.requirements} />
             <TargetAudienceSection targetAudience={course.target_audience} />
-            <RelatedTopicsSection categories={category_chain} />
+            <RelatedTopicsSection
+              categories={category_chain}
+              education={courseEducation}
+            />
             <InstructorSection instructor={course.instructor} />
             {sample_reviews && sample_reviews.length > 0 && (
               <ReviewsSection reviews={sample_reviews} />

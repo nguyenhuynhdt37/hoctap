@@ -1,5 +1,5 @@
-import { ReactNode } from "react";
+import { ReactNode, Suspense } from "react";
 
 export default function LecturerRouteGroupLayout({ children }: { children: ReactNode }) {
-  return <>{children}</>;
+  return <Suspense fallback={null}>{children}</Suspense>;
 }

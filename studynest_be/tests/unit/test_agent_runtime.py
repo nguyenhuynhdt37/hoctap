@@ -9,7 +9,7 @@ from fastapi import HTTPException
 from pydantic import ValidationError
 
 from app.agent.contracts import ActionReceipt, ApprovalDecision, ModelDecision, RunState, ScreenSnapshot, check_transition
-from app.agent.runtime import AgentService, bounded_json, build_prompt, digest, direct_intent, github_mcp_connection_requested, is_greeting, needs_lesson_grounding, requested_action
+from app.agent.runtime import AgentService, bounded_json, build_prompt, digest
 from app.agent.tools import REGISTRY, Patch, Search, available
 
 
@@ -57,7 +57,7 @@ def test_known_registry_cannot_expose_financial_or_arbitrary_browser_tools():
     assert 'video.seek' in tools and 'editor.apply_patch' in tools
     assert 'editor.read_file' not in tools
     assert 'checkout' not in tools
-    assert all(name.startswith(('catalog.','memory.','data.','mcp.','tools.')) for name in available(SimpleNamespace(capabilities=['video.seek'],lesson_id=None)))
+    assert all(name.startswith(('catalog.','memory.','data.','mcp.','tools.','api.')) for name in available(SimpleNamespace(capabilities=['video.seek'],lesson_id=None)))
 
 
 def test_write_tools_require_approval_and_are_not_automatically_retried():
@@ -76,14 +76,6 @@ def test_patch_and_tool_args_reject_extra_authority_fields():
         ModelDecision.model_validate({'tool_calls':[{'name':'video.seek','arguments':{},'admin':True}]})
 
 
-def test_explicit_simple_actions_do_not_need_model_inference():
-    assert direct_intent('Tạm dừng video')==('video.pause',{})
-    assert direct_intent('Tua video về phút thứ 3')==('video.seek',{'seconds':180})
-    assert direct_intent('Tua video tới 01:09')==('video.seek',{'seconds':69})
-    assert direct_intent('Tua video tới 30 giây')==('video.seek',{'seconds':30})
-    assert direct_intent('giải thích video dùng pause thế nào') is None
-    assert is_greeting('cảm ơn nhé!')
-    assert not is_greeting('hi giải thích hợp âm')
 
 
 def test_hash_canonical_and_result_output_bounded():
@@ -93,44 +85,12 @@ def test_hash_canonical_and_result_output_bounded():
     assert exc.value.status_code==413
 
 
-@pytest.mark.parametrize('message', ['connect github mcp', 'Please connect to GitHub MCP', 'Kết nối GitHub MCP', 'hãy cấu hình MCP'])
-def test_external_connection_request_does_not_require_lesson_sources(message):
-    assert github_mcp_connection_requested(message)
-    assert not needs_lesson_grounding(message)
 
 
-@pytest.mark.parametrize('message', ['Giải thích code kết nối GitHub MCP trong bài này', 'hi giải thích bài học', 'Kết nối GitHub MCP rồi giải thích bài học'])
-def test_connection_keywords_do_not_bypass_grounding_for_lesson_questions(message):
-    assert not github_mcp_connection_requested(message)
-    assert needs_lesson_grounding(message)
 
 
-@pytest.mark.asyncio
-async def test_github_connection_reply_never_searches_lesson_or_calls_model(monkeypatch):
-    import app.agent.github_connection as github_connection
-    monkeypatch.setattr(github_connection, 'connection_status', AsyncMock(return_value={'connected': False}))
-    db = SimpleNamespace(commit=AsyncMock())
-    service = AgentService(db, SimpleNamespace(id=uuid4()), str(uuid4()))
-    service.session = SimpleNamespace(lesson_id=uuid4(), context_revision=1)
-    run = SimpleNamespace(message='connect github mcp')
-    service._assert_running_async = AsyncMock(return_value=run)
-    service._transition_async = AsyncMock()
-    service._context_async = AsyncMock(return_value={})
-    service._emit_async = AsyncMock()
-    service.execute_tool_async = AsyncMock()
-    service.finish_async = AsyncMock()
-    await service.run_async(uuid4())
-    service.execute_tool_async.assert_not_awaited()
-    reply = service.finish_async.call_args.args[1]
-    assert 'Kết nối GitHub' in reply and 'chưa truy cập repo' in reply
-    assert service.finish_async.call_args.kwargs == {'partial': False}
 
 
-def test_prompt_labels_untrusted_context_and_omits_private_reasoning_request():
-    prompt=build_prompt('Mở bài tiếp theo',{'screen':{'active_tab':'notes'}},[])
-    assert 'DỮ LIỆU không đáng tin' in prompt
-    assert 'Không hiển thị suy nghĩ nội bộ' in prompt
-    assert requested_action('Mở bài tiếp theo')
 
 
 @pytest.mark.asyncio
@@ -179,32 +139,8 @@ async def test_approval_context_must_match_original_and_current_revision():
     assert exc.value.status_code==409
 
 
-def test_navigation_requires_explicit_command_not_negated_or_quoted_data():
-    from app.agent.runtime import navigation_requested
-    assert navigation_requested('Tua video về phút 3','video.seek')
-    assert navigation_requested('Giải thích bài rồi mở tab ghi chú','ui.switch_tab')
-    assert navigation_requested('Hãy mở bài tiếp theo','learning.next_lesson')
-    assert not navigation_requested('Đừng mở bài khác; chỉ giải thích','learning.navigate_lesson')
-    assert not navigation_requested('Giải thích câu “mở bài tiếp”','learning.next_lesson')
-    assert not navigation_requested('Hướng dẫn cách mở ghi chú','ui.switch_tab')
-    assert not navigation_requested('Code comment: `mở bài tiếp`','learning.next_lesson')
 
 
-def test_navigation_intent_binds_operation_and_target_type():
-    from app.agent.runtime import navigation_requested
-    assert not navigation_requested('Mở panel chat','ui.close_panel')
-    assert not navigation_requested('Đổi file main.py','video.set_playback_rate')
-    assert not navigation_requested('Mở bài trước','learning.next_lesson')
-    assert navigation_requested('Chỉnh tốc độ video lên 1.5x','video.set_playback_rate')
-    assert navigation_requested('Đóng panel chat','ui.close_panel')
-    assert navigation_requested('Hãy cuộn xuống dưới xem nội dung','mcp.browser_scroll')
-    assert navigation_requested('Khoanh vùng chỉ điểm vào phần công thức','mcp.browser_highlight')
-    assert navigation_requested('Chọn đáp án B giúp mình','quiz.select_option')
-    assert navigation_requested('khiển màn truy cập vào khóa học đang học','mcp.browser_click')
-    assert navigation_requested('truy cập vào','mcp.browser_navigate')
-    assert not navigation_requested('Đừng cuộn trang xuống','mcp.browser_scroll')
-    assert not navigation_requested('Đừng chọn đáp án nào cả','quiz.select_option')
-    assert not navigation_requested('Đừng truy cập vào trang đó','mcp.browser_navigate')
 
 
 @pytest.mark.asyncio

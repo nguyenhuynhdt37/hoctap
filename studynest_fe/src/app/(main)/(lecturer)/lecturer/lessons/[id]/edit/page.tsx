@@ -1,7 +1,11 @@
 "use client";
 
 import EditCodeLesson from "@/components/lecturer/lessons/edit/code";
+import EditFillBlankLesson from "@/components/lecturer/lessons/edit/fill-blank";
+import EditFlashcardLesson from "@/components/lecturer/lessons/edit/flashcards";
+import EditListeningLesson from "@/components/lecturer/lessons/edit/listening";
 import EditQuizLesson from "@/components/lecturer/lessons/edit/quizzes";
+import EditSpeakingLesson from "@/components/lecturer/lessons/edit/speaking";
 import EditVideoLesson from "@/components/lecturer/lessons/edit/video";
 import { Alert, Button } from "@/components/ui";
 import api from "@/lib/utils/fetcher/client/axios";
@@ -60,6 +64,22 @@ export default function EditLessonPage() {
 
   if (lessonDetail.lesson_type === "code") {
     return <EditCodeLesson />;
+  }
+
+  if (lessonDetail.lesson_type === "flashcard") {
+    return <EditFlashcardLesson />;
+  }
+
+  if (lessonDetail.lesson_type === "listening") {
+    return <EditListeningLesson />;
+  }
+
+  if (lessonDetail.lesson_type === "fill_blank") {
+    return <EditFillBlankLesson />;
+  }
+
+  if (lessonDetail.lesson_type === "speaking") {
+    return <EditSpeakingLesson />;
   }
 
   // Mặc định render EditVideoLesson cho video và các loại khác

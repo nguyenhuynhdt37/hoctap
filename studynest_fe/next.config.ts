@@ -3,6 +3,12 @@ import type { NextConfig } from "next";
 const backendUrl =
   process.env.NEXT_PUBLIC_URL_BACKEND || "http://127.0.0.1:8000";
 const isDev = process.env.NODE_ENV === "development";
+// Server-side rewrite trong môi trường dev gọi thẳng backend nội bộ 127.0.0.1:8000
+// để tránh vòng qua Tailscale HTTPS proxy (gây `Error: socket hang up` với các API AI chạy lâu).
+// DPoP trên backend ghim origin theo PUBLIC_API_URL nên vẫn xác thực 100% bình thường.
+const rewriteBackendUrl =
+  process.env.INTERNAL_BACKEND_URL ||
+  (isDev ? "http://127.0.0.1:8000" : backendUrl);
 
 function parseCspUrl(value: string | undefined, protocols: readonly string[]) {
   if (!value) return undefined;
@@ -78,8 +84,18 @@ const csp = Object.entries(cspDirectives)
   .join("; ");
 
 const nextConfig: NextConfig = {
-  // Cho phép mở dev server từ thiết bị khác (điện thoại) qua IP LAN/Tailscale.
-  allowedDevOrigins: ["192.168.100.36", "100.94.151.7", "macbook-pro-7.tail6d3a82.ts.net"],
+  // Cho phép mở dev server từ localhost/127.0.0.1 và thiết bị khác qua IP LAN/Tailscale.
+  allowedDevOrigins: [
+    "127.0.0.1",
+    "localhost",
+    "192.168.100.36",
+    "100.94.151.7",
+    "macbook-pro-7.tail6d3a82.ts.net",
+    "*.ngrok-free.app",
+    "*.ngrok-free.dev",
+    "*.ngrok.app",
+    "*.ngrok.io",
+  ],
   distDir: process.env.NEXT_DIST_DIR || ".next",
   // cacheComponents: true,
   // reactCompiler: true,
@@ -119,16 +135,30 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async redirects() {
+    // YouTube từ chối nhúng video khi origin là địa chỉ IP (127.0.0.1) -> "This video is unavailable".
+    // Ở dev, đưa 127.0.0.1:3000 về localhost:3000 để iframe phát được.
+    if (!isDev) return [];
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "127.0.0.1:3000" }],
+        destination: "http://localhost:3000/:path*",
+        permanent: false,
+      },
+    ];
+  },
   async rewrites() {
     return [
       {
         source: "/api/:path*",
-        destination: `${backendUrl}/api/v1/:path*`, // Proxy /api/* -> backend/api/v1/*
+        destination: `${rewriteBackendUrl}/api/v1/:path*`, // Proxy /api/* -> backend/api/v1/*
       },
     ];
   },
   experimental: {
     mcpServer: true,
+    proxyTimeout: 180_000,
     optimizePackageImports: [
       "pulsoicon-react",
       "@radix-ui/react-dropdown-menu",

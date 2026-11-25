@@ -1,198 +1,145 @@
 "use client";
 
-import api from "@/lib/utils/fetcher/client/axios";
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
-import { Pie } from "react-chartjs-2";
-import { CourseStatsResponse } from "@/types/admin/statistics";
-import { useState, useEffect } from "react";
+import Link from "next/link";
 import useSWR from "swr";
-
-ChartJS.register(ArcElement, Tooltip, Legend);
+import { BookOpen, ChevronRight, Star, Users } from "pulsoicon-react";
+import api from "@/lib/utils/fetcher/client/axios";
+import type { CourseStatsResponse } from "@/types/admin/statistics";
 
 export default function CourseStatusChart() {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   const { data, isLoading } = useSWR<CourseStatsResponse>(
     "/admin/statistics/courses",
-    async (url) => {
-      const res = await api.get(url);
-      return res.data;
-    },
-    { revalidateOnFocus: false }
+    async (url: string) => (await api.get(url)).data,
+    { revalidateOnFocus: false },
   );
 
-  const statusData = {
-    labels: ["Đã xuất bản", "Bản nháp", "Lưu trữ"],
-    datasets: [
-      {
-        data: data
-          ? [
-              data.by_status?.published ?? 0,
-              data.by_status?.draft ?? 0,
-              data.by_status?.archived ?? 0,
-            ]
-          : [0, 0, 0],
-        backgroundColor: ["#356FA7", "#F8E9C9", "#BFD7ED"],
-        borderColor: "#ffffff",
-        borderWidth: 3,
-        hoverOffset: 6,
-      },
-    ],
-  };
+  const total = data?.total ?? 0;
+  const published = data?.by_status?.published ?? 0;
+  const draft = data?.by_status?.draft ?? 0;
+  const archived = data?.by_status?.archived ?? 0;
+  const pubPct = total > 0 ? Math.round((published / total) * 100) : 0;
 
-  const levelData = {
-    labels: ["Cơ bản", "Trung cấp", "Nâng cao", "Tất cả"],
-    datasets: [
-      {
-        data: data
-          ? [
-              data.by_level?.beginner ?? 0,
-              data.by_level?.intermediate ?? 0,
-              data.by_level?.advanced ?? 0,
-              data.by_level?.all ?? 0,
-            ]
-          : [0, 0, 0, 0],
-        backgroundColor: ["#7BAFD4", "#356FA7", "#F7C9D9", "#E3D5F5"],
-        borderColor: "#ffffff",
-        borderWidth: 3,
-        hoverOffset: 6,
-      },
-    ],
-  };
-
-  const options = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: { backgroundColor: "#3D4A5A", padding: 12, borderRadius: 10 },
+  const levels = [
+    {
+      label: "Cơ bản (Beginner)",
+      value: data?.by_level?.beginner ?? 0,
+      bar: "bg-primary",
     },
-  };
-
-  if (!mounted) return null;
+    {
+      label: "Trung cấp (Intermediate)",
+      value: data?.by_level?.intermediate ?? 0,
+      bar: "bg-accent-border",
+    },
+    {
+      label: "Nâng cao (Advanced)",
+      value: data?.by_level?.advanced ?? 0,
+      bar: "bg-secondary-pastel",
+    },
+    {
+      label: "Mọi trình độ (All)",
+      value: data?.by_level?.all ?? 0,
+      bar: "bg-accent-vanilla-border",
+    },
+  ];
+  const maxLvl = Math.max(1, ...levels.map((l) => l.value));
 
   return (
-    <div className="bg-white rounded-[20px] shadow-xs border border-border p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-foreground">Thống kê khóa học</h3>
-        {data && (
-          <div className="text-right">
-            <p className="text-2xl font-bold text-primary">
-              {data.total ?? 0}
-            </p>
-            <p className="text-muted-foreground text-sm">Tổng khóa học</p>
-          </div>
-        )}
+    <section className="flex h-full flex-col justify-between rounded-[2rem] border border-primary-pastel/60 bg-surface/90 p-6 shadow-[0_18px_42px_-18px_rgba(53,111,167,0.16)] backdrop-blur-md">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary-light px-2.5 py-0.5 text-[11px] font-semibold text-secondary-foreground">
+            <BookOpen size={12} animated={false} />
+            Hệ sinh thái học liệu
+          </span>
+          <h2 className="mt-1.5 text-lg font-bold text-foreground">
+            Trạng thái &amp; Trình độ Khóa học
+          </h2>
+        </div>
+
+        <Link
+          href="/admin/catalog"
+          className="inline-flex items-center gap-0.5 rounded-xl border border-border bg-surface px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary-light/50"
+        >
+          Catalog
+          <ChevronRight size={13} animated={false} />
+        </Link>
       </div>
 
       {isLoading ? (
-        <div className="h-48 flex items-center justify-center">
-          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-        </div>
+        <div className="my-6 h-48 animate-pulse rounded-2xl bg-background" />
       ) : (
-        <div className="grid grid-cols-2 gap-6">
-          {/* Status Pie */}
-          <div>
-            <p className="text-sm font-medium text-muted-foreground mb-3 text-center">
-              Theo trạng thái
-            </p>
-            <div className="h-32 relative">
-              <Pie data={statusData} options={options as any} />
+        <div className="mt-4 space-y-5">
+          {/* Status Pills + Rating */}
+          <div className="grid grid-cols-3 gap-2.5">
+            <div className="rounded-2xl border border-success-border/70 bg-success-bg/50 p-3 text-center">
+              <p className="text-[11px] text-muted-foreground">Xuất bản</p>
+              <p className="mt-0.5 text-lg font-bold text-success-foreground">
+                {published}
+              </p>
+              <p className="text-[10px] font-semibold text-success-foreground">
+                {pubPct}%
+              </p>
             </div>
-            <div className="mt-3 space-y-1">
-              <div className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-1.5 text-muted-foreground">
-                  <span className="w-2.5 h-2.5 rounded-full bg-primary" />
-                  Xuất bản
-                </span>
-                <span className="font-medium text-foreground">
-                  {data?.by_status?.published ?? 0}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-1.5 text-muted-foreground">
-                  <span className="w-2.5 h-2.5 rounded-full bg-accent-vanilla border border-warning" />
-                  Bản nháp
-                </span>
-                <span className="font-medium text-foreground">
-                  {data?.by_status?.draft ?? 0}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-1.5 text-muted-foreground">
-                  <span className="w-2.5 h-2.5 rounded-full bg-primary-pastel" />
-                  Lưu trữ
-                </span>
-                <span className="font-medium text-foreground">
-                  {data?.by_status?.archived ?? 0}
-                </span>
-              </div>
+            <div className="rounded-2xl border border-accent-vanilla-border bg-accent-vanilla/50 p-3 text-center">
+              <p className="text-[11px] text-muted-foreground">Bản nháp</p>
+              <p className="mt-0.5 text-lg font-bold text-accent-vanilla-foreground">
+                {draft}
+              </p>
+              <p className="text-[10px] text-muted-foreground">Đang soạn</p>
+            </div>
+            <div className="rounded-2xl border border-border bg-background p-3 text-center">
+              <p className="text-[11px] text-muted-foreground">Lưu trữ</p>
+              <p className="mt-0.5 text-lg font-bold text-foreground">
+                {archived}
+              </p>
+              <p className="text-[10px] text-muted-foreground">Đã ẩn</p>
             </div>
           </div>
 
-          {/* Level Pie */}
-          <div>
-            <p className="text-sm font-medium text-muted-foreground mb-3 text-center">
-              Theo cấp độ
-            </p>
-            <div className="h-32 relative">
-              <Pie data={levelData} options={options as any} />
-            </div>
-            <div className="mt-3 space-y-1">
-              <div className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-1.5 text-muted-foreground">
-                  <span className="w-2.5 h-2.5 rounded-full bg-chart-2" />
-                  Cơ bản
-                </span>
-                <span className="font-medium text-foreground">
-                  {data?.by_level?.beginner ?? 0}
-                </span>
+          {/* Level Bars */}
+          <div className="space-y-2.5">
+            {levels.map((lvl) => (
+              <div key={lvl.label} className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-medium text-foreground">
+                    {lvl.label}
+                  </span>
+                  <span className="font-semibold text-muted-foreground">
+                    {lvl.value} khóa
+                  </span>
+                </div>
+                <div className="h-2 w-full overflow-hidden rounded-full bg-background">
+                  <div
+                    className={`h-full rounded-full ${lvl.bar}`}
+                    style={{
+                      width: `${Math.max(4, Math.round((lvl.value / maxLvl) * 100))}%`,
+                    }}
+                  />
+                </div>
               </div>
-              <div className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-1.5 text-muted-foreground">
-                  <span className="w-2.5 h-2.5 rounded-full bg-primary" />
-                  Trung cấp
-                </span>
-                <span className="font-medium text-foreground">
-                  {data?.by_level?.intermediate ?? 0}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-1.5 text-muted-foreground">
-                  <span className="w-2.5 h-2.5 rounded-full bg-secondary-pastel" />
-                  Nâng cao
-                </span>
-                <span className="font-medium text-foreground">
-                  {data?.by_level?.advanced ?? 0}
-                </span>
-              </div>
-            </div>
+            ))}
           </div>
-        </div>
-      )}
 
-      {/* Extra Stats */}
-      {data && (
-        <div className="mt-6 pt-4 border-t border-border grid grid-cols-2 gap-4">
-          <div className="text-center">
-            <p className="text-2xl font-bold text-primary">
-              {(data.avg_rating ?? 0).toFixed(1)}
-              <span className="text-warning ml-1">★</span>
-            </p>
-            <p className="text-muted-foreground text-xs">Đánh giá TB</p>
-          </div>
-          <div className="text-center">
-            <p className="text-2xl font-bold text-primary">
-              {(data.total_enrollments ?? 0).toLocaleString("vi-VN")}
-            </p>
-            <p className="text-muted-foreground text-xs">Lượt đăng ký</p>
+          {/* Rating & Enrollments Footer */}
+          <div className="flex items-center justify-between rounded-2xl border border-primary-pastel/60 bg-primary-light/40 px-4 py-2.5 text-xs">
+            <span className="inline-flex items-center gap-1.5 font-semibold text-foreground">
+              <Star
+                size={14}
+                animated={false}
+                className="text-accent-vanilla-foreground"
+              />
+              Đánh giá TB:{" "}
+              <strong className="text-primary">
+                {(data?.avg_rating ?? 0).toFixed(2)} / 5
+              </strong>
+            </span>
+            <span className="inline-flex items-center gap-1.5 font-semibold text-primary">
+              <Users size={14} animated={false} />
+              {(data?.total_enrollments ?? 0).toLocaleString("vi-VN")} ghi danh
+            </span>
           </div>
         </div>
       )}
-    </div>
+    </section>
   );
 }

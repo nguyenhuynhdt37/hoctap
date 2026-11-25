@@ -11,7 +11,7 @@ Currency = Literal["VND", "USD"]  # mở rộng nếu cần
 
 class CreateCourse(BaseModel):
     title: str = Field(min_length=3, max_length=160)
-    category_id: uuid.UUID
+    category_id: uuid.UUID | None = None
     topic_id: uuid.UUID | None = None
     education: CourseTaxonomy | None = None
 
@@ -32,7 +32,7 @@ class CreateCourse(BaseModel):
 
 class UpdateCourse(BaseModel):
     title: str = Field(min_length=3, max_length=160)
-    category_id: uuid.UUID
+    category_id: uuid.UUID | None = None
     topic_id: uuid.UUID | None = None
     education: CourseTaxonomy | None = None
 

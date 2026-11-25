@@ -1,6 +1,7 @@
 "use client";
 
 import { Alert, Button, CoinBadge, EmptyState, Modal, Skeleton } from "@/components/ui";
+import { useUrlQueryState } from "@/hooks/useUrlQueryState";
 import { hubErrorMessage, isHubUnavailable } from "@/lib/learning-hub/errors";
 import { getHubDataSource } from "@/lib/learning-hub/data-source";
 import { useCoinBalances, useShopActions, useShopInventory, useShopItems } from "@/lib/learning-hub/shop-hooks";
@@ -12,7 +13,6 @@ import { cn } from "@/lib/utils";
 import { useUserStore } from "@/stores/user";
 import { ArrowRight, Check, Cloud, Coins, Eye, PackageOpen, RotateCcw, Store } from "pulsoicon-react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { useId, useMemo, useRef, useState, type KeyboardEvent, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { HubLoadError } from "../hub-page-state";
@@ -236,10 +236,24 @@ function ItemCard({ item, avatar, name, balance, equipment, previewing, pending,
   );
 }
 
+const SHOP_QUERY_SCHEMA = {
+  tab: {
+    type: "string",
+    default: "avatar_frame" as ShopTab,
+    allowed: ["avatar_frame", "title", "emblem", "mine"] as const,
+  },
+  rarity: {
+    type: "string",
+    default: "all" as RarityFilter,
+    allowed: ["all", "common", "rare", "epic", "legendary"] as const,
+  },
+} as const;
+
 export function ShopView() {
-  const search = useSearchParams();
-  const activeIndex = Math.max(tabIndex(search.get("tab")), 0);
-  const activeTab = tabs[activeIndex];
+  const { values, setParam, setParams } = useUrlQueryState(SHOP_QUERY_SCHEMA);
+  const activeTab = values.tab;
+  const rarityFilter = values.rarity;
+  const activeIndex = Math.max(tabIndex(activeTab), 0);
   const id = useId();
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const previewRef = useRef<HTMLHeadingElement>(null);
@@ -252,7 +266,6 @@ export function ShopView() {
   const coins = useCoinBalances();
   const [buying, setBuying] = useState(false);
   const [exchanging, setExchanging] = useState(false);
-  const [rarityFilter, setRarityFilter] = useState<RarityFilter>("all");
   const [preview, setPreview] = useState<ShopItem>();
   const [confirm, setConfirm] = useState<{ item: ShopItem; attempt: ReturnType<typeof createPurchaseConfirmation> }>();
   const [confirmError, setConfirmError] = useState<unknown>();
@@ -271,12 +284,8 @@ export function ShopView() {
   );
 
   function selectTab(tab: ShopTab) {
-    const url = new URL(window.location.href);
-    if (tab === tabs[0]) url.searchParams.delete("tab");
-    else url.searchParams.set("tab", tab);
-    window.history.replaceState(null, "", url);
+    setParams({ tab, rarity: "all" });
     setEquipmentError(undefined);
-    setRarityFilter("all");
   }
 
   function moveTab(event: KeyboardEvent, index: number) {
@@ -456,7 +465,7 @@ export function ShopView() {
                   key={filter.value}
                   type="button"
                   aria-pressed={active}
-                  onClick={() => setRarityFilter(filter.value)}
+                  onClick={() => setParam("rarity", filter.value)}
                   className={cn(
                     "min-h-9 rounded-full border px-3 text-xs font-semibold transition-all cursor-pointer",
                     active
@@ -513,7 +522,7 @@ export function ShopView() {
                       }
                       action={
                         rarityFilter !== "all" ? (
-                          <Button className="min-h-11" onClick={() => setRarityFilter("all")}>Xem tất cả</Button>
+                          <Button className="min-h-11" onClick={() => setParam("rarity", "all")}>Xem tất cả</Button>
                         ) : tab === "mine" ? (
                           <Button className="min-h-11" onClick={() => { selectTab(tabs[0]); tabRefs.current[0]?.focus(); }}>
                             Xem khung avatar

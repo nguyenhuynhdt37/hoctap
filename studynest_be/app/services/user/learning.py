@@ -592,6 +592,10 @@ class LearningService:
                 select(Lessons)
                 .options(
                     selectinload(Lessons.lesson_resources),
+                    selectinload(Lessons.lesson_flashcards),
+                    selectinload(Lessons.lesson_listening),
+                    selectinload(Lessons.lesson_fill_blank),
+                    selectinload(Lessons.lesson_speaking),
                     selectinload(Lessons.lesson_quizzes).selectinload(
                         LessonQuizzes.lesson_quiz_options
                     ),
@@ -648,15 +652,118 @@ class LearningService:
                 )
 
             # 5️⃣ Trả dữ liệu hoàn chỉnh cho frontend
+            flashcards = [
+                {
+                    "id": str(fc.id),
+                    "front_text": fc.front_text,
+                    "back_text": fc.back_text,
+                    "phonetic": fc.phonetic,
+                    "part_of_speech": fc.part_of_speech,
+                    "example_sentence": fc.example_sentence,
+                    "example_translation": fc.example_translation,
+                    "hint": fc.hint,
+                    "lang_code": fc.lang_code,
+                    "voice_id": fc.voice_id,
+                    "audio_url": fc.audio_url,
+                    "example_audio_url": fc.example_audio_url,
+                    "difficulty_level": fc.difficulty_level,
+                    "position": fc.position,
+                }
+                for fc in sorted(
+                    lesson.lesson_flashcards or [],
+                    key=lambda item: (item.position or 0),
+                )
+            ]
+
+            listening_row = lesson.lesson_listening
+            listening_payload = (
+                {
+                    "id": str(listening_row.id),
+                    "lang_code": listening_row.lang_code,
+                    "scenario": listening_row.scenario or "",
+                    "speakers": listening_row.speakers or [],
+                    "script_lines": listening_row.script_lines or [],
+                    "audio_url": listening_row.audio_url or "",
+                    "duration_seconds": listening_row.duration_seconds or 0,
+                    "max_plays": listening_row.max_plays or 0,
+                    "show_transcript_before_submit": bool(
+                        listening_row.show_transcript_before_submit
+                    ),
+                    "pass_percent": listening_row.pass_percent or 70,
+                }
+                if listening_row
+                else None
+            )
+
+            fb_row = lesson.lesson_fill_blank
+            fill_blank_payload = (
+                {
+                    "id": str(fb_row.id),
+                    "lang_code": fb_row.lang_code,
+                    "mode": fb_row.mode or "typing",
+                    "prompt_text": fb_row.prompt_text or "",
+                    "translation": fb_row.translation or "",
+                    "blanks": fb_row.blanks or [],
+                    "distractors": fb_row.distractors or [],
+                    "voice_id": fb_row.voice_id or "",
+                    "audio_url": fb_row.audio_url or "",
+                    "duration_seconds": float(fb_row.duration_seconds or 0),
+                    "case_sensitive": bool(fb_row.case_sensitive),
+                    "allow_hint": bool(fb_row.allow_hint),
+                    "pass_percent": int(fb_row.pass_percent or 70),
+                }
+                if fb_row
+                else None
+            )
+
+            sp_row = lesson.lesson_speaking
+            speaking_payload = (
+                {
+                    "id": str(sp_row.id),
+                    "lang_code": sp_row.lang_code,
+                    "level": sp_row.level or "B1",
+                    "scenario": sp_row.scenario or "",
+                    "student_role": sp_row.student_role or "",
+                    "ai_persona": sp_row.ai_persona or {},
+                    "missions": sp_row.missions or [],
+                    "sample_phrases": sp_row.sample_phrases or [],
+                    "max_turns": int(sp_row.max_turns or 8),
+                    "pass_percent": int(sp_row.pass_percent or 70),
+                    "allow_translation": bool(sp_row.allow_translation),
+                    "allow_suggestion": bool(sp_row.allow_suggestion),
+                }
+                if sp_row
+                else None
+            )
+
+            resolved_file_id = video.file_id if video else None
+            if resolved_file_id and resolved_file_id.startswith("r2:"):
+                try:
+                    from app.services.shares.file_storage import get_file_storage_service
+
+                    r2_key = resolved_file_id[3:].lstrip("/")
+                    if r2_key.startswith("private/"):
+                        resolved_file_id = await get_file_storage_service().signed_download_url(r2_key)
+                except Exception:
+                    pass
+
             return {
                 "id": str(lesson.id),
                 "title": lesson.title,
                 "lesson_type": lesson.lesson_type,
                 "description": lesson.description,
-                "duration": video.duration if video else 0,
-                "file_id": video.file_id if video else None,
+                "duration": (
+                    listening_row.duration_seconds
+                    if listening_row and listening_row.duration_seconds
+                    else (video.duration if video else 0)
+                ),
+                "file_id": resolved_file_id,
                 "resources": lesson.lesson_resources,
                 "quizzes": quizzes,
+                "flashcards": flashcards,
+                "listening": listening_payload,
+                "fill_blank": fill_blank_payload,
+                "speaking": speaking_payload,
                 "is_completed": is_completed,
                 "is_locked": is_locked,
             }
@@ -2578,3 +2685,257 @@ class LearningService:
             except Exception as e:
                 await db.rollback()
                 return {"error": f"Lỗi khi xóa bình luận: {e}", "code": 500}
+
+    # ============================================================
+    # 🗣️ SPEAKING / AI ROLEPLAY (TURN, INLINE TTS, EVALUATE)
+    # ============================================================
+
+    @staticmethod
+    def _parse_speaking_json(raw_text: str) -> dict:
+        import json as _json
+        import re as _re
+
+        text = (raw_text or "").strip()
+        if text.startswith("```"):
+            text = _re.sub(r"^```(?:json)?\s*", "", text, flags=_re.IGNORECASE)
+            text = _re.sub(r"\s*```$", "", text).strip()
+        candidates = [text]
+        s, e = text.find("{"), text.rfind("}")
+        if s != -1 and e > s:
+            candidates.append(text[s : e + 1])
+        for c in candidates:
+            try:
+                obj = _json.loads(c)
+                if isinstance(obj, dict):
+                    return obj
+            except Exception:
+                continue
+        raise ValueError("AI trả về định dạng JSON không hợp lệ.")
+
+    async def _load_speaking_row_async(self, lesson_id: uuid.UUID, user: User):
+        from app.db.models.database import LessonSpeaking
+
+        lesson = await self.db.scalar(
+            select(Lessons)
+            .options(
+                selectinload(Lessons.lesson_speaking),
+                selectinload(Lessons.section).selectinload(CourseSections.course),
+            )
+            .where(Lessons.id == lesson_id)
+        )
+        if not lesson or not lesson.lesson_speaking:
+            raise HTTPException(404, "Không tìm thấy nội dung bài Giao tiếp AI.")
+        return lesson, lesson.lesson_speaking
+
+    async def speaking_tts_inline_async(self, schema) -> bytes:
+        from app.services.shares.tts_service import get_tts_service, resolve_tts_voice
+
+        tts = get_tts_service()
+        _, resolved_voice = resolve_tts_voice(schema.lang_code, schema.voice_id)
+        return await tts._fetch_tts_bytes(schema.text.strip(), resolved_voice)
+
+    async def speaking_roleplay_turn_async(
+        self, lesson_id: uuid.UUID, user: User, schema
+    ):
+        import json as _json
+        from app.core.llm import get_llm_service
+
+        _, sp = await self._load_speaking_row_async(lesson_id, user)
+        persona = sp.ai_persona or {}
+        missions = sp.missions or []
+        already_done = set(schema.completed_mission_ids or [])
+
+        history_lines = []
+        for m in (schema.history or [])[-12:]:
+            speaker = "Student" if m.role == "user" else persona.get("name", "AI")
+            history_lines.append(f"{speaker}: {m.content}")
+        history_block = "\n".join(history_lines) if history_lines else "(Mở đầu cuộc hội thoại)"
+
+        missions_json = _json.dumps(
+            [
+                {
+                    "id": m.get("id"),
+                    "title": m.get("title"),
+                    "already_completed": m.get("id") in already_done,
+                }
+                for m in missions
+            ],
+            ensure_ascii=False,
+        )
+
+        prompt = f"""You are roleplaying as {persona.get("name", "Alex")} ({persona.get("role", "partner")}).
+Personality: {persona.get("personality", "friendly, polite, natural")}.
+Scenario: {sp.scenario}
+Student role: {sp.student_role}
+Target language: {sp.lang_code} (CEFR/Level: {sp.level})
+
+Missions the student must accomplish during the conversation:
+{missions_json}
+
+Recent conversation:
+{history_block}
+
+Student's latest message:
+{schema.message}
+
+Return ONLY a valid JSON object with exact keys:
+{{
+  "reply": "Natural 1-2 sentence reply in {sp.lang_code} staying in character. Keep it concise and encourage the student toward remaining missions.",
+  "reply_translation": "Natural Vietnamese translation of reply",
+  "newly_completed_mission_ids": ["mission_id_completed_by_student_so_far"],
+  "grammar_correction": "If student made a noticeable grammar/wording error, provide a short natural corrected version in {sp.lang_code} with brief Vietnamese note; otherwise empty string ''",
+  "feedback_tip": "Optional 1-sentence encouragement or hint in Vietnamese for next turn (empty string if unnecessary)"
+}}
+
+Rules:
+- Only mark a mission ID in `newly_completed_mission_ids` if the student genuinely expressed that idea in their messages (do not invent or grant it for empty/unrelated text).
+- Keep `reply` concise (under 35 words) so spoken playback feels snappy and natural.
+"""
+        llm = get_llm_service()
+        try:
+            raw = await llm.call_model(
+                prompt,
+                mime_type="application/json",
+                temperature=0.45,
+                max_output_tokens=900,
+            )
+            parsed = self._parse_speaking_json(raw)
+        except Exception as exc:
+            raise HTTPException(500, f"Không thể xử lý lượt hội thoại AI: {exc}")
+
+        valid_mission_ids = {str(m.get("id")) for m in missions}
+        newly_done = [
+            str(mid)
+            for mid in (parsed.get("newly_completed_mission_ids") or [])
+            if str(mid) in valid_mission_ids
+        ]
+        merged_done = [
+            str(m.get("id"))
+            for m in missions
+            if str(m.get("id")) in (already_done | set(newly_done))
+        ]
+        all_done = len(missions) > 0 and len(merged_done) >= len(missions)
+
+        return {
+            "reply": str(parsed.get("reply") or "").strip(),
+            "reply_translation": str(parsed.get("reply_translation") or "").strip(),
+            "completed_mission_ids": merged_done,
+            "newly_completed_mission_ids": [
+                mid for mid in newly_done if mid not in already_done
+            ],
+            "grammar_correction": str(parsed.get("grammar_correction") or "").strip(),
+            "feedback_tip": str(parsed.get("feedback_tip") or "").strip(),
+            "all_missions_completed": all_done,
+        }
+
+    async def speaking_roleplay_evaluate_async(
+        self, lesson_id: uuid.UUID, user: User, schema
+    ):
+        import json as _json
+        from app.core.llm import get_llm_service
+
+        _, sp = await self._load_speaking_row_async(lesson_id, user)
+        missions = sp.missions or []
+        done_ids = set(schema.completed_mission_ids or [])
+
+        transcript = "\n".join(
+            f"{'Student' if m.role == 'user' else 'AI'}: {m.content}"
+            for m in (schema.history or [])
+        )
+        missions_desc = _json.dumps(
+            [
+                {
+                    "id": m.get("id"),
+                    "title": m.get("title"),
+                    "completed": m.get("id") in done_ids,
+                }
+                for m in missions
+            ],
+            ensure_ascii=False,
+        )
+
+        prompt = f"""Bạn là giám khảo đánh giá kỹ năng giao tiếp ngoại ngữ ({sp.lang_code}, trình độ {sp.level}).
+Hãy chấm điểm cuộc hội thoại đóng vai dưới đây giữa Học viên và AI.
+
+Bối cảnh: {sp.scenario}
+Danh sách nhiệm vụ: {missions_desc}
+
+Nội dung hội thoại:
+{transcript}
+
+Chỉ trả về 1 JSON object hợp lệ:
+{{
+  "mission_score": 0,
+  "grammar_score": 0,
+  "fluency_score": 0,
+  "overall_score": 0,
+  "completed_mission_ids": ["m1"],
+  "summary": "Nhận xét tổng quan 2-3 câu bằng tiếng Việt mang tính khích lệ và cụ thể.",
+  "strengths": ["Điểm mạnh 1 (tiếng Việt)", "Điểm mạnh 2"],
+  "improvements": [
+    {{
+      "original": "Câu học viên đã nói (nếu có thể cải thiện)",
+      "better": "Cách nói tự nhiên hơn bằng {sp.lang_code}",
+      "note": "Giải thích ngắn gọn bằng tiếng Việt"
+    }}
+  ]
+}}
+
+Quy tắc chấm:
+- Mỗi điểm số là số nguyên từ 0 đến 100.
+- `overall_score` = 45% * mission_score + 30% * grammar_score + 25% * fluency_score.
+- Nếu học viên chỉ nói vài từ vô nghĩa hoặc lạc đề hoàn toàn, chấm dưới 40.
+"""
+        llm = get_llm_service()
+        try:
+            raw = await llm.call_model(
+                prompt,
+                mime_type="application/json",
+                temperature=0.3,
+                max_output_tokens=1600,
+            )
+            parsed = self._parse_speaking_json(raw)
+        except Exception as exc:
+            raise HTTPException(500, f"Không thể chấm điểm bài giao tiếp: {exc}")
+
+        def _clamp(v) -> int:
+            try:
+                return max(0, min(100, int(round(float(v)))))
+            except Exception:
+                return 0
+
+        mission_score = _clamp(parsed.get("mission_score"))
+        grammar_score = _clamp(parsed.get("grammar_score"))
+        fluency_score = _clamp(parsed.get("fluency_score"))
+        overall_score = _clamp(
+            parsed.get("overall_score")
+            or (0.45 * mission_score + 0.30 * grammar_score + 0.25 * fluency_score)
+        )
+        valid_ids = {str(m.get("id")) for m in missions}
+        final_done = [
+            str(mid)
+            for mid in (parsed.get("completed_mission_ids") or list(done_ids))
+            if str(mid) in valid_ids
+        ]
+        pass_percent = int(sp.pass_percent or 70)
+
+        return {
+            "mission_score": mission_score,
+            "grammar_score": grammar_score,
+            "fluency_score": fluency_score,
+            "overall_score": overall_score,
+            "pass_percent": pass_percent,
+            "passed": overall_score >= pass_percent,
+            "completed_mission_ids": final_done,
+            "summary": str(parsed.get("summary") or "").strip(),
+            "strengths": [str(s).strip() for s in (parsed.get("strengths") or []) if str(s).strip()],
+            "improvements": [
+                {
+                    "original": str(i.get("original") or "").strip(),
+                    "better": str(i.get("better") or "").strip(),
+                    "note": str(i.get("note") or "").strip(),
+                }
+                for i in (parsed.get("improvements") or [])
+                if isinstance(i, dict) and str(i.get("better") or "").strip()
+            ],
+        }

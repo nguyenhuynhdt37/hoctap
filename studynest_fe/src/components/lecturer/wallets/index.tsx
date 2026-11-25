@@ -1,10 +1,23 @@
 "use client";
-import { CoinBadge } from "@/components/ui";
 
-import { Alert, Badge, Card, EmptyState, Skeleton } from "@/components/ui";
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  CoinBadge,
+  EmptyState,
+  Skeleton,
+} from "@/components/ui";
+import {
+  DEFAULT_COIN_VND_RATE,
+  formatVnd,
+  formatVndAsCoin,
+  vndToCoin,
+} from "@/lib/learning-hub/coin-logic";
 import { useCoinBalances } from "@/lib/learning-hub/shop-hooks";
-import { formatCoin } from "@/lib/learning-hub/shop-logic";
 import api from "@/lib/utils/fetcher/client/axios";
+import { showToast } from "@/lib/utils/helpers/toast";
 import {
   LecturerTransactionsResponse,
   LecturerWallet,
@@ -12,20 +25,30 @@ import {
 import { isAxiosError } from "axios";
 import {
   ArrowDownLeft,
+  ArrowRight,
   ArrowUpRight,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
   Clock,
+  Coins,
+  Download,
   History,
-  PlusCircle,
+  Plus,
+  RefreshCw,
   Search,
+  ShieldCheck,
   Wallet as WalletIcon,
+  X,
 } from "pulsoicon-react";
+import {
+  useDebouncedUrlSearch,
+  useUrlQueryState,
+} from "@/hooks/useUrlQueryState";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import useSWR from "swr";
 
 const WALLET_ENDPOINT = "/lecturer/wallets/lecturer/wallet";
@@ -38,25 +61,28 @@ const formatCurrency = (value?: number) =>
   }).format(value ?? 0);
 
 const formatDateTime = (value?: string | null) => {
-  if (!value) return "Đang cập nhật";
+  if (!value) return "Chưa ghi nhận giao dịch";
   try {
     return new Intl.DateTimeFormat("vi-VN", {
-      dateStyle: "short",
-      timeStyle: "short",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
       hour12: false,
     }).format(new Date(value));
   } catch {
-    return "Đang cập nhật";
+    return "Chưa ghi nhận giao dịch";
   }
 };
 
 const getTypeLabel = (type: string) => {
   const labels: Record<string, string> = {
     deposit: "Nạp tiền",
-    earning_release: "Thu nhập",
-    earning_payout: "Rút tiền",
+    earning_release: "Thu nhập khóa học",
+    earning_payout: "Giải ngân rút tiền",
     earning_refund: "Hoàn tiền",
-    withdraw_request: "Yêu cầu rút",
+    withdraw_request: "Yêu cầu rút tiền",
     income: "Thu nhập",
   };
   return labels[type] || type;
@@ -67,6 +93,7 @@ const getStatusLabel = (status: string) => {
     completed: "Thành công",
     canceled: "Đã hủy",
     pending: "Đang xử lý",
+    failed: "Thất bại",
   };
   return labels[status] || status;
 };
@@ -83,7 +110,8 @@ const isIncomeTransaction = ({
   return (
     type === "deposit" ||
     type === "earning_release" ||
-    type === "earning_refund"
+    type === "earning_refund" ||
+    type === "income"
   );
 };
 
@@ -96,26 +124,69 @@ const extractAxiosError = (error: unknown, fallback: string) => {
   return fallback;
 };
 
+const TYPE_TABS = [
+  { value: "all", label: "Tất cả" },
+  { value: "earning_release", label: "Thu nhập" },
+  { value: "deposit", label: "Nạp tiền" },
+  { value: "withdraw_request", label: "Yêu cầu rút" },
+] as const;
+
+const LECTURER_WALLETS_QUERY_SCHEMA = {
+  page: { type: "number", default: 1, min: 1 },
+  limit: { type: "number", default: 20, min: 1, max: 100 },
+  status: {
+    type: "string",
+    default: "all",
+    allowed: ["all", "completed", "pending", "canceled"] as const,
+  },
+  type: {
+    type: "string",
+    default: "all",
+    allowed: [
+      "all",
+      "earning_release",
+      "deposit",
+      "withdraw_request",
+    ] as const,
+  },
+  search: { type: "string", default: "" as string },
+} as const;
+
 export default function LecturerWallets() {
   const router = useRouter();
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(20);
-  const [status, setStatus] = useState<string>("all");
-  const [type, setType] = useState<string>("all");
-  const [search, setSearch] = useState("");
+  const { values, setParam } = useUrlQueryState(LECTURER_WALLETS_QUERY_SCHEMA);
+  const page = values.page;
+  const limit = values.limit;
+  const status = values.status;
+  const type = values.type;
+  const search = values.search;
+  const [refreshing, setRefreshing] = useState(false);
 
-  const { data: wallet, error: walletError } = useSWR<LecturerWallet>(
+  const {
+    inputValue: searchInput,
+    setInputValue: setSearchInput,
+    commitNow: commitSearchNow,
+  } = useDebouncedUrlSearch(search, (val) => setParam("search", val));
+
+  const {
+    data: coins,
+    mutate: mutateCoins,
+  } = useCoinBalances();
+
+  const {
+    data: wallet,
+    error: walletError,
+    mutate: mutateWallet,
+  } = useSWR<LecturerWallet>(
     WALLET_ENDPOINT,
     async (url) => {
       const response = await api.get(url);
       return response.data;
     },
-    {
-      revalidateOnFocus: false,
-    }
+    { revalidateOnFocus: false },
   );
 
-  const buildQuery = () => {
+  const queryString = useMemo(() => {
     const params = new URLSearchParams();
     params.set("page", page.toString());
     params.set("limit", limit.toString());
@@ -123,509 +194,659 @@ export default function LecturerWallets() {
     if (type !== "all") params.set("type", type);
     if (search.trim()) params.set("search", search.trim());
     return params.toString();
-  };
+  }, [page, limit, status, type, search]);
 
-  const { data: transactionsData, error: transactionsError } =
-    useSWR<LecturerTransactionsResponse>(
-      `/lecturer/transactions?${buildQuery()}`,
-      async (url) => {
-        const response = await api.get(url);
-        return response.data;
-      },
-      {
-        revalidateOnFocus: false,
-      }
-    );
+  const {
+    data: transactionsData,
+    error: transactionsError,
+    mutate: mutateTx,
+  } = useSWR<LecturerTransactionsResponse>(
+    `/lecturer/transactions?${queryString}`,
+    async (url) => {
+      const response = await api.get(url);
+      return response.data;
+    },
+    { revalidateOnFocus: false },
+  );
 
-  const walletStatus = wallet?.is_locked ? "Đã khóa" : "Đang hoạt động";
+  const rateVnd = coins?.rateVnd ?? DEFAULT_COIN_VND_RATE;
+  const paidCoin = coins?.paid ?? vndToCoin(wallet?.balance ?? 0, rateVnd);
+  const bonusCoin = coins?.bonus ?? 0;
+
+  const totalIn = Number(wallet?.total_in ?? 0);
+  const totalOut = Number(wallet?.total_out ?? 0);
+  const withdrawnPct =
+    totalIn > 0 ? Math.min(100, Math.round((totalOut / totalIn) * 100)) : 0;
+
+  const isLocked = Boolean(wallet?.is_locked);
 
   const error =
     (walletError &&
       extractAxiosError(
         walletError,
-        "Không thể tải thông tin ví. Vui lòng thử lại."
+        "Không thể tải thông tin ví. Vui lòng thử lại.",
       )) ||
     (transactionsError &&
       extractAxiosError(
         transactionsError,
-        "Không thể tải danh sách giao dịch."
+        "Không thể tải danh sách giao dịch.",
       ));
 
   const totalPages = transactionsData
     ? Math.max(1, Math.ceil(transactionsData.total / limit))
     : 1;
 
-  return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex-1">
-          <h1 className="font-display text-2xl sm:text-3xl font-semibold text-foreground tracking-tight">
-            Ví của giảng viên
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1.5">
-            Quản lý số dư, trạng thái KYC và các giao dịch gần đây.
-          </p>
-        </div>
-        <Link
-          href="/lecturer/hold"
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary-hover transition-colors text-sm shadow-soft-xs self-start sm:self-auto"
-        >
-          <Clock className="w-4 h-4" />
-          <span>Giao dịch đang hold</span>
-        </Link>
-      </div>
+  const handleRefreshAll = async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([mutateWallet(), mutateTx(), mutateCoins()]);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
-      {error && <Alert variant="destructive">{error}</Alert>}
+  const handleExportCsv = () => {
+    const items = transactionsData?.items ?? [];
+    if (items.length === 0) {
+      showToast.error("Chưa có giao dịch để xuất tệp CSV.");
+      return;
+    }
+    const headers = [
+      "Mã giao dịch",
+      "Loại",
+      "Chiều",
+      "Số Coin",
+      "Số tiền (VND)",
+      "Trạng thái",
+      "Mô tả",
+      "Thời gian",
+    ];
+    const escapeCell = (v: string | number) =>
+      `"${String(v ?? "").replace(/"/g, '""')}"`;
 
-      <section className="grid gap-6 md:grid-cols-[2fr,3fr]">
-        <WalletSummaryCard
-          wallet={wallet ?? null}
-          walletStatus={walletStatus}
-        />
-      </section>
+    const lines = [
+      headers.map(escapeCell).join(","),
+      ...items.map(({ transaction: tx }) => {
+        const isIncome = isIncomeTransaction(tx);
+        return [
+          tx.transaction_code || tx.id,
+          getTypeLabel(tx.type),
+          isIncome ? "Cộng" : "Trừ",
+          vndToCoin(tx.amount, rateVnd),
+          tx.amount,
+          getStatusLabel(tx.status),
+          tx.description || "",
+          formatDateTime(tx.created_at),
+        ]
+          .map(escapeCell)
+          .join(",");
+      }),
+    ];
 
-      <Card variant="surface" className="p-6">
-        <h2 className="text-lg font-semibold text-foreground mb-4">Rút tiền</h2>
-        <div className="flex flex-wrap gap-3">
-          <Link
-            href="/lecturer/withdraw/create"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl hover:bg-primary-hover font-semibold text-sm transition-colors shadow-soft-xs"
-          >
-            <PlusCircle className="w-4 h-4" />
-            <span>Tạo yêu cầu rút tiền</span>
-          </Link>
-          <Link
-            href="/lecturer/withdraw"
-            className="inline-flex items-center gap-2 px-5 py-2.5 border border-border bg-surface rounded-xl text-foreground hover:bg-background font-semibold text-sm transition-colors"
-          >
-            <History className="w-4 h-4 text-muted-foreground" />
-            <span>Lịch sử yêu cầu</span>
-          </Link>
-        </div>
-      </Card>
-
-      <TransactionsTable
-        transactions={transactionsData?.items || []}
-        page={page}
-        limit={limit}
-        total={transactionsData?.total || 0}
-        totalPages={totalPages}
-        status={status}
-        type={type}
-        search={search}
-        isLoading={!transactionsData && !transactionsError}
-        router={router}
-        onPageChange={setPage}
-        onLimitChange={(l) => {
-          setLimit(l);
-          setPage(1);
-        }}
-        onStatusChange={(s) => {
-          setStatus(s);
-          setPage(1);
-        }}
-        onTypeChange={(t) => {
-          setType(t);
-          setPage(1);
-        }}
-        onSearchChange={setSearch}
-        onSearchSubmit={() => setPage(1)}
-      />
-    </div>
-  );
-}
-
-interface WalletSummaryCardProps {
-  wallet: LecturerWallet | null;
-  walletStatus: string;
-}
-
-function WalletSummaryCard({ wallet, walletStatus }: WalletSummaryCardProps) {
-  const coins = useCoinBalances().data;
-  const isLocked = Boolean(wallet?.is_locked);
-  const statusStyles = isLocked
-    ? "bg-destructive-bg text-destructive-foreground border-destructive-border"
-    : "bg-success-bg text-success-foreground border-success-border";
+    const blob = new Blob(["\uFEFF" + lines.join("\n")], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `so-cai-vi-giang-vien-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    showToast.success("Đã xuất sổ cái giao dịch ra tệp CSV.");
+  };
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-primary-pastel bg-gradient-to-br from-primary-light/85 via-surface to-accent-vanilla/45 p-6 text-foreground shadow-[0_20px_44px_-14px_rgba(53,111,167,0.16)]">
-      <div className="pointer-events-none absolute -right-14 -top-14 h-36 w-36 rounded-full bg-white/80 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-16 -left-10 h-40 w-40 rounded-full bg-primary-pastel/35 blur-3xl" />
-
-      <div className="relative flex items-start justify-between gap-4">
-        <div className="flex flex-col gap-3">
-          <span className="text-xs font-semibold uppercase tracking-wide text-primary">
-            Số dư Coin vàng
-          </span>
-          <p className="mt-1 text-3xl font-semibold sm:text-4xl tracking-tight text-foreground tabular-nums">
-            {coins ? `${new Intl.NumberFormat("vi-VN").format(coins.paid)} Coin vàng` : "…"}
-          </p>
-          {coins && (
-            <div className="flex flex-wrap items-center gap-2">
-              <CoinBadge kind="gold" amount={coins.paid} size="sm" />
-              <CoinBadge kind="white" amount={coins.bonus} size="sm" />
-              {Number(wallet?.balance) > 0 && (
-                <span className="text-xs text-muted-foreground">
-                  · phần dư VND cũ {formatCurrency(wallet?.balance)}
-                </span>
-              )}
-            </div>
-          )}
-        </div>
-        <div className="flex flex-col items-end gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-accent-vanilla-border bg-accent-vanilla/80 text-accent-vanilla-foreground shadow-2xs">
-            <WalletIcon className="h-6 w-6" />
-          </div>
-          <span className="rounded-full border border-accent-vanilla-border bg-accent-vanilla/70 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-accent-vanilla-foreground">
-            Coin vàng
-          </span>
-        </div>
-      </div>
-
-      <div className="relative mt-6 grid gap-3 text-sm sm:grid-cols-2">
-        <div className="rounded-2xl border border-border bg-surface/90 px-4 py-3 shadow-2xs">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">
-            Tổng nạp
-          </p>
-          <p className="mt-1 text-base font-semibold text-foreground">
-            {formatCurrency(wallet?.total_in)}
-          </p>
-        </div>
-        <div className="rounded-2xl border border-border bg-surface/90 px-4 py-3 shadow-2xs">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">
-            Tổng rút
-          </p>
-          <p className="mt-1 text-base font-semibold text-foreground">
-            {formatCurrency(wallet?.total_out)}
-          </p>
-        </div>
-        <div className="rounded-2xl border border-border bg-surface/90 px-4 py-3 shadow-2xs sm:col-span-2">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                Trạng thái
-              </p>
-              <p className="mt-1 text-base font-semibold text-foreground">
-                {walletStatus}
-              </p>
-            </div>
-            <span
-              className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide ${statusStyles}`}
-            >
-              <span
-                className={`h-2 w-2 rounded-full ${
-                  isLocked ? "bg-destructive-foreground" : "bg-white"
-                }`}
-              />
-              {isLocked ? "Ví đã khóa" : "Ví đang hoạt động"}
+    <div className="min-h-screen bg-background px-4 py-7 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl space-y-6">
+        {/* Header tiêu đề + nút làm mới */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-primary-pastel bg-primary-light/70 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
+              <WalletIcon animated={false} className="h-3.5 w-3.5" aria-hidden="true" />
+              <span>Kho bạc giảng viên</span>
             </span>
+            <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+              Ví &amp; Sổ Cái Dòng Tiền
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Quản lý số dư Coin vàng, theo dõi dòng tiền thu nhập, nạp và rút
+              về tài khoản PayPal.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="rounded-full bg-surface"
+              disabled={refreshing}
+              onClick={() => void handleRefreshAll()}
+              leftIcon={
+                <RefreshCw
+                  className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
+                />
+              }
+            >
+              Làm mới
+            </Button>
+            <Link href="/lecturer/hold">
+              <Button
+                type="button"
+                variant="pastel"
+                size="sm"
+                className="rounded-full border border-primary-pastel/80"
+                leftIcon={<Clock className="h-4 w-4" />}
+              >
+                Kho tạm giữ
+              </Button>
+            </Link>
+            <Link href="/lecturer/withdraw/create">
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                className="rounded-full shadow-sm"
+                leftIcon={<Plus className="h-4 w-4" />}
+              >
+                Tạo lệnh rút tiền
+              </Button>
+            </Link>
           </div>
         </div>
-        <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 sm:col-span-2">
-          <p className="text-xs uppercase tracking-wide text-white/70">
-            Giao dịch gần nhất
-          </p>
-          <p className="mt-1 text-base font-medium text-white">
-            {wallet?.last_transaction_at
-              ? formatDateTime(wallet.last_transaction_at)
-              : "Chưa ghi nhận giao dịch"}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
 
-interface TransactionsTableProps {
-  transactions: LecturerTransactionsResponse["items"];
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-  status: string;
-  type: string;
-  search: string;
-  isLoading: boolean;
-  router: ReturnType<typeof useRouter>;
-  onPageChange: (page: number) => void;
-  onLimitChange: (limit: number) => void;
-  onStatusChange: (status: string) => void;
-  onTypeChange: (type: string) => void;
-  onSearchChange: (search: string) => void;
-  onSearchSubmit: () => void;
-}
+        {error && <Alert variant="destructive">{error}</Alert>}
 
-function TransactionsTable({
-  transactions,
-  page,
-  limit,
-  total,
-  totalPages,
-  status,
-  type,
-  search,
-  isLoading,
-  router,
-  onPageChange,
-  onLimitChange,
-  onStatusChange,
-  onTypeChange,
-  onSearchChange,
-  onSearchSubmit,
-}: TransactionsTableProps) {
-  return (
-    <Card variant="surface" className="p-6">
-      <div className="mb-6">
-        <h2 className="text-lg font-semibold text-foreground mb-4">
-          Lịch sử giao dịch
-        </h2>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative flex-1 min-w-[220px]">
-            <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => onSearchChange(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && onSearchSubmit()}
-              placeholder="Tìm kiếm..."
-              className="w-full pl-10 pr-4 py-2 text-sm border border-border bg-surface text-foreground placeholder:text-muted-foreground rounded-xl focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
+        {/* Bố cục Hero Kho Bạc 2 cột (7/5) */}
+        <section className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+          {/* Cột trái (7/12): Thẻ Kho Bạc Coin Vàng */}
+          <div className="relative overflow-hidden rounded-[30px] border border-accent-vanilla-border bg-gradient-to-br from-primary-light/85 via-surface to-accent-vanilla/85 p-6 shadow-sm sm:p-7 lg:col-span-7">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -right-14 -top-14 h-48 w-48 rounded-full bg-surface/70 blur-2xl"
             />
-          </div>
-          <select
-            value={status}
-            onChange={(e) => onStatusChange(e.target.value)}
-            className="px-3.5 py-2 text-sm border border-border bg-surface text-foreground rounded-xl focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
-          >
-            <option value="all">Tất cả trạng thái</option>
-            <option value="completed">Thành công</option>
-            <option value="pending">Đang xử lý</option>
-            <option value="canceled">Đã hủy</option>
-          </select>
-          <select
-            value={type}
-            onChange={(e) => onTypeChange(e.target.value)}
-            className="px-3.5 py-2 text-sm border border-border bg-surface text-foreground rounded-xl focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
-          >
-            <option value="all">Tất cả loại</option>
-            <option value="deposit">Nạp tiền</option>
-            <option value="income">Thu nhập</option>
-            <option value="earning_release">Thu nhập</option>
-            <option value="withdraw_request">Yêu cầu rút</option>
-          </select>
-        </div>
-      </div>
+            <svg
+              aria-hidden="true"
+              className="pointer-events-none absolute -bottom-8 -right-8 h-52 w-52 text-primary/10"
+              viewBox="0 0 200 200"
+              fill="none"
+            >
+              <circle
+                cx="100"
+                cy="100"
+                r="84"
+                stroke="currentColor"
+                strokeWidth="1.2"
+                strokeDasharray="6 6"
+              />
+              <circle cx="100" cy="100" r="54" stroke="currentColor" strokeWidth="1.2" />
+              <circle cx="100" cy="100" r="28" stroke="currentColor" strokeWidth="1.2" />
+            </svg>
 
-      {isLoading ? (
-        <div className="space-y-3 py-4">
-          {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-14 w-full rounded-xl" />
-          ))}
-        </div>
-      ) : transactions.length === 0 ? (
-        <EmptyState
-          icon={<WalletIcon className="h-7 w-7" />}
-          title="Chưa có giao dịch nào"
-          description="Các giao dịch phát sinh trong ví của bạn sẽ hiển thị tại đây."
-        />
-      ) : (
-        <>
-          <div className="overflow-x-auto rounded-xl border border-border">
-            <table className="min-w-full divide-y divide-border">
-              <thead>
-                <tr className="bg-background">
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Loại
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Số tiền
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Trạng thái
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Mô tả
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Thời gian
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border bg-surface">
-                {transactions.map((item) => {
-                  const tx = item.transaction;
-                  const isIncome = isIncomeTransaction(tx);
-                  const typeLabel = getTypeLabel(tx.type);
-                  const badgeVariant =
-                    tx.status === "completed"
-                      ? "success"
-                      : tx.status === "canceled"
-                      ? "destructive"
-                      : "warning";
-
-                  return (
-                    <tr
-                      key={tx.id}
-                      className="hover:bg-background/80 cursor-pointer transition-colors"
-                      onClick={() =>
-                        router.push(`/lecturer/wallets/transactions/${tx.id}`)
-                      }
+            <div className="relative flex h-full flex-col justify-between gap-6">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="space-y-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-accent-vanilla-border bg-surface/90 px-3 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-warning-foreground">
+                      <Coins
+                        animated={false}
+                        className="h-3.5 w-3.5 text-[#C98A2C]"
+                        aria-hidden="true"
+                      />
+                      Số dư Coin khả dụng
+                    </span>
+                    <Badge
+                      variant={isLocked ? "destructive" : "success"}
+                      size="sm"
+                      dot
                     >
-                      <td className="px-4 py-4">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={`flex h-9 w-9 items-center justify-center rounded-xl border ${
-                              isIncome
-                                ? "bg-success-bg text-success-foreground border-success-border/70"
-                                : "bg-background text-muted-foreground border-border"
-                            }`}
-                          >
-                            {isIncome ? (
-                              <ArrowUpRight animated={false} className="h-4 w-4" />
-                            ) : (
-                              <ArrowDownLeft animated={false} className="h-4 w-4" />
-                            )}
-                          </div>
-                          <div className="font-semibold text-sm text-foreground">
-                            {typeLabel}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <span
-                          className={`text-base font-bold tabular-nums ${
-                            isIncome
-                              ? "text-success-foreground"
-                              : "text-foreground"
-                          }`}
-                        >
-                          {isIncome ? "+" : "-"}
-                          {formatCurrency(tx.amount)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-4">
-                        <Badge variant={badgeVariant} size="sm" dot>
-                          {getStatusLabel(tx.status)}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-4">
-                        <p className="text-sm text-foreground">
-                          {tx.description || "Không có mô tả"}
-                        </p>
-                        {tx.transaction_code && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Mã: {tx.transaction_code}
-                          </p>
-                        )}
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="text-sm text-muted-foreground">
-                          {formatDateTime(tx.created_at)}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                      {isLocked ? "Ví đã khóa" : "Đang hoạt động"}
+                    </Badge>
+                    {wallet?.kyc_verified && (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-success-border bg-success-bg px-2.5 py-0.5 text-[11px] font-semibold text-success-foreground">
+                        <ShieldCheck
+                          animated={false}
+                          className="h-3 w-3"
+                          aria-hidden="true"
+                        />
+                        Đã xác minh
+                      </span>
+                    )}
+                  </div>
 
-          {totalPages > 1 && (
-            <div className="mt-5 pt-4 border-t border-border space-y-4">
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="text-sm text-muted-foreground">
-                  Hiển thị {(page - 1) * limit + 1}-
-                  {Math.min(page * limit, total)} trên tổng số {total} giao dịch
+                  <div className="flex items-center gap-2.5 font-display text-3xl font-bold tracking-tight tabular-nums text-warning-foreground sm:text-4xl">
+                    <Coins
+                      animated={false}
+                      className="h-8 w-8 shrink-0 text-[#C98A2C]"
+                      aria-hidden="true"
+                    />
+                    <span>{paidCoin.toLocaleString("vi-VN")} Coin</span>
+                  </div>
+
+                  <p className="text-xs font-medium text-muted-foreground tabular-nums">
+                    Quy đổi tương đương ≈ {formatVnd(paidCoin * rateVnd)} (1 Coin
+                    = {formatVnd(rateVnd)})
+                  </p>
+
+                  <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                    <CoinBadge kind="gold" amount={paidCoin} size="sm" />
+                    <CoinBadge kind="white" amount={bonusCoin} size="sm" />
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">
-                    Mỗi trang
-                  </span>
-                  <select
-                    value={limit}
-                    onChange={(e) => onLimitChange(Number(e.target.value))}
-                    className="px-3 py-1.5 text-sm border border-border bg-surface text-foreground rounded-xl focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                  >
-                    <option value={10}>10</option>
-                    <option value={20}>20</option>
-                    <option value={50}>50</option>
-                    <option value={100}>100</option>
-                  </select>
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-accent-vanilla-border bg-surface/90 text-[#C98A2C] shadow-2xs">
+                  <WalletIcon className="h-6 w-6" />
                 </div>
               </div>
 
-              <div className="flex items-center justify-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => onPageChange(1)}
-                  disabled={page === 1}
-                  className="p-2 border border-border bg-surface text-foreground rounded-xl hover:bg-background disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  aria-label="Trang đầu"
+              {/* Giao dịch gần nhất — nền sáng tương phản chuẩn WCAG AA */}
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-surface bg-surface/90 px-4 py-3 shadow-2xs backdrop-blur-xs">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    Giao dịch gần nhất
+                  </p>
+                  <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">
+                    {formatDateTime(wallet?.last_transaction_at)}
+                  </p>
+                </div>
+                <Link
+                  href="/lecturer/withdraw/create"
+                  className="inline-flex items-center gap-1 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-2xs transition-colors hover:bg-primary-hover"
                 >
-                  <ChevronsLeft className="h-4 w-4" />
-                </button>
-                <button
+                  <span>Rút Coin ngay</span>
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* Cột phải (5/12): Tổng thu / Tổng rút & Lối tắt */}
+          <div className="flex flex-col justify-between gap-4 lg:col-span-5">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-1">
+              <Card className="rounded-[24px] border-success-border/80 bg-gradient-to-br from-success-bg/75 via-surface to-surface p-5 shadow-2xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-success-foreground">
+                    Tổng thu nhập &amp; nạp vào
+                  </span>
+                  <span className="flex h-8 w-8 items-center justify-center rounded-xl border border-success-border bg-surface text-success-foreground">
+                    <ArrowUpRight animated={false} className="h-4 w-4" />
+                  </span>
+                </div>
+                <p className="mt-2 inline-flex items-center gap-1.5 font-display text-2xl font-bold tabular-nums text-warning-foreground">
+                  <Coins animated={false} className="h-5 w-5 text-[#C98A2C]" aria-hidden="true" />
+                  {formatVndAsCoin(totalIn, rateVnd)}
+                </p>
+                <p className="mt-0.5 text-xs text-muted-foreground tabular-nums">
+                  ≈ {formatCurrency(totalIn)}
+                </p>
+              </Card>
+
+              <Card className="rounded-[24px] border-secondary-pastel/80 bg-gradient-to-br from-secondary-light/75 via-surface to-surface p-5 shadow-2xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-secondary-foreground">
+                    Tổng đã rút về tài khoản
+                  </span>
+                  <span className="flex h-8 w-8 items-center justify-center rounded-xl border border-secondary-pastel bg-surface text-secondary-foreground">
+                    <ArrowDownLeft animated={false} className="h-4 w-4" />
+                  </span>
+                </div>
+                <p className="mt-2 inline-flex items-center gap-1.5 font-display text-2xl font-bold tabular-nums text-foreground">
+                  <Coins animated={false} className="h-5 w-5 text-[#C98A2C]" aria-hidden="true" />
+                  {formatVndAsCoin(totalOut, rateVnd)}
+                </p>
+                <div className="mt-2 flex items-center gap-2">
+                  <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface">
+                    <div
+                      className="h-full rounded-full bg-primary"
+                      style={{ width: `${withdrawnPct}%` }}
+                    />
+                  </div>
+                  <span className="text-[11px] font-semibold tabular-nums text-primary">
+                    {withdrawnPct}%
+                  </span>
+                </div>
+              </Card>
+            </div>
+
+            {/* Lối tắt quản lý rút tiền */}
+            <div className="grid grid-cols-2 gap-3">
+              <Link href="/lecturer/withdraw" className="block">
+                <Button
                   type="button"
-                  onClick={() => onPageChange(Math.max(1, page - 1))}
-                  disabled={page === 1}
-                  className="p-2 border border-border bg-surface text-foreground rounded-xl hover:bg-background disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  aria-label="Trang trước"
+                  variant="outline"
+                  fullWidth
+                  className="rounded-full bg-surface"
+                  leftIcon={<History className="h-4 w-4" />}
                 >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
+                  Lịch sử rút
+                </Button>
+              </Link>
+              <Link href="/lecturer/hold" className="block">
+                <Button
+                  type="button"
+                  variant="pastel"
+                  fullWidth
+                  className="rounded-full border border-primary-pastel/70"
+                  leftIcon={<Clock className="h-4 w-4" />}
+                >
+                  Đang tạm giữ
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </section>
 
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  let pageNum: number;
-                  if (totalPages <= 5) {
-                    pageNum = i + 1;
-                  } else if (page <= 3) {
-                    pageNum = i + 1;
-                  } else if (page >= totalPages - 2) {
-                    pageNum = totalPages - 4 + i;
-                  } else {
-                    pageNum = page - 2 + i;
-                  }
+        {/* Sổ Cái Lịch Sử Giao Dịch */}
+        <Card
+          variant="surface"
+          density="none"
+          className="overflow-hidden rounded-[28px] border border-border shadow-xs"
+        >
+          {/* Header & Bộ lọc */}
+          <div className="space-y-4 border-b border-border bg-gradient-to-r from-primary-light/40 via-surface to-accent-vanilla/40 px-6 py-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="font-display text-xl font-semibold text-foreground">
+                  Sổ cái lịch sử giao dịch
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  Nhấp vào bất kỳ dòng giao dịch nào để mở biên lai đối soát chi
+                  tiết
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="self-start rounded-full bg-surface sm:self-auto"
+                onClick={handleExportCsv}
+                leftIcon={<Download className="h-3.5 w-3.5" />}
+              >
+                Xuất CSV
+              </Button>
+            </div>
 
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              {/* Segmented Type Pills */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                {TYPE_TABS.map((tab) => {
+                  const active = type === tab.value;
                   return (
                     <button
-                      key={pageNum}
+                      key={tab.value}
                       type="button"
-                      onClick={() => onPageChange(pageNum)}
-                      className={`min-w-[36px] px-3 py-1.5 rounded-xl text-sm font-semibold transition-colors ${
-                        pageNum === page
-                          ? "bg-primary text-primary-foreground shadow-soft-xs"
-                          : "border border-border bg-surface text-foreground hover:bg-background"
+                      onClick={() => setParam("type", tab.value)}
+                      className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
+                        active
+                          ? "bg-primary text-primary-foreground shadow-xs"
+                          : "bg-surface text-muted-foreground border border-border hover:border-primary-pastel hover:text-primary"
                       }`}
                     >
-                      {pageNum}
+                      {tab.label}
                     </button>
                   );
                 })}
+              </div>
 
-                <button
-                  type="button"
-                  onClick={() => onPageChange(Math.min(totalPages, page + 1))}
-                  disabled={page === totalPages}
-                  className="p-2 border border-border bg-surface text-foreground rounded-xl hover:bg-background disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  aria-label="Trang sau"
+              {/* Tìm kiếm + Lọc trạng thái */}
+              <div className="flex flex-wrap items-center gap-2.5">
+                <div className="relative flex-1 sm:w-60 sm:flex-initial">
+                  <Search
+                    animated={false}
+                    className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                    aria-hidden="true"
+                  />
+                  <input
+                    type="text"
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    placeholder="Tìm mã hoặc mô tả..."
+                    className="h-9 w-full rounded-full border border-border bg-surface pl-9 pr-8 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  />
+                  {searchInput && (
+                    <button
+                      type="button"
+                      aria-label="Xóa từ khóa"
+                      onClick={() => commitSearchNow("")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                <select
+                  value={status}
+                  onChange={(e) =>
+                    setParam(
+                      "status",
+                      e.target.value as (typeof LECTURER_WALLETS_QUERY_SCHEMA.status.allowed)[number],
+                    )
+                  }
+                  aria-label="Lọc trạng thái giao dịch"
+                  className="h-9 rounded-full border border-border bg-surface px-3.5 text-xs font-semibold text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                 >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onPageChange(totalPages)}
-                  disabled={page === totalPages}
-                  className="p-2 border border-border bg-surface text-foreground rounded-xl hover:bg-background disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  aria-label="Trang cuối"
-                >
-                  <ChevronsRight className="h-4 w-4" />
-                </button>
+                  <option value="all">Tất cả trạng thái</option>
+                  <option value="completed">Thành công</option>
+                  <option value="pending">Đang xử lý</option>
+                  <option value="canceled">Đã hủy</option>
+                </select>
               </div>
             </div>
+          </div>
+
+          {/* Nội dung bảng giao dịch */}
+          {!transactionsData && !transactionsError ? (
+            <div className="space-y-3 p-6">
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="h-14 w-full rounded-2xl" />
+              ))}
+            </div>
+          ) : (transactionsData?.items?.length ?? 0) === 0 ? (
+            <div className="p-10">
+              <EmptyState
+                icon={<WalletIcon className="h-8 w-8 text-primary" />}
+                title="Chưa có giao dịch nào"
+                description="Các giao dịch thu nhập, nạp và rút Coin sẽ hiển thị chi tiết tại đây."
+              />
+            </div>
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-border">
+                  <thead className="bg-background/70">
+                    <tr>
+                      <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        Loại giao dịch
+                      </th>
+                      <th className="px-5 py-3.5 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        Biến động Coin
+                      </th>
+                      <th className="px-4 py-3.5 text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        Trạng thái
+                      </th>
+                      <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        Mô tả &amp; Mã chứng từ
+                      </th>
+                      <th className="px-5 py-3.5 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        Thời gian
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border bg-surface">
+                    {transactionsData?.items.map((item) => {
+                      const tx = item.transaction;
+                      const isIncome = isIncomeTransaction(tx);
+                      const typeLabel = getTypeLabel(tx.type);
+                      const badgeVariant =
+                        tx.status === "completed"
+                          ? "success"
+                          : tx.status === "canceled" || tx.status === "failed"
+                            ? "destructive"
+                            : "warning";
+
+                      return (
+                        <tr
+                          key={tx.id}
+                          className="cursor-pointer transition-colors hover:bg-primary-light/20"
+                          onClick={() =>
+                            router.push(`/lecturer/wallets/transactions/${tx.id}`)
+                          }
+                        >
+                          <td className="px-5 py-4">
+                            <div className="flex items-center gap-3">
+                              <div
+                                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border ${
+                                  isIncome
+                                    ? "border-success-border bg-success-bg text-success-foreground"
+                                    : "border-accent-vanilla-border bg-accent-vanilla/70 text-warning-foreground"
+                                }`}
+                              >
+                                {isIncome ? (
+                                  <ArrowUpRight
+                                    animated={false}
+                                    className="h-4 w-4"
+                                  />
+                                ) : (
+                                  <ArrowDownLeft
+                                    animated={false}
+                                    className="h-4 w-4"
+                                  />
+                                )}
+                              </div>
+                              <span className="text-sm font-semibold text-foreground">
+                                {typeLabel}
+                              </span>
+                            </div>
+                          </td>
+
+                          <td className="px-5 py-4 text-right">
+                            <div
+                              className={`inline-flex items-center gap-1 font-display text-base font-bold tabular-nums ${
+                                isIncome
+                                  ? "text-warning-foreground"
+                                  : "text-foreground"
+                              }`}
+                            >
+                              <Coins
+                                animated={false}
+                                className="h-4 w-4 text-[#C98A2C]"
+                                aria-hidden="true"
+                              />
+                              <span>
+                                {isIncome ? "+" : "-"}
+                                {formatVndAsCoin(tx.amount, rateVnd)}
+                              </span>
+                            </div>
+                            <p className="text-[11px] tabular-nums text-muted-foreground">
+                              ≈ {formatCurrency(tx.amount)}
+                            </p>
+                          </td>
+
+                          <td className="px-4 py-4 text-center">
+                            <Badge variant={badgeVariant} size="sm" dot>
+                              {getStatusLabel(tx.status)}
+                            </Badge>
+                          </td>
+
+                          <td className="px-5 py-4">
+                            <p className="max-w-sm truncate text-sm text-foreground">
+                              {tx.description || "Không có mô tả"}
+                            </p>
+                            {tx.transaction_code && (
+                              <p className="mt-0.5 font-mono text-[11px] text-muted-foreground">
+                                Mã: {tx.transaction_code}
+                              </p>
+                            )}
+                          </td>
+
+                          <td className="px-5 py-4 text-right text-xs tabular-nums text-muted-foreground">
+                            {formatDateTime(tx.created_at)}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Phân trang */}
+              {totalPages > 1 && (
+                <div className="flex flex-col items-center justify-between gap-4 border-t border-border bg-background/50 px-6 py-4 sm:flex-row">
+                  <div className="text-xs tabular-nums text-muted-foreground">
+                    Hiển thị {(page - 1) * limit + 1}–
+                    {Math.min(page * limit, transactionsData?.total || 0)} trên
+                    tổng{" "}
+                    <strong className="text-foreground">
+                      {transactionsData?.total || 0}
+                    </strong>{" "}
+                    giao dịch
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <select
+                      value={limit}
+                      onChange={(e) =>
+                        setParam("limit", Number(e.target.value))
+                      }
+                      aria-label="Số dòng mỗi trang"
+                      className="h-8 rounded-full border border-border bg-surface px-3 text-xs text-foreground"
+                    >
+                      <option value={10}>10 / trang</option>
+                      <option value={20}>20 / trang</option>
+                      <option value={50}>50 / trang</option>
+                    </select>
+
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setParam("page", 1)}
+                        disabled={page === 1}
+                        aria-label="Trang đầu"
+                        className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-surface text-foreground transition-colors hover:border-primary-pastel hover:text-primary disabled:opacity-40 cursor-pointer"
+                      >
+                        <ChevronsLeft className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setParam("page", Math.max(1, page - 1))}
+                        disabled={page === 1}
+                        aria-label="Trang trước"
+                        className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-surface text-foreground transition-colors hover:border-primary-pastel hover:text-primary disabled:opacity-40 cursor-pointer"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </button>
+                      <span className="px-2.5 text-xs font-semibold tabular-nums text-foreground">
+                        {page} / {totalPages}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setParam("page", Math.min(totalPages, page + 1))
+                        }
+                        disabled={page === totalPages}
+                        aria-label="Trang sau"
+                        className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-surface text-foreground transition-colors hover:border-primary-pastel hover:text-primary disabled:opacity-40 cursor-pointer"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setParam("page", totalPages)}
+                        disabled={page === totalPages}
+                        aria-label="Trang cuối"
+                        className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-surface text-foreground transition-colors hover:border-primary-pastel hover:text-primary disabled:opacity-40 cursor-pointer"
+                      >
+                        <ChevronsRight className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
           )}
-        </>
-      )}
-    </Card>
+        </Card>
+      </div>
+    </div>
   );
 }

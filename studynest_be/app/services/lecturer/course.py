@@ -66,12 +66,13 @@ class CourseService:
             if not lecturer or not lecturer.id:
                 raise HTTPException(401, "❌ Không xác định được giảng viên")
 
-            # 2️⃣ Kiểm tra category tồn tại
-            category_exists = await self.db.scalar(
-                select(Categories.id).where(Categories.id == schema.category_id)
-            )
-            if not category_exists:
-                raise HTTPException(400, "❌ Category không tồn tại")
+            # 2️⃣ Kiểm tra category tồn tại (nếu có truyền)
+            if schema.category_id is not None:
+                category_exists = await self.db.scalar(
+                    select(Categories.id).where(Categories.id == schema.category_id)
+                )
+                if not category_exists:
+                    raise HTTPException(400, "❌ Category không tồn tại")
 
             # 3️⃣ Nếu có topic_id → kiểm tra topic tồn tại và cùng category
             if schema.topic_id:
@@ -80,7 +81,7 @@ class CourseService:
                 )
                 if not topic:
                     raise HTTPException(400, "❌ Topic không tồn tại")
-                if topic.category_id != schema.category_id:
+                if schema.category_id is not None and topic.category_id != schema.category_id:
                     raise HTTPException(
                         400, f"⚠️ Topic '{topic.name}' không thuộc category này"
                     )
@@ -465,7 +466,7 @@ class CourseService:
             topic = await self.db.get(Topics, schema.topic_id)
             if not topic:
                 raise HTTPException(400, "❌ Topic không tồn tại")
-            if topic.category_id != schema.category_id:
+            if schema.category_id is not None and topic.category_id != schema.category_id:
                 raise HTTPException(400, "⚠️ Topic không thuộc category này")
 
         # 4️⃣ Kiểm tra giá

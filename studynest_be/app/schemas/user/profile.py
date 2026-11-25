@@ -12,6 +12,7 @@ class ProfileUpdate(BaseModel):
     district: Optional[str] = None
     citizenship_identity: Optional[str] = None
     instructor_description: Optional[str] = None
+    # paypal_email / paypal_payer_id chỉ được đặt qua luồng xác thực PayPal OAuth (payout/callback), không qua form hồ sơ.
     # Learning goals
     learning_goals: Optional[str] = None
     daily_goal_minutes: Optional[int] = None

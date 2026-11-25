@@ -100,9 +100,11 @@ def public_course():
 
 
 def record(model):
-    return {
-        column.name: getattr(model, column.name) for column in model.__table__.columns
-    }
+    result = {}
+    for column in model.__table__.columns:
+        attr_name = "extra_metadata" if column.name == "metadata" else column.name
+        result[column.name] = getattr(model, attr_name)
+    return result
 
 
 def filter_signature(filters):
@@ -317,11 +319,15 @@ class CatalogService:
         if not model:
             raise HTTPException(404, "Loại danh mục không hợp lệ")
         fields = set(model.__table__.columns.keys()) - {"id"}
-        data = {
-            k: v
-            for k, v in schema.model_dump().items()
-            if k in fields and v is not None
-        }
+        raw_dump = schema.model_dump()
+        fields_set = getattr(schema, "model_fields_set", set(raw_dump.keys()))
+        nullable_optional = {"icon", "tagline", "description"}
+        data = {}
+        for k, v in raw_dump.items():
+            if k not in fields:
+                continue
+            if v is not None or (k in nullable_optional and k in fields_set):
+                data[k] = v
         if (
             kind == "grades"
             and not {"grade_number", "education_level_id"} <= data.keys()
@@ -340,13 +346,18 @@ class CatalogService:
             raise HTTPException(409, "Code và slug ổn định; chỉ thay tên hiển thị")
         try:
             if not item_id and "slug" in model.__table__.c:
-                values = {key: value for key, value in data.items() if key != "slug"}
+                values = {
+                    ("extra_metadata" if key == "metadata" else key): value
+                    for key, value in data.items()
+                    if key != "slug"
+                }
                 item = await create_slugged(
                     self.db, model, data["name"], data.get("slug") or "", **values
                 )
             else:
                 for key, value in data.items():
-                    setattr(item, key, value)
+                    attr_name = "extra_metadata" if key == "metadata" else key
+                    setattr(item, attr_name, value)
                 self.db.add(item)
             await self.db.commit()
         except IntegrityError:
@@ -896,6 +907,386 @@ class CatalogService:
             "has_more": more,
             "total": total,
         }
+
+    async def admin_overview(self):
+        """Rich single-call payload for Mây Mây Curriculum Studio (/admin/catalog)."""
+        active_courses_cond = and_(
+            Courses.deleted_at.is_(None),
+            ~Courses.slug.like("demo-catalog-%"),
+            ~Courses.slug.like("seed-shop-%"),
+        )
+
+        # 1. Load all 5 taxonomy lists including inactive
+        levels = await self.list_taxonomy("levels", include_inactive=True)
+        grades = await self.list_taxonomy("grades", include_inactive=True)
+        subjects = await self.list_taxonomy("subjects", include_inactive=True)
+        learning_goals = await self.list_taxonomy("learning-goals", include_inactive=True)
+        exams = await self.list_taxonomy("exams", include_inactive=True)
+
+        # 2. Course counts per taxonomy item
+        subject_counts = {
+            row[0]: int(row[1])
+            for row in (
+                await self.db.execute(
+                    select(Courses.subject_id, func.count(Courses.id))
+                    .where(active_courses_cond, Courses.subject_id.is_not(None))
+                    .group_by(Courses.subject_id)
+                )
+            ).all()
+        }
+        grade_counts = {
+            row[0]: int(row[1])
+            for row in (
+                await self.db.execute(
+                    select(course_grades.c.grade_id, func.count(course_grades.c.course_id.distinct()))
+                    .join(Courses, Courses.id == course_grades.c.course_id)
+                    .where(active_courses_cond)
+                    .group_by(course_grades.c.grade_id)
+                )
+            ).all()
+        }
+        level_counts = {
+            row[0]: int(row[1])
+            for row in (
+                await self.db.execute(
+                    select(Grade.education_level_id, func.count(course_grades.c.course_id.distinct()))
+                    .join(course_grades, course_grades.c.grade_id == Grade.id)
+                    .join(Courses, Courses.id == course_grades.c.course_id)
+                    .where(active_courses_cond)
+                    .group_by(Grade.education_level_id)
+                )
+            ).all()
+        }
+        goal_counts = {
+            row[0]: int(row[1])
+            for row in (
+                await self.db.execute(
+                    select(
+                        course_learning_goals.c.learning_goal_id,
+                        func.count(course_learning_goals.c.course_id.distinct()),
+                    )
+                    .join(Courses, Courses.id == course_learning_goals.c.course_id)
+                    .where(active_courses_cond)
+                    .group_by(course_learning_goals.c.learning_goal_id)
+                )
+            ).all()
+        }
+        exam_counts = {
+            row[0]: int(row[1])
+            for row in (
+                await self.db.execute(
+                    select(
+                        course_exams.c.exam_id,
+                        func.count(course_exams.c.course_id.distinct()),
+                    )
+                    .join(Courses, Courses.id == course_exams.c.course_id)
+                    .where(active_courses_cond)
+                    .group_by(course_exams.c.exam_id)
+                )
+            ).all()
+        }
+
+        # 3. Grade x Subject matrix & per-cell course counts
+        gs_rows = (await self.db.execute(select(grade_subjects))).all()
+        gs_set = {(r[0], r[1]) for r in gs_rows}
+        cell_counts = {
+            (row[0], row[1]): int(row[2])
+            for row in (
+                await self.db.execute(
+                    select(
+                        course_grades.c.grade_id,
+                        Courses.subject_id,
+                        func.count(Courses.id.distinct()),
+                    )
+                    .join(Courses, Courses.id == course_grades.c.course_id)
+                    .where(active_courses_cond, Courses.subject_id.is_not(None))
+                    .group_by(course_grades.c.grade_id, Courses.subject_id)
+                )
+            ).all()
+        }
+
+        subjects_per_grade: dict[UUID, int] = {}
+        grades_per_subject: dict[UUID, int] = {}
+        for g_id, s_id in gs_set:
+            subjects_per_grade[g_id] = subjects_per_grade.get(g_id, 0) + 1
+            grades_per_subject[s_id] = grades_per_subject.get(s_id, 0) + 1
+
+        for item in levels:
+            item["course_count"] = level_counts.get(item["id"], 0)
+        for item in grades:
+            item["course_count"] = grade_counts.get(item["id"], 0)
+            item["subject_count"] = subjects_per_grade.get(item["id"], 0)
+        for item in subjects:
+            item["course_count"] = subject_counts.get(item["id"], 0)
+            item["grade_count"] = grades_per_subject.get(item["id"], 0)
+        for item in learning_goals:
+            item["course_count"] = goal_counts.get(item["id"], 0)
+        for item in exams:
+            item["course_count"] = exam_counts.get(item["id"], 0)
+
+        grade_subjects_payload = [
+            {
+                "grade_id": g_id,
+                "subject_id": s_id,
+                "course_count": cell_counts.get((g_id, s_id), 0),
+            }
+            for g_id, s_id in sorted(gs_set, key=lambda pair: (str(pair[0]), str(pair[1])))
+        ]
+
+        # 4. Health metrics & content gaps
+        total_courses = int(
+            (
+                await self.db.scalar(
+                    select(func.count(Courses.id)).where(active_courses_cond)
+                )
+            )
+            or 0
+        )
+        published_courses = int(
+            (
+                await self.db.scalar(
+                    select(func.count(Courses.id)).where(public_course())
+                )
+            )
+            or 0
+        )
+        has_grade = exists(
+            select(course_grades.c.course_id)
+            .where(course_grades.c.course_id == Courses.id)
+            .correlate(Courses)
+        )
+        unclassified_courses = int(
+            (
+                await self.db.scalar(
+                    select(func.count(Courses.id)).where(
+                        active_courses_cond,
+                        or_(Courses.subject_id.is_(None), ~has_grade),
+                    )
+                )
+            )
+            or 0
+        )
+
+        level_by_id = {l["id"]: l for l in levels}
+        grade_by_id = {g["id"]: g for g in grades}
+        subject_by_id = {s["id"]: s for s in subjects}
+
+        content_gaps = []
+        covered_links = 0
+        for g_id, s_id in gs_set:
+            cnt = cell_counts.get((g_id, s_id), 0)
+            if cnt > 0:
+                covered_links += 1
+            else:
+                g = grade_by_id.get(g_id)
+                s = subject_by_id.get(s_id)
+                if g and s and g["is_active"] and s["is_active"]:
+                    lvl = level_by_id.get(g["education_level_id"])
+                    content_gaps.append(
+                        {
+                            "grade_id": g_id,
+                            "grade_name": g["name"],
+                            "grade_number": g["grade_number"],
+                            "level_id": g["education_level_id"],
+                            "level_name": lvl["name"] if lvl else "",
+                            "level_code": lvl["code"] if lvl else "",
+                            "subject_id": s_id,
+                            "subject_name": s["name"],
+                            "subject_icon": s.get("icon"),
+                            "subject_color": s.get("color_token", "primary"),
+                        }
+                    )
+        content_gaps.sort(key=lambda x: (x["grade_number"], x["subject_name"]))
+
+        inactive_count = sum(
+            1
+            for group in (levels, grades, subjects, learning_goals, exams)
+            for item in group
+            if not item["is_active"]
+        )
+
+        return {
+            "levels": levels,
+            "grades": grades,
+            "subjects": subjects,
+            "learning_goals": learning_goals,
+            "exams": exams,
+            "grade_subjects": grade_subjects_payload,
+            "health": {
+                "total_courses": total_courses,
+                "published_courses": published_courses,
+                "unclassified_courses": unclassified_courses,
+                "inactive_taxonomies": inactive_count,
+                "matrix_total_links": len(gs_set),
+                "matrix_covered_links": covered_links,
+                "content_gaps_count": len(content_gaps),
+                "content_gaps": content_gaps[:60],
+            },
+        }
+
+    async def quick_update(self, kind: str, item_id: UUID, is_active=None, is_featured=None):
+        model = ENTITIES.get(kind)
+        if not model:
+            raise HTTPException(404, "Loại danh mục không hợp lệ")
+        item = await self.db.get(model, item_id)
+        if not item:
+            raise HTTPException(404, "Không tìm thấy danh mục")
+        if is_active is not None:
+            item.is_active = is_active
+        if is_featured is not None:
+            item.is_featured = is_featured
+        self.db.add(item)
+        await self.db.commit()
+        await self.db.refresh(item)
+        return record(item)
+
+    async def reorder_taxonomy(self, kind: str, ids: list[UUID]):
+        model = ENTITIES.get(kind)
+        if not model:
+            raise HTTPException(404, "Loại danh mục không hợp lệ")
+        if len(ids) != len(set(ids)):
+            raise HTTPException(422, "Danh sách sắp xếp chứa ID trùng lặp")
+        rows = (
+            await self.db.scalars(select(model).where(model.id.in_(ids)))
+        ).all()
+        by_id = {row.id: row for row in rows}
+        if len(by_id) != len(ids):
+            raise HTTPException(404, "Một số mục danh mục không tồn tại")
+        for idx, item_id in enumerate(ids, start=1):
+            by_id[item_id].order_index = idx
+        await self.db.commit()
+        return {"message": "Đã cập nhật thứ tự hiển thị", "count": len(ids)}
+
+    async def toggle_matrix(self, grade_ids: list[UUID], subject_id: UUID, enabled: bool):
+        subject = await self.db.get(Subject, subject_id)
+        if not subject:
+            raise HTTPException(404, "Không tìm thấy môn học")
+        if enabled and not subject.is_active:
+            raise HTTPException(422, "Môn học đang bị ẩn, hãy kích hoạt trước khi gán")
+        unique_grades = list(dict.fromkeys(grade_ids))
+        grades = (
+            await self.db.scalars(select(Grade).where(Grade.id.in_(unique_grades)))
+        ).all()
+        if len(grades) != len(unique_grades):
+            raise HTTPException(404, "Một số khối lớp không tồn tại")
+
+        if enabled:
+            existing = set(
+                (
+                    await self.db.scalars(
+                        select(grade_subjects.c.grade_id).where(
+                            grade_subjects.c.subject_id == subject_id,
+                            grade_subjects.c.grade_id.in_(unique_grades),
+                        )
+                    )
+                ).all()
+            )
+            to_insert = [
+                {"grade_id": gid, "subject_id": subject_id}
+                for gid in unique_grades
+                if gid not in existing
+            ]
+            if to_insert:
+                await self.db.execute(grade_subjects.insert(), to_insert)
+            await self.db.commit()
+            return {"message": "Đã bật liên kết trên ma trận", "changed": len(to_insert)}
+
+        # Guard: cannot unlink a grade-subject pair currently used by courses
+        used_rows = (
+            await self.db.execute(
+                select(Grade.name, func.count(Courses.id.distinct()))
+                .join(course_grades, course_grades.c.grade_id == Grade.id)
+                .join(Courses, Courses.id == course_grades.c.course_id)
+                .where(
+                    Grade.id.in_(unique_grades),
+                    Courses.subject_id == subject_id,
+                    Courses.deleted_at.is_(None),
+                )
+                .group_by(Grade.name)
+            )
+        ).all()
+        if used_rows:
+            details = ", ".join(f"{name} ({cnt} khóa)" for name, cnt in used_rows)
+            raise HTTPException(
+                409,
+                f"Không thể gỡ vì đang có khóa học sử dụng: {details}",
+            )
+        await self.db.execute(
+            delete(grade_subjects).where(
+                grade_subjects.c.subject_id == subject_id,
+                grade_subjects.c.grade_id.in_(unique_grades),
+            )
+        )
+        await self.db.commit()
+        return {"message": "Đã gỡ liên kết trên ma trận", "changed": len(unique_grades)}
+
+    async def ai_enrich_taxonomy(
+        self, kind: str, name: str, code: str | None = None, exam_type: str | None = None
+    ):
+        allowed_icons = [
+            "GraduationCap", "School", "BookOpen", "BookMarked", "Calculator",
+            "Compass", "Atom", "FlaskConical", "Dna", "Globe", "Landmark",
+            "Languages", "Laptop", "Cpu", "PenTool", "Feather", "Microscope",
+            "Telescope", "Brain", "Lightbulb", "Target", "Trophy", "Award",
+            "Medal", "Flag", "Rocket", "Flame", "Star", "Layers", "Map",
+            "Heart", "Music", "Palette", "Code2", "Zap", "TrendingUp",
+        ]
+        allowed_colors = ["primary", "secondary", "lavender", "vanilla", "success", "info"]
+        kind_labels = {
+            "levels": "Cấp học",
+            "grades": "Khối lớp",
+            "subjects": "Môn học",
+            "learning-goals": "Định hướng học tập",
+            "exams": "Kỳ thi",
+        }
+        prompt = f"""Bạn là chuyên gia thiết kế chương trình giáo dục phổ thông Việt Nam cho nền tảng học trực tuyến Mây Mây.
+Hãy đề xuất metadata biên tập tinh tế, ngắn gọn, chuẩn sư phạm tiếng Việt cho danh mục sau:
+- Loại danh mục: {kind_labels.get(kind, kind)}
+- Tên: {name}
+- Mã: {code or "(chưa có)"}
+- Nhóm kỳ thi (nếu có): {exam_type or "(không áp dụng)"}
+
+CHỈ trả về JSON hợp lệ theo đúng cấu trúc sau (không thêm markdown hay giải thích):
+{{
+  "tagline": "Khẩu hiệu ngắn 1 dòng (8-18 từ, truyền cảm hứng, không dấu chấm cuối)",
+  "description": "Mô tả chi tiết 1-2 câu về mục tiêu và nội dung trọng tâm",
+  "icon": "Chọn CHÍNH XÁC 1 tên từ danh sách: {', '.join(allowed_icons)}",
+  "color_token": "Chọn CHÍNH XÁC 1 giá trị từ: {', '.join(allowed_colors)}",
+  "metadata": {{}}
+}}"""
+        try:
+            from app.core.llm import LLMService
+
+            raw = await LLMService().call_model(
+                prompt, mime_type="application/json", temperature=0.4, max_output_tokens=600
+            )
+            text_clean = (raw or "").strip()
+            start = text_clean.find("{")
+            end = text_clean.rfind("}")
+            if start != -1 and end > start:
+                text_clean = text_clean[start : end + 1]
+            parsed = json.loads(text_clean)
+            icon = parsed.get("icon") if parsed.get("icon") in allowed_icons else "BookOpen"
+            color = (
+                parsed.get("color_token")
+                if parsed.get("color_token") in allowed_colors
+                else "primary"
+            )
+            return {
+                "tagline": str(parsed.get("tagline") or f"Lộ trình học tập {name} chuẩn hệ thống")[:240],
+                "description": str(parsed.get("description") or f"Hệ thống kiến thức và bài tập trọng tâm cho {name}.")[:1000],
+                "icon": icon,
+                "color_token": color,
+                "metadata": parsed.get("metadata") if isinstance(parsed.get("metadata"), dict) else {},
+            }
+        except Exception:
+            return {
+                "tagline": f"Khám phá và chinh phục {name} theo lộ trình khoa học",
+                "description": f"Tổng hợp khóa học, bài giảng và luyện tập trọng tâm cho {name} trên nền tảng Mây Mây.",
+                "icon": "GraduationCap" if kind in ("levels", "grades") else ("Trophy" if kind == "exams" else "BookOpen"),
+                "color_token": "lavender" if kind == "exams" else "primary",
+                "metadata": {},
+            }
 
 
 def require_real_course(course):

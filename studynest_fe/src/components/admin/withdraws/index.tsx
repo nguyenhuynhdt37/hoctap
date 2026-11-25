@@ -1,680 +1,715 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import useSWR from "swr";
+import toast from "react-hot-toast";
+import {
+  ArrowUpRight,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Coins,
+  Download,
+  Eye,
+  LayoutGrid,
+  RefreshCw,
+  Search,
+  Table2,
+  Wallet,
+  X,
+} from "pulsoicon-react";
 import ContextMenu from "@/components/shared/context-menu";
+import { Button, Pagination } from "@/components/ui";
+import {
+  useDebouncedUrlSearch,
+  useUrlQueryState,
+} from "@/hooks/useUrlQueryState";
 import api from "@/lib/utils/fetcher/client/axios";
 import { getImageUrl } from "@/lib/utils/helpers/image";
-import { showToast } from "@/lib/utils/helpers/toast";
-import type {
-  AdminLecturerOption,
-  AdminWithdrawResponse,
-} from "@/types/admin/withdraw";
-import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
-import { Eye } from "pulsoicon-react";
-import useSWR from "swr";
+import type { AdminWithdrawResponse } from "@/types/admin/withdraw";
+import {
+  type AdminWithdrawStats,
+  WITHDRAW_STATUS_ORDER,
+  exportWithdrawsCsv,
+  formatWithdrawCoin,
+  formatWithdrawDateTime,
+  getWithdrawStatusMeta,
+} from "./withdraw-visuals";
 
-const formatCurrency = (val: number) =>
-  new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-    maximumFractionDigits: 0,
-  }).format(val);
-
-const formatDateTime = (val?: string | null) => {
-  if (!val) return "—";
-  try {
-    return new Intl.DateTimeFormat("vi-VN", {
-      dateStyle: "short",
-      timeStyle: "short",
-      hour12: false,
-    }).format(new Date(val));
-  } catch {
-    return "—";
-  }
-};
-
-const getStatusLabel = (status: string) => {
-  const labels: Record<string, string> = {
-    pending: "Đang chờ",
-    approved: "Đã duyệt",
-    rejected: "Đã từ chối",
-    payout_pending: "Đang chờ PayPal thanh toán",
-    failed: "PayPal thanh toán thất bại",
-    paid: "Đã rút tiền thành công",
-  };
-  return labels[status] || status;
-};
-
-const getStatusClass = (status: string) => {
-  const classes: Record<string, string> = {
-    pending: "bg-yellow-100 text-yellow-700 border-yellow-300",
-    approved: "bg-green-100 text-green-700 border-green-200",
-    rejected: "bg-red-100 text-red-700 border-red-200",
-    payout_pending: "bg-yellow-100 text-yellow-700 border-yellow-300",
-    failed: "bg-red-100 text-red-700 border-red-200",
-    paid: "bg-green-100 text-green-700 border-green-200",
-  };
-  return classes[status] || "bg-gray-100 text-gray-700 border-gray-200";
-};
+const WITHDRAWS_QUERY_SCHEMA = {
+  page: { type: "number", default: 1, min: 1 },
+  limit: { type: "number", default: 12, min: 1, max: 100 },
+  status: {
+    type: "string",
+    default: "all" as
+      | "all"
+      | "pending"
+      | "approved"
+      | "rejected"
+      | "payout_pending"
+      | "failed"
+      | "paid",
+    allowed: [
+      "all",
+      "pending",
+      "approved",
+      "rejected",
+      "payout_pending",
+      "failed",
+      "paid",
+    ] as const,
+  },
+  lecturer_id: { type: "string", default: "" },
+  search: { type: "string", default: "" },
+  order_by: {
+    type: "string",
+    default: "requested_at" as "requested_at" | "amount" | "status",
+    allowed: ["requested_at", "amount", "status"] as const,
+  },
+  order_dir: {
+    type: "string",
+    default: "desc" as "asc" | "desc",
+    allowed: ["asc", "desc"] as const,
+  },
+} as const;
 
 export default function AdminWithdraws() {
   const router = useRouter();
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const [status, setStatus] = useState<string>("all");
-  const [lecturerId, setLecturerId] = useState<string>("");
-  const [search, setSearch] = useState("");
-  const [orderBy, setOrderBy] = useState("requested_at");
-  const [orderDir, setOrderDir] = useState<"asc" | "desc">("desc");
-  const [lecturerSearch, setLecturerSearch] = useState("");
-  const [showLecturerDropdown, setShowLecturerDropdown] = useState(false);
-  const lecturerDropdownRef = useRef<HTMLDivElement>(null);
-  const [batchAction, setBatchAction] = useState<"approve" | "reject" | null>(
-    null
-  );
-  const [batchReason, setBatchReason] = useState("");
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [menuPos, setMenuPos] = useState<{ x: number; y: number }>({
-    x: 0,
-    y: 0,
-  });
-  const [menuItem, setMenuItem] = useState<{ id: string } | null>(null);
+  const [layout, setLayout] = useState<"cards" | "table">("cards");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [rejectReason, setRejectReason] = useState("");
+  const [showRejectBox, setShowRejectBox] = useState(false);
+  const [batchBusy, setBatchBusy] = useState(false);
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    id: string;
+  } | null>(null);
 
-  const buildQuery = () => {
+  const { values, setParam, setParams } = useUrlQueryState(
+    WITHDRAWS_QUERY_SCHEMA,
+  );
+  const {
+    page,
+    limit,
+    status,
+    lecturer_id: lecturerId,
+    search,
+    order_by: orderBy,
+    order_dir: orderDir,
+  } = values;
+
+  const { inputValue: searchInput, setInputValue: setSearchInput } =
+    useDebouncedUrlSearch(search, (val) => setParam("search", val));
+
+  const query = useMemo(() => {
     const params = new URLSearchParams();
-    params.set("page", page.toString());
-    params.set("limit", limit.toString());
+    params.set("page", String(page));
+    params.set("limit", String(limit));
     params.set("order_by", orderBy);
     params.set("order_dir", orderDir);
-    if (status !== "all") params.set("status", status);
+    if (status && status !== "all") params.set("status", status);
     if (lecturerId) params.set("lecturer_id", lecturerId);
     if (search.trim()) params.set("search", search.trim());
     return params.toString();
-  };
+  }, [page, limit, orderBy, orderDir, status, lecturerId, search]);
 
-  const { data, error, isLoading, mutate } = useSWR<AdminWithdrawResponse>(
-    `/admin/withdraw?${buildQuery()}`,
-    async (url) => {
-      const res = await api.get(url);
-      return res.data;
-    },
-    {
-      revalidateOnFocus: false,
-    }
-  );
+  const { data, error, isLoading, isValidating, mutate } =
+    useSWR<AdminWithdrawResponse>(
+      `/admin/withdraw?${query}`,
+      (url: string) => api.get(url).then((r) => r.data),
+      { revalidateOnFocus: false },
+    );
 
-  const searchQuery = lecturerSearch.trim() || "";
-  const { data: lecturerOptions } = useSWR<AdminLecturerOption[]>(
-    `/admin/withdraw/lecturers?q=${encodeURIComponent(searchQuery)}`,
-    async (url) => {
-      const res = await api.get(url);
-      return res.data;
-    },
-    {
-      revalidateOnFocus: false,
-    }
+  const { data: stats, mutate: mutateStats } = useSWR<AdminWithdrawStats>(
+    "/admin/withdraw/stats",
+    (url: string) => api.get(url).then((r) => r.data),
+    { revalidateOnFocus: false },
   );
 
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        lecturerDropdownRef.current &&
-        !lecturerDropdownRef.current.contains(e.target as Node)
-      ) {
-        setShowLecturerDropdown(false);
-      }
+    if (!contextMenu) return;
+    const close = () => setContextMenu(null);
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setContextMenu(null);
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const openContextMenu = (e: React.MouseEvent, item: { id: string }) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setMenuItem(item);
-    setMenuPos({ x: e.clientX, y: e.clientY });
-    setMenuOpen(true);
-  };
-
-  useEffect(() => {
-    if (!menuOpen) return;
-    const close = () => setMenuOpen(false);
     document.addEventListener("click", close);
     document.addEventListener("contextmenu", close);
+    document.addEventListener("keydown", onEsc);
     return () => {
       document.removeEventListener("click", close);
       document.removeEventListener("contextmenu", close);
+      document.removeEventListener("keydown", onEsc);
     };
-  }, [menuOpen]);
+  }, [contextMenu]);
 
-  const totalPages = data ? Math.max(1, Math.ceil(data.total / limit)) : 1;
+  const items = data?.items ?? [];
+  const total = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
 
-  const pendingItems = data?.items.filter((item) => item.status === "pending");
-  const hasPending = pendingItems && pendingItems.length > 0;
-  const pendingForLecturer =
-    lecturerId &&
-    pendingItems?.filter((item) => item.lecturer_id === lecturerId);
-  const hasPendingForLecturer =
-    lecturerId && pendingForLecturer && pendingForLecturer.length > 0;
-
-  const handleBatchAction = async (action: "approve" | "reject") => {
-    if (action === "reject" && !batchReason.trim()) {
-      showToast.error("Vui lòng nhập lý do từ chối");
-      return;
-    }
-    try {
-      const payload: any = {
-        approve: action === "approve",
-        all_pending: true,
-      };
-      if (lecturerId) {
-        payload.lecturer_id = lecturerId;
-      }
-      if (action === "reject" && batchReason.trim()) {
-        payload.reason = batchReason.trim();
-      }
-      await api.post(`/admin/withdraw/approve_deny`, payload);
-      mutate();
-      showToast.success(
-        action === "approve"
-          ? `Đã duyệt tất cả yêu cầu${lecturerId ? " của giảng viên này" : ""}`
-          : `Đã từ chối tất cả yêu cầu${
-              lecturerId ? " của giảng viên này" : ""
-            }`
-      );
-      setBatchAction(null);
-      setBatchReason("");
-      router.refresh();
-    } catch (error: any) {
-      showToast.error(
-        error?.response?.data?.message ||
-          error?.response?.data?.detail ||
-          "Không thể xử lý yêu cầu"
-      );
-    }
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
   };
 
+  async function handleBatchAction(approve: boolean) {
+    if (selectedIds.length === 0) return;
+    if (!approve && !rejectReason.trim()) {
+      toast.error("Vui lòng nhập lý do từ chối chi trả.");
+      return;
+    }
+    setBatchBusy(true);
+    try {
+      await api.post("/admin/withdraw/approve_deny", {
+        approve,
+        withdraw_ids: selectedIds,
+        ...(rejectReason.trim() ? { reason: rejectReason.trim() } : {}),
+      });
+      toast.success(
+        approve
+          ? `Đã phê duyệt ${selectedIds.length} lệnh rút tiền`
+          : `Đã từ chối ${selectedIds.length} lệnh rút tiền`,
+      );
+      setSelectedIds([]);
+      setRejectReason("");
+      setShowRejectBox(false);
+      await Promise.all([mutate(), mutateStats()]);
+    } catch (err: unknown) {
+      const detail =
+        (err as { response?: { data?: { detail?: string } } })?.response?.data
+          ?.detail || "Không thể xử lý hàng loạt lệnh rút tiền.";
+      toast.error(detail);
+    } finally {
+      setBatchBusy(false);
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-7xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Quản lý yêu cầu rút tiền
-          </h1>
-          <p className="text-sm text-gray-600 mt-1">
-            Quản lý và xử lý các yêu cầu rút tiền từ giảng viên
-          </p>
+    <main className="mx-auto max-w-[1440px] space-y-6 p-4 text-foreground sm:p-6 lg:p-8">
+      {/* Editorial Hero — Cloudy Blue Pastel Sky */}
+      <section className="relative overflow-hidden rounded-[2rem] border border-primary-pastel/75 bg-gradient-to-br from-primary-light/90 via-surface to-accent/35 p-6 shadow-[0_24px_48px_-16px_rgba(53,111,167,0.16)] sm:p-8">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/75 blur-3xl"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -bottom-20 left-1/3 h-52 w-52 rounded-full bg-primary-pastel/35 blur-3xl"
+        />
+
+        <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="space-y-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-primary-pastel bg-surface/90 px-3 py-1 text-xs font-semibold text-primary shadow-2xs">
+              <ArrowUpRight size={13} animated={false} />
+              Mây Mây Payout &amp; Disbursement Hub
+            </span>
+            <h1 className="font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+              Trung tâm Chi trả &amp; Rút tiền Giảng viên
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Kiểm duyệt lệnh rút tiền, đối soát KYC &amp; số dư ví giảng viên, hỗ trợ duyệt chi trả hàng loạt an toàn.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Link href="/admin/wallets">
+              <Button variant="outline" size="sm">
+                <Wallet size={14} />
+                Kho bạc Ví
+              </Button>
+            </Link>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={isValidating}
+              onClick={() => void Promise.all([mutate(), mutateStats()])}
+            >
+              <RefreshCw
+                size={14}
+                className={isValidating ? "animate-spin" : ""}
+              />
+              Làm mới
+            </Button>
+            <Button
+              size="sm"
+              disabled={items.length === 0}
+              onClick={() => {
+                exportWithdrawsCsv(items);
+                toast.success(`Đã xuất ${items.length} lệnh rút ra file CSV`);
+              }}
+            >
+              <Download size={14} />
+              Xuất CSV
+            </Button>
+          </div>
         </div>
 
-        {error && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
-            Không thể tải danh sách yêu cầu. Vui lòng thử lại
+        {/* 4 Floating Glass KPIs */}
+        {stats && (
+          <div className="relative z-10 mt-6 grid grid-cols-2 gap-3.5 lg:grid-cols-4">
+            <div className="rounded-2xl border border-border/80 bg-surface/85 p-4 backdrop-blur-sm">
+              <p className="text-xs font-medium text-muted-foreground">
+                Tổng lệnh rút tiền
+              </p>
+              <p className="mt-1 text-2xl font-bold text-foreground">
+                {stats.total} lệnh
+              </p>
+              <p className="mt-0.5 text-[11px] text-primary">
+                Toàn lịch sử yêu cầu chi trả
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-accent-vanilla-border/90 bg-surface/85 p-4 backdrop-blur-sm">
+              <p className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                <Clock size={13} className="text-accent-vanilla-foreground" />
+                Chờ duyệt &amp; Đang chi
+              </p>
+              <p className="mt-1 text-2xl font-bold text-accent-vanilla-foreground">
+                {stats.pending_count} lệnh
+              </p>
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                {formatWithdrawCoin(stats.pending_amount)}
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-success-border/70 bg-surface/85 p-4 backdrop-blur-sm">
+              <p className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                <Coins size={13} className="text-success-foreground" />
+                Đã giải ngân thành công
+              </p>
+              <p className="mt-1 text-2xl font-bold text-success-foreground">
+                {formatWithdrawCoin(stats.paid_amount)}
+              </p>
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                {stats.paid_count} lệnh đã hoàn tất
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-destructive-border/70 bg-surface/85 p-4 backdrop-blur-sm">
+              <p className="text-xs font-medium text-muted-foreground">
+                Từ chối / Lỗi thanh toán
+              </p>
+              <p className="mt-1 text-2xl font-bold text-destructive-foreground">
+                {stats.rejected_count} lệnh
+              </p>
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                Đã hoàn lại số dư về ví giảng viên
+              </p>
+            </div>
           </div>
         )}
+      </section>
 
-        <div className="bg-white rounded-xl border border-green-200 shadow-sm">
-          <div className="p-4 border-b border-gray-200 space-y-4">
-            <div className="flex flex-wrap items-center gap-4">
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setPage(1);
-                }}
-                placeholder="Tìm kiếm theo tên/email..."
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 flex-1 min-w-[200px]"
-              />
-
-              <div className="relative" ref={lecturerDropdownRef}>
-                <input
-                  type="text"
-                  value={lecturerSearch}
-                  onChange={(e) => {
-                    setLecturerSearch(e.target.value);
-                    setShowLecturerDropdown(true);
-                    if (!e.target.value) setLecturerId("");
-                  }}
-                  onFocus={() => setShowLecturerDropdown(true)}
-                  placeholder="Tìm giảng viên..."
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 w-64"
-                />
-                {showLecturerDropdown &&
-                  lecturerOptions &&
-                  lecturerOptions.length > 0 && (
-                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                      {lecturerOptions.map((lecturer) => (
-                        <button
-                          key={lecturer.id}
-                          onClick={() => {
-                            setLecturerId(lecturer.id);
-                            setLecturerSearch(lecturer.fullname);
-                            setShowLecturerDropdown(false);
-                            setPage(1);
-                          }}
-                          className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3"
-                        >
-                          {lecturer.avatar ? (
-                            <img
-                              src={getImageUrl(lecturer.avatar)}
-                              alt={lecturer.fullname}
-                              className="w-10 h-10 rounded-full object-cover shrink-0"
-                            />
-                          ) : (
-                            <div className="w-10 h-10 rounded-full bg-gray-200 shrink-0 flex items-center justify-center">
-                              <span className="text-gray-500 text-xs font-medium">
-                                {lecturer.fullname[0]?.toUpperCase()}
-                              </span>
-                            </div>
-                          )}
-                          <div>
-                            <div className="font-medium text-gray-900">
-                              {lecturer.fullname}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {lecturer.email}
-                            </div>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-              </div>
-
-              <select
-                value={status}
-                onChange={(e) => {
-                  setStatus(e.target.value);
-                  setPage(1);
-                }}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+      {/* Batch Action Bar (when items selected) */}
+      {selectedIds.length > 0 && (
+        <section className="space-y-3 rounded-3xl border border-primary bg-primary-light/70 p-4 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <span className="text-sm font-semibold text-primary">
+              Đã chọn {selectedIds.length} lệnh chờ duyệt
+            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                size="sm"
+                disabled={batchBusy}
+                onClick={() => void handleBatchAction(true)}
               >
-                <option value="all">Tất cả trạng thái</option>
-                <option value="pending">Đang chờ</option>
-                <option value="approved">Đã duyệt</option>
-                <option value="rejected">Đã từ chối</option>
-                <option value="payout_pending">
-                  Đang chờ PayPal thanh toán
-                </option>
-                <option value="failed">PayPal thanh toán thất bại</option>
-                <option value="paid">Đã rút tiền thành công</option>
-              </select>
-
-              <select
-                value={orderBy}
-                onChange={(e) => {
-                  setOrderBy(e.target.value);
-                  setPage(1);
+                <CheckCircle2 size={14} />
+                Duyệt chi trả ({selectedIds.length})
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                disabled={batchBusy}
+                onClick={() => setShowRejectBox((v) => !v)}
+              >
+                <X size={14} />
+                Từ chối hàng loạt
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSelectedIds([]);
+                  setShowRejectBox(false);
                 }}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
               >
-                <option value="requested_at">Sắp xếp theo thời gian</option>
-                <option value="amount">Sắp xếp theo số tiền</option>
-                <option value="status">Sắp xếp theo trạng thái</option>
-              </select>
-
-              <button
-                onClick={() => setOrderDir(orderDir === "asc" ? "desc" : "asc")}
-                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2"
-              >
-                {orderDir === "asc" ? (
-                  <>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                      <path
-                        d="M12 19V5m0 0-5 5m5-5 5 5"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                    Tăng dần
-                  </>
-                ) : (
-                  <>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                      <path
-                        d="M12 5v14m0 0-5-5m5 5 5-5"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                    Giảm dần
-                  </>
-                )}
-              </button>
+                Bỏ chọn
+              </Button>
             </div>
-
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              {(lecturerId || search) && (
-                <div className="flex items-center gap-2 flex-wrap">
-                  {lecturerId && (
-                    <span className="px-3 py-1 bg-green-100 text-green-700 rounded-lg text-sm font-medium">
-                      Giảng viên: {lecturerSearch || "Đã chọn"}
-                      <button
-                        onClick={() => {
-                          setLecturerId("");
-                          setLecturerSearch("");
-                          setPage(1);
-                        }}
-                        className="ml-2 hover:text-green-900"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  )}
-                  {search && (
-                    <span className="px-3 py-1 bg-green-100 text-green-700 rounded-lg text-sm font-medium">
-                      Tìm kiếm: {search}
-                      <button
-                        onClick={() => {
-                          setSearch("");
-                          setPage(1);
-                        }}
-                        className="ml-2 hover:text-green-900"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  )}
-                </div>
-              )}
-
-              {hasPending && status === "pending" && (
-                <div className="flex gap-2">
-                  {hasPendingForLecturer ? (
-                    <>
-                      <button
-                        onClick={() => setBatchAction("approve")}
-                        className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 text-sm"
-                      >
-                        Duyệt tất cả của GV
-                      </button>
-                      <button
-                        onClick={() => setBatchAction("reject")}
-                        className="px-4 py-2 border border-red-200 text-red-600 rounded-lg font-semibold hover:bg-red-50 text-sm"
-                      >
-                        Từ chối tất cả của GV
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button
-                        onClick={() => setBatchAction("approve")}
-                        className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 text-sm"
-                      >
-                        Duyệt tất cả
-                      </button>
-                      <button
-                        onClick={() => setBatchAction("reject")}
-                        className="px-4 py-2 border border-red-200 text-red-600 rounded-lg font-semibold hover:bg-red-50 text-sm"
-                      >
-                        Từ chối tất cả
-                      </button>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {batchAction && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <div className="mb-3">
-                  <p className="font-semibold text-gray-900 mb-1">
-                    {batchAction === "approve"
-                      ? `Xác nhận duyệt tất cả yêu cầu${
-                          lecturerId ? " của giảng viên này" : ""
-                        }?`
-                      : `Xác nhận từ chối tất cả yêu cầu${
-                          lecturerId ? " của giảng viên này" : ""
-                        }?`}
-                  </p>
-                  <p className="text-sm text-red-600 font-medium">
-                    ⚠️ Hành động này không thể hoàn tác
-                  </p>
-                </div>
-                {batchAction === "reject" && (
-                  <textarea
-                    value={batchReason}
-                    onChange={(e) => setBatchReason(e.target.value)}
-                    placeholder="Nhập lý do từ chối (bắt buộc)..."
-                    className="w-full min-h-[100px] rounded-lg border border-yellow-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 text-sm p-3 mb-3"
-                  />
-                )}
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => {
-                      setBatchAction(null);
-                      setBatchReason("");
-                    }}
-                    className="px-4 py-2 border border-gray-300 rounded-lg font-semibold hover:bg-gray-50 text-sm"
-                  >
-                    Hủy
-                  </button>
-                  <button
-                    onClick={() => handleBatchAction(batchAction)}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 text-sm"
-                  >
-                    Xác nhận
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
 
-          {isLoading ? (
-            <div className="p-12 text-center text-gray-500">
-              <div className="w-6 h-6 border-2 border-green-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-              <p className="mt-2">Đang tải...</p>
+          {showRejectBox && (
+            <div className="flex flex-wrap items-center gap-2 border-t border-primary-pastel pt-3">
+              <input
+                type="text"
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                placeholder="Nhập lý do từ chối chung cho các lệnh đã chọn..."
+                className="h-9 flex-1 rounded-xl border border-border bg-surface px-3 text-sm text-foreground focus:border-primary focus:outline-none"
+              />
+              <Button
+                variant="destructive"
+                size="sm"
+                disabled={batchBusy}
+                onClick={() => void handleBatchAction(false)}
+              >
+                Xác nhận từ chối
+              </Button>
             </div>
-          ) : data && data.items.length === 0 ? (
-            <div className="p-12 text-center text-gray-500">
-              <p>Chưa có yêu cầu rút tiền nào</p>
-            </div>
-          ) : (
-            <>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">
-                        Giảng viên
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">
-                        Số tiền
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">
-                        Trạng thái
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">
-                        Thời gian yêu cầu
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">
-                        Hành động
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 bg-white">
-                    {data?.items.map((item) => (
-                      <tr
-                        key={item.id}
-                        onClick={() =>
-                          router.push(`/admin/withdraws/${item.id}`)
-                        }
-                        onContextMenu={(e) => openContextMenu(e, item)}
-                        className="hover:bg-gray-50 cursor-pointer"
-                      >
-                        <td className="px-4 py-4">
-                          <div className="flex items-center gap-3">
-                            {item.avatar && (
-                              <img
-                                src={getImageUrl(item.avatar)}
-                                alt={item.fullname}
-                                className="w-10 h-10 rounded-full object-cover shrink-0"
-                              />
-                            )}
-                            <div>
-                              <div className="font-semibold text-gray-900">
-                                {item.fullname}
-                              </div>
-                              <div className="text-sm text-gray-500">
-                                {item.email}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="text-lg font-bold text-gray-900">
-                            {formatCurrency(item.amount)}
-                          </div>
-                        </td>
-                        <td className="px-4 py-4">
-                          <span
-                            className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${getStatusClass(
-                              item.status
-                            )}`}
-                          >
-                            {getStatusLabel(item.status)}
-                          </span>
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="text-sm text-gray-900">
-                            {formatDateTime(item.requested_at)}
-                          </div>
-                        </td>
-                        <td
-                          className="px-4 py-4"
-                          onClick={(e) => e.stopPropagation()}
-                          onContextMenu={(e) => e.stopPropagation()}
-                        >
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              router.push(`/admin/withdraws/${item.id}`);
-                            }}
-                            className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
-                          >
-                            <Eye className="h-4 w-4" />
-                            Xem chi tiết
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {totalPages > 1 && (
-                <div className="p-4 border-t border-gray-200 space-y-4">
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <div className="text-sm text-gray-600">
-                      Hiển thị {(page - 1) * limit + 1}-
-                      {Math.min(page * limit, data?.total || 0)} trên tổng số{" "}
-                      {data?.total || 0} yêu cầu
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-600">Mỗi trang</span>
-                      <select
-                        value={limit}
-                        onChange={(e) => {
-                          setLimit(Number(e.target.value));
-                          setPage(1);
-                        }}
-                        className="px-3 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                      >
-                        <option value={10}>10</option>
-                        <option value={20}>20</option>
-                        <option value={50}>50</option>
-                        <option value={100}>100</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-center gap-2">
-                    <button
-                      onClick={() => setPage(1)}
-                      disabled={page === 1}
-                      className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      «
-                    </button>
-                    <button
-                      onClick={() => setPage(Math.max(1, page - 1))}
-                      disabled={page === 1}
-                      className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      ‹
-                    </button>
-
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      let pageNum: number;
-                      if (totalPages <= 5) {
-                        pageNum = i + 1;
-                      } else if (page <= 3) {
-                        pageNum = i + 1;
-                      } else if (page >= totalPages - 2) {
-                        pageNum = totalPages - 4 + i;
-                      } else {
-                        pageNum = page - 2 + i;
-                      }
-
-                      return (
-                        <button
-                          key={pageNum}
-                          onClick={() => setPage(pageNum)}
-                          className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-                            pageNum === page
-                              ? "bg-green-600 text-white"
-                              : "border border-gray-300 hover:bg-gray-50"
-                          }`}
-                        >
-                          {pageNum}
-                        </button>
-                      );
-                    })}
-
-                    <button
-                      onClick={() => setPage(Math.min(totalPages, page + 1))}
-                      disabled={page === totalPages}
-                      className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      ›
-                    </button>
-                    <button
-                      onClick={() => setPage(totalPages)}
-                      disabled={page === totalPages}
-                      className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      »
-                    </button>
-                  </div>
-                </div>
-              )}
-            </>
           )}
-        </div>
-      </div>
+        </section>
+      )}
 
-      {/* Context Menu */}
-      {menuOpen && menuItem && (
+      {/* Status Pills + Filter Toolbar */}
+      <section className="space-y-4 rounded-3xl border border-border bg-surface p-4 shadow-[0_10px_28px_-14px_rgba(53,111,167,0.10)] sm:p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setParams({ status: "all", page: 1 })}
+              className={`rounded-2xl border px-3.5 py-1.5 text-xs font-semibold transition-all ${
+                status === "all"
+                  ? "border-primary bg-primary text-primary-foreground shadow-2xs"
+                  : "border-border bg-background text-muted-foreground hover:border-primary-pastel hover:text-primary"
+              }`}
+            >
+              Tất cả ({stats?.total ?? total})
+            </button>
+            {WITHDRAW_STATUS_ORDER.map((st) => {
+              const meta = getWithdrawStatusMeta(st);
+              const active = status === st;
+              const cnt = stats?.by_status?.[st]?.count ?? 0;
+              return (
+                <button
+                  key={st}
+                  type="button"
+                  onClick={() => setParams({ status: st, page: 1 })}
+                  className={`inline-flex items-center gap-1.5 rounded-2xl border px-3.5 py-1.5 text-xs font-semibold transition-all ${
+                    active
+                      ? "border-primary bg-primary text-primary-foreground shadow-2xs"
+                      : `${meta.badgeClass} opacity-85 hover:opacity-100`
+                  }`}
+                >
+                  <span>{meta.shortLabel}</span>
+                  <span className="rounded-full bg-surface/85 px-1.5 py-0.2 text-[10px] font-bold text-foreground">
+                    {cnt}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="flex items-center gap-1 rounded-xl border border-border bg-background p-1">
+            <button
+              type="button"
+              onClick={() => setLayout("cards")}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
+                layout === "cards"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <LayoutGrid size={14} animated={false} />
+              Thẻ
+            </button>
+            <button
+              type="button"
+              onClick={() => setLayout("table")}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
+                layout === "table"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Table2 size={14} animated={false} />
+              Bảng
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-12">
+          <div className="relative md:col-span-7">
+            <Search
+              size={15}
+              animated={false}
+              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+            />
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Tìm tên giảng viên, email hoặc mã lệnh rút..."
+              className="h-10 w-full rounded-xl border border-border bg-background pl-10 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+            />
+          </div>
+
+          <div className="flex gap-2 md:col-span-5">
+            <select
+              aria-label="Sắp xếp"
+              value={`${orderBy}:${orderDir}`}
+              onChange={(e) => {
+                const [ob, od] = e.target.value.split(":") as [
+                  "requested_at" | "amount" | "status",
+                  "asc" | "desc",
+                ];
+                setParams({ order_by: ob, order_dir: od, page: 1 });
+              }}
+              className="h-10 flex-1 rounded-xl border border-border bg-background px-3 text-xs font-medium text-foreground focus:border-primary focus:outline-none"
+            >
+              <option value="requested_at:desc">Mới yêu cầu nhất</option>
+              <option value="requested_at:asc">Cũ nhất trước</option>
+              <option value="amount:desc">Số tiền rút cao nhất</option>
+              <option value="amount:asc">Số tiền rút thấp nhất</option>
+            </select>
+
+            {(search || status !== "all" || lecturerId) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSearchInput("");
+                  setParams({
+                    page: 1,
+                    status: "all",
+                    search: "",
+                    lecturer_id: "",
+                  });
+                }}
+              >
+                Đặt lại
+              </Button>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* Error */}
+      {error && (
+        <div
+          role="alert"
+          className="flex items-center justify-between rounded-2xl border border-destructive-border bg-destructive-bg p-4 text-sm text-destructive-foreground"
+        >
+          <span>Không tải được danh sách yêu cầu rút tiền.</span>
+          <Button variant="outline" size="sm" onClick={() => void mutate()}>
+            Thử lại
+          </Button>
+        </div>
+      )}
+
+      {/* Main Content */}
+      {isLoading ? (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div
+              key={i}
+              className="h-48 animate-pulse rounded-3xl border border-border bg-surface p-5"
+            />
+          ))}
+        </div>
+      ) : items.length === 0 ? (
+        <div className="rounded-3xl border border-dashed border-border bg-surface p-14 text-center text-sm text-muted-foreground">
+          Chưa có yêu cầu rút tiền nào phù hợp với bộ lọc.
+        </div>
+      ) : layout === "cards" ? (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {items.map((w) => {
+            const meta = getWithdrawStatusMeta(w.status);
+            const isPending = w.status === "pending";
+            const isSelected = selectedIds.includes(w.id);
+            return (
+              <article
+                key={w.id}
+                onClick={() => router.push(`/admin/withdraws/${w.id}`)}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  setContextMenu({ x: e.clientX, y: e.clientY, id: w.id });
+                }}
+                className={`group flex cursor-pointer flex-col justify-between rounded-3xl border bg-surface p-5 shadow-[0_10px_28px_-14px_rgba(53,111,167,0.12)] transition-all hover:-translate-y-0.5 hover:shadow-[0_18px_36px_-14px_rgba(53,111,167,0.18)] ${
+                  isSelected ? "border-primary ring-2 ring-primary/20" : meta.accentBorder
+                }`}
+              >
+                <div className="space-y-3.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      {isPending && (
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={() => toggleSelect(w.id)}
+                          aria-label={`Chọn lệnh rút ${w.id}`}
+                        />
+                      )}
+                      <span
+                        className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${meta.badgeClass}`}
+                      >
+                        {meta.label}
+                      </span>
+                    </div>
+                    <span className="text-lg font-bold text-primary">
+                      {formatWithdrawCoin(w.amount)}
+                    </span>
+                  </div>
+
+                  {/* Lecturer */}
+                  <div className="flex items-center gap-3 rounded-2xl bg-background/60 p-3">
+                    {w.avatar ? (
+                      <img
+                        src={getImageUrl(w.avatar)}
+                        alt={w.fullname}
+                        className="h-10 w-10 shrink-0 rounded-xl border border-border object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-primary-pastel bg-primary-light font-bold text-primary">
+                        {w.fullname.slice(0, 1).toUpperCase()}
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-foreground group-hover:text-primary">
+                        {w.fullname}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {w.email}
+                      </p>
+                    </div>
+                  </div>
+
+                  {w.reason && (
+                    <p className="line-clamp-2 rounded-xl bg-destructive-bg/50 px-3 py-2 text-xs text-destructive-foreground">
+                      Lý do: {w.reason}
+                    </p>
+                  )}
+                </div>
+
+                <div className="mt-4 flex items-center justify-between border-t border-border/70 pt-3 text-xs text-muted-foreground">
+                  <span className="inline-flex items-center gap-1">
+                    <Clock size={12} animated={false} />
+                    {formatWithdrawDateTime(w.requested_at)}
+                  </span>
+                  <span className="font-semibold text-primary">
+                    {isPending ? "Xét duyệt ngay →" : "Xem hồ sơ →"}
+                  </span>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="overflow-x-auto rounded-3xl border border-border bg-surface shadow-[0_14px_36px_-14px_rgba(53,111,167,0.12)]">
+          <table className="w-full text-left text-sm">
+            <thead className="border-b border-border bg-primary-light/60 text-xs font-semibold text-foreground">
+              <tr>
+                <th className="w-10 px-4 py-3.5" />
+                <th className="px-4 py-3.5">Giảng viên</th>
+                <th className="px-4 py-3.5">Số tiền rút</th>
+                <th className="px-4 py-3.5">Trạng thái</th>
+                <th className="px-4 py-3.5">Thời gian yêu cầu</th>
+                <th className="px-4 py-3.5 text-right">Hồ sơ</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/70">
+              {items.map((w) => {
+                const meta = getWithdrawStatusMeta(w.status);
+                const isPending = w.status === "pending";
+                return (
+                  <tr
+                    key={w.id}
+                    onClick={() => router.push(`/admin/withdraws/${w.id}`)}
+                    className="cursor-pointer transition-colors hover:bg-primary-light/25"
+                  >
+                    <td
+                      className="px-4 py-3.5"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {isPending && (
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(w.id)}
+                          onChange={() => toggleSelect(w.id)}
+                        />
+                      )}
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <p className="font-semibold text-foreground">
+                        {w.fullname}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{w.email}</p>
+                    </td>
+                    <td className="px-4 py-3.5 font-bold text-primary">
+                      {formatWithdrawCoin(w.amount)}
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <span
+                        className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-semibold ${meta.badgeClass}`}
+                      >
+                        {meta.label}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3.5 text-xs text-muted-foreground">
+                      {formatWithdrawDateTime(w.requested_at)}
+                    </td>
+                    <td
+                      className="px-4 py-3.5 text-right"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => router.push(`/admin/withdraws/${w.id}`)}
+                      >
+                        <Eye size={14} />
+                        Xem
+                      </Button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Pagination */}
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        totalItems={total}
+        pageSize={limit}
+        itemLabel="lệnh rút"
+        onPageChange={(nextPage) => setParam("page", nextPage)}
+        onPageSizeChange={(nextSize) =>
+          setParams({ limit: nextSize, page: 1 })
+        }
+      />
+
+      {contextMenu && (
         <ContextMenu
-          x={menuPos.x}
-          y={menuPos.y}
-          onClose={() => setMenuOpen(false)}
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onClose={() => setContextMenu(null)}
           items={[
             {
-              label: "Xem chi tiết",
+              label: "Xem hồ sơ chi trả",
               onClick: () => {
-                router.push(`/admin/withdraws/${menuItem.id}`);
-                setMenuOpen(false);
+                router.push(`/admin/withdraws/${contextMenu.id}`);
+                setContextMenu(null);
+              },
+            },
+            {
+              label: "Sao chép Withdraw ID",
+              onClick: () => {
+                navigator.clipboard.writeText(contextMenu.id);
+                toast.success("Đã sao chép Withdraw ID");
+                setContextMenu(null);
               },
             },
           ]}
         />
       )}
-    </div>
+    </main>
   );
 }

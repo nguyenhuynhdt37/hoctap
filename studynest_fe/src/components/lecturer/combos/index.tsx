@@ -33,6 +33,10 @@ import {
   EmptyState,
   Switch,
 } from "@/components/ui";
+import {
+  useDebouncedUrlSearch,
+  useUrlQueryState,
+} from "@/hooks/useUrlQueryState";
 import api from "@/lib/utils/fetcher/client/axios";
 import { showToast } from "@/lib/utils/helpers/toast";
 
@@ -54,7 +58,20 @@ export type ComboRow = {
 };
 
 type StatusTab = "all" | "active" | "paused" | "draft";
-type ViewMode = "grid" | "list";
+
+const LECTURER_COMBOS_QUERY_SCHEMA = {
+  search: { type: "string", default: "" as string },
+  status: {
+    type: "string",
+    default: "all",
+    allowed: ["all", "active", "paused", "draft"] as const,
+  },
+  view: {
+    type: "string",
+    default: "grid",
+    allowed: ["grid", "list"] as const,
+  },
+} as const;
 
 const statusLabels: Record<string, string> = {
   draft: "Bản nháp",
@@ -67,17 +84,26 @@ const formatVndApprox = (vnd: number) =>
 
 export default function LecturerCombos() {
   const router = useRouter();
-  const [keyword, setKeyword] = useState("");
-  const [query, setQuery] = useState("");
-  const [statusTab, setStatusTab] = useState<StatusTab>("all");
-  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const { values, setParam, resetParams } = useUrlQueryState(
+    LECTURER_COMBOS_QUERY_SCHEMA,
+  );
+  const query = values.search;
+  const statusTab = values.status;
+  const viewMode = values.view;
+
+  const {
+    inputValue: keyword,
+    setInputValue: setKeyword,
+    commitNow: commitSearchNow,
+  } = useDebouncedUrlSearch(query, (val) => setParam("search", val));
+
   const [togglingBundleId, setTogglingBundleId] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
   const { data, error, mutate, isLoading } = useSWR<{
     items: ComboRow[];
     total: number;
-  }>(`/lecturer/bundles?keyword=${encodeURIComponent(query)}`, fetchLearning);
+  }>(`/lecturer/bundles?keyword=${encodeURIComponent(query.trim())}`, fetchLearning);
 
   const items = useMemo(() => data?.items ?? [], [data]);
 
@@ -322,7 +348,7 @@ export default function LecturerCombos() {
                   <button
                     key={tab.key}
                     type="button"
-                    onClick={() => setStatusTab(tab.key)}
+                    onClick={() => setParam("status", tab.key)}
                     className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
                       active
                         ? "bg-primary text-primary-foreground shadow-xs"
@@ -350,7 +376,7 @@ export default function LecturerCombos() {
                 className="flex flex-1 items-center gap-2 sm:flex-initial"
                 onSubmit={(event) => {
                   event.preventDefault();
-                  setQuery(keyword.trim());
+                  commitSearchNow(keyword.trim());
                 }}
               >
                 <div className="relative flex-1 sm:w-64">
@@ -372,8 +398,7 @@ export default function LecturerCombos() {
                       type="button"
                       aria-label="Xóa từ khóa"
                       onClick={() => {
-                        setKeyword("");
-                        setQuery("");
+                        commitSearchNow("");
                       }}
                       className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground hover:bg-surface-muted hover:text-foreground"
                     >
@@ -399,7 +424,7 @@ export default function LecturerCombos() {
               >
                 <button
                   type="button"
-                  onClick={() => setViewMode("grid")}
+                  onClick={() => setParam("view", "grid", { resetPage: false })}
                   aria-label="Xem dạng lưới"
                   aria-pressed={viewMode === "grid"}
                   className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
@@ -413,7 +438,7 @@ export default function LecturerCombos() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setViewMode("list")}
+                  onClick={() => setParam("view", "list", { resetPage: false })}
                   aria-label="Xem dạng danh sách"
                   aria-pressed={viewMode === "list"}
                   className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
@@ -473,8 +498,7 @@ export default function LecturerCombos() {
                     className="rounded-full"
                     onClick={() => {
                       setKeyword("");
-                      setQuery("");
-                      setStatusTab("all");
+                      resetParams();
                     }}
                   >
                     Đặt lại bộ lọc
@@ -638,10 +662,10 @@ export default function LecturerCombos() {
                         {/* Cụm giá kép & Tiết kiệm */}
                         <div className="rounded-2xl border border-border/70 bg-background/80 px-3.5 py-2.5">
                           <div className="flex flex-wrap items-baseline gap-2.5">
-                            <span className="inline-flex items-center gap-1.5 font-display text-2xl font-bold tabular-nums text-primary">
+                            <span className="inline-flex items-center gap-1.5 font-display text-2xl font-bold tabular-nums text-warning-foreground">
                               <Coins
                                 animated={false}
-                                className="h-5 w-5 text-primary"
+                                className="h-5 w-5 text-[#C98A2C]"
                                 aria-hidden="true"
                               />
                               {price(item.price)}

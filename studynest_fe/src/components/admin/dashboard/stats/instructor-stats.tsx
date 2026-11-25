@@ -1,79 +1,87 @@
 "use client";
 
-import api from "@/lib/utils/fetcher/client/axios";
-import { InstructorStatsResponse } from "@/types/admin/statistics";
-import useSWR from "swr";
 import Link from "next/link";
-import { ExternalLink } from "pulsoicon-react";
-
+import useSWR from "swr";
+import { ChevronRight, GraduationCap } from "pulsoicon-react";
+import api from "@/lib/utils/fetcher/client/axios";
 import { formatVndAsCoin } from "@/lib/learning-hub/coin-logic";
-
-const formatCurrency = (value: number | null | undefined) => formatVndAsCoin(value);
+import type { InstructorStatsResponse } from "@/types/admin/statistics";
 
 export default function InstructorStats() {
   const { data, isLoading } = useSWR<InstructorStatsResponse>(
     "/admin/statistics/instructors",
-    async (url) => {
-      const res = await api.get(url);
-      return res.data;
-    },
-    { revalidateOnFocus: false }
+    async (url: string) => (await api.get(url)).data,
+    { revalidateOnFocus: false },
   );
 
-  if (isLoading) {
-    return (
-      <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/30 p-6">
-        <div className="h-6 w-32 bg-gray-200 rounded animate-pulse mb-6" />
-        <div className="grid grid-cols-2 gap-4">
-          {[...Array(4)].map((_, i) => (
-            <div
-              key={i}
-              className="h-20 bg-gray-100 rounded-xl animate-pulse"
-            />
-          ))}
-        </div>
-      </div>
-    );
-  }
+  const totalEarn = Number(data?.total_earnings || 0);
+  const paidOut = Number(data?.paid_out || 0);
+  const paidPct =
+    totalEarn > 0 ? Math.min(100, Math.round((paidOut / totalEarn) * 100)) : 0;
 
   return (
-    <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/30 p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-xl font-bold text-gray-900">Thống kê Giảng viên</h3>
+    <section className="flex h-full flex-col justify-between rounded-[2rem] border border-primary-pastel/60 bg-surface/90 p-6 shadow-[0_18px_42px_-18px_rgba(53,111,167,0.16)] backdrop-blur-md">
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-vanilla px-2.5 py-0.5 text-[11px] font-semibold text-accent-vanilla-foreground">
+            <GraduationCap size={12} animated={false} />
+            Hệ sinh thái giảng dạy
+          </span>
+          <h3 className="mt-1.5 text-base font-bold text-foreground">
+            Doanh thu &amp; Chi trả GV
+          </h3>
+        </div>
         <Link
-          href="/admin/instructors"
-          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-green-600 border border-green-200 rounded-lg hover:bg-green-50 transition-colors"
+          href="/admin/withdraws"
+          className="inline-flex items-center gap-0.5 text-xs font-semibold text-primary hover:underline"
         >
-          <ExternalLink className="w-4 h-4" />
-          Chi tiết
+          Chi trả
+          <ChevronRight size={13} animated={false} />
         </Link>
       </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-green-50 rounded-xl p-4 text-center">
-          <p className="text-3xl font-bold text-green-600">
-            {data?.total ?? 0}
-          </p>
-          <p className="text-green-700 text-sm mt-1">Tổng giảng viên</p>
+
+      {isLoading ? (
+        <div className="mt-4 h-40 animate-pulse rounded-2xl bg-background" />
+      ) : (
+        <div className="mt-4 space-y-3 text-xs">
+          <div className="flex items-center justify-between rounded-2xl bg-accent-vanilla/50 px-4 py-3">
+            <span className="font-medium text-accent-vanilla-foreground">
+              Tổng doanh thu giảng viên
+            </span>
+            <span className="text-sm font-bold text-accent-vanilla-foreground">
+              {formatVndAsCoin(Math.round(totalEarn))}
+            </span>
+          </div>
+
+          <div className="space-y-1.5 rounded-2xl bg-background/70 p-3.5">
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Tỉ lệ đã giải ngân</span>
+              <span className="font-bold text-primary">{paidPct}%</span>
+            </div>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-surface">
+              <div
+                className="h-full rounded-full bg-primary"
+                style={{ width: `${paidPct}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2.5">
+            <div className="rounded-2xl bg-success-bg/55 p-3">
+              <p className="text-[11px] text-muted-foreground">Đã chi trả</p>
+              <p className="mt-0.5 font-bold text-success-foreground">
+                {formatVndAsCoin(Math.round(paidOut))}
+              </p>
+            </div>
+            <div className="rounded-2xl bg-warning-bg/60 p-3">
+              <p className="text-[11px] text-muted-foreground">Chờ chi trả</p>
+              <p className="mt-0.5 font-bold text-warning-foreground">
+                {formatVndAsCoin(Math.round(data?.pending_payout || 0))}
+              </p>
+            </div>
+          </div>
         </div>
-        <div className="bg-emerald-50 rounded-xl p-4 text-center">
-          <p className="text-lg font-bold text-emerald-600">
-            {formatCurrency(data?.total_earnings)}
-          </p>
-          <p className="text-emerald-700 text-sm mt-1">Tổng thu nhập</p>
-        </div>
-        <div className="bg-yellow-50 rounded-xl p-4 text-center">
-          <p className="text-lg font-bold text-yellow-600">
-            {formatCurrency(data?.pending_payout)}
-          </p>
-          <p className="text-yellow-700 text-sm mt-1">Chờ thanh toán</p>
-        </div>
-        <div className="bg-teal-50 rounded-xl p-4 text-center">
-          <p className="text-lg font-bold text-teal-600">
-            {formatCurrency(data?.paid_out)}
-          </p>
-          <p className="text-teal-700 text-sm mt-1">Đã thanh toán</p>
-        </div>
-      </div>
-    </div>
+      )}
+    </section>
   );
 }

@@ -5,7 +5,7 @@ import enum
 import uuid
 
 from pgvector.sqlalchemy.vector import VECTOR
-from sqlalchemy import ARRAY, BigInteger, Boolean, CheckConstraint, Computed, Date, DateTime, Double, Enum, ForeignKey, ForeignKeyConstraint, Index, Integer, Numeric, PrimaryKeyConstraint, REAL, SmallInteger, String, Text, UniqueConstraint, Uuid, text
+from sqlalchemy import ARRAY, BigInteger, Boolean, CheckConstraint, Computed, Date, DateTime, Double, Enum, Float, ForeignKey, ForeignKeyConstraint, Index, Integer, Numeric, PrimaryKeyConstraint, REAL, SmallInteger, String, Text, UniqueConstraint, Uuid, text
 from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -24,6 +24,10 @@ class LessonTypeEnum(str, enum.Enum):
     ARTICLE = 'article'
     QUIZ = 'quiz'
     CODE = 'code'
+    FLASHCARD = 'flashcard'
+    LISTENING = 'listening'
+    FILL_BLANK = 'fill_blank'
+    SPEAKING = 'speaking'
     ASSIGNMENT = 'assignment'
     RESOURCE = 'resource'
 
@@ -1698,6 +1702,18 @@ class Lessons(Base):
     lesson_notes: Mapped[list['LessonNotes']] = relationship('LessonNotes', back_populates='lesson')
     lesson_progress: Mapped[list['LessonProgress']] = relationship('LessonProgress', back_populates='lesson')
     lesson_quizzes: Mapped[list['LessonQuizzes']] = relationship('LessonQuizzes', back_populates='lesson')
+    lesson_flashcards: Mapped[list['LessonFlashcards']] = relationship(
+        'LessonFlashcards', back_populates='lesson', cascade='all, delete-orphan'
+    )
+    lesson_listening: Mapped[Optional['LessonListening']] = relationship(
+        'LessonListening', back_populates='lesson', uselist=False, cascade='all, delete-orphan'
+    )
+    lesson_fill_blank: Mapped[Optional['LessonFillBlanks']] = relationship(
+        'LessonFillBlanks', back_populates='lesson', uselist=False, cascade='all, delete-orphan'
+    )
+    lesson_speaking: Mapped[Optional['LessonSpeaking']] = relationship(
+        'LessonSpeaking', back_populates='lesson', uselist=False, cascade='all, delete-orphan'
+    )
     lesson_resources: Mapped[list['LessonResources']] = relationship('LessonResources', back_populates='lesson')
     lesson_tutor_memory: Mapped[list['LessonTutorMemory']] = relationship('LessonTutorMemory', back_populates='lesson')
     tutor_chat_threads: Mapped[list['TutorChatThreads']] = relationship('TutorChatThreads', back_populates='lesson')
@@ -2008,6 +2024,136 @@ class LessonQuizzes(Base):
     lesson: Mapped[Optional['Lessons']] = relationship('Lessons', back_populates='lesson_quizzes')
     section: Mapped[Optional['CourseSections']] = relationship('CourseSections', back_populates='lesson_quizzes')
     lesson_quiz_options: Mapped[list['LessonQuizOptions']] = relationship('LessonQuizOptions', back_populates='quiz')
+
+
+class LessonFlashcards(Base):
+    __tablename__ = 'lesson_flashcards'
+    __table_args__ = (
+        ForeignKeyConstraint(['course_id'], ['public.courses.id'], ondelete='CASCADE', name='lesson_flashcards_course_id_fkey'),
+        ForeignKeyConstraint(['lesson_id'], ['public.lessons.id'], ondelete='CASCADE', name='lesson_flashcards_lesson_id_fkey'),
+        ForeignKeyConstraint(['section_id'], ['public.course_sections.id'], ondelete='CASCADE', name='lesson_flashcards_section_id_fkey'),
+        PrimaryKeyConstraint('id', name='lesson_flashcards_pkey'),
+        Index('ix_lesson_flashcards_lesson', 'lesson_id'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('uuid_generate_v4()'))
+    lesson_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    section_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    course_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    front_text: Mapped[str] = mapped_column(Text, nullable=False)
+    back_text: Mapped[str] = mapped_column(Text, nullable=False)
+    phonetic: Mapped[Optional[str]] = mapped_column(Text)
+    part_of_speech: Mapped[Optional[str]] = mapped_column(String(60))
+    example_sentence: Mapped[Optional[str]] = mapped_column(Text)
+    example_translation: Mapped[Optional[str]] = mapped_column(Text)
+    hint: Mapped[Optional[str]] = mapped_column(Text)
+    lang_code: Mapped[str] = mapped_column(String(20), nullable=False, server_default=text("'en-US'::character varying"))
+    voice_id: Mapped[Optional[str]] = mapped_column(String(120))
+    audio_url: Mapped[Optional[str]] = mapped_column(Text)
+    example_audio_url: Mapped[Optional[str]] = mapped_column(Text)
+    difficulty_level: Mapped[int] = mapped_column(SmallInteger, nullable=False, server_default=text('1'))
+    position: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('0'))
+    created_by: Mapped[Optional[str]] = mapped_column(String(20), server_default=text("'lecturer'::character varying"))
+    created_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, server_default=text('now()'))
+    updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, server_default=text('now()'))
+
+    lesson: Mapped['Lessons'] = relationship('Lessons', back_populates='lesson_flashcards')
+
+
+class LessonListening(Base):
+    __tablename__ = 'lesson_listening'
+    __table_args__ = (
+        ForeignKeyConstraint(['course_id'], ['public.courses.id'], ondelete='CASCADE', name='lesson_listening_course_id_fkey'),
+        ForeignKeyConstraint(['lesson_id'], ['public.lessons.id'], ondelete='CASCADE', name='lesson_listening_lesson_id_fkey'),
+        ForeignKeyConstraint(['section_id'], ['public.course_sections.id'], ondelete='CASCADE', name='lesson_listening_section_id_fkey'),
+        PrimaryKeyConstraint('id', name='lesson_listening_pkey'),
+        UniqueConstraint('lesson_id', name='lesson_listening_lesson_id_key'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('uuid_generate_v4()'))
+    lesson_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    section_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    course_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    lang_code: Mapped[str] = mapped_column(String(20), nullable=False, server_default=text("'en-GB'::character varying"))
+    scenario: Mapped[Optional[str]] = mapped_column(Text)
+    speakers: Mapped[Any] = mapped_column(JSONB, nullable=False, server_default=text("'[]'::jsonb"))
+    script_lines: Mapped[Any] = mapped_column(JSONB, nullable=False, server_default=text("'[]'::jsonb"))
+    audio_url: Mapped[Optional[str]] = mapped_column(Text)
+    duration_seconds: Mapped[Optional[float]] = mapped_column(Float, server_default=text('0'))
+    max_plays: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('0'))
+    show_transcript_before_submit: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
+    pass_percent: Mapped[int] = mapped_column(SmallInteger, nullable=False, server_default=text('70'))
+    created_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, server_default=text('now()'))
+    updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, server_default=text('now()'))
+
+    lesson: Mapped['Lessons'] = relationship('Lessons', back_populates='lesson_listening')
+
+
+class LessonFillBlanks(Base):
+    __tablename__ = 'lesson_fill_blanks'
+    __table_args__ = (
+        ForeignKeyConstraint(['course_id'], ['public.courses.id'], ondelete='CASCADE', name='lesson_fill_blanks_course_id_fkey'),
+        ForeignKeyConstraint(['lesson_id'], ['public.lessons.id'], ondelete='CASCADE', name='lesson_fill_blanks_lesson_id_fkey'),
+        ForeignKeyConstraint(['section_id'], ['public.course_sections.id'], ondelete='CASCADE', name='lesson_fill_blanks_section_id_fkey'),
+        PrimaryKeyConstraint('id', name='lesson_fill_blanks_pkey'),
+        UniqueConstraint('lesson_id', name='lesson_fill_blanks_lesson_id_key'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    lesson_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    section_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    course_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    lang_code: Mapped[str] = mapped_column(String(20), nullable=False, server_default=text("'en-GB'::character varying"))
+    mode: Mapped[str] = mapped_column(String(30), nullable=False, server_default=text("'typing'::character varying"))
+    prompt_text: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''::text"))
+    translation: Mapped[Optional[str]] = mapped_column(Text)
+    blanks: Mapped[Any] = mapped_column(JSONB, nullable=False, server_default=text("'[]'::jsonb"))
+    distractors: Mapped[Any] = mapped_column(JSONB, nullable=False, server_default=text("'[]'::jsonb"))
+    voice_id: Mapped[Optional[str]] = mapped_column(String(120))
+    audio_url: Mapped[Optional[str]] = mapped_column(Text)
+    duration_seconds: Mapped[Optional[float]] = mapped_column(Float, server_default=text('0'))
+    case_sensitive: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
+    allow_hint: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('true'))
+    pass_percent: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('70'))
+    created_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, server_default=text('now()'))
+    updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, server_default=text('now()'))
+
+    lesson: Mapped['Lessons'] = relationship('Lessons', back_populates='lesson_fill_blank')
+
+
+class LessonSpeaking(Base):
+    __tablename__ = 'lesson_speaking'
+    __table_args__ = (
+        ForeignKeyConstraint(['course_id'], ['public.courses.id'], ondelete='CASCADE', name='lesson_speaking_course_id_fkey'),
+        ForeignKeyConstraint(['lesson_id'], ['public.lessons.id'], ondelete='CASCADE', name='lesson_speaking_lesson_id_fkey'),
+        ForeignKeyConstraint(['section_id'], ['public.course_sections.id'], ondelete='CASCADE', name='lesson_speaking_section_id_fkey'),
+        PrimaryKeyConstraint('id', name='lesson_speaking_pkey'),
+        UniqueConstraint('lesson_id', name='lesson_speaking_lesson_id_key'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    lesson_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    section_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    course_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    lang_code: Mapped[str] = mapped_column(String(20), nullable=False, server_default=text("'en-GB'::character varying"))
+    level: Mapped[str] = mapped_column(String(20), nullable=False, server_default=text("'B1'::character varying"))
+    scenario: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''::text"))
+    student_role: Mapped[str] = mapped_column(String(200), nullable=False, server_default=text("''::character varying"))
+    ai_persona: Mapped[Any] = mapped_column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
+    missions: Mapped[Any] = mapped_column(JSONB, nullable=False, server_default=text("'[]'::jsonb"))
+    sample_phrases: Mapped[Any] = mapped_column(JSONB, nullable=False, server_default=text("'[]'::jsonb"))
+    max_turns: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('8'))
+    pass_percent: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('70'))
+    allow_translation: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('true'))
+    allow_suggestion: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('true'))
+    created_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, server_default=text('now()'))
+    updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, server_default=text('now()'))
+
+    lesson: Mapped['Lessons'] = relationship('Lessons', back_populates='lesson_speaking')
 
 
 class LessonResources(Base):

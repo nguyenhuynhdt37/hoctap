@@ -66,3 +66,67 @@ async def create_coding_tasks_from_lessons(
     return await service.create_coding_tasks_from_lessons_async(
         schema.lesson_ids, lecturer.id
     )
+
+
+@router.post("/flashcards", status_code=201)
+async def create_flashcards_from_lessons(
+    schema: LessonListSchema = Body(...),
+    lang_code: str = "en-US",
+    authorization: AuthorizationService = Depends(AuthorizationService),
+    service: LessonService = Depends(LessonService),
+):
+    lecturer: User = await authorization.require_role(["LECTURER"])
+    return await service.create_flashcards_from_lessons_async(
+        schema.lesson_ids, lecturer.id, lang_code=lang_code
+    )
+
+
+@router.post("/listening", status_code=201)
+async def create_listening_from_ai(
+    payload: dict = Body(...),
+    authorization: AuthorizationService = Depends(AuthorizationService),
+    service: LessonService = Depends(LessonService),
+):
+    lecturer: User = await authorization.require_role(["LECTURER"])
+    return await service.create_listening_dialogue_async(
+        lecturer_id=lecturer.id,
+        topic=str(payload.get("topic") or "").strip(),
+        lesson_ids=payload.get("lesson_ids") or [],
+        lang_code=str(payload.get("lang_code") or "en-GB"),
+        turns=int(payload.get("turns") or 10),
+        question_count=int(payload.get("question_count") or 5),
+    )
+
+
+@router.post("/fill-blank", status_code=201)
+async def create_fill_blank_from_ai(
+    payload: dict = Body(...),
+    authorization: AuthorizationService = Depends(AuthorizationService),
+    service: LessonService = Depends(LessonService),
+):
+    lecturer: User = await authorization.require_role(["LECTURER"])
+    return await service.create_fill_blank_async(
+        lecturer_id=lecturer.id,
+        topic=str(payload.get("topic") or "").strip(),
+        lesson_ids=payload.get("lesson_ids") or [],
+        lang_code=str(payload.get("lang_code") or "en-GB"),
+        blank_count=int(payload.get("blank_count") or 6),
+        mode=str(payload.get("mode") or "typing"),
+    )
+
+
+@router.post("/speaking", status_code=201)
+async def create_speaking_scenario_from_ai(
+    payload: dict = Body(...),
+    authorization: AuthorizationService = Depends(AuthorizationService),
+    service: LessonService = Depends(LessonService),
+):
+    lecturer: User = await authorization.require_role(["LECTURER"])
+    return await service.create_speaking_scenario_async(
+        lecturer_id=lecturer.id,
+        topic=str(payload.get("topic") or "").strip(),
+        lesson_ids=payload.get("lesson_ids") or [],
+        lang_code=str(payload.get("lang_code") or "en-GB"),
+        level=str(payload.get("level") or "B1"),
+        mission_count=int(payload.get("mission_count") or 4),
+    )

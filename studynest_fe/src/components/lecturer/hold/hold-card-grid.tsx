@@ -219,8 +219,8 @@ function HoldVaultCard({ item }: { item: HoldEarningsItem }) {
           <p className="text-[11px] font-medium text-muted-foreground">
             Thù lao giảng viên
           </p>
-          <p className="inline-flex items-center gap-1 font-display text-xl font-bold tabular-nums text-primary">
-            <Coins animated={false} className="h-4 w-4" aria-hidden="true" />
+          <p className="inline-flex items-center gap-1 font-display text-xl font-bold tabular-nums text-warning-foreground">
+            <Coins animated={false} className="h-4 w-4 text-[#C98A2C]" aria-hidden="true" />
             {formatVndAsCoin(item.amount_instructor)}
           </p>
         </div>

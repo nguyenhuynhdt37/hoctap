@@ -61,7 +61,7 @@ const QUICK_MISSIONS = [
 
 const SLASH_CHIPS = [
   { label: "/screen", text: "Hãy đọc màn hình hiện tại (browser_snapshot) và tóm tắt những gì đang hiển thị.", icon: Eye },
-  { label: "/highlight", text: "Hãy đọc màn hình rồi khoanh vùng chỉ điểm (browser_highlight) vào: ", icon: Compass },
+  { label: "/highlight", text: "/highlight ", icon: Compass },
   { label: "/open", text: "/open ", icon: MousePointerClick },
   { label: "/courses", text: "Hãy tìm các khóa học công khai hiện có và gợi ý cho mình.", icon: Star },
 ];

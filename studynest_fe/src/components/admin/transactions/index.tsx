@@ -1,669 +1,699 @@
 "use client";
 
-import api from "@/lib/utils/fetcher/client/axios";
-import { getImageUrl } from "@/lib/utils/helpers/image";
-import {
-  AdminTransactionItem,
-  AdminTransactionsQuery,
-  AdminTransactionsResponse,
-} from "@/types/admin/transaction";
+import { useMemo } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import useSWR from "swr";
+import toast from "react-hot-toast";
 import {
-  ArrowDown,
-  ArrowUp,
-  Clock,
-  CircleDollarSign,
+  ArrowDownLeft,
+  ArrowUpRight,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Coins,
+  Copy,
+  Download,
+  Eye,
   RefreshCw,
   Search,
-  ArrowDownWideNarrow,
+  Wallet,
 } from "pulsoicon-react";
-import useSWR from "swr";
-
-import { formatVndAsCoin } from "@/lib/learning-hub/coin-logic";
-
-const formatCurrency = (value: number) => formatVndAsCoin(value);
-
-const formatDateTime = (value?: string | null) => {
-  if (!value) return "—";
-  try {
-    return new Intl.DateTimeFormat("vi-VN", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    }).format(new Date(value));
-  } catch {
-    return "—";
-  }
-};
+import { Button, Pagination } from "@/components/ui";
+import {
+  useDebouncedUrlSearch,
+  useUrlQueryState,
+} from "@/hooks/useUrlQueryState";
+import api from "@/lib/utils/fetcher/client/axios";
+import { getImageUrl } from "@/lib/utils/helpers/image";
+import type { AdminTransactionsResponse } from "@/types/admin/transaction";
+import {
+  TX_STATUS_ORDER,
+  TX_TYPE_OPTIONS,
+  exportAdminTransactionsCsv,
+  formatTxCoin,
+  formatTxDateTime,
+  getGatewayLabel,
+  getTxStatusMeta,
+  getTxTypeMeta,
+} from "./transaction-visuals";
 
 const DEFAULT_LIMIT = 20;
 
+const TRANSACTIONS_QUERY_SCHEMA = {
+  page: { type: "number", default: 1, min: 1 },
+  limit: { type: "number", default: DEFAULT_LIMIT, min: 1, max: 100 },
+  search: { type: "string", default: "" },
+  type: {
+    type: "string",
+    default: "" as
+      | ""
+      | "deposit"
+      | "purchase"
+      | "income"
+      | "refund"
+      | "withdraw_hold"
+      | "fee"
+      | "withdraw_reject_refund",
+    allowed: [
+      "",
+      "deposit",
+      "purchase",
+      "income",
+      "refund",
+      "withdraw_hold",
+      "fee",
+      "withdraw_reject_refund",
+    ] as const,
+  },
+  status: {
+    type: "string",
+    default: "" as
+      | ""
+      | "pending"
+      | "completed"
+      | "failed"
+      | "refunded"
+      | "canceled",
+    allowed: [
+      "",
+      "pending",
+      "completed",
+      "failed",
+      "refunded",
+      "canceled",
+    ] as const,
+  },
+  direction: {
+    type: "string",
+    default: "" as "" | "in" | "out",
+    allowed: ["", "in", "out"] as const,
+  },
+  gateway: {
+    type: "string",
+    default: "" as
+      | ""
+      | "paypal"
+      | "internal_wallet"
+      | "wallet"
+      | "internal"
+      | "momo"
+      | "stripe",
+    allowed: [
+      "",
+      "paypal",
+      "internal_wallet",
+      "wallet",
+      "internal",
+      "momo",
+      "stripe",
+    ] as const,
+  },
+  date_from: { type: "string", default: "" },
+  date_to: { type: "string", default: "" },
+  sort_by: {
+    type: "string",
+    default: "created_at" as "created_at" | "amount",
+    allowed: ["created_at", "amount"] as const,
+  },
+  order_dir: {
+    type: "string",
+    default: "desc" as "asc" | "desc",
+    allowed: ["asc", "desc"] as const,
+  },
+} as const;
+
+const toIsoIfValid = (value: string): string | undefined => {
+  if (!value) return undefined;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? undefined : parsed.toISOString();
+};
+
 export default function AdminTransactions() {
   const router = useRouter();
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: DEFAULT_LIMIT,
-  });
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [type, setType] = useState<string>("");
-  const [status, setStatus] = useState<string>("");
-  const [direction, setDirection] = useState<string>("");
-  const [method, setMethod] = useState<string>("");
-  const [gateway, setGateway] = useState<string>("");
-  const [dateFrom, setDateFrom] = useState<string>("");
-  const [dateTo, setDateTo] = useState<string>("");
-  const [sortBy, setSortBy] = useState<string>("created_at");
-  const [orderDir, setOrderDir] = useState<"asc" | "desc">("desc");
-
-  useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(search), 300);
-    return () => clearTimeout(t);
-  }, [search]);
-
-  useEffect(() => {
-    setPagination((p) => ({ ...p, page: 1 }));
-  }, [
+  const { values, setParam, setParams } = useUrlQueryState(
+    TRANSACTIONS_QUERY_SCHEMA,
+  );
+  const {
+    page,
+    limit,
+    search: debouncedSearch,
     type,
     status,
     direction,
-    method,
+    gateway,
+    date_from: dateFrom,
+    date_to: dateTo,
+    sort_by: sortBy,
+    order_dir: orderDir,
+  } = values;
+
+  const { inputValue: search, setInputValue: setSearch } =
+    useDebouncedUrlSearch(debouncedSearch, (val) => setParam("search", val));
+
+  const query = useMemo(() => {
+    const params = new URLSearchParams();
+    params.set("page", String(page));
+    params.set("limit", String(limit));
+    params.set("sort_by", sortBy);
+    params.set("order_dir", orderDir);
+    if (debouncedSearch) params.set("search", debouncedSearch.trim());
+    if (type) params.set("type", type);
+    if (status) params.set("status", status);
+    if (direction) params.set("direction", direction);
+    if (gateway) params.set("gateway", gateway);
+    const fromIso = toIsoIfValid(dateFrom);
+    const toIso = toIsoIfValid(dateTo);
+    if (fromIso) params.set("date_from", fromIso);
+    if (toIso) params.set("date_to", toIso);
+    return params.toString();
+  }, [
+    page,
+    limit,
+    sortBy,
+    orderDir,
+    debouncedSearch,
+    type,
+    status,
+    direction,
     gateway,
     dateFrom,
     dateTo,
-    debouncedSearch,
-    sortBy,
-    orderDir,
   ]);
 
-  const buildQuery = (): AdminTransactionsQuery => {
-    const q: AdminTransactionsQuery = {
-      page: pagination.page,
-      limit: pagination.limit,
-      sort_by: sortBy,
-      order_dir: orderDir,
-    };
-    if (debouncedSearch) q.search = debouncedSearch.trim();
-    if (type) q.type = type;
-    if (status) q.status = status;
-    if (direction) q.direction = direction;
-    if (method) q.method = method;
-    if (gateway) q.gateway = gateway;
-    if (dateFrom) q.date_from = new Date(dateFrom).toISOString();
-    if (dateTo) q.date_to = new Date(dateTo).toISOString();
-    return q;
-  };
+  const { data, error, isLoading, isValidating, mutate } =
+    useSWR<AdminTransactionsResponse>(
+      `/admin/transactions?${query}`,
+      (url: string) => api.get(url).then((r) => r.data),
+      { revalidateOnFocus: false },
+    );
 
-  const query = buildQuery();
-  const queryString = useMemo(() => {
-    const params = new URLSearchParams();
-    Object.entries(query).forEach(([k, v]) => {
-      if (v !== undefined && v !== null && v !== "")
-        params.append(k, String(v));
-    });
-    return params.toString();
-  }, [query]);
+  const items = data?.items ?? [];
+  const total = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  const summary = data?.summary;
+  const statusCounts = summary?.status_counts ?? {};
+  const successRate = summary?.success_rate ?? 0;
 
-  const { data, isLoading, mutate } = useSWR<AdminTransactionsResponse>(
-    `/admin/transactions?${queryString}`,
-    async (url) => {
-      const res = await api.get(url);
-      return res.data;
-    },
-    { revalidateOnFocus: false }
+  const totalAmountNum = Number(summary?.total_amount || 0);
+  const totalInNum = Number(summary?.total_in || 0);
+  const totalOutNum = Number(summary?.total_out || 0);
+
+  const hasActiveFilter = Boolean(
+    debouncedSearch || type || status || direction || gateway || dateFrom || dateTo,
   );
 
-  const totals = useMemo(() => {
-    const totalIn = Number(data?.summary?.total_in || 0);
-    const totalOut = Number(data?.summary?.total_out || 0);
-    const totalAmount = Number(data?.summary?.total_amount || 0);
-    return { totalIn, totalOut, totalAmount };
-  }, [data]);
-
-  const totalPages = useMemo(() => {
-    if (!data) return 0;
-    return Math.ceil(data.total / pagination.limit);
-  }, [data, pagination.limit]);
-
-  // Context menu state
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [menuPos, setMenuPos] = useState<{ x: number; y: number }>({
-    x: 0,
-    y: 0,
-  });
-  const [menuItem, setMenuItem] = useState<AdminTransactionItem | null>(null);
-
-  const openContextMenu = (e: React.MouseEvent, item: AdminTransactionItem) => {
-    e.preventDefault();
-    setMenuItem(item);
-    setMenuPos({ x: e.clientX, y: e.clientY });
-    setMenuOpen(true);
+  const resetFilters = () => {
+    setSearch("");
+    setParams({
+      page: 1,
+      search: "",
+      type: "",
+      status: "",
+      direction: "",
+      gateway: "",
+      date_from: "",
+      date_to: "",
+      sort_by: "created_at",
+      order_dir: "desc",
+    });
   };
 
-  useEffect(() => {
-    const close = () => setMenuOpen(false);
-    const onEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMenuOpen(false);
-    };
-    if (menuOpen) {
-      document.addEventListener("click", close);
-      document.addEventListener("contextmenu", close);
-      document.addEventListener("keydown", onEsc);
-    }
-    return () => {
-      document.removeEventListener("click", close);
-      document.removeEventListener("contextmenu", close);
-      document.removeEventListener("keydown", onEsc);
-    };
-  }, [menuOpen]);
-
-  const copy = async (text?: string | null) => {
-    if (!text) return;
-    try {
-      await navigator.clipboard.writeText(String(text));
-    } catch {}
+  const copyText = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success(`Đã sao chép ${label}`);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="mx-auto px-4 py-6">
-        {/* Header */}
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              Giao dịch hệ thống
+    <main className="mx-auto max-w-[1440px] space-y-6 p-4 text-foreground sm:p-6 lg:p-8">
+      {/* Editorial Hero Banner — Cloudy Blue Pastel Sky */}
+      <section className="relative overflow-hidden rounded-[2rem] border border-primary-pastel/75 bg-gradient-to-br from-primary-light/90 via-surface to-secondary-light/35 p-6 shadow-[0_24px_48px_-16px_rgba(53,111,167,0.16)] sm:p-8">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/75 blur-3xl"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -bottom-20 left-1/3 h-48 w-48 rounded-full bg-primary-pastel/35 blur-3xl"
+        />
+
+        <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="space-y-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-primary-pastel bg-surface/90 px-3 py-1 text-xs font-semibold text-primary shadow-2xs">
+              <Coins size={13} animated={false} />
+              Mây Mây Transaction Command Center
+            </span>
+            <h1 className="font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+              Trung tâm Quản trị Giao dịch
             </h1>
-            <p className="text-gray-600">
-              Danh sách các giao dịch phát sinh trong hệ thống
+            <p className="text-sm text-muted-foreground">
+              Theo dõi toàn bộ 7 dòng giao dịch (nạp tiền, mua khóa học, thu nhập GV, hoàn tiền, rút tiền, phí sàn) theo thời gian thực.
             </p>
           </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Link href="/admin/wallets">
+              <Button variant="outline" size="sm">
+                <Wallet size={14} />
+                Kho bạc Ví
+              </Button>
+            </Link>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void mutate()}
+              disabled={isValidating}
+            >
+              <RefreshCw
+                size={14}
+                className={isValidating ? "animate-spin" : ""}
+              />
+              Làm mới
+            </Button>
+            <Button
+              size="sm"
+              disabled={items.length === 0}
+              onClick={() => {
+                exportAdminTransactionsCsv(items);
+                toast.success(`Đã xuất ${items.length} giao dịch ra file CSV`);
+              }}
+            >
+              <Download size={14} />
+              Xuất CSV
+            </Button>
+          </div>
+        </div>
+
+        {/* 4 Floating Glass KPI Cards */}
+        <div className="relative z-10 mt-6 grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-2xl border border-border/80 bg-surface/85 p-4 backdrop-blur-sm">
+            <p className="text-xs font-medium text-muted-foreground">
+              Tổng khối lượng (Hoàn tất)
+            </p>
+            <p className="mt-1 text-xl font-bold text-primary">
+              {formatTxCoin(totalAmountNum)}
+            </p>
+            <p className="mt-0.5 text-[11px] text-muted-foreground">
+              Trên tổng {total} lệnh khớp lọc
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-success-border/70 bg-surface/85 p-4 backdrop-blur-sm">
+            <p className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+              <ArrowDownLeft size={13} className="text-success-foreground" />
+              Dòng tiền vào (Hoàn tất)
+            </p>
+            <p className="mt-1 text-xl font-bold text-success-foreground">
+              +{formatTxCoin(totalInNum)}
+            </p>
+            <p className="mt-0.5 text-[11px] text-muted-foreground">
+              Nạp tiền &amp; doanh thu thực nhận
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-destructive-border/70 bg-surface/85 p-4 backdrop-blur-sm">
+            <p className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+              <ArrowUpRight size={13} className="text-destructive-foreground" />
+              Dòng tiền ra (Hoàn tất)
+            </p>
+            <p className="mt-1 text-xl font-bold text-destructive-foreground">
+              -{formatTxCoin(totalOutNum)}
+            </p>
+            <p className="mt-0.5 text-[11px] text-muted-foreground">
+              Mua khóa, chi trả &amp; hoàn tiền
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-border/80 bg-surface/85 p-4 backdrop-blur-sm">
+            <div className="flex items-center justify-between">
+              <p className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                <CheckCircle2 size={13} className="text-primary" />
+                Tỉ lệ hoàn tất
+              </p>
+              <span className="text-sm font-bold text-primary">
+                {successRate}%
+              </span>
+            </div>
+            <div className="mt-2.5 flex h-2.5 w-full overflow-hidden rounded-full bg-background">
+              {TX_STATUS_ORDER.map((st) => {
+                const cnt = statusCounts[st] ?? 0;
+                if (!cnt || !total) return null;
+                const w = (cnt / total) * 100;
+                const meta = getTxStatusMeta(st);
+                return (
+                  <div
+                    key={st}
+                    title={`${meta.label}: ${cnt}`}
+                    className={`h-full ${meta.dotClass}`}
+                    style={{ width: `${w}%` }}
+                  />
+                );
+              })}
+            </div>
+            <p className="mt-1.5 text-[11px] text-muted-foreground">
+              {statusCounts.completed ?? 0} hoàn tất ·{" "}
+              {statusCounts.pending ?? 0} chờ · {statusCounts.failed ?? 0} lỗi
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Quick Status Pills + Multi-Filter Bar */}
+      <section className="space-y-4 rounded-3xl border border-border bg-surface p-4 shadow-[0_10px_28px_-14px_rgba(53,111,167,0.10)] sm:p-5">
+        {/* Quick Status Filter Pills */}
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
-            onClick={() => mutate()}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+            onClick={() => setParams({ status: "", page: 1 })}
+            className={`rounded-2xl border px-3.5 py-1.5 text-xs font-semibold transition-all ${
+              status === ""
+                ? "border-primary bg-primary text-primary-foreground shadow-2xs"
+                : "border-border bg-background text-muted-foreground hover:border-primary-pastel hover:text-primary"
+            }`}
           >
-            <RefreshCw className="w-5 h-5" />
-            Tải lại
+            Tất cả ({total})
           </button>
-        </div>
-
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-5">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="h-10 w-10 rounded-lg bg-green-100 flex items-center justify-center">
-                <ArrowDown className="w-6 h-6 text-green-600" />
-              </div>
-              <div className="text-sm font-semibold text-gray-700">
-                Tổng tiền vào
-              </div>
-            </div>
-            <div className="text-2xl font-bold text-green-600">
-              {formatCurrency(totals.totalIn)}
-            </div>
-          </div>
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-5">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="h-10 w-10 rounded-lg bg-red-100 flex items-center justify-center">
-                <ArrowUp className="w-6 h-6 text-red-600" />
-              </div>
-              <div className="text-sm font-semibold text-gray-700">
-                Tổng tiền ra
-              </div>
-            </div>
-            <div className="text-2xl font-bold text-red-600">
-              {formatCurrency(totals.totalOut)}
-            </div>
-          </div>
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-5">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center">
-                <CircleDollarSign className="w-6 h-6 text-gray-700" />
-              </div>
-              <div className="text-sm font-semibold text-gray-700">
-                Tổng giao dịch
-              </div>
-            </div>
-            <div className="text-2xl font-bold text-gray-900">
-              {formatCurrency(totals.totalAmount)}
-            </div>
-          </div>
-        </div>
-
-        {/* Filters */}
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-            <div className="col-span-1 md:col-span-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Tìm theo user, email, khóa học, order_id, transaction_code..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                />
-              </div>
-            </div>
-            <select
-              value={type}
-              onChange={(e) => setType(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-            >
-              <option value="">Loại giao dịch</option>
-              <option value="deposit">Nạp tiền</option>
-              <option value="purchase">Mua khóa học</option>
-            </select>
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-            >
-              <option value="">Trạng thái</option>
-              <option value="pending">Chờ xử lý</option>
-              <option value="completed">Hoàn tất</option>
-              <option value="failed">Thất bại</option>
-              <option value="refunded">Hoàn tiền</option>
-              <option value="canceled">Đã hủy</option>
-            </select>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
-            <select
-              value={direction}
-              onChange={(e) => setDirection(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-            >
-              <option value="">Dòng tiền</option>
-              <option value="in">Tiền vào</option>
-              <option value="out">Tiền ra</option>
-            </select>
-            <select
-              value={method}
-              onChange={(e) => setMethod(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-            >
-              <option value="">Phương thức</option>
-              <option value="wallet">Ví nội bộ</option>
-              <option value="paypal">PayPal</option>
-              <option value="momo">MoMo</option>
-              <option value="vnpay">VNPAY</option>
-              <option value="bank_transfer">Chuyển khoản</option>
-            </select>
-            <select
-              value={gateway}
-              onChange={(e) => setGateway(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-            >
-              <option value="">Cổng thanh toán</option>
-              <option value="internal_wallet">Internal Wallet</option>
-              <option value="paypal">PayPal</option>
-              <option value="momo">MoMo</option>
-              <option value="stripe">Stripe</option>
-            </select>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mt-3">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">Từ ngày</span>
-              <input
-                type="datetime-local"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">Đến ngày</span>
-              <input
-                type="datetime-local"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <ArrowDownWideNarrow className="w-5 h-5 text-gray-500" />
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+          {TX_STATUS_ORDER.map((st) => {
+            const meta = getTxStatusMeta(st);
+            const active = status === st;
+            const cnt = statusCounts[st];
+            return (
+              <button
+                key={st}
+                type="button"
+                onClick={() => setParams({ status: st, page: 1 })}
+                className={`inline-flex items-center gap-1.5 rounded-2xl border px-3.5 py-1.5 text-xs font-semibold transition-all ${
+                  active
+                    ? "border-primary bg-primary text-primary-foreground shadow-2xs"
+                    : `${meta.badgeClass} opacity-85 hover:opacity-100`
+                }`}
               >
-                <option value="created_at">Sắp xếp theo thời gian</option>
-                <option value="amount">Sắp xếp theo số tiền</option>
-              </select>
-              <select
-                value={orderDir}
-                onChange={(e) =>
-                  setOrderDir(e.target.value === "asc" ? "asc" : "desc")
-                }
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-              >
-                <option value="desc">Mới nhất trước</option>
-                <option value="asc">Cũ nhất trước</option>
-              </select>
-            </div>
-          </div>
+                <span>{meta.label}</span>
+                {typeof cnt === "number" && status === "" && (
+                  <span className="rounded-full bg-surface/80 px-1.5 py-0.2 text-[10px] font-bold text-foreground">
+                    {cnt}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
-        {/* Table */}
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+        {/* Detailed Filter Controls */}
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-12">
+          <div className="relative md:col-span-4">
+            <Search
+              size={15}
+              animated={false}
+              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+            />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Tìm tên, email, khóa học, mã đơn, mã GD..."
+              className="h-10 w-full rounded-xl border border-border bg-background pl-10 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+            />
+          </div>
+
+          <select
+            aria-label="Lọc theo loại giao dịch"
+            value={type}
+            onChange={(e) =>
+              setParams({
+                type: e.target.value as typeof type,
+                page: 1,
+              })
+            }
+            className="h-10 rounded-xl border border-border bg-background px-3 text-xs font-medium text-foreground focus:border-primary focus:outline-none md:col-span-2"
+          >
+            <option value="">Tất cả loại GD</option>
+            {TX_TYPE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+
+          <select
+            aria-label="Lọc theo hướng tiền"
+            value={direction}
+            onChange={(e) =>
+              setParams({
+                direction: e.target.value as "" | "in" | "out",
+                page: 1,
+              })
+            }
+            className="h-10 rounded-xl border border-border bg-background px-3 text-xs font-medium text-foreground focus:border-primary focus:outline-none md:col-span-2"
+          >
+            <option value="">Tất cả hướng</option>
+            <option value="in">Tiền vào (In)</option>
+            <option value="out">Tiền ra (Out)</option>
+          </select>
+
+          <select
+            aria-label="Lọc theo cổng thanh toán"
+            value={gateway}
+            onChange={(e) =>
+              setParams({
+                gateway: e.target.value as typeof gateway,
+                page: 1,
+              })
+            }
+            className="h-10 rounded-xl border border-border bg-background px-3 text-xs font-medium text-foreground focus:border-primary focus:outline-none md:col-span-2"
+          >
+            <option value="">Tất cả cổng</option>
+            <option value="paypal">PayPal</option>
+            <option value="internal_wallet">Ví nội bộ (internal_wallet)</option>
+            <option value="wallet">Ví (wallet)</option>
+            <option value="internal">Hệ thống (internal)</option>
+            <option value="momo">MoMo</option>
+            <option value="stripe">Stripe</option>
+          </select>
+
+          <select
+            aria-label="Sắp xếp"
+            value={`${sortBy}:${orderDir}`}
+            onChange={(e) => {
+              const [sb, od] = e.target.value.split(":") as [
+                "created_at" | "amount",
+                "asc" | "desc",
+              ];
+              setParams({ sort_by: sb, order_dir: od, page: 1 });
+            }}
+            className="h-10 rounded-xl border border-border bg-background px-3 text-xs font-medium text-foreground focus:border-primary focus:outline-none md:col-span-2"
+          >
+            <option value="created_at:desc">Mới nhất</option>
+            <option value="created_at:asc">Cũ nhất</option>
+            <option value="amount:desc">Giá trị cao nhất</option>
+            <option value="amount:asc">Giá trị thấp nhất</option>
+          </select>
+        </div>
+
+        {/* Date Range + Reset */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-3">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            <span>Khoảng thời gian:</span>
+            <input
+              type="date"
+              aria-label="Từ ngày"
+              value={dateFrom}
+              onChange={(e) =>
+                setParams({ date_from: e.target.value, page: 1 })
+              }
+              className="h-9 rounded-xl border border-border bg-background px-3 text-xs text-foreground focus:border-primary focus:outline-none"
+            />
+            <span>đến</span>
+            <input
+              type="date"
+              aria-label="Đến ngày"
+              value={dateTo}
+              onChange={(e) => setParams({ date_to: e.target.value, page: 1 })}
+              className="h-9 rounded-xl border border-border bg-background px-3 text-xs text-foreground focus:border-primary focus:outline-none"
+            />
+          </div>
+
+          {hasActiveFilter && (
+            <Button variant="ghost" size="sm" onClick={resetFilters}>
+              Đặt lại bộ lọc
+            </Button>
+          )}
+        </div>
+      </section>
+
+      {/* Error */}
+      {error && (
+        <div
+          role="alert"
+          className="flex items-center justify-between rounded-2xl border border-destructive-border bg-destructive-bg p-4 text-sm text-destructive-foreground"
+        >
+          <span>Không tải được danh sách giao dịch.</span>
+          <Button variant="outline" size="sm" onClick={() => void mutate()}>
+            Thử lại
+          </Button>
+        </div>
+      )}
+
+      {/* Transactions Table */}
+      <section className="overflow-hidden rounded-3xl border border-border bg-surface shadow-[0_14px_36px_-14px_rgba(53,111,167,0.12)]">
+        {isLoading ? (
+          <div className="space-y-3 p-6">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div
+                key={i}
+                className="h-14 animate-pulse rounded-xl bg-background"
+              />
+            ))}
+          </div>
+        ) : items.length === 0 ? (
+          <div className="p-14 text-center text-sm text-muted-foreground">
+            Không tìm thấy giao dịch nào khớp với tiêu chí lọc.
+          </div>
+        ) : (
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b border-border bg-primary-light/60 text-xs font-semibold text-foreground">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
-                    Thời gian
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
-                    Người dùng
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
-                    Loại / Trạng thái
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
-                    Phương thức / Cổng
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-600">
-                    Số tiền
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
-                    Mã đơn / Mã giao dịch
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
-                    Mô tả
-                  </th>
+                  <th className="px-5 py-3.5">Người dùng</th>
+                  <th className="px-5 py-3.5">Loại &amp; Trạng thái</th>
+                  <th className="px-5 py-3.5">Số tiền</th>
+                  <th className="px-5 py-3.5">Cổng / Mã GD</th>
+                  <th className="px-5 py-3.5">Thời gian</th>
+                  <th className="px-5 py-3.5 text-right">Hồ sơ</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
-                {isLoading ? (
-                  <tr>
-                    <td colSpan={7} className="px-6 py-12">
-                      <div className="flex items-center justify-center gap-3 text-gray-600">
-                        <div className="inline-block h-6 w-6 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
-                        Đang tải dữ liệu...
-                      </div>
-                    </td>
-                  </tr>
-                ) : !data || data.items.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={7}
-                      className="px-6 py-12 text-center text-gray-600"
+              <tbody className="divide-y divide-border/70">
+                {items.map(({ transaction: t, user, course }) => {
+                  const typeMeta = getTxTypeMeta(t.type);
+                  const statusMeta = getTxStatusMeta(t.status);
+                  const isIn = t.direction === "in";
+                  const refCode = t.order_id || t.transaction_code || t.id;
+                  return (
+                    <tr
+                      key={t.id}
+                      onClick={() => router.push(`/admin/transactions/${t.id}`)}
+                      className="cursor-pointer transition-colors hover:bg-primary-light/25"
                     >
-                      Không có giao dịch nào
-                    </td>
-                  </tr>
-                ) : (
-                  data.items.map((item: AdminTransactionItem) => {
-                    const t = item.transaction;
-                    const isIncome = t.direction === "in";
-                    return (
-                      <tr
-                        key={t.id}
-                        className="hover:bg-gray-50 transition-colors"
-                        onContextMenu={(e) => openContextMenu(e, item)}
-                      >
-                        <td className="px-6 py-4">
-                          <div className="flex items-center justify-between gap-2 text-sm text-gray-700">
-                            <div className="flex items-center gap-2">
-                              <Clock animated={false} className="w-4 h-4 text-gray-400" />
-                              <span>{formatDateTime(t.created_at)}</span>
-                            </div>
-                            <button
-                              type="button"
-                              className="p-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors sm:hidden"
-                              title="Thao tác"
-                              onClick={(e) => {
-                                const rect = (
-                                  e.currentTarget as HTMLElement
-                                ).getBoundingClientRect();
-                                setMenuItem(item);
-                                setMenuPos({
-                                  x: rect.left + rect.width / 2,
-                                  y: rect.bottom + 8,
-                                });
-                                setMenuOpen(true);
-                              }}
-                            >
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 20 20"
-                                fill="currentColor"
-                                className="w-5 h-5"
-                              >
-                                <path d="M10 4a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 20a2 2 0 110-4 2 2 0 010 4z" />
-                              </svg>
-                            </button>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          {item.user ? (
-                            <div className="flex items-center gap-3">
-                              {item.user.avatar ? (
-                                <img
-                                  src={getImageUrl(item.user.avatar)}
-                                  alt={item.user.fullname}
-                                  className="h-9 w-9 rounded-full object-cover"
-                                  onError={(e) => {
-                                    (
-                                      e.target as HTMLImageElement
-                                    ).style.display = "none";
-                                  }}
-                                />
-                              ) : (
-                                <div className="h-9 w-9 rounded-full bg-green-100 flex items-center justify-center">
-                                  <span className="text-green-700 text-xs font-semibold">
-                                    {item.user.fullname
-                                      .split(" ")
-                                      .map((s) => s[0])
-                                      .join("")
-                                      .slice(0, 2)
-                                      .toUpperCase()}
-                                  </span>
-                                </div>
-                              )}
-                              <div className="min-w-0">
-                                <p className="text-sm font-medium text-gray-900">
-                                  {item.user.fullname}
-                                </p>
-                                <p className="text-xs text-gray-500 truncate">
-                                  {item.user.email}
-                                </p>
-                              </div>
-                            </div>
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-3">
+                          {user?.avatar ? (
+                            <img
+                              src={getImageUrl(user.avatar)}
+                              alt={user.fullname}
+                              className="h-9 w-9 shrink-0 rounded-xl border border-border object-cover"
+                            />
                           ) : (
-                            <span className="text-sm text-gray-400">—</span>
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-primary-pastel bg-primary-light text-xs font-bold text-primary">
+                              {(user?.fullname || "HT")
+                                .slice(0, 1)
+                                .toUpperCase()}
+                            </div>
                           )}
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
-                                isIncome
-                                  ? "bg-green-50 text-green-700 border-green-200"
-                                  : "bg-red-50 text-red-700 border-red-200"
-                              }`}
-                            >
-                              {t.type}
-                            </span>
-                            <span
-                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
-                                t.status === "completed"
-                                  ? "bg-green-50 text-green-700 border-green-200"
-                                  : t.status === "pending"
-                                  ? "bg-yellow-50 text-yellow-700 border-yellow-200"
-                                  : t.status === "failed"
-                                  ? "bg-red-50 text-red-700 border-red-200"
-                                  : t.status === "canceled"
-                                  ? "bg-gray-100 text-gray-600 border-gray-200"
-                                  : "bg-gray-50 text-gray-700 border-gray-200"
-                              }`}
-                            >
-                              {t.status}
-                            </span>
+                          <div className="min-w-0">
+                            <p className="max-w-[180px] truncate font-semibold text-foreground">
+                              {user?.fullname || "Hệ thống"}
+                            </p>
+                            <p className="max-w-[180px] truncate text-xs text-muted-foreground">
+                              {course?.title || user?.email || "Giao dịch nội bộ"}
+                            </p>
                           </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-gray-700">
-                            <div className="font-medium">{t.method}</div>
-                            <div className="text-xs text-gray-500">
-                              {t.gateway}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-right">
+                        </div>
+                      </td>
+
+                      <td className="px-5 py-3.5">
+                        <div className="flex flex-wrap items-center gap-1.5">
                           <span
-                            className={`font-semibold ${
-                              isIncome ? "text-green-600" : "text-red-600"
-                            }`}
+                            className={`rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${typeMeta.badgeClass}`}
                           >
-                            {isIncome ? "+" : "-"}
-                            {formatCurrency(Math.abs(t.amount))}
+                            {typeMeta.label}
                           </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-xs text-gray-700 space-y-1">
-                            <div>
-                              <span className="text-gray-500">Order:</span>{" "}
-                              <span className="font-mono">
-                                {t.order_id ? t.order_id : "—"}
-                              </span>
-                            </div>
-                            <div>
-                              <span className="text-gray-500">Txn:</span>{" "}
-                              <span className="font-mono">
-                                {t.transaction_code ? t.transaction_code : "—"}
-                              </span>
-                            </div>
+                          <span
+                            className={`rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${statusMeta.badgeClass}`}
+                          >
+                            {statusMeta.label}
+                          </span>
+                        </div>
+                      </td>
+
+                      <td className="px-5 py-3.5">
+                        <span
+                          className={`inline-flex items-center gap-1 font-bold ${
+                            isIn
+                              ? "text-success-foreground"
+                              : "text-destructive-foreground"
+                          }`}
+                        >
+                          {isIn ? "+" : "-"}
+                          {formatTxCoin(Math.abs(t.amount))}
+                        </span>
+                      </td>
+
+                      <td
+                        className="px-5 py-3.5"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="space-y-1">
+                          <span className="block text-xs font-medium text-foreground">
+                            {getGatewayLabel(t.gateway, t.method)}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => copyText(refCode, "mã giao dịch")}
+                            className="inline-flex items-center gap-1 rounded-md bg-background px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground hover:text-primary"
+                          >
+                            <span>{refCode.slice(0, 10)}...</span>
+                            <Copy size={10} animated={false} />
+                          </button>
+                        </div>
+                      </td>
+
+                      <td className="px-5 py-3.5 text-xs text-muted-foreground">
+                        <div>{formatTxDateTime(t.created_at)}</div>
+                        {t.confirmed_at && (
+                          <div className="text-[11px] text-success-foreground">
+                            XN: {formatTxDateTime(t.confirmed_at)}
                           </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="text-sm text-gray-700 line-clamp-2">
-                            {t.description || "—"}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
+                        )}
+                      </td>
+
+                      <td
+                        className="px-5 py-3.5 text-right"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            router.push(`/admin/transactions/${t.id}`)
+                          }
+                        >
+                          <Eye size={14} />
+                          Chi tiết
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
+        )}
 
-          {/* Pagination */}
-          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-white">
-            <div className="text-sm text-gray-600">
-              Tổng:{" "}
-              <span className="font-semibold">{data ? data.total : 0}</span>{" "}
-              giao dịch
-            </div>
-            <div className="flex items-center gap-3">
-              <select
-                value={pagination.limit}
-                onChange={(e) =>
-                  setPagination((p) => ({
-                    ...p,
-                    limit: Number(e.target.value),
-                    page: 1,
-                  }))
-                }
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-              >
-                <option value={10}>10</option>
-                <option value={20}>20</option>
-                <option value={50}>50</option>
-                <option value={100}>100</option>
-              </select>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setPagination((p) => ({
-                      ...p,
-                      page: Math.max(1, p.page - 1),
-                    }))
-                  }
-                  disabled={pagination.page <= 1}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50"
-                >
-                  Trước
-                </button>
-                <span className="text-sm text-gray-700">
-                  {pagination.page} / {Math.max(1, totalPages)}
-                </span>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setPagination((p) => ({
-                      ...p,
-                      page: Math.min(Math.max(1, totalPages), p.page + 1),
-                    }))
-                  }
-                  disabled={pagination.page >= totalPages}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50"
-                >
-                  Sau
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      {/* Context Menu */}
-      {menuOpen && menuItem && (
-        <div
-          className="fixed z-50 min-w-[220px] bg-white border border-gray-200 rounded-lg shadow-lg p-1"
-          style={{ left: menuPos.x, top: menuPos.y }}
-          onContextMenu={(e) => e.preventDefault()}
-        >
-          <button
-            type="button"
-            className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-50"
-            onClick={() => {
-              router.push(`/admin/transactions/${menuItem.transaction.id}`);
-              setMenuOpen(false);
-            }}
-          >
-            Xem chi tiết
-          </button>
-          <div className="h-px bg-gray-200 my-1" />
-          <button
-            type="button"
-            className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-50"
-            onClick={() => {
-              copy(menuItem.transaction.id);
-              setMenuOpen(false);
-            }}
-          >
-            Sao chép Transaction ID
-          </button>
-          <button
-            type="button"
-            className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-50"
-            onClick={() => {
-              copy(menuItem.transaction.order_id);
-              setMenuOpen(false);
-            }}
-          >
-            Sao chép Order ID
-          </button>
-          <button
-            type="button"
-            className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-50"
-            onClick={() => {
-              copy(String(menuItem.transaction.amount));
-              setMenuOpen(false);
-            }}
-          >
-            Sao chép Số tiền
-          </button>
-        </div>
-      )}
-    </div>
+        {/* Pagination */}
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          totalItems={total}
+          pageSize={limit}
+          itemLabel="giao dịch"
+          pageSizeOptions={[15, 25, 50, 100]}
+          onPageChange={(nextPage) => setParam("page", nextPage)}
+          onPageSizeChange={(nextSize) =>
+            setParams({ limit: nextSize, page: 1 })
+          }
+          className="rounded-none rounded-b-3xl border-0 border-t border-border shadow-none"
+        />
+      </section>
+    </main>
   );
 }

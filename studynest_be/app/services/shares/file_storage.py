@@ -93,10 +93,14 @@ class FileStorageService:
             prefix = f"public/bundles/{parts[1]}/thumbnails"
         elif len(parts) == 5 and parts[0] == "courses" and parts[2] == "lessons" and parts[4] == "resources":
             prefix = f"private/courses/{parts[1]}/lessons/{parts[3]}/resources/{category}"
+        elif len(parts) == 5 and parts[0] == "courses" and parts[2] == "lessons" and parts[4] == "videos":
+            prefix = f"private/courses/{parts[1]}/lessons/{parts[3]}/videos"
         elif len(parts) == 2 and parts[0] == "tutor_chat":
             prefix = f"private/users/{parts[1]}/tutor-chat/{date}/{category}"
         elif len(parts) == 3 and parts[0] == "notes":
             prefix = f"private/users/{parts[1]}/lessons/{parts[2]}/notes/attachments/{category}"
+        elif len(parts) == 2 and parts[0] == "tts":
+            prefix = f"public/tts/{parts[1]}"
         else:
             raise ValueError("Unknown upload purpose; add an explicit storage tree mapping")
         asset_id = asset_id or uuid4().hex

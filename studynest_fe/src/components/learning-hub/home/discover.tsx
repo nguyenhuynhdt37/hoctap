@@ -20,7 +20,7 @@ const widths = ["w-[17.5rem] sm:w-[20rem]", "w-[15rem] sm:w-[17rem]", "w-[16.5re
 const tilts = ["rotate-1", "-rotate-1", "rotate-[0.5deg]"];
 
 async function fetchCombos(url: string): Promise<CatalogCombosResponse> {
-  const response = await fetch(url, { credentials: "omit", signal: AbortSignal.timeout(15_000) });
+  const response = await fetch(url, { credentials: "omit", headers: { "ngrok-skip-browser-warning": "1" }, signal: AbortSignal.timeout(15_000) });
   if (!response.ok) throw new Error("Không tải được combo.");
   return response.json();
 }

@@ -6,6 +6,8 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 Sort = Literal["newest", "popular", "rating", "price_asc", "price_desc"]
+ColorToken = Literal["primary", "secondary", "lavender", "vanilla", "success", "info"]
+TaxonomyKind = Literal["levels", "grades", "subjects", "learning-goals", "exams"]
 
 
 class BrowseTaxonomyOption(BaseModel):
@@ -59,6 +61,11 @@ class CatalogTaxonomyOption(BrowseTaxonomyOption):
     grade_number: int | None = None
     description: str | None = None
     exam_type: str | None = None
+    icon: str | None = None
+    color_token: str = "primary"
+    tagline: str | None = None
+    is_featured: bool = False
+    metadata: dict = Field(default_factory=dict)
 
 
 class CatalogSubjectCourseCounts(BaseModel):
@@ -196,6 +203,45 @@ class TaxonomyInput(BaseModel):
     grade_number: int | None = Field(None, ge=1, le=12)
     description: str | None = Field(None, max_length=10000)
     exam_type: str | None = Field(None, max_length=60)
+    icon: str | None = Field(None, max_length=64)
+    color_token: ColorToken = "primary"
+    tagline: str | None = Field(None, max_length=240)
+    is_featured: bool = False
+    metadata: dict | None = None
+
+
+class CatalogQuickUpdateInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    is_active: bool | None = None
+    is_featured: bool | None = None
+
+
+class CatalogReorderInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    ids: list[UUID] = Field(min_length=1, max_length=200)
+
+
+class CatalogMatrixToggleInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    grade_ids: list[UUID] = Field(min_length=1, max_length=12)
+    subject_id: UUID
+    enabled: bool
+
+
+class CatalogAiEnrichInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    kind: TaxonomyKind
+    name: str = Field(min_length=1, max_length=160)
+    code: str | None = Field(None, max_length=80)
+    exam_type: str | None = Field(None, max_length=60)
+
+
+class CatalogAiEnrichResponse(BaseModel):
+    tagline: str
+    description: str
+    icon: str
+    color_token: ColorToken
+    metadata: dict = Field(default_factory=dict)
 
 
 class ProviderInput(BaseModel):

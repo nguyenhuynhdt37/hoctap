@@ -211,7 +211,7 @@ export function SkyPanel({
       ref={panelRef}
       id={id}
       role="dialog"
-      aria-label="Bản đồ bầu trời Mây Mây"
+      aria-label="Bảng tiện ích Mây Mây"
       tabIndex={-1}
       className="relative flex-1 min-h-0 overflow-y-auto overscroll-contain px-3 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-4 outline-none sm:px-5 lg:px-8 lg:pb-8"
     >

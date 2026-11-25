@@ -30,6 +30,7 @@ export interface AdminWithdrawDetail {
   id: string;
   lecturer_id: string;
   amount: number;
+  coin_amount?: number | null;
   currency: string;
   status: string;
   requested_at: string;
@@ -46,13 +47,16 @@ export interface AdminWithdrawDetail {
   wallets: {
     id: string;
     balance: number;
+    paid_coins?: number;
+    bonus_coins?: number;
+    coin_vnd_rate?: number;
     total_in: number;
     total_out: number;
     currency: string;
     is_locked: boolean;
     kyc_verified: boolean;
-    created_at: string;
-    updated_at: string;
+    created_at: string | null;
+    updated_at: string | null;
     last_transaction_at: string | null;
   };
 }

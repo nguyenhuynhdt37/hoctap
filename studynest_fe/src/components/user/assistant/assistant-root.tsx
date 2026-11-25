@@ -26,7 +26,6 @@ function AssistantSurface() {
   const pathname = usePathname();
   const voice = useAssistantVoice();
   const agent = useLearningAgent();
-  const inLesson = pathname.startsWith("/learning/");
 
   useEffect(() => {
     try {
@@ -68,17 +67,15 @@ function AssistantSurface() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k" && !inLesson) {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
         setLoaded(true);
         updateOpen(value => !value);
       }
     };
     const onOpenAssistant = () => {
-      if (!inLesson) {
-        setLoaded(true);
-        updateOpen(true);
-      }
+      setLoaded(true);
+      updateOpen(true);
     };
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("maymay:open-assistant", onOpenAssistant);
@@ -88,7 +85,7 @@ function AssistantSurface() {
       window.removeEventListener("maymay:open-assistant", onOpenAssistant);
       window.removeEventListener("maymay:quick-prompt", onOpenAssistant);
     };
-  }, [inLesson]);
+  }, []);
 
   const modeLabel =
     agent?.permissionMode === "autoPilot"
@@ -104,7 +101,7 @@ function AssistantSurface() {
         : "lavender";
 
   return (
-    <div className={inLesson ? "hidden" : undefined}>
+    <div>
       {/* Floating Co-Pilot Launcher Pill */}
       <button
         type="button"
@@ -229,11 +226,15 @@ function AssistantSurface() {
 
 export default function AssistantRoot({ children }: { children: React.ReactNode; accessToken?: string }) {
   const userId = useUserStore(state => state.user?.id);
+  const roles = useUserStore(state => state.user?.roles);
+  const pathname = usePathname();
+  // Một Co-Pilot duy nhất cho học viên và giảng viên; không hoạt động trong khu vực quản trị.
+  const allowed = Boolean(roles?.some(role => role === "USER" || role === "LECTURER")) && !pathname.startsWith("/admin");
   return (
     <LearningAgentProvider key={userId || "anonymous"}>
       <AssistantVoiceProvider>
         {children}
-        {userId && <AssistantSurface />}
+        {userId && allowed && <AssistantSurface />}
       </AssistantVoiceProvider>
     </LearningAgentProvider>
   );

@@ -1,12 +1,18 @@
 import uuid
 
 from fastapi import APIRouter, Depends, Query
+from pydantic import BaseModel
 
 from app.core.deps import AuthorizationService
 from app.schemas.shares.discounts import DiscountCreateSchema, DiscountEditSchema
 from app.services.shares.discounts import DiscountService
 
 router = APIRouter(prefix="/admin/discounts", tags=["Admin Discounts"])
+
+
+class BulkToggleDiscountsSchema(BaseModel):
+    discount_ids: list[uuid.UUID]
+    is_active: bool
 
 
 @router.post("", summary="Tạo mã giảm giá")
@@ -21,7 +27,7 @@ async def create_discount(
     )
 
 
-@router.get("", summary="Lấy danh sách mã giảm giá")
+@router.get("", summary="Lấy danh sách mã giảm giá (Nền tảng + Giảng viên)")
 async def get_discounts(
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
@@ -32,12 +38,14 @@ async def get_discounts(
     sort_by: str = Query("created_at"),
     validity: str | None = Query(None),
     order_dir: str = Query("desc", regex="^(asc|desc)$"),
+    created_role: str | None = Query(None, regex="^(ADMIN|LECTURER)$"),
+    creator_id: uuid.UUID | None = Query(None),
     service: DiscountService = Depends(DiscountService),
     authorization: AuthorizationService = Depends(AuthorizationService),
 ):
-    lecturer = await authorization.require_role(["ADMIN"])
+    admin = await authorization.require_role(["ADMIN"])
     return await service.get_discounts_async(
-        lecturer,
+        admin,
         "ADMIN",
         page,
         limit,
@@ -48,7 +56,31 @@ async def get_discounts(
         validity,
         sort_by,
         order_dir,
+        created_role=created_role,
+        creator_id=creator_id,
     )
+
+
+@router.patch("/bulk-toggle", summary="Bật / tắt hàng loạt mã giảm giá")
+async def bulk_toggle_discounts(
+    schema: BulkToggleDiscountsSchema,
+    service: DiscountService = Depends(DiscountService),
+    authorization: AuthorizationService = Depends(AuthorizationService),
+):
+    await authorization.require_role(["ADMIN"])
+    return await service.bulk_toggle_discounts_active_async(
+        discount_ids=schema.discount_ids,
+        is_active=schema.is_active,
+    )
+
+
+@router.get("/stats", summary="Thống kê tổng quan mã giảm giá")
+async def get_admin_discount_stats(
+    service: DiscountService = Depends(DiscountService),
+    authorization: AuthorizationService = Depends(AuthorizationService),
+):
+    await authorization.require_role(["ADMIN"])
+    return await service.get_admin_discount_stats_async()
 
 
 # ==============================

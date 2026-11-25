@@ -185,9 +185,27 @@ class LLMService:
             )]
             content = "".join(chunks).strip()
             if mime_type == "application/json":
-                if content.startswith("```") and content.endswith("```"):
-                    content = content.split("\n", 1)[1].rsplit("```", 1)[0].strip()
-                json.loads(content)
+                if content.startswith("```"):
+                    content = content.split("\n", 1)[1] if "\n" in content else content[3:]
+                    if content.endswith("```"):
+                        content = content[:-3]
+                    content = content.strip()
+                try:
+                    json.loads(content)
+                except json.JSONDecodeError:
+                    # Trích xuất khối JSON đầu tiên nếu model thêm lời dẫn ngoài JSON
+                    obj_start, obj_end = content.find("{"), content.rfind("}")
+                    arr_start, arr_end = content.find("["), content.rfind("]")
+                    extracted = None
+                    if obj_start != -1 and obj_end > obj_start and (arr_start == -1 or obj_start < arr_start):
+                        extracted = content[obj_start : obj_end + 1]
+                    elif arr_start != -1 and arr_end > arr_start:
+                        extracted = content[arr_start : arr_end + 1]
+                    if extracted:
+                        json.loads(extracted)
+                        content = extracted
+                    else:
+                        raise
             return content
 
         from app.services.admin.ai_settings import get_chat_model

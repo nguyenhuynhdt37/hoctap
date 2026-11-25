@@ -1,3 +1,18 @@
+export type CatalogColorToken =
+  | "primary"
+  | "secondary"
+  | "lavender"
+  | "vanilla"
+  | "success"
+  | "info";
+
+export type CatalogTaxonomyKind =
+  | "levels"
+  | "grades"
+  | "subjects"
+  | "learning-goals"
+  | "exams";
+
 export interface TaxonomyItem {
   id: string;
   code: string;
@@ -9,6 +24,62 @@ export interface TaxonomyItem {
   grade_number?: number;
   description?: string | null;
   exam_type?: string;
+  icon?: string | null;
+  color_token?: CatalogColorToken | string;
+  tagline?: string | null;
+  is_featured?: boolean;
+  metadata?: Record<string, unknown>;
+  course_count?: number;
+  subject_count?: number;
+  grade_count?: number;
+}
+
+export interface AdminCatalogMatrixCell {
+  grade_id: string;
+  subject_id: string;
+  course_count: number;
+}
+
+export interface AdminCatalogContentGap {
+  grade_id: string;
+  grade_name: string;
+  grade_number: number;
+  level_id: string;
+  level_name: string;
+  level_code: string;
+  subject_id: string;
+  subject_name: string;
+  subject_icon?: string | null;
+  subject_color?: string;
+}
+
+export interface AdminCatalogHealth {
+  total_courses: number;
+  published_courses: number;
+  unclassified_courses: number;
+  inactive_taxonomies: number;
+  matrix_total_links: number;
+  matrix_covered_links: number;
+  content_gaps_count: number;
+  content_gaps: AdminCatalogContentGap[];
+}
+
+export interface AdminCatalogOverview {
+  levels: TaxonomyItem[];
+  grades: TaxonomyItem[];
+  subjects: TaxonomyItem[];
+  learning_goals: TaxonomyItem[];
+  exams: TaxonomyItem[];
+  grade_subjects: AdminCatalogMatrixCell[];
+  health: AdminCatalogHealth;
+}
+
+export interface CatalogAiEnrichResult {
+  tagline: string;
+  description: string;
+  icon: string;
+  color_token: CatalogColorToken;
+  metadata: Record<string, unknown>;
 }
 export interface CatalogOptions {
   levels: TaxonomyItem[];

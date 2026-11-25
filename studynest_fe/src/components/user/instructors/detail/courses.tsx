@@ -6,6 +6,7 @@ import Link from "next/link";
 import { BookOpen, RotateCcw, Search, Star } from "pulsoicon-react";
 import { Badge, Button, Card, EmptyState, Input, Skeleton } from "@/components/ui";
 import { CoinPrice } from "@/components/ui";
+import { useDebouncedUrlSearch, useUrlQueryState } from "@/hooks/useUrlQueryState";
 import { formatCoursePriceCoin } from "@/lib/learning-hub/coin-logic";
 import api from "@/lib/utils/fetcher/client/axios";
 import { handleImageError } from "@/lib/utils/helpers/image";
@@ -26,6 +27,27 @@ interface InstructorCoursesProps {
   instructorId: string;
 }
 
+const INSTRUCTOR_COURSES_SORT_VALUES = [
+  "created_at_desc",
+  "created_at_asc",
+  "rating_desc",
+  "enrolls_desc",
+  "views_desc",
+] as const;
+
+type InstructorCourseSort = (typeof INSTRUCTOR_COURSES_SORT_VALUES)[number];
+
+const INSTRUCTOR_COURSES_QUERY_SCHEMA = {
+  search: { type: "string", default: "" as string, trim: true },
+  subject: { type: "string", default: "" as string },
+  grade: { type: "string", default: "" as string },
+  sort: {
+    type: "string",
+    default: "rating_desc" as InstructorCourseSort,
+    allowed: INSTRUCTOR_COURSES_SORT_VALUES,
+  },
+} as const;
+
 export default function InstructorCourses({ instructorId }: InstructorCoursesProps) {
   const user = useUserStore((s) => s.user);
   const viewerScope = user?.id || "guest";
@@ -35,11 +57,13 @@ export default function InstructorCourses({ instructorId }: InstructorCoursesPro
   const gradeSelectId = useId();
   const sortSelectId = useId();
 
-  const [keyword, setKeyword] = useState("");
-  const [debouncedKeyword, setDebouncedKeyword] = useState("");
-  const [subject, setSubject] = useState("");
-  const [grade, setGrade] = useState("");
-  const [sort, setSort] = useState("rating_desc");
+  const { values, setParam, resetParams } = useUrlQueryState(
+    INSTRUCTOR_COURSES_QUERY_SCHEMA,
+  );
+  const { search: debouncedKeyword, subject, grade, sort } = values;
+
+  const { inputValue: keyword, setInputValue: setKeyword } =
+    useDebouncedUrlSearch(debouncedKeyword, (val) => setParam("search", val));
 
   // Nạp danh mục taxonomy từ filter-options thay vì API /categories/all legacy
   const { data: options } = useSWR<InstructorFilterOptions>(
@@ -47,12 +71,6 @@ export default function InstructorCourses({ instructorId }: InstructorCoursesPro
     fetcher,
     { revalidateOnFocus: false }
   );
-
-  // Debounce tìm kiếm 350ms
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedKeyword(keyword.trim()), 350);
-    return () => clearTimeout(timer);
-  }, [keyword]);
 
   const queryParams = useMemo(() => {
     const p = new URLSearchParams({ limit: "12", sort });
@@ -213,13 +231,12 @@ export default function InstructorCourses({ instructorId }: InstructorCoursesPro
     }
   };
 
-  const hasFilter = Boolean(keyword || subject || grade || sort !== "rating_desc");
+  const hasFilter = Boolean(
+    keyword || debouncedKeyword || subject || grade || sort !== "rating_desc",
+  );
   const handleResetFilters = () => {
     setKeyword("");
-    setDebouncedKeyword("");
-    setSubject("");
-    setGrade("");
-    setSort("rating_desc");
+    resetParams();
   };
 
   const selectStyle =
@@ -254,7 +271,7 @@ export default function InstructorCourses({ instructorId }: InstructorCoursesPro
             <select
               id={subjectSelectId}
               value={subject}
-              onChange={(e) => setSubject(e.target.value)}
+              onChange={(e) => setParam("subject", e.target.value)}
               className={selectStyle}
             >
               <option value="">Tất cả môn học</option>
@@ -274,7 +291,7 @@ export default function InstructorCourses({ instructorId }: InstructorCoursesPro
             <select
               id={gradeSelectId}
               value={grade}
-              onChange={(e) => setGrade(e.target.value)}
+              onChange={(e) => setParam("grade", e.target.value)}
               className={selectStyle}
             >
               <option value="">Tất cả khối lớp</option>
@@ -294,7 +311,9 @@ export default function InstructorCourses({ instructorId }: InstructorCoursesPro
             <select
               id={sortSelectId}
               value={sort}
-              onChange={(e) => setSort(e.target.value)}
+              onChange={(e) =>
+                setParam("sort", e.target.value as InstructorCourseSort)
+              }
               className={selectStyle}
             >
               <option value="created_at_desc">Mới nhất</option>

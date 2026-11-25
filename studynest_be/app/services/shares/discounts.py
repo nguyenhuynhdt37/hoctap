@@ -255,6 +255,8 @@ class DiscountService:
         validity: Optional[str] = None,
         sort_by: str = "created_at",
         order_dir: str = "desc",
+        created_role: Optional[str] = None,
+        creator_id: Optional[uuid.UUID] = None,
     ):
         now = get_now()
 
@@ -286,8 +288,16 @@ class DiscountService:
             )
 
         elif role == "ADMIN":
-            # Admin xem toàn bộ discount do Admin tạo (course+category+global)
-            stmt = select(Discounts).where(Discounts.created_role == "ADMIN")
+            # Admin kiểm soát toàn bộ mã của Nền tảng và tất cả Giảng viên
+            stmt = select(Discounts).outerjoin(
+                User, User.id == Discounts.created_by
+            ).where(
+                ~Discounts.discount_code.startswith(REWARD_DIGEST_PREFIX)
+            )
+            if created_role in ("ADMIN", "LECTURER"):
+                stmt = stmt.where(Discounts.created_role == created_role)
+            if creator_id is not None:
+                stmt = stmt.where(Discounts.created_by == creator_id)
 
         else:
             raise HTTPException(403, "Role không hợp lệ.")
@@ -297,12 +307,22 @@ class DiscountService:
         # ============================
         if search:
             like = f"%{search.lower()}%"
-            stmt = stmt.where(
-                or_(
-                    func.lower(Discounts.name).like(like),
-                    func.lower(Discounts.discount_code).like(like),
+            if role == "ADMIN":
+                stmt = stmt.where(
+                    or_(
+                        func.lower(Discounts.name).like(like),
+                        func.lower(Discounts.discount_code).like(like),
+                        func.lower(func.coalesce(User.fullname, "")).like(like),
+                        func.lower(func.coalesce(User.email, "")).like(like),
+                    )
                 )
-            )
+            else:
+                stmt = stmt.where(
+                    or_(
+                        func.lower(Discounts.name).like(like),
+                        func.lower(Discounts.discount_code).like(like),
+                    )
+                )
 
         # ============================
         # FILTER applies_to (nếu ADMIN muốn lọc select)
@@ -348,13 +368,87 @@ class DiscountService:
         offset = (page - 1) * limit
         stmt = stmt.order_by(sort_order).limit(limit).offset(offset)
 
-        items = (await self.db.execute(stmt)).scalars().all()
+        raw_items = (await self.db.execute(stmt)).scalars().all()
+
+        if role != "ADMIN":
+            return {
+                "total": total,
+                "page": page,
+                "limit": limit,
+                "items": raw_items,
+            }
+
+        # Làm giàu thông tin người tạo & số mục tiêu áp dụng cho Admin
+        creator_ids = list({d.created_by for d in raw_items if d.created_by})
+        creator_map: dict[uuid.UUID, dict] = {}
+        if creator_ids:
+            creator_rows = (
+                await self.db.execute(
+                    select(User.id, User.fullname, User.email, User.avatar).where(
+                        User.id.in_(creator_ids)
+                    )
+                )
+            ).all()
+            for uid, fullname, email, avatar in creator_rows:
+                creator_map[uid] = {
+                    "id": str(uid),
+                    "fullname": fullname or "Chưa đặt tên",
+                    "email": email,
+                    "avatar": avatar,
+                }
+
+        discount_ids = [d.id for d in raw_items]
+        target_count_map: dict[uuid.UUID, int] = {}
+        if discount_ids:
+            tgt_rows = (
+                await self.db.execute(
+                    select(
+                        DiscountTargets.discount_id,
+                        func.count(DiscountTargets.id),
+                    )
+                    .where(DiscountTargets.discount_id.in_(discount_ids))
+                    .group_by(DiscountTargets.discount_id)
+                )
+            ).all()
+            for did, cnt in tgt_rows:
+                target_count_map[did] = int(cnt or 0)
+
+        enriched_items = []
+        for d in raw_items:
+            enriched_items.append(
+                {
+                    "id": str(d.id),
+                    "name": d.name,
+                    "discount_code": d.discount_code,
+                    "discount_type": d.discount_type,
+                    "percent_value": d.percent_value,
+                    "fixed_value": float(d.fixed_value)
+                    if d.fixed_value is not None
+                    else None,
+                    "applies_to": d.applies_to,
+                    "usage_count": int(d.usage_count or 0),
+                    "usage_limit": d.usage_limit,
+                    "per_user_limit": d.per_user_limit,
+                    "start_at": d.start_at,
+                    "end_at": d.end_at,
+                    "is_hidden": bool(d.is_hidden),
+                    "is_active": bool(d.is_active),
+                    "description": d.description,
+                    "created_at": d.created_at,
+                    "created_by": str(d.created_by) if d.created_by else None,
+                    "created_role": d.created_role,
+                    "creator": creator_map.get(d.created_by)
+                    if d.created_by
+                    else None,
+                    "target_count": target_count_map.get(d.id, 0),
+                }
+            )
 
         return {
             "total": total,
             "page": page,
             "limit": limit,
-            "items": items,
+            "items": enriched_items,
         }
 
     # ============================================================
@@ -457,6 +551,23 @@ class DiscountService:
         # ============================
         # 5) FORMAT DISCOUNT TRẢ VỀ
         # ============================
+        creator_info = None
+        if discount.created_by:
+            creator_row = (
+                await self.db.execute(
+                    select(User.id, User.fullname, User.email, User.avatar).where(
+                        User.id == discount.created_by
+                    )
+                )
+            ).first()
+            if creator_row:
+                creator_info = {
+                    "id": str(creator_row[0]),
+                    "fullname": creator_row[1] or "Chưa đặt tên",
+                    "email": creator_row[2],
+                    "avatar": creator_row[3],
+                }
+
         discount_data = {
             "id": str(discount.id),
             "code": discount.discount_code,
@@ -473,6 +584,9 @@ class DiscountService:
             "end_at": discount.end_at,
             "is_active": discount.is_active,
             "is_hidden": discount.is_hidden,
+            "created_by": str(discount.created_by) if discount.created_by else None,
+            "created_role": discount.created_role,
+            "creator": creator_info,
         }
 
         return {
@@ -1806,4 +1920,158 @@ class DiscountService:
             "code": code,
             "code_masked": instance.code_masked,
             "expires_at": exp.isoformat() if exp else None,
+        }
+
+    async def bulk_toggle_discounts_active_async(
+        self,
+        discount_ids: list[uuid.UUID],
+        is_active: bool,
+    ):
+        """Admin bật/tắt hàng loạt mã giảm giá (bao gồm mã nền tảng & mã giảng viên)."""
+        if not discount_ids:
+            return {"updated": 0, "is_active": bool(is_active)}
+
+        rows = (
+            await self.db.execute(
+                select(Discounts).where(
+                    Discounts.id.in_(discount_ids),
+                    ~Discounts.discount_code.startswith(REWARD_DIGEST_PREFIX),
+                )
+            )
+        ).scalars().all()
+
+        updated = 0
+        for d in rows:
+            d.is_active = bool(is_active)
+            updated += 1
+
+        await self.db.commit()
+        return {"updated": updated, "is_active": bool(is_active)}
+
+    async def get_admin_discount_stats_async(self):
+        """Tổng hợp KPI chiến dịch khuyến mãi (Nền tảng + Giảng viên) cho Admin Voucher Studio."""
+        all_discounts = (
+            await self.db.execute(
+                select(Discounts).where(
+                    ~Discounts.discount_code.startswith(REWARD_DIGEST_PREFIX)
+                )
+            )
+        ).scalars().all()
+        now = get_now()
+        now_naive = now.replace(tzinfo=None) if now.tzinfo else now
+        running = 0
+        upcoming = 0
+        expired = 0
+        inactive = 0
+        admin_count = 0
+        lecturer_count = 0
+        lecturer_running = 0
+        lecturer_inactive = 0
+        total_redemptions = 0
+        creator_agg: dict[uuid.UUID, dict] = {}
+
+        for d in all_discounts:
+            total_redemptions += int(d.usage_count or 0)
+            is_lecturer_code = d.created_role == "LECTURER"
+            if is_lecturer_code:
+                lecturer_count += 1
+            else:
+                admin_count += 1
+
+            is_running = False
+            if not d.is_active:
+                inactive += 1
+                if is_lecturer_code:
+                    lecturer_inactive += 1
+            else:
+                start_at = (
+                    d.start_at.replace(tzinfo=None)
+                    if d.start_at and d.start_at.tzinfo
+                    else d.start_at
+                )
+                end_at = (
+                    d.end_at.replace(tzinfo=None)
+                    if d.end_at and d.end_at.tzinfo
+                    else d.end_at
+                )
+                if start_at and now_naive < start_at:
+                    upcoming += 1
+                elif end_at and now_naive > end_at:
+                    expired += 1
+                else:
+                    running += 1
+                    is_running = True
+                    if is_lecturer_code:
+                        lecturer_running += 1
+
+            if is_lecturer_code and d.created_by:
+                bucket = creator_agg.setdefault(
+                    d.created_by,
+                    {"discount_count": 0, "running_count": 0},
+                )
+                bucket["discount_count"] += 1
+                if is_running:
+                    bucket["running_count"] += 1
+
+        creators = []
+        if creator_agg:
+            u_rows = (
+                await self.db.execute(
+                    select(User.id, User.fullname, User.email, User.avatar).where(
+                        User.id.in_(list(creator_agg.keys()))
+                    )
+                )
+            ).all()
+            for uid, fullname, email, avatar in u_rows:
+                meta = creator_agg.get(uid, {})
+                creators.append(
+                    {
+                        "id": str(uid),
+                        "fullname": fullname or "Giảng viên",
+                        "email": email,
+                        "avatar": avatar,
+                        "discount_count": meta.get("discount_count", 0),
+                        "running_count": meta.get("running_count", 0),
+                    }
+                )
+            creators.sort(key=lambda x: (-x["discount_count"], x["fullname"]))
+
+        hist_row = (
+            await self.db.execute(
+                select(
+                    func.count(DiscountHistory.id),
+                    func.coalesce(func.sum(DiscountHistory.discounted_amount), 0),
+                )
+            )
+        ).one()
+
+        top_codes = sorted(
+            all_discounts, key=lambda x: int(x.usage_count or 0), reverse=True
+        )[:3]
+
+        return {
+            "total": len(all_discounts),
+            "running": running,
+            "upcoming": upcoming,
+            "expired": expired,
+            "inactive": inactive,
+            "admin_count": admin_count,
+            "lecturer_count": lecturer_count,
+            "lecturer_running": lecturer_running,
+            "lecturer_inactive": lecturer_inactive,
+            "creators": creators,
+            "total_redemptions": total_redemptions,
+            "history_records": int(hist_row[0] or 0),
+            "total_discounted_amount": float(hist_row[1] or 0),
+            "top_codes": [
+                {
+                    "id": str(d.id),
+                    "name": d.name,
+                    "code": d.discount_code,
+                    "created_role": d.created_role,
+                    "usage_count": int(d.usage_count or 0),
+                    "usage_limit": d.usage_limit,
+                }
+                for d in top_codes
+            ],
         }

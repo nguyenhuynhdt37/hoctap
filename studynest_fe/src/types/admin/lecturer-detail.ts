@@ -1,5 +1,9 @@
 export interface LecturerWallet {
   balance: number;
+  paid_coins?: number;
+  bonus_coins?: number;
+  coin_vnd_rate?: number;
+  total_earnings_vnd?: number;
   total_in: number;
   total_out: number;
   last_transaction_at: string;

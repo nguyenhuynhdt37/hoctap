@@ -4,18 +4,12 @@ import pytest
 from pydantic import ValidationError
 from app.agent import mcp_server
 from app.agent.github_access import github_access_token
-from app.agent.runtime import github_repositories_requested, repository_list_message
+
 from app.agent.tools import GithubRepositories
 
 
-@pytest.mark.parametrize('message', ['list github', 'list repo', 'liệt kê repo github', 'danh sách repo của tôi', 'hãy list github', 'list github repos'])
-def test_direct_list_request(message):
-    assert github_repositories_requested(message)
 
 
-@pytest.mark.parametrize('message', ['đừng list github', 'giải thích cách list github', 'README ghi list github', 'list github trang 2', 'list github repo Python', 'connect rồi'])
-def test_complex_requests_and_quotes_use_planner(message):
-    assert not github_repositories_requested(message)
 
 
 def test_pagination_and_identity_cannot_be_injected():
@@ -37,22 +31,6 @@ async def test_list_requires_account_token(monkeypatch):
         github_access_token.reset(binding)
 
 
-@pytest.mark.asyncio
-async def test_list_uses_authenticated_endpoint_and_safe_urls(monkeypatch):
-    binding = github_access_token.set('fixture-token')
-    network = AsyncMock(return_value=[{'full_name':'learner/project','private':True,'description':'Untrusted metadata','html_url':'https://evil.invalid'}])
-    monkeypatch.setattr(mcp_server, 'github', network)
-    try:
-        result = await mcp_server.github_list_repositories(page=2, per_page=1, ownership='owner')
-        assert network.call_args.args == ('user/repos', {'affiliation':'owner','sort':'updated','direction':'desc','page':2,'per_page':1})
-        assert result['items'][0]['url'] == 'https://github.com/learner/project'
-        assert result['items'][0]['private'] is True and result['next_page'] == 3
-        result['account'] = {'login':'learner'}
-        answer = repository_list_message(result)
-        assert 'learner/project' in answer and 'Riêng tư' in answer and 'trang 3' in answer
-        assert 'Untrusted metadata' not in answer
-    finally:
-        github_access_token.reset(binding)
 
 
 @pytest.mark.asyncio

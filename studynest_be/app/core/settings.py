@@ -55,14 +55,14 @@ class Settings(BaseSettings):
     AGENT_MODEL: str = ""
     AGENT_VISION_PROVIDER: str = "gemini"
     AGENT_VISION_MODEL: str = "gemini-3.1-flash-lite"
-    AGENT_RUN_MAX_SECONDS: int = 240
+    AGENT_RUN_MAX_SECONDS: int = 1800
     AGENT_MODEL_TIMEOUT_SECONDS: float = 90
-    AGENT_MAX_TOOL_CALLS: int = 12
+    AGENT_MAX_TOOL_CALLS: int = 0  # không dùng: agent không giới hạn số lần gọi tool
     AGENT_MAX_RUNS_PER_MINUTE: int = 20
     AGENT_MAX_SESSIONS_PER_HOUR: int = 60
-    AGENT_MAX_ITERATIONS: int = 6
+    AGENT_MAX_ITERATIONS: int = 0  # không dùng: agent không giới hạn số vòng lặp
     AGENT_MAX_INPUT_TOKENS: int = 8000000
-    AGENT_MAX_OUTPUT_TOKENS_TOTAL: int = 12000
+    AGENT_MAX_OUTPUT_TOKENS_TOTAL: int = 100_000_000
     AGENT_MAX_RUN_COST_USD: float | None = None
     AGENT_MODEL_PRICES_JSON: str = "{}"
     AGENT_EVENT_RETENTION_DAYS: int = 30
@@ -130,6 +130,8 @@ class Settings(BaseSettings):
     PAYPAL_CLIENT_ID: str = ""
     PAYPAL_CLIENT_SECRET: str = ""
     PAYPAL_BASE_URL: str = ""
+    # Địa chỉ quay về của "Log in with PayPal"; để trống thì dùng BACKEND_URL + /api/v1/lecturer/payout/callback.
+    PAYPAL_REDIRECT_URI: str = ""
     # PAYPAL_WEBHOOK_ID: str = ""
 
     CORS_ALLOWED_ORIGINS: str = ""

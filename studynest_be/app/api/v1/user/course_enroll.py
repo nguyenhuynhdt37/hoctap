@@ -31,6 +31,8 @@ async def get_my_courses(
     size: int = Query(10, ge=1, le=100),
     keyword: str | None = None,
     category_id: uuid.UUID | None = None,
+    subject_id: uuid.UUID | None = None,
+    grade_id: uuid.UUID | None = None,
     level: str | None = None,
     language: str | None = None,
     sort_by: str = Query(
@@ -55,6 +57,8 @@ async def get_my_courses(
         order,
         archived,
         list_id,
+        subject_id,
+        grade_id,
     )
 
 
@@ -110,6 +114,8 @@ async def get_user_courses(
     size: int = Query(10, ge=1, le=100),
     keyword: str | None = None,
     category_id: uuid.UUID | None = None,
+    subject_id: uuid.UUID | None = None,
+    grade_id: uuid.UUID | None = None,
     level: str | None = None,
     language: str | None = None,
     sort_by: str = Query(
@@ -123,5 +129,17 @@ async def get_user_courses(
     if current.id != user_id and "ADMIN" not in await authorization_service.get_list_role_in_user(current):
         raise HTTPException(403, "Không có quyền xem khóa học của tài khoản khác")
     return await purchase_service.get_user_courses_async(
-        user_id, page, size, keyword, category_id, level, language, sort_by, order
+        user_id,
+        page,
+        size,
+        keyword,
+        category_id,
+        level,
+        language,
+        sort_by,
+        order,
+        False,
+        None,
+        subject_id,
+        grade_id,
     )

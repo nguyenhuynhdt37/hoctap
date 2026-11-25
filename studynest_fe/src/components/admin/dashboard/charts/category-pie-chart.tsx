@@ -1,141 +1,145 @@
 "use client";
 
-import api from "@/lib/utils/fetcher/client/axios";
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
-import { Doughnut } from "react-chartjs-2";
-import { RevenueByCategoryResponse } from "@/types/admin/statistics";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import useSWR from "swr";
+import { Layers } from "pulsoicon-react";
+import api from "@/lib/utils/fetcher/client/axios";
+import { formatVndAsCoin } from "@/lib/learning-hub/coin-logic";
+import type { RevenueByCategoryResponse } from "@/types/admin/statistics";
 
-ChartJS.register(ArcElement, Tooltip, Legend);
-
-const COLORS = [
+const CLOUDY_SLICE_COLORS = [
   "#356FA7",
-  "#7BAFD4",
-  "#F7C9D9",
-  "#E3D5F5",
-  "#F8E9C9",
-  "#BFD7ED",
-  "#598EC2",
-  "#D9A7BC",
+  "#6FA3D6",
+  "#9F85D9",
+  "#E58EA9",
+  "#E3B166",
+  "#67B287",
 ];
 
-import { formatVndAsCoin } from "@/lib/learning-hub/coin-logic";
-
-const formatCurrency = (value: number | null | undefined) => formatVndAsCoin(value);
-
 export default function CategoryPieChart() {
-  const [mounted, setMounted] = useState(false);
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const { data: response, isLoading } = useSWR<RevenueByCategoryResponse>(
+  const { data, isLoading } = useSWR<RevenueByCategoryResponse>(
     "/admin/statistics/revenue/by-category",
-    async (url) => {
-      const res = await api.get(url);
-      return res.data;
-    },
-    { revalidateOnFocus: false }
+    async (url: string) => (await api.get(url)).data,
+    { revalidateOnFocus: false },
   );
 
-  const data = response?.data || [];
+  const items = (data?.data ?? []).slice(0, 6);
+  const totalRevenue = items.reduce((sum, i) => sum + Number(i.revenue || 0), 0);
 
-  const chartData = {
-    labels: data.map((d) => d.category_name),
-    datasets: [
-      {
-        data: data.map((d) => parseFloat(String(d.revenue)) || 0),
-        backgroundColor: COLORS.slice(0, data.length),
-        borderColor: "#ffffff",
-        borderWidth: 3,
-        hoverOffset: 8,
-      },
-    ],
-  };
+  const radius = 58;
+  const circumference = 2 * Math.PI * radius;
 
-  const options = {
-    responsive: true,
-    maintainAspectRatio: false,
-    cutout: "60%",
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        backgroundColor: "#3D4A5A",
-        titleColor: "#ffffff",
-        bodyColor: "#ffffff",
-        padding: 12,
-        borderRadius: 10,
-        callbacks: {
-          label: (ctx: { raw: number; label: string }) =>
-            `${ctx.label}: ${formatCurrency(ctx.raw)}`,
-        },
-      },
-    },
-  };
+  let cumulativePct = 0;
+  const segments = items.map((item, idx) => {
+    const pct =
+      totalRevenue > 0 ? (Number(item.revenue || 0) / totalRevenue) * 100 : 0;
+    const strokeDasharray = `${(pct / 100) * circumference} ${circumference}`;
+    const strokeDashoffset = -((cumulativePct / 100) * circumference);
+    cumulativePct += pct;
+    return {
+      ...item,
+      pct: Math.round(pct * 10) / 10,
+      color: CLOUDY_SLICE_COLORS[idx % CLOUDY_SLICE_COLORS.length],
+      strokeDasharray,
+      strokeDashoffset,
+    };
+  });
 
-  const totalRevenue = data.reduce(
-    (sum, d) => sum + (parseFloat(String(d.revenue)) || 0),
-    0
-  );
-
-  if (!mounted) return null;
+  const focused =
+    activeIndex !== null ? segments[activeIndex] : segments[0] ?? null;
 
   return (
-    <div className="bg-white rounded-[20px] shadow-xs border border-border p-6 h-full">
-      <h3 className="text-lg font-semibold text-foreground mb-6">
-        Doanh thu theo danh mục
-      </h3>
+    <section className="flex h-full flex-col justify-between rounded-[2rem] border border-primary-pastel/60 bg-surface/90 p-6 shadow-[0_18px_42px_-18px_rgba(53,111,167,0.16)] backdrop-blur-md">
+      <div>
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-accent px-2.5 py-0.5 text-[11px] font-semibold text-accent-foreground">
+          <Layers size={12} animated={false} />
+          Phân bổ doanh thu
+        </span>
+        <h2 className="mt-1.5 text-lg font-bold text-foreground">
+          Cơ cấu theo Danh mục
+        </h2>
+      </div>
 
       {isLoading ? (
-        <div className="h-64 flex items-center justify-center">
-          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-        </div>
-      ) : data.length === 0 ? (
-        <div className="h-64 flex items-center justify-center text-muted-foreground">
-          Không có dữ liệu
+        <div className="my-6 h-48 animate-pulse rounded-2xl bg-background" />
+      ) : segments.length === 0 ? (
+        <div className="my-6 flex h-48 items-center justify-center rounded-2xl border border-dashed border-border text-xs text-muted-foreground">
+          Chưa có doanh thu theo danh mục.
         </div>
       ) : (
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* Chart */}
-          <div className="relative h-48 w-48 mx-auto lg:mx-0 flex-shrink-0">
-            <Doughnut data={chartData} options={options as any} />
-            {/* Center text */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-muted-foreground text-xs">Tổng</span>
-              <span className="text-foreground font-bold text-sm">
-                {formatCurrency(totalRevenue)}
+        <div className="mt-4 flex flex-col items-center gap-5">
+          {/* Interactive SVG Donut */}
+          <div className="relative flex h-40 w-40 items-center justify-center">
+            <svg
+              viewBox="0 0 150 150"
+              className="h-full w-full -rotate-90"
+              aria-label="Biểu đồ cơ cấu doanh thu theo danh mục"
+            >
+              <circle
+                cx="75"
+                cy="75"
+                r={radius}
+                fill="none"
+                stroke="#E8F2FA"
+                strokeWidth="18"
+              />
+              {segments.map((seg, idx) => (
+                <circle
+                  key={seg.category_id}
+                  cx="75"
+                  cy="75"
+                  r={radius}
+                  fill="none"
+                  stroke={seg.color}
+                  strokeWidth={activeIndex === idx ? "22" : "18"}
+                  strokeDasharray={seg.strokeDasharray}
+                  strokeDashoffset={seg.strokeDashoffset}
+                  className="cursor-pointer transition-all duration-300"
+                  onMouseEnter={() => setActiveIndex(idx)}
+                  onMouseLeave={() => setActiveIndex(null)}
+                />
+              ))}
+            </svg>
+            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-4 text-center">
+              <span className="text-lg font-bold text-foreground">
+                {focused ? `${focused.pct}%` : "0%"}
+              </span>
+              <span className="line-clamp-1 text-[10px] font-medium text-muted-foreground">
+                {focused?.category_name || "Tổng"}
               </span>
             </div>
           </div>
 
-          {/* Legend */}
-          <div className="flex-1 space-y-3 max-h-48 overflow-y-auto">
-            {data.map((item, idx) => (
+          {/* Legend List */}
+          <div className="w-full space-y-2">
+            {segments.map((seg, idx) => (
               <div
-                key={item.category_id}
-                className="flex items-center justify-between"
+                key={seg.category_id}
+                onMouseEnter={() => setActiveIndex(idx)}
+                onMouseLeave={() => setActiveIndex(null)}
+                className={`flex cursor-pointer items-center justify-between gap-2 rounded-xl px-2.5 py-1.5 text-xs transition-colors ${
+                  activeIndex === idx ? "bg-primary-light/60" : "hover:bg-background"
+                }`}
               >
-                <div className="flex items-center gap-2">
-                  <div
-                    className="w-3 h-3 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: COLORS[idx % COLORS.length] }}
+                <span className="flex min-w-0 items-center gap-2">
+                  <span
+                    className="h-2.5 w-2.5 shrink-0 rounded-full"
+                    style={{ backgroundColor: seg.color }}
                   />
-                  <span className="text-sm text-muted-foreground truncate max-w-[120px]">
-                    {item.category_name}
+                  <span className="truncate font-medium text-foreground">
+                    {seg.category_name}
                   </span>
-                </div>
-                <div className="text-right">
-                  <span className="text-sm font-medium text-foreground">
-                    {(parseFloat(String(item.percentage)) || 0).toFixed(1)}%
-                  </span>
-                </div>
+                </span>
+                <span className="shrink-0 font-semibold text-primary">
+                  {formatVndAsCoin(Math.round(seg.revenue))}
+                </span>
               </div>
             ))}
           </div>
         </div>
       )}
-    </div>
+    </section>
   );
 }

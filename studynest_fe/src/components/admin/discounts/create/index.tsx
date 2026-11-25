@@ -1,27 +1,45 @@
 "use client";
-import { coinToVnd, DEFAULT_COIN_VND_RATE, vndToCoin } from "@/lib/learning-hub/coin-logic";
 
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, Coins, Percent, RefreshCw, Tag } from "pulsoicon-react";
+import { Button, Input } from "@/components/ui";
+import {
+  coinToVnd,
+  DEFAULT_COIN_VND_RATE,
+  vndToCoin,
+} from "@/lib/learning-hub/coin-logic";
 import api from "@/lib/utils/fetcher/client/axios";
 import { showToast } from "@/lib/utils/helpers/toast";
-import { Category } from "@/types/admin/category";
-import { DiscountCourse, DiscountFormData } from "@/types/admin/discount";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { ArrowLeft, CircleDollarSign, Tag } from "pulsoicon-react";
+import type { Category } from "@/types/admin/category";
+import type { DiscountCourse, DiscountFormData } from "@/types/admin/discount";
+import {
+  VoucherTicketPreview,
+  generatePromoCode,
+} from "../discount-visuals";
 import { CategorySelector } from "./category-selector";
 import { CourseSelector } from "./course-selector";
 import { WeakCoursesList } from "./weak-courses-list";
 
-// Helper: Convert datetime-local to ISO format
 const datetimeLocalToISO = (datetimeLocal: string): string => {
   if (!datetimeLocal) return "";
   try {
     const date = new Date(datetimeLocal);
-    if (isNaN(date.getTime())) return "";
+    if (Number.isNaN(date.getTime())) return "";
     return date.toISOString();
   } catch {
     return "";
   }
+};
+
+const toDatetimeLocal = (date: Date): string => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  const h = String(date.getHours()).padStart(2, "0");
+  const min = String(date.getMinutes()).padStart(2, "0");
+  return `${y}-${m}-${d}T${h}:${min}`;
 };
 
 export default function CreateDiscount() {
@@ -36,8 +54,8 @@ export default function CreateDiscount() {
     discount_code: "",
     is_hidden: false,
     applies_to: "global",
-    discount_type: "fixed",
-    percent_value: null,
+    discount_type: "percent",
+    percent_value: 20,
     fixed_value: null,
     usage_limit: null,
     per_user_limit: 1,
@@ -47,26 +65,13 @@ export default function CreateDiscount() {
     targets: [],
   });
 
-  const handleInputChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
-  ) => {
-    const { name, value, type } = e.target;
-    const checked = (e.target as HTMLInputElement).checked;
-
+  const applyDatePreset = (days: number) => {
+    const now = new Date();
+    const end = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
     setFormData((prev) => ({
       ...prev,
-      [name]:
-        type === "checkbox"
-          ? checked
-          : type === "number"
-          ? value === ""
-            ? null
-            : Number(value)
-          : name === "discount_code"
-          ? value.toUpperCase()
-          : value,
+      start_at: toDatetimeLocal(now),
+      end_at: toDatetimeLocal(end),
     }));
   };
 
@@ -103,13 +108,13 @@ export default function CreateDiscount() {
   };
 
   const validateForm = (): string | null => {
-    if (!formData.name.trim()) return "Vui lòng nhập tên mã giảm giá";
-    if (!formData.discount_code.trim()) return "Vui lòng nhập mã giảm giá";
+    if (!formData.name.trim()) return "Vui lòng nhập tên chiến dịch giảm giá";
+    if (!formData.discount_code.trim()) return "Vui lòng nhập mã voucher";
     if (formData.discount_type === "percent" && !formData.percent_value) {
       return "Vui lòng nhập phần trăm giảm giá";
     }
     if (formData.discount_type === "fixed" && !formData.fixed_value) {
-      return "Vui lòng nhập số tiền giảm giá";
+      return "Vui lòng nhập số Coin giảm giá";
     }
     if (!formData.start_at) return "Vui lòng chọn thời gian bắt đầu";
     if (!formData.end_at) return "Vui lòng chọn thời gian kết thúc";
@@ -118,32 +123,30 @@ export default function CreateDiscount() {
     }
     if (
       formData.applies_to === "course" &&
-      formData.targets.length === 0 &&
-      !formData.auto_targets_weak_courses
+      !formData.auto_targets_weak_courses &&
+      formData.targets.length === 0
     ) {
-      return "Vui lòng chọn ít nhất một khóa học hoặc bật tự động chọn khóa học yếu";
+      return "Vui lòng chọn ít nhất 1 khóa học hoặc bật tự động nhắm khóa yếu";
     }
     if (formData.applies_to === "category" && formData.targets.length === 0) {
-      return "Vui lòng chọn ít nhất một danh mục";
+      return "Vui lòng chọn ít nhất 1 danh mục";
     }
     return null;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    const error = validateForm();
-    if (error) {
-      showToast.error(error);
+    const err = validateForm();
+    if (err) {
+      showToast.error(err);
       return;
     }
-
     setIsSubmitting(true);
     try {
       const payload = {
-        name: formData.name,
-        description: formData.description,
-        discount_code: formData.discount_code,
+        name: formData.name.trim(),
+        description: formData.description.trim() || null,
+        discount_code: formData.discount_code.trim().toUpperCase(),
         is_hidden: formData.is_hidden,
         applies_to: formData.applies_to,
         discount_type: formData.discount_type,
@@ -157,399 +160,415 @@ export default function CreateDiscount() {
         end_at: datetimeLocalToISO(formData.end_at),
         auto_targets_weak_courses: formData.auto_targets_weak_courses,
         targets:
-          formData.applies_to === "global"
+          formData.applies_to === "global" || formData.auto_targets_weak_courses
             ? []
-            : formData.applies_to === "category"
-            ? formData.targets
-                .filter((t) => t.category_id)
-                .map((t) => ({ category_id: t.category_id }))
-            : formData.targets
-                .filter((t) => t.course_id)
-                .map((t) => ({ course_id: t.course_id })),
+            : formData.targets,
       };
-
       await api.post("/admin/discounts", payload);
-      showToast.success("Tạo mã giảm giá thành công!");
+      showToast.success("Đã tạo mã giảm giá thành công!");
       router.push("/admin/discounts");
-    } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.detail ||
-        error.response?.data?.message ||
-        "Không thể tạo mã giảm giá. Vui lòng thử lại.";
-      showToast.error(errorMessage);
+    } catch (error: unknown) {
+      const detail =
+        (error as { response?: { data?: { detail?: string } } })?.response?.data
+          ?.detail || "Không thể tạo mã giảm giá.";
+      showToast.error(detail);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-6">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="flex items-center gap-2 text-gray-600 hover:text-green-600 transition-colors mb-4"
+    <main className="mx-auto max-w-[1440px] space-y-6 p-4 text-foreground sm:p-6 lg:p-8">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <Link
+            href="/admin/discounts"
+            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3.5 py-1.5 text-xs font-semibold text-foreground hover:border-primary hover:text-primary"
           >
-            <ArrowLeft className="h-5 w-5" />
-            <span className="font-medium">Quay lại</span>
-          </button>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Tạo mã giảm giá mới
+            <ArrowLeft size={13} />
+            Quay lại danh sách
+          </Link>
+          <h1 className="mt-3 font-display text-2xl font-bold text-foreground sm:text-3xl">
+            Tạo Chiến dịch Mã Giảm Giá
           </h1>
-          <p className="text-gray-600">
-            Tạo mã giảm giá cho khóa học, danh mục hoặc toàn hệ thống
+          <p className="mt-1 text-sm text-muted-foreground">
+            Thiết lập mức ưu đãi, phạm vi áp dụng và xem trước vé khuyến mãi theo thời gian thực.
           </p>
         </div>
+      </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 space-y-6">
-            {/* Basic Info */}
-            <div>
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
-                Thông tin cơ bản
-              </h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Tên mã giảm giá <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
+      <form
+        onSubmit={handleSubmit}
+        className="grid grid-cols-1 gap-6 lg:grid-cols-12"
+      >
+        {/* Left Form Column */}
+        <div className="space-y-6 lg:col-span-8">
+          {/* Basic Info */}
+          <section className="space-y-4 rounded-3xl border border-border bg-surface p-6 shadow-[0_10px_28px_-14px_rgba(53,111,167,0.10)]">
+            <h2 className="flex items-center gap-2 text-base font-semibold text-foreground">
+              <Tag size={17} className="text-primary" />
+              Thông tin Chiến dịch
+            </h2>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Input
+                label="Tên chiến dịch"
+                required
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData((p) => ({ ...p, name: e.target.value }))
+                }
+                placeholder="VD: Ưu đãi khai giảng tháng 9"
+              />
+              <div className="flex items-end gap-2">
+                <div className="flex-1">
+                  <Input
+                    label="Mã Voucher (Code)"
                     required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    placeholder="Ví dụ: Black Friday Sale 2024"
+                    value={formData.discount_code}
+                    onChange={(e) =>
+                      setFormData((p) => ({
+                        ...p,
+                        discount_code: e.target.value.toUpperCase(),
+                      }))
+                    }
+                    placeholder="VD: MAYMAY20"
                   />
                 </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() =>
+                    setFormData((p) => ({
+                      ...p,
+                      discount_code: generatePromoCode("MAYMAY"),
+                    }))
+                  }
+                >
+                  <RefreshCw size={14} />
+                  Sinh mã
+                </Button>
+              </div>
+            </div>
 
+            <label className="block space-y-1.5 text-sm">
+              <span className="font-medium text-foreground">Mô tả ngắn</span>
+              <textarea
+                rows={3}
+                value={formData.description}
+                onChange={(e) =>
+                  setFormData((p) => ({ ...p, description: e.target.value }))
+                }
+                placeholder="Ghi chú điều kiện áp dụng hoặc mục tiêu chiến dịch..."
+                className="w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm text-foreground focus:border-primary focus:outline-none"
+              />
+            </label>
+
+            <label className="inline-flex items-center gap-2 text-sm font-medium text-foreground">
+              <input
+                type="checkbox"
+                checked={formData.is_hidden}
+                onChange={(e) =>
+                  setFormData((p) => ({ ...p, is_hidden: e.target.checked }))
+                }
+              />
+              Ẩn khỏi danh sách công khai (chỉ dùng khi học viên nhập đúng mã)
+            </label>
+          </section>
+
+          {/* Value & Limits */}
+          <section className="space-y-4 rounded-3xl border border-border bg-surface p-6 shadow-[0_10px_28px_-14px_rgba(53,111,167,0.10)]">
+            <h2 className="flex items-center gap-2 text-base font-semibold text-foreground">
+              <Coins size={17} className="text-primary" />
+              Mức Ưu đãi &amp; Giới hạn
+            </h2>
+
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() =>
+                  setFormData((p) => ({
+                    ...p,
+                    discount_type: "percent",
+                    fixed_value: null,
+                    percent_value: p.percent_value ?? 20,
+                  }))
+                }
+                className={`flex items-center gap-3 rounded-2xl border p-4 text-left transition-all ${
+                  formData.discount_type === "percent"
+                    ? "border-primary bg-primary-light/70 text-primary"
+                    : "border-border bg-background text-muted-foreground hover:border-primary-pastel"
+                }`}
+              >
+                <Percent size={20} />
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Mã giảm giá <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="discount_code"
-                    value={formData.discount_code}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 uppercase"
-                    placeholder="Ví dụ: BLACKFRIDAY2024"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Mã sẽ được chuyển thành chữ hoa tự động
+                  <p className="text-sm font-bold">Giảm theo %</p>
+                  <p className="text-xs opacity-80">VD: Giảm 15%, 20%, 50%</p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setFormData((p) => ({
+                    ...p,
+                    discount_type: "fixed",
+                    percent_value: null,
+                    fixed_value: p.fixed_value ?? coinToVnd(50, DEFAULT_COIN_VND_RATE),
+                  }))
+                }
+                className={`flex items-center gap-3 rounded-2xl border p-4 text-left transition-all ${
+                  formData.discount_type === "fixed"
+                    ? "border-primary bg-primary-light/70 text-primary"
+                    : "border-border bg-background text-muted-foreground hover:border-primary-pastel"
+                }`}
+              >
+                <Coins size={20} />
+                <div>
+                  <p className="text-sm font-bold">Giảm Coin cố định</p>
+                  <p className="text-xs opacity-80">
+                    1 Coin = {DEFAULT_COIN_VND_RATE.toLocaleString("vi-VN")}đ
                   </p>
                 </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Mô tả
-                  </label>
-                  <textarea
-                    name="description"
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    rows={3}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    placeholder="Mô tả về mã giảm giá..."
-                  />
-                </div>
-              </div>
+              </button>
             </div>
 
-            {/* Discount Type */}
-            <div className="border-t border-gray-200 pt-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
-                Loại giảm giá
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              {formData.discount_type === "percent" ? (
+                <Input
+                  label="Phần trăm giảm (%)"
+                  type="number"
+                  min={1}
+                  max={100}
+                  required
+                  value={
+                    formData.percent_value === null
+                      ? ""
+                      : String(formData.percent_value)
+                  }
+                  onChange={(e) =>
+                    setFormData((p) => ({
+                      ...p,
+                      percent_value:
+                        e.target.value === "" ? null : Number(e.target.value),
+                    }))
+                  }
+                />
+              ) : (
+                <Input
+                  label="Số Coin giảm"
+                  type="number"
+                  min={1}
+                  required
+                  value={
+                    formData.fixed_value === null
+                      ? ""
+                      : String(vndToCoin(formData.fixed_value))
+                  }
+                  onChange={(e) =>
+                    setFormData((p) => ({
+                      ...p,
+                      fixed_value:
+                        e.target.value === ""
+                          ? null
+                          : coinToVnd(Number(e.target.value), DEFAULT_COIN_VND_RATE),
+                    }))
+                  }
+                />
+              )}
+
+              <Input
+                label="Tổng lượt dùng (trống = ∞)"
+                type="number"
+                min={1}
+                value={
+                  formData.usage_limit === null
+                    ? ""
+                    : String(formData.usage_limit)
+                }
+                onChange={(e) =>
+                  setFormData((p) => ({
+                    ...p,
+                    usage_limit:
+                      e.target.value === "" ? null : Number(e.target.value),
+                  }))
+                }
+              />
+
+              <Input
+                label="Giới hạn mỗi học viên"
+                type="number"
+                min={1}
+                required
+                value={String(formData.per_user_limit)}
+                onChange={(e) =>
+                  setFormData((p) => ({
+                    ...p,
+                    per_user_limit: Math.max(1, Number(e.target.value) || 1),
+                  }))
+                }
+              />
+            </div>
+          </section>
+
+          {/* Schedule */}
+          <section className="space-y-4 rounded-3xl border border-border bg-surface p-6 shadow-[0_10px_28px_-14px_rgba(53,111,167,0.10)]">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-base font-semibold text-foreground">
+                Lịch chạy Chiến dịch
               </h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Loại <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    name="discount_type"
-                    value={formData.discount_type}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              <div className="flex flex-wrap gap-1.5">
+                {[7, 14, 30].map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => applyDatePreset(d)}
+                    className="rounded-xl border border-primary-pastel bg-primary-light/60 px-2.5 py-1 text-xs font-semibold text-primary hover:bg-primary hover:text-primary-foreground"
                   >
-                    <option value="fixed">Giảm trực tiếp (Coin)</option>
-                    <option value="percent">Giảm theo phần trăm (%)</option>
-                  </select>
-                </div>
-
-                {formData.discount_type === "percent" ? (
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Phần trăm giảm <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        name="percent_value"
-                        value={formData.percent_value || ""}
-                        onChange={handleInputChange}
-                        min="1"
-                        max="100"
-                        required
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                        placeholder="Ví dụ: 20"
-                      />
-                      <span className="absolute right-4 top-2.5 text-gray-500">
-                        %
-                      </span>
-                    </div>
-                  </div>
-                ) : (
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Số Coin giảm <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <CircleDollarSign className="absolute left-4 top-2.5 h-5 w-5 text-gray-400" />
-                      <input
-                        type="number"
-                        name="fixed_value"
-                        value={formData.fixed_value ? vndToCoin(formData.fixed_value) : ""}
-                        onChange={(e) => {
-                          const raw = e.target.value;
-                          setFormData((prev) => ({
-                            ...prev,
-                            fixed_value: raw ? coinToVnd(Math.max(1, Math.round(Number(raw) || 0)), DEFAULT_COIN_VND_RATE) : null,
-                          }));
-                        }}
-                        min="1"
-                        step="1"
-                        required
-                        className="w-full pl-12 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                        placeholder="Ví dụ: 5"
-                      />
-                    </div>
-                  </div>
-                )}
+                    Chạy ngay +{d} ngày
+                  </button>
+                ))}
               </div>
             </div>
 
-            {/* Applies To */}
-            <div className="border-t border-gray-200 pt-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
-                Phạm vi áp dụng
-              </h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Áp dụng cho <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    name="applies_to"
-                    value={formData.applies_to}
-                    onChange={(e) => {
-                      handleInputChange(e);
-                      // Reset selections when changing applies_to
-                      if (e.target.value !== "course") {
-                        setSelectedCourses([]);
-                        setFormData((prev) => ({
-                          ...prev,
-                          targets: prev.targets.filter((t) => !t.course_id),
-                          auto_targets_weak_courses: false,
-                        }));
-                      }
-                      if (e.target.value !== "category") {
-                        setSelectedCategories([]);
-                        setFormData((prev) => ({
-                          ...prev,
-                          targets: prev.targets.filter((t) => !t.category_id),
-                        }));
-                      }
-                      if (e.target.value === "global") {
-                        setFormData((prev) => ({
-                          ...prev,
-                          targets: [],
-                          auto_targets_weak_courses: false,
-                        }));
-                      }
-                    }}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                  >
-                    <option value="global">
-                      Toàn hệ thống (tất cả khóa học)
-                    </option>
-                    <option value="course">Khóa học cụ thể</option>
-                    <option value="category">Danh mục</option>
-                  </select>
-                </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Input
+                label="Bắt đầu từ"
+                type="datetime-local"
+                required
+                value={formData.start_at}
+                onChange={(e) =>
+                  setFormData((p) => ({ ...p, start_at: e.target.value }))
+                }
+              />
+              <Input
+                label="Kết thúc lúc"
+                type="datetime-local"
+                required
+                value={formData.end_at}
+                onChange={(e) =>
+                  setFormData((p) => ({ ...p, end_at: e.target.value }))
+                }
+              />
+            </div>
+          </section>
 
-                {/* Auto-target weak courses (only for course) */}
-                {formData.applies_to === "course" && (
-                  <div>
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        name="auto_targets_weak_courses"
-                        checked={formData.auto_targets_weak_courses}
-                        onChange={handleInputChange}
-                        className="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500"
-                      />
-                      <span className="text-gray-700">
-                        Tự động áp dụng cho 100 khóa học yếu nhất
-                      </span>
-                    </label>
-                    <p className="text-xs text-gray-500 mt-1 ml-8">
-                      Hệ thống sẽ tự động chọn TOP 100 khóa học có rating,
-                      enrolls và views thấp nhất
-                    </p>
-                    <WeakCoursesList
-                      isEnabled={formData.auto_targets_weak_courses}
-                    />
-                  </div>
-                )}
-
-                {/* Course Selector */}
-                {formData.applies_to === "course" &&
-                  !formData.auto_targets_weak_courses && (
-                    <CourseSelector
-                      selectedCourses={selectedCourses}
-                      onSelect={handleSelectCourse}
-                      onRemove={handleRemoveCourse}
-                    />
-                  )}
-
-                {/* Category Selector */}
-                {formData.applies_to === "category" && (
-                  <CategorySelector
-                    selectedCategories={selectedCategories}
-                    onSelect={handleSelectCategory}
-                    onRemove={handleRemoveCategory}
-                  />
-                )}
-              </div>
+          {/* Scope Targets */}
+          <section className="space-y-4 rounded-3xl border border-border bg-surface p-6 shadow-[0_10px_28px_-14px_rgba(53,111,167,0.10)]">
+            <h2 className="text-base font-semibold text-foreground">
+              Phạm vi Áp dụng
+            </h2>
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+              {(
+                [
+                  ["global", "Toàn hệ thống", "Áp dụng mọi khóa học"],
+                  ["course", "Khóa học chỉ định", "Chọn khóa cụ thể / khóa yếu"],
+                  ["category", "Theo danh mục", "Áp dụng theo nhóm ngành"],
+                ] as const
+              ).map(([key, title, desc]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => {
+                    setSelectedCourses([]);
+                    setSelectedCategories([]);
+                    setFormData((p) => ({
+                      ...p,
+                      applies_to: key,
+                      auto_targets_weak_courses: false,
+                      targets: [],
+                    }));
+                  }}
+                  className={`rounded-2xl border p-3.5 text-left transition-all ${
+                    formData.applies_to === key
+                      ? "border-primary bg-primary-light/70 text-primary"
+                      : "border-border bg-background text-foreground hover:border-primary-pastel"
+                  }`}
+                >
+                  <p className="text-sm font-bold">{title}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{desc}</p>
+                </button>
+              ))}
             </div>
 
-            {/* Limits */}
-            <div className="border-t border-gray-200 pt-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
-                Giới hạn sử dụng
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Tổng số lần sử dụng
-                  </label>
-                  <input
-                    type="number"
-                    name="usage_limit"
-                    value={formData.usage_limit || ""}
-                    onChange={handleInputChange}
-                    min="1"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    placeholder="Để trống = không giới hạn"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Số lần/người dùng <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    name="per_user_limit"
-                    value={formData.per_user_limit || ""}
-                    onChange={handleInputChange}
-                    min="1"
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Date Range */}
-            <div className="border-t border-gray-200 pt-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
-                Thời gian hiệu lực
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Bắt đầu <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="datetime-local"
-                    name="start_at"
-                    value={formData.start_at}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Kết thúc <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="datetime-local"
-                    name="end_at"
-                    value={formData.end_at}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Options */}
-            <div className="border-t border-gray-200 pt-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Tùy chọn</h2>
-              <div className="space-y-3">
-                <label className="flex items-center gap-3 cursor-pointer">
+            {formData.applies_to === "course" && (
+              <div className="space-y-4 pt-2">
+                <label className="inline-flex items-center gap-2 rounded-2xl border border-accent-vanilla-border bg-accent-vanilla/45 px-4 py-3 text-xs font-semibold text-accent-vanilla-foreground">
                   <input
                     type="checkbox"
-                    name="is_hidden"
-                    checked={formData.is_hidden}
-                    onChange={handleInputChange}
-                    className="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                    checked={formData.auto_targets_weak_courses}
+                    onChange={(e) =>
+                      setFormData((p) => ({
+                        ...p,
+                        auto_targets_weak_courses: e.target.checked,
+                      }))
+                    }
                   />
-                  <span className="text-gray-700">
-                    Ẩn mã giảm giá (chỉ có thể sử dụng khi biết mã)
-                  </span>
+                  Tự động nhắm các khóa học cần thúc đẩy doanh số (Weak Courses)
                 </label>
+
+                {formData.auto_targets_weak_courses ? (
+                  <WeakCoursesList isEnabled={formData.auto_targets_weak_courses} />
+                ) : (
+                  <CourseSelector
+                    selectedCourses={selectedCourses}
+                    onSelect={handleSelectCourse}
+                    onRemove={handleRemoveCourse}
+                  />
+                )}
               </div>
+            )}
+
+            {formData.applies_to === "category" && (
+              <div className="pt-2">
+                <CategorySelector
+                  selectedCategories={selectedCategories}
+                  onSelect={handleSelectCategory}
+                  onRemove={handleRemoveCategory}
+                />
+              </div>
+            )}
+          </section>
+        </div>
+
+        {/* Right Sticky Live Preview */}
+        <aside className="space-y-4 lg:col-span-4">
+          <div className="sticky top-20 space-y-4">
+            <div className="rounded-3xl border border-primary-pastel/70 bg-primary-light/35 p-5">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-primary">
+                Xem trước Vé Voucher trực tiếp
+              </p>
+              <VoucherTicketPreview
+                name={formData.name}
+                code={formData.discount_code}
+                discountType={formData.discount_type}
+                percentValue={formData.percent_value}
+                fixedValue={formData.fixed_value}
+                appliesTo={formData.applies_to}
+                isActive={true}
+                isHidden={formData.is_hidden}
+                startAt={formData.start_at || null}
+                endAt={formData.end_at || null}
+                usageCount={0}
+                usageLimit={formData.usage_limit}
+              />
+            </div>
+
+            <div className="flex flex-col gap-2.5">
+              <Button type="submit" disabled={isSubmitting} className="w-full">
+                {isSubmitting ? "Đang khởi tạo..." : "Phát hành Mã Giảm Giá"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => router.push("/admin/discounts")}
+              >
+                Hủy bỏ
+              </Button>
             </div>
           </div>
-
-          {/* Actions */}
-          <div className="flex items-center justify-end gap-4">
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className="px-6 py-3 border border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              Hủy
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Đang tạo...</span>
-                </>
-              ) : (
-                <>
-                  <Tag className="h-5 w-5" />
-                  <span>Tạo mã giảm giá</span>
-                </>
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        </aside>
+      </form>
+    </main>
   );
 }

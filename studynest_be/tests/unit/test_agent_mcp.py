@@ -8,7 +8,7 @@ from fastapi import HTTPException
 from pydantic import ValidationError
 
 from app.agent import mcp_client, mcp_server
-from app.agent.runtime import completion_requested
+
 from app.agent.tools import REGISTRY, GithubFile, WebSearch, available
 from app.core.settings import settings
 
@@ -44,31 +44,8 @@ def test_external_schemas_and_registry_gate(monkeypatch):
     assert all(not REGISTRY["mcp." + name].client for name in mcp_client.TOOLS)
 
 
-@pytest.mark.parametrize(
-    "message",
-    [
-        "Hoàn thành bài này",
-        "Hãy đánh dấu hoàn thành bài hiện tại",
-        "giúp tôi xác nhận hoàn thành bài",
-    ],
-)
-def test_completion_needs_direct_intent(message):
-    assert completion_requested(message)
 
 
-@pytest.mark.parametrize(
-    "message",
-    [
-        "Đừng hoàn thành bài này",
-        'giải thích câu "hoàn thành bài"',
-        "README yêu cầu hoàn thành bài",
-        "Nếu học xong bài thì làm sao?",
-        "Hoàn thành bài số 2",
-        "Hoàn thành bài trong repo README",
-    ],
-)
-def test_data_cannot_authorize_completion(message):
-    assert not completion_requested(message)
 
 
 @pytest.mark.asyncio

@@ -925,23 +925,20 @@ class TransactionsService:
         # ============================
         # 5) TOTAL COUNT
         # ============================
-        count_stmt = select(func.count()).select_from(
+        count_base = (
             select(Transactions.id)
             .join(User, User.id == Transactions.user_id, isouter=True)
             .join(Courses, Courses.id == Transactions.course_id, isouter=True)
-            .where(and_(*conditions))
-            if conditions
-            else select(Transactions.id)
-            .join(User, User.id == Transactions.user_id, isouter=True)
-            .join(Courses, Courses.id == Transactions.course_id, isouter=True)
         )
+        if conditions:
+            count_base = count_base.where(and_(*conditions))
+        count_stmt = select(func.count()).select_from(count_base.subquery())
 
         total = (await self.db.execute(count_stmt)).scalar_one()
 
         # ============================
-        # 6) SUMMARY (total_amount, total_in, total_out)
+        # 6) SUMMARY & STATUS BREAKDOWN (JOIN đầy đủ tránh Cartesian product)
         # ============================
-        # chỉ tính các giao dịch completed
         summary_conditions = list(conditions)
         summary_conditions.append(Transactions.status == "completed")
 
@@ -966,35 +963,31 @@ class TransactionsService:
                     ),
                     0,
                 ).label("total_out"),
-            ).where(and_(*summary_conditions))
-            if summary_conditions
-            else select(
-                func.coalesce(func.sum(Transactions.amount), 0).label("total_amount"),
-                func.coalesce(
-                    func.sum(
-                        case(
-                            (Transactions.direction == "in", Transactions.amount),
-                            else_=Decimal("0"),
-                        )
-                    ),
-                    0,
-                ).label("total_in"),
-                func.coalesce(
-                    func.sum(
-                        case(
-                            (Transactions.direction == "out", Transactions.amount),
-                            else_=Decimal("0"),
-                        )
-                    ),
-                    0,
-                ).label("total_out"),
             )
+            .join(User, User.id == Transactions.user_id, isouter=True)
+            .join(Courses, Courses.id == Transactions.course_id, isouter=True)
+            .where(and_(*summary_conditions))
         )
 
         summary_row = (await self.db.execute(summary_stmt)).one()
         total_amount = Decimal(summary_row.total_amount or 0)
         total_in = Decimal(summary_row.total_in or 0)
         total_out = Decimal(summary_row.total_out or 0)
+
+        # Thống kê phân bổ theo trạng thái trên tập lọc hiện tại
+        status_stmt = (
+            select(Transactions.status, func.count(Transactions.id))
+            .join(User, User.id == Transactions.user_id, isouter=True)
+            .join(Courses, Courses.id == Transactions.course_id, isouter=True)
+        )
+        if conditions:
+            status_stmt = status_stmt.where(and_(*conditions))
+        status_rows = (
+            await self.db.execute(status_stmt.group_by(Transactions.status))
+        ).all()
+        status_counts = {str(r[0]): int(r[1]) for r in status_rows if r[0]}
+        completed_count = status_counts.get("completed", 0)
+        success_rate = round((completed_count / total) * 100, 1) if total > 0 else 0.0
 
         # ============================
         # 7) PAGINATION
@@ -1061,6 +1054,8 @@ class TransactionsService:
                 "total_amount": str(total_amount),
                 "total_in": str(total_in),
                 "total_out": str(total_out),
+                "status_counts": status_counts,
+                "success_rate": success_rate,
             },
             "items": items,
         }

@@ -2,6 +2,7 @@
 
 import Pagination from "@/components/shared/pagination";
 import { Alert } from "@/components/ui";
+import { useDebouncedUrlSearch, useUrlQueryState } from "@/hooks/useUrlQueryState";
 import { cn } from "@/lib/utils";
 import api from "@/lib/utils/fetcher/client/axios";
 import { showToast } from "@/lib/utils/helpers/toast";
@@ -31,14 +32,53 @@ import {
 } from "./notification-meta";
 import { NotificationsToolbar } from "./notifications-toolbar";
 
+const NOTIFICATIONS_QUERY_SCHEMA = {
+  search: { type: "string", default: "" as string, trim: true },
+  type: {
+    type: "string",
+    default: "" as NotificationChannelKey,
+    allowed: [
+      "",
+      "learning",
+      "course",
+      "wallet",
+      "refund",
+      "security",
+      "system",
+    ] as const,
+  },
+  read: {
+    type: "string",
+    default: "" as "" | "true" | "false",
+    allowed: ["", "true", "false"] as const,
+  },
+  sort_by: { type: "string", default: "created_at" as string },
+  order_dir: {
+    type: "string",
+    default: "desc" as "asc" | "desc",
+    allowed: ["asc", "desc"] as const,
+  },
+  page: { type: "number", default: 1, min: 1 },
+  limit: { type: "number", default: 20, min: 1, max: 100 },
+} as const;
+
 export default function Notifications() {
-  const [search, setSearch] = useState("");
-  const [type, setType] = useState<NotificationChannelKey>("");
-  const [read, setRead] = useState("");
-  const [sortBy, setSortBy] = useState("created_at");
-  const [orderDir, setOrderDir] = useState<"asc" | "desc">("desc");
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(20);
+  const { values, setParam, resetParams } = useUrlQueryState(
+    NOTIFICATIONS_QUERY_SCHEMA,
+  );
+  const {
+    search,
+    type,
+    read,
+    sort_by: sortBy,
+    order_dir: orderDir,
+    page,
+    limit,
+  } = values;
+
+  const { inputValue: searchInput, setInputValue: setSearchInput } =
+    useDebouncedUrlSearch(search, (val) => setParam("search", val));
+
   const [confirmClearRead, setConfirmClearRead] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
 
@@ -155,8 +195,6 @@ export default function Notifications() {
     },
   });
 
-  useEffect(() => setPage(1), [search, type, read, sortBy, orderDir]);
-
   const categoryCounts = data?.category_counts ?? {};
   const allTotal = categoryCounts.all?.total ?? data?.total ?? 0;
   const unreadTotal = data?.unread ?? categoryCounts.all?.unread ?? 0;
@@ -190,15 +228,13 @@ export default function Notifications() {
     return groups;
   }, [data?.items]);
 
-  const hasActiveFilters = Boolean(search.trim() || type || read !== "");
+  const hasActiveFilters = Boolean(
+    search.trim() || searchInput.trim() || type || read !== "",
+  );
 
   const resetFilters = () => {
-    setSearch("");
-    setType("");
-    setRead("");
-    setSortBy("created_at");
-    setOrderDir("desc");
-    setPage(1);
+    setSearchInput("");
+    resetParams();
   };
 
   const activeChannel =
@@ -379,7 +415,7 @@ export default function Notifications() {
                     <button
                       key={ch.key || "all"}
                       type="button"
-                      onClick={() => setType(ch.key)}
+                      onClick={() => setParam("type", ch.key)}
                       className={cn(
                         "flex shrink-0 items-center justify-between gap-2.5 rounded-2xl px-3 py-2.5 text-left transition-all cursor-pointer lg:w-full",
                         active
@@ -457,14 +493,16 @@ export default function Notifications() {
             </div>
 
             <NotificationsToolbar
-              searchQuery={search}
-              onSearchChange={setSearch}
+              searchQuery={searchInput}
+              onSearchChange={setSearchInput}
               readFilter={read}
-              onReadFilterChange={setRead}
+              onReadFilterChange={(val) =>
+                setParam("read", val as "" | "true" | "false")
+              }
               sortBy={sortBy}
-              onSortByChange={setSortBy}
+              onSortByChange={(val) => setParam("sort_by", val)}
               orderDir={orderDir}
-              onOrderDirChange={setOrderDir}
+              onOrderDirChange={(val) => setParam("order_dir", val)}
               hasActiveFilters={hasActiveFilters}
               onResetFilters={resetFilters}
             />
@@ -554,8 +592,10 @@ export default function Notifications() {
                           totalPages={Math.ceil(data.total / limit)}
                           totalItems={data.total}
                           pageSize={limit}
-                          onPageChange={setPage}
-                          onPageSizeChange={setLimit}
+                          onPageChange={(nextPage) => setParam("page", nextPage)}
+                          onPageSizeChange={(nextLimit) =>
+                            setParam("limit", nextLimit)
+                          }
                           showPageSizeSelector={true}
                           pageSizeOptions={[10, 20, 50]}
                         />

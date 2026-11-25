@@ -1,126 +1,74 @@
 "use client";
 
-import api from "@/lib/utils/fetcher/client/axios";
-import { FinanceStatsResponse } from "@/types/admin/statistics";
-import {
-  CircleDollarSign,
-  ArrowDown,
-  ArrowUp,
-  Clock,
-  RefreshCw,
-} from "pulsoicon-react";
+import Link from "next/link";
 import useSWR from "swr";
-
+import { ChevronRight, Wallet } from "pulsoicon-react";
+import api from "@/lib/utils/fetcher/client/axios";
 import { formatVndAsCoin } from "@/lib/learning-hub/coin-logic";
-
-const formatCurrency = (value: number | null | undefined) => formatVndAsCoin(value);
+import type { FinanceStatsResponse } from "@/types/admin/statistics";
 
 export default function FinanceStats() {
   const { data, isLoading } = useSWR<FinanceStatsResponse>(
     "/admin/statistics/finance",
-    async (url) => {
-      const res = await api.get(url);
-      return res.data;
-    },
-    { revalidateOnFocus: false }
+    async (url: string) => (await api.get(url)).data,
+    { revalidateOnFocus: false },
   );
 
-  if (isLoading) {
-    return (
-      <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/30 p-6">
-        <div className="h-6 w-32 bg-gray-200 rounded animate-pulse mb-6" />
-        <div className="space-y-4">
-          {[...Array(5)].map((_, i) => (
-            <div
-              key={i}
-              className="h-12 bg-gray-100 rounded-lg animate-pulse"
-            />
-          ))}
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/30 p-6">
-      <h3 className="text-xl font-bold text-gray-900 mb-6">
-        Thống kê Tài chính
-      </h3>
-
-      {/* Main Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="bg-green-50 rounded-xl p-4 text-center">
-          <CircleDollarSign className="w-6 h-6 text-green-600 mx-auto mb-2" />
-          <p className="text-green-800 text-lg font-bold">
-            {formatCurrency(data?.platform_balance)}
-          </p>
-          <p className="text-green-600 text-xs">Số dư nền tảng</p>
+    <section className="flex h-full flex-col justify-between rounded-[2rem] border border-primary-pastel/60 bg-surface/90 p-6 shadow-[0_18px_42px_-18px_rgba(53,111,167,0.16)] backdrop-blur-md">
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-success-bg px-2.5 py-0.5 text-[11px] font-semibold text-success-foreground">
+            <Wallet size={12} animated={false} />
+            Dòng tiền kho bạc
+          </span>
+          <h3 className="mt-1.5 text-base font-bold text-foreground">
+            Tài chính &amp; Thanh khoản
+          </h3>
         </div>
-        <div className="bg-emerald-50 rounded-xl p-4 text-center">
-          <ArrowDown className="w-6 h-6 text-emerald-600 mx-auto mb-2" />
-          <p className="text-emerald-800 text-lg font-bold">
-            {formatCurrency(data?.total_deposits)}
-          </p>
-          <p className="text-emerald-600 text-xs">Tổng nạp</p>
-        </div>
-        <div className="bg-teal-50 rounded-xl p-4 text-center">
-          <ArrowUp className="w-6 h-6 text-teal-600 mx-auto mb-2" />
-          <p className="text-teal-800 text-lg font-bold">
-            {formatCurrency(data?.total_withdrawals)}
-          </p>
-          <p className="text-teal-600 text-xs">Tổng rút</p>
-        </div>
+        <Link
+          href="/admin/wallets"
+          className="inline-flex items-center gap-0.5 text-xs font-semibold text-primary hover:underline"
+        >
+          Mở ví
+          <ChevronRight size={13} animated={false} />
+        </Link>
       </div>
 
-      {/* Pending Withdrawals */}
-      <div className="bg-yellow-50 rounded-xl p-4 mb-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Clock className="w-5 h-5 text-yellow-600" />
-            <div>
-              <p className="text-yellow-800 font-semibold">Chờ rút tiền</p>
-              <p className="text-yellow-600 text-sm">
-                {data?.pending_withdrawals?.count ?? 0} yêu cầu
-              </p>
-            </div>
-          </div>
-          <p className="text-yellow-800 font-bold">
-            {formatCurrency(data?.pending_withdrawals?.amount)}
-          </p>
-        </div>
-      </div>
-
-      {/* Refunds */}
-      <div className="bg-gray-50 rounded-xl p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <RefreshCw className="w-5 h-5 text-gray-600" />
-          <p className="text-gray-800 font-semibold">Hoàn tiền</p>
-        </div>
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <div className="flex justify-between">
-            <span className="text-gray-600">Yêu cầu:</span>
-            <span className="font-medium">{data?.refunds?.requested ?? 0}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600">Đã duyệt:</span>
-            <span className="font-medium text-green-600">
-              {data?.refunds?.approved ?? 0}
+      {isLoading ? (
+        <div className="mt-4 h-40 animate-pulse rounded-2xl bg-background" />
+      ) : (
+        <div className="mt-4 space-y-2.5 text-xs">
+          <div className="flex items-center justify-between rounded-2xl bg-primary-light/55 px-4 py-3">
+            <span className="font-medium text-muted-foreground">
+              Số dư ví nền tảng
+            </span>
+            <span className="text-sm font-bold text-primary">
+              {formatVndAsCoin(Math.round(data?.platform_balance || 0))}
             </span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600">Từ chối:</span>
-            <span className="font-medium text-red-600">
-              {data?.refunds?.rejected ?? 0}
+          <div className="flex items-center justify-between rounded-2xl bg-background/70 px-4 py-2.5">
+            <span className="text-muted-foreground">Tổng tiền nạp vào</span>
+            <span className="font-bold text-success-foreground">
+              +{formatVndAsCoin(Math.round(data?.total_deposits || 0))}
             </span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600">Tổng hoàn:</span>
-            <span className="font-medium">
-              {formatCurrency(data?.refunds?.total_refunded)}
+          <div className="flex items-center justify-between rounded-2xl bg-background/70 px-4 py-2.5">
+            <span className="text-muted-foreground">Tổng đã rút ra</span>
+            <span className="font-bold text-destructive-foreground">
+              -{formatVndAsCoin(Math.round(data?.total_withdrawals || 0))}
+            </span>
+          </div>
+          <div className="flex items-center justify-between rounded-2xl bg-secondary-light/45 px-4 py-2.5">
+            <span className="text-secondary-foreground">
+              Tổng đã hoàn tiền ({data?.refunds?.approved ?? 0} duyệt)
+            </span>
+            <span className="font-bold text-secondary-foreground">
+              {formatVndAsCoin(Math.round(data?.refunds?.total_refunded || 0))}
             </span>
           </div>
         </div>
-      </div>
-    </div>
+      )}
+    </section>
   );
 }

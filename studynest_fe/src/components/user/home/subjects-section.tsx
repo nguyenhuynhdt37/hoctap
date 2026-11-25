@@ -25,7 +25,14 @@ const previewLimit = 5;
 const grid = "grid grid-cols-1 gap-4 md:grid-cols-2 lg:auto-rows-[minmax(9.5rem,auto)] lg:grid-cols-3";
 const layoutTransition = { layout: { duration: 0.32, ease: [0.22, 1, 0.36, 1] as const } };
 const roundedButton = "rounded-full motion-reduce:transition-none motion-reduce:active:translate-y-0";
-const fetcher = (url: string) => api.get<CatalogOptionsWithCourseCounts>(url).then(({ data }) => data);
+const fetcher = (url: string) => api.get<CatalogOptionsWithCourseCounts>(url).then(({ data }) => {
+  // Proxy/tunnel có thể trả HTML thay vì JSON; không để dữ liệu sai dạng làm sập giao diện.
+  if (!data || !Array.isArray(data.levels) || !Array.isArray(data.grades)
+    || !Array.isArray(data.subjects) || !Array.isArray(data.grade_subjects)) {
+    throw new Error("Dữ liệu danh mục không hợp lệ.");
+  }
+  return data;
+});
 
 interface SubjectsSectionProps {
   selectedLevel: SchoolLevelId;

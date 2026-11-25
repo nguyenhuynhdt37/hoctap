@@ -2,6 +2,7 @@
 
 import { Badge } from "@/components/ui";
 import { getImageUrl } from "@/lib/utils/helpers/image";
+import type { CourseEducation } from "@/types/catalog";
 import { CategoryItem, Course } from "@/types/user/course_detail";
 import Link from "next/link";
 import {
@@ -18,6 +19,7 @@ import {
 interface CourseHeaderProps {
   course: Course;
   categoryChain: CategoryItem[];
+  education?: CourseEducation | null;
   totalDurationSeconds?: number;
   formatDate: (dateString: string) => string;
   formatSecondsToHms?: (seconds: number) => string;
@@ -28,6 +30,7 @@ interface CourseHeaderProps {
 export default function CourseHeader({
   course,
   categoryChain,
+  education,
   totalDurationSeconds = 0,
   formatDate,
   formatSecondsToHms,
@@ -37,6 +40,48 @@ export default function CourseHeader({
     (sum, s) => sum + (s.lessons?.length || 0),
     0,
   );
+
+  const educationBreadcrumbs: Array<{ key: string; label: string; href: string }> =
+    [];
+  if (education && !education.needs_classification) {
+    if (education.subject) {
+      const subjectParam = education.subject.slug || education.subject.code;
+      educationBreadcrumbs.push({
+        key: `subject-${education.subject.id}`,
+        label: education.subject.name,
+        href: `/courses?subject=${encodeURIComponent(subjectParam)}`,
+      });
+    }
+    const primaryGrade = education.grades?.[0];
+    if (primaryGrade) {
+      const gradeParam =
+        primaryGrade.grade_number != null
+          ? String(primaryGrade.grade_number)
+          : primaryGrade.code;
+      educationBreadcrumbs.push({
+        key: `grade-${primaryGrade.id}`,
+        label: primaryGrade.name,
+        href: `/courses?grade=${encodeURIComponent(gradeParam)}`,
+      });
+    }
+    const primaryGoal = education.learning_goals?.[0];
+    if (primaryGoal) {
+      educationBreadcrumbs.push({
+        key: `goal-${primaryGoal.id}`,
+        label: primaryGoal.name,
+        href: `/courses?goal=${encodeURIComponent(primaryGoal.code)}`,
+      });
+    }
+    const primaryExam = education.exams?.[0];
+    if (primaryExam) {
+      educationBreadcrumbs.push({
+        key: `exam-${primaryExam.id}`,
+        label: primaryExam.name,
+        href: `/courses?exam=${encodeURIComponent(primaryExam.code)}`,
+      });
+    }
+  }
+  const hasEducation = educationBreadcrumbs.length > 0;
 
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-primary-light/85 via-background to-secondary-light/45 border-b border-border">
@@ -62,17 +107,42 @@ export default function CourseHeader({
           >
             Mây Mây
           </Link>
-          {categoryChain.map((category) => (
-            <div key={category.id} className="flex items-center gap-2">
-              <span className="text-subtle-foreground">/</span>
-              <Link
-                href={`/categories/${category.slug}`}
-                className="hover:text-primary font-medium transition-colors"
-              >
-                {category.name}
-              </Link>
-            </div>
-          ))}
+          {hasEducation ? (
+            <>
+              <div className="flex items-center gap-2">
+                <span className="text-subtle-foreground">/</span>
+                <Link
+                  href="/courses"
+                  className="hover:text-primary font-medium transition-colors"
+                >
+                  Khóa học
+                </Link>
+              </div>
+              {educationBreadcrumbs.map((item) => (
+                <div key={item.key} className="flex items-center gap-2">
+                  <span className="text-subtle-foreground">/</span>
+                  <Link
+                    href={item.href}
+                    className="hover:text-primary font-medium transition-colors"
+                  >
+                    {item.label}
+                  </Link>
+                </div>
+              ))}
+            </>
+          ) : (
+            categoryChain.map((category) => (
+              <div key={category.id} className="flex items-center gap-2">
+                <span className="text-subtle-foreground">/</span>
+                <Link
+                  href={`/categories/${category.slug}`}
+                  className="hover:text-primary font-medium transition-colors"
+                >
+                  {category.name}
+                </Link>
+              </div>
+            ))
+          )}
         </nav>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
@@ -88,10 +158,30 @@ export default function CourseHeader({
                 Khóa học Mây Mây
               </Badge>
 
-              {categoryChain.length > 0 && (
-                <Badge variant="secondary" size="md">
-                  {categoryChain[categoryChain.length - 1].name}
-                </Badge>
+              {hasEducation ? (
+                <>
+                  {education?.subject && (
+                    <Badge variant="secondary" size="md">
+                      {education.subject.name}
+                    </Badge>
+                  )}
+                  {(education?.grades ?? []).slice(0, 2).map((grade) => (
+                    <Badge key={grade.id} variant="default" size="md">
+                      {grade.name}
+                    </Badge>
+                  ))}
+                  {education?.exams?.[0] && (
+                    <Badge variant="vanilla" size="md">
+                      {education.exams[0].name}
+                    </Badge>
+                  )}
+                </>
+              ) : (
+                categoryChain.length > 0 && (
+                  <Badge variant="secondary" size="md">
+                    {categoryChain[categoryChain.length - 1].name}
+                  </Badge>
+                )
               )}
 
               <Badge variant="vanilla" size="md">

@@ -7,6 +7,7 @@ from sqlalchemy import asc, delete, desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.embedding import EmbeddingService
+from app.db.models.catalog import course_grades
 from app.db.models.database import (
     Categories,
     CourseEnrollments,
@@ -124,6 +125,8 @@ class CourseFavoriteService:
         language: Optional[str] = None,
         sort_by: str = "created_at",
         order: str = "desc",
+        subject_id: Optional[uuid.UUID] = None,
+        grade_id: Optional[uuid.UUID] = None,
     ):
         """
         Lấy danh sách khóa học yêu thích của user.
@@ -198,6 +201,16 @@ class CourseFavoriteService:
         # 🎯 Lọc nâng cao
         if category_id:
             query = query.where(Courses.category_id == category_id)
+        if subject_id:
+            query = query.where(Courses.subject_id == subject_id)
+        if grade_id:
+            query = query.where(
+                Courses.id.in_(
+                    select(course_grades.c.course_id).where(
+                        course_grades.c.grade_id == grade_id
+                    )
+                )
+            )
         if level:
             query = query.where(Courses.level == level)
         if language:
@@ -207,12 +220,40 @@ class CourseFavoriteService:
         query = query.order_by(sort_order(sort_field))
         query = query.offset((page - 1) * size).limit(size)
 
-        # 📊 Tổng số
+        # 📊 Tổng số (khớp bộ lọc)
         total_query = (
             select(func.count())
             .select_from(CourseFavourites)
+            .join(Courses, Courses.id == CourseFavourites.course_id)
             .where(CourseFavourites.user_id == user_id)
         )
+        if keyword:
+            kw = f"%{keyword.lower()}%"
+            total_query = total_query.where(
+                or_(
+                    func.lower(Courses.title).ilike(kw),
+                    func.lower(Courses.description).ilike(kw),
+                    Courses.search_tsv.op("@@")(
+                        func.plainto_tsquery("simple", keyword)
+                    ),
+                )
+            )
+        if category_id:
+            total_query = total_query.where(Courses.category_id == category_id)
+        if subject_id:
+            total_query = total_query.where(Courses.subject_id == subject_id)
+        if grade_id:
+            total_query = total_query.where(
+                Courses.id.in_(
+                    select(course_grades.c.course_id).where(
+                        course_grades.c.grade_id == grade_id
+                    )
+                )
+            )
+        if level:
+            total_query = total_query.where(Courses.level == level)
+        if language:
+            total_query = total_query.where(Courses.language == language)
 
         result = await self.db.execute(query)
         total = await self.db.scalar(total_query)

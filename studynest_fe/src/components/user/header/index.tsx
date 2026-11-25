@@ -276,7 +276,7 @@ function SkyIsland({ pathname }: { pathname: string }) {
             type="button"
             disabled={authPending}
             onClick={(event) => toggle("map", event.currentTarget)}
-            aria-label={open ? "Thu bản đồ bầu trời" : unread > 0 && viewer.signedIn ? `Mở bản đồ bầu trời, ${unread} thông báo chưa đọc` : "Mở bản đồ bầu trời"}
+            aria-label={open ? "Thu bảng tiện ích" : unread > 0 && viewer.signedIn ? `Mở bảng tiện ích, ${unread} thông báo chưa đọc` : "Mở bảng tiện ích"}
             aria-expanded={mode === "map"}
             aria-controls={mode === "map" ? panelId : undefined}
             aria-haspopup="dialog"
@@ -286,7 +286,7 @@ function SkyIsland({ pathname }: { pathname: string }) {
             )}
           >
             {open ? <X aria-hidden="true" className="size-5" /> : <LayoutGrid aria-hidden="true" className="size-5" />}
-            <span className="hidden md:inline">Bản đồ</span>
+            <span className="hidden md:inline">Tiện ích</span>
             <ChevronDown
               aria-hidden="true"
               className={cn("hidden size-3.5 transition-transform duration-300 md:block motion-reduce:transition-none", mode === "map" && "rotate-180")}

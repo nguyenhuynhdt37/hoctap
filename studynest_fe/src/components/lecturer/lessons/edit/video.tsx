@@ -1,38 +1,139 @@
 "use client";
 
 import TiptapEditor from "@/components/shared/tiptap_editor";
+import { Alert, Button, Card } from "@/components/ui";
+import { useUrlQueryState } from "@/hooks/useUrlQueryState";
+import { connectWebSocket } from "@/hooks/websocket/connectWebSocket";
+import { formatApiError } from "@/lib/utils";
 import api from "@/lib/utils/fetcher/client/axios";
-import {
+import { showToast } from "@/lib/utils/helpers/toast";
+import type {
   LessonDetail,
-  UploadProgress,
   VideoData,
   VideoFormData,
 } from "@/types/lecturer/lesson-api";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  AlertTriangle,
   ArrowLeft,
-  ChevronLeft,
-  ChevronRight,
-  UploadCloud,
-  Link as LinkIcon,
-  Play,
-  Video,
-  XCircle,
+  Bot,
   CheckCircle2,
+  Circle,
+  ClipboardList,
+  Clock,
+  Eye,
+  FileText,
+  Film,
+  Layers,
+  Lightbulb,
+  Link as LinkIcon,
+  Lock,
+  Paperclip,
+  Play,
+  RefreshCw,
+  Save,
+  Unlock,
+  UploadCloud,
+  Video,
+  Wifi,
+  X,
 } from "pulsoicon-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import useSWR from "swr";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Alert } from "@/components/ui/states";
-import { Badge } from "@/components/ui/badge";
 
-// ============================================
-// HELPER FUNCTIONS
-// ============================================
+interface LessonPipelineState {
+  lesson_id: string;
+  stage:
+    | "queued"
+    | "uploading"
+    | "extracting_audio"
+    | "transcribing"
+    | "embedding"
+    | "retrying"
+    | "completed"
+    | "failed";
+  stage_label: string;
+  percent: number;
+  upload_percent: number;
+  speed_mb_s: number;
+  uploaded_mb: number;
+  total_mb: number;
+  chunks_total: number;
+  chunks_done: number;
+  source_kind: string | null;
+  source_label: string | null;
+  attempt: number;
+  max_attempts: number;
+  next_retry_in: number;
+  message: string;
+  error: string | null;
+  is_completed: boolean;
+  video_url: string | null;
+  video_id: string | null;
+}
 
-const stripMarkdown = (text: string): string => {
-  return text
+const EDIT_VIDEO_SCHEMA = {
+  source: {
+    type: "string",
+    default: "youtube",
+    allowed: ["youtube", "file"] as const,
+  },
+} as const;
+
+const PIPELINE_STEPS = [
+  { key: "upload", label: "Tải video" },
+  { key: "extract", label: "Trích nội dung" },
+  { key: "embed", label: "Tạo vector AI" },
+  { key: "done", label: "Hoàn tất" },
+] as const;
+
+function getPipelineStepIndex(stage: LessonPipelineState["stage"]): number {
+  switch (stage) {
+    case "queued":
+    case "uploading":
+      return 0;
+    case "extracting_audio":
+    case "transcribing":
+      return 1;
+    case "embedding":
+    case "retrying":
+      return 2;
+    case "completed":
+      return 4;
+    default:
+      return 2;
+  }
+}
+
+function extractYoutubeId(url: string): string | null {
+  const trimmed = (url || "").trim();
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
+    /^([a-zA-Z0-9_-]{11})$/,
+  ];
+  for (const pattern of patterns) {
+    const match = trimmed.match(pattern);
+    if (match?.[1]?.length === 11) return match[1];
+  }
+  return null;
+}
+
+function formatDuration(seconds: number): string {
+  if (!Number.isFinite(seconds) || seconds <= 0) return "";
+  const total = Math.round(seconds);
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  if (h > 0) {
+    return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  }
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
+function stripRichText(raw: string): string {
+  return (raw || "")
+    .replace(/<[^>]*>/g, " ")
     .replace(/#{1,6}\s+/g, "")
     .replace(/\*\*([^*]+)\*\*/g, "$1")
     .replace(/\*([^*]+)\*/g, "$1")
@@ -41,51 +142,46 @@ const stripMarkdown = (text: string): string => {
     .replace(/!\[([^\]]*)\]\([^\)]+\)/g, "")
     .replace(/^\s*[-*+]\s+/gm, "")
     .replace(/^\s*\d+\.\s+/gm, "")
+    .replace(/\s+/g, " ")
     .trim();
-};
-
-const formatDuration = (seconds: number): string => {
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  return `${minutes}:${String(remainingSeconds).padStart(2, "0")}`;
-};
-
-// ============================================
-// MAIN COMPONENT
-// ============================================
+}
 
 const EditVideoLesson = () => {
   const router = useRouter();
   const params = useParams();
-  const lessonId = params?.id as string;
+  const lessonId = (params?.id as string) || "";
 
-  // ============================================
-  // STATE
-  // ============================================
+  const { values: urlState, setParam } = useUrlQueryState(EDIT_VIDEO_SCHEMA);
+  const activeSource = urlState.source;
 
   const [mounted, setMounted] = useState(false);
-  const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isReindexing, setIsReindexing] = useState(false);
   const [isGeneratingTitle, setIsGeneratingTitle] = useState(false);
   const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [videoPreview, setVideoPreview] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [showUploadProgress, setShowUploadProgress] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(
-    null
-  );
-  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const videoData404Ref = useRef<boolean>(false); // Track nếu video API đã trả về 404
-  const redirectTimeoutRef = useRef<NodeJS.Timeout | null>(null); // Track timeout redirect
+  const [isDraggingFile, setIsDraggingFile] = useState(false);
+
+  const [videoObjectUrl, setVideoObjectUrl] = useState<string | null>(null);
+  const [localDurationSec, setLocalDurationSec] = useState<number>(0);
+
+  const [pipelineState, setPipelineState] =
+    useState<LessonPipelineState | null>(null);
+  const [wsConnected, setWsConnected] = useState(false);
+
+  const wsRef = useRef<WebSocket | null>(null);
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fallbackPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pipelineDoneRef = useRef(false);
+  const videoData404Ref = useRef(false);
 
   const [formData, setFormData] = useState<VideoFormData>({
     title: "",
     description: "",
     is_preview: false,
-    uploadMethod: "",
+    uploadMethod: "youtube",
     video_url: "",
     video_file: null,
   });
@@ -94,21 +190,19 @@ const EditVideoLesson = () => {
     Partial<Record<keyof VideoFormData, string>>
   >({});
 
-  const totalSteps = 3;
-
-  // ============================================
-  // DATA FETCHING
-  // ============================================
-
-  const { data: lessonDetail, mutate: mutateLessonDetail } =
-    useSWR<LessonDetail>(
-      lessonId ? `/lecturer/lessons/${lessonId}/detail` : null,
-      async (url: string) => {
-        const res = await api.get(url);
-        return res.data;
-      },
-      { revalidateOnFocus: false }
-    );
+  // Data fetching
+  const {
+    data: lessonDetail,
+    isLoading: isLoadingLesson,
+    mutate: mutateLessonDetail,
+  } = useSWR<LessonDetail>(
+    lessonId ? `/lecturer/lessons/${lessonId}/detail` : null,
+    async (url: string) => {
+      const res = await api.get(url);
+      return res.data;
+    },
+    { revalidateOnFocus: false }
+  );
 
   const { data: videoData, mutate: mutateVideoData } = useSWR<VideoData>(
     lessonId && !videoData404Ref.current
@@ -118,19 +212,21 @@ const EditVideoLesson = () => {
       try {
         const res = await api.get(url);
         return res.data;
-      } catch (error: any) {
-        // Nếu API trả về 404, set flag để không fetch lại
-        if (error?.response?.status === 404) {
+      } catch (err: unknown) {
+        const status = (err as { response?: { status?: number } })?.response
+          ?.status;
+        if (status === 404) {
           videoData404Ref.current = true;
         }
-        throw error;
+        throw err;
       }
     },
     {
       revalidateOnFocus: false,
-      // Không retry khi gặp 404
-      shouldRetryOnError: (error: any) => {
-        return error?.response?.status !== 404;
+      shouldRetryOnError: (err: unknown) => {
+        const status = (err as { response?: { status?: number } })?.response
+          ?.status;
+        return status !== 404;
       },
     }
   );
@@ -146,420 +242,380 @@ const EditVideoLesson = () => {
     { revalidateOnFocus: false }
   );
 
-  // ============================================
-  // COMPUTED VALUES
-  // ============================================
-
   const sectionName = useMemo(() => {
     if (!chaptersData?.sections || !lessonDetail?.section_id) return "";
     return (
       chaptersData.sections.find(
-        (section: any) => section.section_id === lessonDetail.section_id
+        (s: { section_id: string; section_title: string }) =>
+          s.section_id === lessonDetail.section_id
       )?.section_title || ""
     );
   }, [chaptersData, lessonDetail]);
 
-  const progressPercentage = useMemo(
-    () => ((currentStep + 1) / totalSteps) * 100,
-    [currentStep, totalSteps]
-  );
-
-  // Kiểm tra thay đổi lesson (title, description, is_preview)
-  const hasLessonChanges = useMemo(() => {
-    if (!lessonDetail) return false;
-
-    // So sánh title (trim cả hai bên)
-    const titleChanged =
-      formData.title.trim() !== (lessonDetail.title || "").trim();
-
-    // So sánh description (trim cả hai bên)
-    const originalDescription = (lessonDetail.description || "").trim();
-    const newDescription = formData.description.trim();
-    const descriptionChanged = originalDescription !== newDescription;
-
-    // So sánh is_preview
-    const previewChanged = formData.is_preview !== lessonDetail.is_preview;
-
-    return titleChanged || descriptionChanged || previewChanged;
-  }, [formData, lessonDetail]);
-
-  // Kiểm tra thay đổi video (URL hoặc file)
-  const hasVideoChanges = useMemo(() => {
-    // Nếu không có videoData (404), chỉ coi là thay đổi nếu user thực sự chọn video mới
-    if (!videoData || videoData404Ref.current) {
-      // Chỉ trả về true nếu user đã chọn phương thức và có dữ liệu video
-      if (formData.uploadMethod === "youtube") {
-        return formData.video_url.trim() !== "";
-      }
-      if (formData.uploadMethod === "file") {
-        return formData.video_file !== null;
-      }
-      return false; // Không chọn phương thức nào → không có thay đổi
-    }
-
-    // Có videoData, kiểm tra thay đổi thực sự
-
-    // Nếu uploadMethod không được set → không có thay đổi (giữ nguyên video hiện tại)
-    if (!formData.uploadMethod) {
-      return false;
-    }
-
-    // Nếu uploadMethod khớp với video hiện tại
-    const isCurrentMethodYouTube =
-      formData.uploadMethod === "youtube" &&
-      videoData.source_type === "youtube_url";
-    const isCurrentMethodFile =
-      formData.uploadMethod === "file" &&
-      videoData.source_type !== "youtube_url";
-
-    // Nếu đang giữ nguyên phương thức hiện tại
-    if (isCurrentMethodYouTube) {
-      // Kiểm tra xem URL có thay đổi không
-      const currentUrl = (videoData.video_url || "").trim();
-      const newUrl = formData.video_url.trim();
-      return newUrl !== "" && newUrl !== currentUrl;
-    }
-
-    if (isCurrentMethodFile) {
-      // Kiểm tra xem có file mới được chọn không
-      return formData.video_file !== null;
-    }
-
-    // Nếu đổi phương thức (từ YouTube sang File hoặc ngược lại)
-    return true;
-  }, [formData, videoData]);
-
-  // Tổng hợp thay đổi
-  const hasChanges = hasLessonChanges || hasVideoChanges;
-
-  const isYouTubeVideo = videoData?.source_type === "youtube_url";
-  const isCurrentVideoYouTube =
-    isYouTubeVideo && videoData && !videoData404Ref.current;
-  const isCurrentVideoFile =
-    !isYouTubeVideo && videoData?.source_type && !videoData404Ref.current;
-
-  // ============================================
-  // INITIALIZE FORM DATA
-  // ============================================
-
-  // Reset videoData404Ref khi lessonId thay đổi (component mount lại)
+  // Reset refs when lessonId changes
   useEffect(() => {
-    if (lessonId) {
-      videoData404Ref.current = false;
-    }
+    videoData404Ref.current = false;
+    setMounted(false);
   }, [lessonId]);
 
+  // Populate initial form data
   useEffect(() => {
-    // Mount form ngay khi có lessonDetail (không cần đợi videoData)
     if (lessonDetail && !mounted) {
-      // Luôn mount form với lesson data trước
-      const initialFormData: VideoFormData = {
+      setFormData({
         title: lessonDetail.title || "",
         description: lessonDetail.description || "",
         is_preview: lessonDetail.is_preview || false,
-        uploadMethod: "",
-        video_url: "",
+        uploadMethod:
+          videoData && videoData.source_type !== "youtube_url"
+            ? "file"
+            : "youtube",
+        video_url: videoData?.video_url || "",
         video_file: null,
-      };
-
-      // Nếu có videoData và không phải 404, cập nhật thông tin video
-      if (videoData && !videoData404Ref.current) {
-        initialFormData.uploadMethod = isYouTubeVideo ? "youtube" : "file";
-        initialFormData.video_url = videoData.video_url || "";
-      }
-
-      setFormData(initialFormData);
+      });
       setMounted(true);
-      setIsLoading(false);
     }
-  }, [lessonDetail, mounted, isYouTubeVideo, videoData]);
+  }, [lessonDetail, mounted, videoData]);
 
-  // ============================================
-  // VALIDATION
-  // ============================================
-
-  const validateStep = useCallback(
-    (step: number): boolean => {
-      const newErrors: Partial<Record<keyof VideoFormData, string>> = {};
-
-      switch (step) {
-        case 0:
-          if (!formData.title.trim()) {
-            newErrors.title = "Vui lòng nhập tiêu đề bài học";
-          }
-          if (!stripMarkdown(formData.description)) {
-            newErrors.description = "Vui lòng nhập mô tả bài học";
-          }
-          break;
-
-        case 1:
-          if (!formData.uploadMethod) {
-            newErrors.uploadMethod = "Vui lòng chọn phương thức upload";
-          }
-          break;
-
-        case 2:
-          // Chỉ validate video khi có thay đổi hoặc đang thay đổi phương thức
-          if (formData.uploadMethod === "youtube") {
-            // Validate YouTube URL chỉ khi URL thay đổi
-            if (
-              formData.video_url.trim() &&
-              formData.video_url.trim() !== videoData?.video_url
-            ) {
-              if (
-                !formData.video_url.includes("youtube.com") &&
-                !formData.video_url.includes("youtu.be")
-              ) {
-                newErrors.video_url =
-                  "URL không hợp lệ. Vui lòng nhập URL YouTube";
-              }
+  // Sync video_url when videoData arrives after lessonDetail
+  useEffect(() => {
+    if (mounted && videoData && !videoData404Ref.current) {
+      setFormData((prev) =>
+        prev.video_url
+          ? prev
+          : {
+              ...prev,
+              video_url: videoData.video_url || "",
             }
-          } else if (formData.uploadMethod === "file") {
-            // Chỉ yêu cầu file khi đang đổi từ YouTube sang file
-            if (isYouTubeVideo && !formData.video_file) {
-              newErrors.video_file =
-                "Vui lòng chọn file video để thay đổi từ YouTube sang file";
-            }
-          }
-          break;
+      );
+    }
+  }, [mounted, videoData]);
+
+  useEffect(() => {
+    return () => {
+      if (videoObjectUrl) URL.revokeObjectURL(videoObjectUrl);
+    };
+  }, [videoObjectUrl]);
+
+  // WebSocket pipeline helpers
+  const cleanupPipelineConnections = useCallback(() => {
+    if (reconnectTimerRef.current) {
+      clearTimeout(reconnectTimerRef.current);
+      reconnectTimerRef.current = null;
+    }
+    if (fallbackPollRef.current) {
+      clearInterval(fallbackPollRef.current);
+      fallbackPollRef.current = null;
+    }
+    if (wsRef.current) {
+      try {
+        wsRef.current.close();
+      } catch {
+        // ignore
       }
+      wsRef.current = null;
+    }
+    setWsConnected(false);
+  }, []);
 
-      setErrors(newErrors);
-      return Object.keys(newErrors).length === 0;
+  const applyIncomingPipeline = useCallback(
+    (incoming: Partial<LessonPipelineState>) => {
+      setPipelineState((prev) => {
+        const merged: LessonPipelineState = {
+          lesson_id: incoming.lesson_id || prev?.lesson_id || lessonId,
+          stage: incoming.stage || prev?.stage || "queued",
+          stage_label:
+            incoming.stage_label || prev?.stage_label || "Đang xử lý",
+          percent:
+            typeof incoming.percent === "number"
+              ? incoming.percent
+              : (prev?.percent ?? 0),
+          upload_percent:
+            typeof incoming.upload_percent === "number"
+              ? incoming.upload_percent
+              : (prev?.upload_percent ?? 0),
+          speed_mb_s:
+            typeof incoming.speed_mb_s === "number"
+              ? incoming.speed_mb_s
+              : (prev?.speed_mb_s ?? 0),
+          uploaded_mb:
+            typeof incoming.uploaded_mb === "number"
+              ? incoming.uploaded_mb
+              : (prev?.uploaded_mb ?? 0),
+          total_mb:
+            typeof incoming.total_mb === "number"
+              ? incoming.total_mb
+              : (prev?.total_mb ?? 0),
+          chunks_total:
+            typeof incoming.chunks_total === "number"
+              ? incoming.chunks_total
+              : (prev?.chunks_total ?? 0),
+          chunks_done:
+            typeof incoming.chunks_done === "number"
+              ? incoming.chunks_done
+              : (prev?.chunks_done ?? 0),
+          source_kind:
+            incoming.source_kind !== undefined
+              ? incoming.source_kind
+              : (prev?.source_kind ?? null),
+          source_label:
+            incoming.source_label !== undefined
+              ? incoming.source_label
+              : (prev?.source_label ?? null),
+          attempt: incoming.attempt ?? prev?.attempt ?? 1,
+          max_attempts: incoming.max_attempts ?? prev?.max_attempts ?? 3,
+          next_retry_in: incoming.next_retry_in ?? prev?.next_retry_in ?? 0,
+          message: incoming.message || prev?.message || "",
+          error:
+            incoming.error !== undefined
+              ? incoming.error
+              : (prev?.error ?? null),
+          is_completed:
+            incoming.is_completed !== undefined
+              ? incoming.is_completed
+              : (prev?.is_completed ?? false),
+          video_url: incoming.video_url ?? prev?.video_url ?? null,
+          video_id: incoming.video_id ?? prev?.video_id ?? null,
+        };
+
+        if (merged.is_completed || merged.stage === "completed") {
+          pipelineDoneRef.current = true;
+          mutateVideoData().catch(() => undefined);
+        }
+        return merged;
+      });
     },
-    [formData, videoData, isYouTubeVideo]
+    [lessonId, mutateVideoData]
   );
 
-  // ============================================
-  // HANDLERS - NAVIGATION
-  // ============================================
+  const startFallbackPoll = useCallback(
+    (targetLessonId: string) => {
+      if (fallbackPollRef.current) return;
+      fallbackPollRef.current = setInterval(async () => {
+        if (pipelineDoneRef.current) {
+          if (fallbackPollRef.current) {
+            clearInterval(fallbackPollRef.current);
+            fallbackPollRef.current = null;
+          }
+          return;
+        }
+        try {
+          const res = await api.get<{
+            percent: number;
+            speed_mb_s: number;
+            uploaded_mb: number;
+            total_mb: number;
+            is_completed: boolean;
+            pipeline?: LessonPipelineState | null;
+          }>(`/lecturer/lessons/${targetLessonId}/upload_progress`);
+          if (res.data?.pipeline) {
+            applyIncomingPipeline(res.data.pipeline);
+          }
+        } catch {
+          // ignore
+        }
+      }, 3000);
+    },
+    [applyIncomingPipeline]
+  );
 
-  const handleNext = useCallback(() => {
-    if (validateStep(currentStep)) {
-      if (currentStep < totalSteps - 1) {
-        setCurrentStep(currentStep + 1);
-        setError(null);
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      }
+  const startPipelineSocket = useCallback(
+    (targetLessonId: string, retryCount = 0) => {
+      cleanupPipelineConnections();
+      pipelineDoneRef.current = false;
+      connectWebSocket(
+        `/api/v1/lecturer/lessons/ws/pipeline/${targetLessonId}`,
+        "LECTURER",
+        (data) => {
+          if (data && typeof data === "object") {
+            applyIncomingPipeline(data as Partial<LessonPipelineState>);
+          }
+        },
+        () => {
+          setWsConnected(false);
+          if (!pipelineDoneRef.current && retryCount < 5) {
+            reconnectTimerRef.current = setTimeout(() => {
+              startPipelineSocket(targetLessonId, retryCount + 1);
+            }, 2500);
+          } else if (!pipelineDoneRef.current) {
+            startFallbackPoll(targetLessonId);
+          }
+        }
+      )
+        .then((ws) => {
+          wsRef.current = ws;
+          setWsConnected(true);
+        })
+        .catch(() => {
+          setWsConnected(false);
+          startFallbackPoll(targetLessonId);
+        });
+    },
+    [applyIncomingPipeline, cleanupPipelineConnections, startFallbackPoll]
+  );
+
+  useEffect(() => {
+    return () => {
+      cleanupPipelineConnections();
+    };
+  }, [cleanupPipelineConnections]);
+
+  // Derived states
+  const plainDescription = useMemo(
+    () => stripRichText(formData.description),
+    [formData.description]
+  );
+
+  const hasLessonChanges = useMemo(() => {
+    if (!lessonDetail) return false;
+    return (
+      formData.title.trim() !== (lessonDetail.title || "").trim() ||
+      formData.description.trim() !== (lessonDetail.description || "").trim() ||
+      formData.is_preview !== lessonDetail.is_preview
+    );
+  }, [formData, lessonDetail]);
+
+  const hasVideoChanges = useMemo(() => {
+    if (activeSource === "file") {
+      return formData.video_file !== null;
     }
-  }, [currentStep, totalSteps, validateStep]);
+    const nextUrl = formData.video_url.trim();
+    const curUrl = (videoData?.video_url || "").trim();
+    return Boolean(nextUrl && nextUrl !== curUrl);
+  }, [activeSource, formData.video_file, formData.video_url, videoData]);
 
-  const handleBack = useCallback(() => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
-      setErrors({});
-      setError(null);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  }, [currentStep]);
+  const hasChanges = hasLessonChanges || hasVideoChanges;
 
-  // ============================================
-  // HANDLERS - AI GENERATION
-  // ============================================
+  const previewYoutubeUrl = useMemo(() => {
+    const candidate =
+      activeSource === "youtube"
+        ? formData.video_url || videoData?.video_url || ""
+        : videoData?.video_url || "";
+    const id = extractYoutubeId(candidate);
+    return id ? `https://www.youtube.com/embed/${id}` : null;
+  }, [activeSource, formData.video_url, videoData]);
 
-  const handleGenerateTitle = useCallback(async () => {
-    if (!formData.title.trim()) {
-      setError("Vui lòng nhập tiêu đề bài học trước");
+  const applyVideoFile = (file: File | null) => {
+    if (!file) {
+      if (videoObjectUrl) URL.revokeObjectURL(videoObjectUrl);
+      setVideoObjectUrl(null);
+      setLocalDurationSec(0);
+      setFormData((prev) => ({ ...prev, video_file: null }));
       return;
     }
+    if (!file.type.startsWith("video/")) {
+      setErrors((prev) => ({
+        ...prev,
+        video_file: "Tệp được chọn phải có định dạng video",
+      }));
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024 * 1024) {
+      setErrors((prev) => ({
+        ...prev,
+        video_file: "Tệp video không được vượt quá 2GB",
+      }));
+      return;
+    }
+    if (videoObjectUrl) URL.revokeObjectURL(videoObjectUrl);
+    setVideoObjectUrl(URL.createObjectURL(file));
+    setLocalDurationSec(0);
+    setFormData((prev) => ({ ...prev, video_file: file }));
+    setErrors((prev) => ({ ...prev, video_file: undefined }));
+  };
 
+  // AI Generators
+  const handleGenerateTitle = async () => {
+    if (!formData.title.trim()) {
+      setError("Vui lòng nhập tiêu đề nháp trước");
+      return;
+    }
     setIsGeneratingTitle(true);
     setError(null);
-
     try {
-      const response = await api.post(
-        "/lecturers/chat/lesson/rewrite_the_title",
-        { title: formData.title.trim() }
-      );
-
-      // API trả về text thuần trực tiếp
-      const generatedTitle = response.data;
-
-      if (generatedTitle && typeof generatedTitle === "string") {
-        setFormData((prev) => ({ ...prev, title: generatedTitle }));
-      } else {
-        setError("Không thể tạo tiêu đề tự động. Vui lòng thử lại.");
+      const res = await api.post("/lecturers/chat/lesson/rewrite_the_title", {
+        title: formData.title.trim(),
+      });
+      if (res.data && typeof res.data === "string") {
+        setFormData((prev) => ({ ...prev, title: res.data }));
+        showToast.success("AI đã tối ưu tiêu đề bài học");
       }
-    } catch (error: any) {
-      setError(
-        error.response?.data?.detail ||
-          error.response?.data?.message ||
-          error.message ||
-          "Không thể tạo tiêu đề tự động"
-      );
+    } catch (err: unknown) {
+      setError(formatApiError(err, "Không thể tạo tiêu đề tự động"));
     } finally {
       setIsGeneratingTitle(false);
     }
-  }, [formData.title]);
+  };
 
-  const handleGenerateDescription = useCallback(async () => {
+  const handleGenerateDescription = async () => {
     if (!formData.title.trim()) {
       setError("Vui lòng nhập tiêu đề bài học trước");
       return;
     }
-
-    if (!sectionName) {
-      setError("Đang tải thông tin section. Vui lòng đợi...");
-      return;
-    }
-
     setIsGeneratingDescription(true);
     setError(null);
-
     try {
-      const response = await api.post(
-        "/lecturers/chat/lesson/create_description",
-        {
-          title: formData.title.trim(),
-          section_name: sectionName,
-        }
-      );
-
-      // API trả về markdown string trực tiếp
-      const generatedDescription = response.data;
-
-      if (generatedDescription && typeof generatedDescription === "string") {
-        setFormData((prev) => ({ ...prev, description: generatedDescription }));
-      } else {
-        setError("Không thể tạo mô tả tự động. Vui lòng thử lại.");
+      const res = await api.post("/lecturers/chat/lesson/create_description", {
+        title: formData.title.trim(),
+        section_name: sectionName || "Chương học chính",
+      });
+      if (res.data && typeof res.data === "string") {
+        setFormData((prev) => ({ ...prev, description: res.data }));
+        showToast.success("AI đã viết mô tả bài học");
       }
-    } catch (error: any) {
-      setError(
-        error.response?.data?.detail ||
-          error.response?.data?.message ||
-          error.message ||
-          "Không thể tạo mô tả tự động"
-      );
+    } catch (err: unknown) {
+      setError(formatApiError(err, "Không thể tạo mô tả tự động"));
     } finally {
       setIsGeneratingDescription(false);
     }
-  }, [formData.title, sectionName]);
+  };
 
-  // ============================================
-  // HANDLERS - FILE UPLOAD
-  // ============================================
-
-  const handleFileChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-
-      if (!file.type.startsWith("video/")) {
-        setErrors((prev) => ({
-          ...prev,
-          video_file: "File phải là định dạng video",
-        }));
-        return;
-      }
-
-      const maxSize = 2 * 1024 * 1024 * 1024; // 2GB
-      if (file.size > maxSize) {
-        setErrors((prev) => ({
-          ...prev,
-          video_file: "File video không được vượt quá 2GB",
-        }));
-        return;
-      }
-
-      setFormData((prev) => ({ ...prev, video_file: file }));
-      setErrors((prev) => ({ ...prev, video_file: undefined }));
-
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setVideoPreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-    },
-    []
-  );
-
-  // ============================================
-  // HANDLERS - UPLOAD PROGRESS
-  // ============================================
-
-  const checkUploadProgress = useCallback(async () => {
-    if (!lessonId) return;
-
+  const handleReindex = async () => {
+    if (!lessonId || isReindexing) return;
+    setIsReindexing(true);
+    setError(null);
     try {
-      const response = await api.get<UploadProgress>(
-        `/lecturer/lessons/${lessonId}/upload_progress`
-      );
-      const progress = response.data;
-      setUploadProgress(progress);
+      await api.post(`/lecturer/lessons/${lessonId}/reindex`);
+      applyIncomingPipeline({
+        lesson_id: lessonId,
+        stage: "queued",
+        stage_label: "Đang chạy lại chỉ mục AI",
+        percent: 10,
+        error: null,
+        is_completed: false,
+        message: "Đã nhận yêu cầu chạy lại trích xuất & tạo vector AI...",
+      });
+      startPipelineSocket(lessonId);
+      showToast.success("Đã kích hoạt chạy lại chỉ mục AI");
+    } catch (err: unknown) {
+      const msg = formatApiError(err, "Không thể chạy lại chỉ mục AI");
+      setError(msg);
+      showToast.error(msg);
+    } finally {
+      setIsReindexing(false);
+    }
+  };
 
-      // Nếu upload hoàn thành
-      if (progress.is_completed) {
-        if (pollingIntervalRef.current) {
-          clearInterval(pollingIntervalRef.current);
-          pollingIntervalRef.current = null;
-        }
-
-        // Không gọi mutateVideoData() khi upload file vì video cần thời gian xử lý
-        // API video có thể trả về 404 trong lúc này
-        // Video sẽ được fetch lại khi user quay lại trang sau
-        setSuccessMessage("✅ Video đã được upload và xử lý thành công!");
-
-        // Redirect sau 3 giây
-        if (redirectTimeoutRef.current) {
-          clearTimeout(redirectTimeoutRef.current);
-        }
-        redirectTimeoutRef.current = setTimeout(() => {
-          if (lessonDetail?.course_id) {
-            router.push(
-              `/lecturer/chapters?course_id=${lessonDetail.course_id}`
-            );
-          } else {
-            router.push("/lecturer/chapters");
-          }
-        }, 3000);
-      }
-    } catch (error: any) {
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-        pollingIntervalRef.current = null;
+  const handleSubmit = async () => {
+    const newErrors: Partial<Record<keyof VideoFormData, string>> = {};
+    if (!formData.title.trim()) {
+      newErrors.title = "Vui lòng nhập tiêu đề bài học";
+    }
+    if (!plainDescription) {
+      newErrors.description = "Vui lòng nhập mô tả bài học";
+    }
+    if (hasVideoChanges && activeSource === "youtube") {
+      if (!extractYoutubeId(formData.video_url)) {
+        newErrors.video_url =
+          "Đường dẫn YouTube chưa hợp lệ (youtube.com/watch?v=... hoặc youtu.be/...)";
       }
     }
-  }, [lessonId, lessonDetail, router]);
-
-  const startProgressPolling = useCallback(() => {
-    if (pollingIntervalRef.current) {
-      clearInterval(pollingIntervalRef.current);
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      showToast.error("Vui lòng kiểm tra lại các trường bắt buộc");
+      return;
     }
-    checkUploadProgress();
-    const interval = setInterval(() => {
-      checkUploadProgress();
-    }, 2000);
-    pollingIntervalRef.current = interval;
-  }, [checkUploadProgress]);
-
-  const stopProgressPolling = useCallback(() => {
-    if (pollingIntervalRef.current) {
-      clearInterval(pollingIntervalRef.current);
-      pollingIntervalRef.current = null;
-    }
-  }, []);
-
-  // Cleanup polling và timeout khi component unmount
-  useEffect(() => {
-    return () => {
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-      }
-      if (redirectTimeoutRef.current) {
-        clearTimeout(redirectTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  // ============================================
-  // HANDLERS - SUBMIT
-  // ============================================
-
-  const handleSubmit = useCallback(async () => {
-    if (!validateStep(currentStep) || !lessonId) {
-      if (!lessonId) {
-        setError("Thiếu thông tin lesson ID");
-      }
+    if (!hasChanges) {
+      showToast.info("Chưa có thay đổi nào cần lưu");
       return;
     }
 
@@ -568,980 +624,840 @@ const EditVideoLesson = () => {
     setSuccessMessage(null);
 
     try {
-      const messages: string[] = [];
-
-      // Cập nhật lesson info (chỉ khi có thay đổi)
       if (hasLessonChanges) {
         await api.put(`/lecturer/lessons/${lessonId}`, {
           title: formData.title.trim(),
           description: formData.description.trim(),
           is_preview: formData.is_preview,
         });
-        messages.push("✅ Cập nhật thông tin bài học thành công!");
         await mutateLessonDetail();
       }
 
       if (hasVideoChanges) {
         setIsUploading(true);
+        applyIncomingPipeline({
+          lesson_id: lessonId,
+          stage: activeSource === "file" ? "uploading" : "queued",
+          stage_label:
+            activeSource === "file"
+              ? "Đang tải tệp video mới lên YouTube"
+              : "Đang cập nhật liên kết & chỉ mục AI",
+          percent: 5,
+          error: null,
+          is_completed: false,
+          message:
+            activeSource === "file"
+              ? "Đang tải tệp video mới và tách âm thanh AI song song..."
+              : "Đang liên kết YouTube mới và lập lại chỉ mục AI...",
+        });
+        startPipelineSocket(lessonId);
 
-        // Trường hợp 1: Upload video file
-        if (formData.video_file) {
-          const formDataUpload = new FormData();
-          formDataUpload.append("video", formData.video_file);
-
-          await api.put(
-            `/lecturer/lessons/${lessonId}/video/file`,
-            formDataUpload,
-            {
-              headers: { "Content-Type": "multipart/form-data" },
-            }
-          );
-        }
-        // Trường hợp 2: Update YouTube URL
-        else if (
-          formData.uploadMethod === "youtube" &&
-          formData.video_url.trim()
-        ) {
-          try {
-            // Gửi JSON body với video_url
-            await api.put(`/lecturer/lessons/${lessonId}/video/link`, {
-              video_url: formData.video_url.trim(),
-            });
-
-            messages.push("✅ Video YouTube đã được cập nhật!");
-            videoData404Ref.current = false;
-            try {
-              await mutateVideoData();
-            } catch (videoError: any) {
-              if (videoError?.response?.status === 404) {
-                videoData404Ref.current = true;
-              }
-            }
-          } catch (youtubeError: any) {
-            // Xử lý lỗi từ YouTube API
-            const errorMessage =
-              youtubeError?.response?.data?.detail ||
-              youtubeError?.response?.data?.message ||
-              youtubeError?.message ||
-              "Lỗi khi cập nhật video YouTube";
-            throw new Error(errorMessage);
-          }
-        } else {
-          // Không có dữ liệu video để upload, không gọi API
-          setIsUploading(false);
-          return;
-        }
-
-        if (formData.video_file) {
-          // Set videoData404Ref = true để tránh SWR gọi API video
-          // vì video cần thời gian xử lý sau khi upload
-          videoData404Ref.current = true;
-          if (messages.length > 0) {
-            setSuccessMessage(`${messages.join(" ")}`);
-          }
-          setShowUploadProgress(true);
-          setUploadProgress({
-            task_id: lessonId,
-            percent: 0,
-            speed_mb_s: 0,
-            uploaded_mb: 0,
-            total_mb: 0,
-            video_url: null,
-            video_id: null,
-            is_completed: false,
+        if (activeSource === "file" && formData.video_file) {
+          const fd = new FormData();
+          fd.append("video", formData.video_file);
+          await api.put(`/lecturer/lessons/${lessonId}/video/file`, fd, {
+            headers: { "Content-Type": "multipart/form-data" },
           });
-          startProgressPolling();
-          setIsUploading(false);
-          window.scrollTo({ top: 0, behavior: "smooth" });
-          return;
+          applyVideoFile(null);
+        } else if (activeSource === "youtube" && formData.video_url.trim()) {
+          await api.put(`/lecturer/lessons/${lessonId}/video/link`, {
+            video_url: formData.video_url.trim(),
+          });
+          videoData404Ref.current = false;
+          await mutateVideoData().catch(() => undefined);
         }
-
-        setIsUploading(false);
       }
 
-      // Thông báo thành công (chỉ khi không có file upload đang chạy)
-      if (messages.length > 0) {
-        setSuccessMessage(`${messages.join(" ")} Đang chuyển hướng...`);
-      } else {
-        setSuccessMessage("✅ Không có thay đổi nào. Đang chuyển hướng...");
-      }
-
+      const msg = "Đã cập nhật bài học thành công!";
+      setSuccessMessage(msg);
+      showToast.success(msg);
       window.scrollTo({ top: 0, behavior: "smooth" });
-
-      setTimeout(() => {
-        if (lessonDetail?.course_id) {
-          router.push(`/lecturer/chapters?course_id=${lessonDetail.course_id}`);
-        } else {
-          router.push("/lecturer/chapters");
-        }
-      }, 3000);
-    } catch (error: any) {
-      setError(
-        error.response?.data?.detail ||
-          error.response?.data?.message ||
-          error.message ||
-          "Đã xảy ra lỗi khi cập nhật bài học"
-      );
+    } catch (err: unknown) {
+      const msg = formatApiError(err, "Đã xảy ra lỗi khi cập nhật bài học");
+      setError(msg);
+      showToast.error(msg);
+      if (hasVideoChanges) {
+        pipelineDoneRef.current = true;
+        cleanupPipelineConnections();
+        applyIncomingPipeline({
+          stage: "failed",
+          stage_label: "Cập nhật video thất bại",
+          error: msg,
+          message: msg,
+          is_completed: false,
+        });
+      }
     } finally {
       setIsSubmitting(false);
       setIsUploading(false);
     }
-  }, [
-    currentStep,
-    validateStep,
-    lessonId,
-    formData,
-    hasLessonChanges,
-    hasVideoChanges,
-    lessonDetail,
-    mutateLessonDetail,
-    mutateVideoData,
-    router,
-    startProgressPolling,
-  ]);
+  };
 
-  // Handler để quay về khi upload đang chạy nền
-  const handleBackToChapters = useCallback(() => {
-    stopProgressPolling();
-    // Clear timeout redirect nếu có
-    if (redirectTimeoutRef.current) {
-      clearTimeout(redirectTimeoutRef.current);
-      redirectTimeoutRef.current = null;
-    }
-    if (lessonDetail?.course_id) {
-      router.push(`/lecturer/chapters?course_id=${lessonDetail.course_id}`);
-    } else {
-      router.push("/lecturer/chapters");
-    }
-  }, [stopProgressPolling, lessonDetail, router]);
-
-  // ============================================
-  // EARLY RETURNS
-  // ============================================
-
-  if (!lessonId) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="max-w-md w-full p-6 border border-border text-center">
-          <Alert variant="destructive" title="Thiếu thông tin cần thiết">
-            Thiếu thông tin lesson ID. Vui lòng quay lại trang trước.
-          </Alert>
-          <div className="mt-4">
-            <Button
-              variant="outline"
-              onClick={() => router.back()}
-              leftIcon={<ArrowLeft className="h-4 w-4" />}
-            >
-              Quay lại
-            </Button>
-          </div>
-        </Card>
-      </div>
-    );
-  }
-
-  if (isLoading || !mounted || !lessonDetail) {
+  if (isLoadingLesson || !mounted) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="max-w-4xl mx-auto px-4 py-16 flex items-center justify-center">
-          <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-          <span className="ml-3 text-sm text-muted-foreground">Đang tải...</span>
+        <div className="mx-auto max-w-4xl px-4 py-20 text-center">
+          <div className="mx-auto h-11 w-11 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <p className="mt-4 text-sm font-medium text-muted-foreground">
+            Đang tải trình biên tập bài học Video...
+          </p>
         </div>
       </div>
     );
   }
 
-  // ============================================
-  // RENDER
-  // ============================================
+  const courseId = lessonDetail?.course_id || "";
+  const hasTranscript = (videoData?.transcript_length ?? 0) > 0;
+  const displayDuration = localDurationSec || videoData?.duration_seconds || 0;
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              if (lessonDetail?.course_id) {
-                router.push(
-                  `/lecturer/chapters?course_id=${lessonDetail.course_id}`
-                );
-              } else {
-                router.push("/lecturer/chapters");
-              }
-            }}
-            leftIcon={<ArrowLeft className="h-4 w-4" />}
-            className="mb-4 text-muted-foreground hover:text-foreground"
+    <div className="min-h-screen bg-background pb-16">
+      <div className="mx-auto max-w-[1360px] px-4 pt-6 sm:px-6 lg:px-8">
+        {/* Top Bar điều hướng 1 chạm */}
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <Link
+            href={
+              courseId
+                ? `/lecturer/chapters?course_id=${courseId}`
+                : "/lecturer/courses"
+            }
+            className="inline-flex items-center gap-2 rounded-full border border-border bg-surface/90 px-4 py-2 text-sm font-medium text-muted-foreground shadow-xs transition-all hover:border-primary-pastel hover:bg-primary-light/50 hover:text-primary"
           >
-            Quay lại danh sách bài học
-          </Button>
-          <h1 className="text-3xl font-bold font-display text-foreground mb-2">
-            Chỉnh sửa bài học Video
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Cập nhật thông tin và video cho bài học
-          </p>
+            <ArrowLeft className="h-4 w-4" />
+            <span>Chương & bài học</span>
+          </Link>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href={`/lecturer/resources?lesson_id=${lessonId}`}
+              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3.5 py-2 text-xs font-semibold text-foreground shadow-xs transition-all hover:border-primary-pastel hover:bg-primary-light/50 hover:text-primary"
+            >
+              <Paperclip className="h-3.5 w-3.5" />
+              <span>Tài liệu bài học</span>
+            </Link>
+            {courseId && (
+              <Link
+                href={`/lecturer/quizzes-lesson?lesson_id=${lessonId}&course_id=${courseId}`}
+                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3.5 py-2 text-xs font-semibold text-foreground shadow-xs transition-all hover:border-warning-border hover:bg-warning-bg/70 hover:text-warning-foreground"
+              >
+                <ClipboardList className="h-3.5 w-3.5" />
+                <span>Câu hỏi trắc nghiệm</span>
+              </Link>
+            )}
+          </div>
         </div>
 
-        {/* Progress Bar */}
-        <Card className="p-6 border border-border bg-surface shadow-xs mb-6">
-          <div className="flex items-center justify-between text-sm mb-3">
-            <span className="font-medium text-foreground">
-              Bước {currentStep + 1} / {totalSteps}
-            </span>
-            <span className="font-semibold text-primary">
-              {Math.round(progressPercentage)}%
-            </span>
-          </div>
-          <div className="w-full bg-primary-light/50 rounded-full h-2.5 overflow-hidden">
-            <div
-              className="bg-primary h-2.5 rounded-full transition-all duration-500 ease-out"
-              style={{ width: `${progressPercentage}%` }}
-            />
-          </div>
-          <div className="flex items-center justify-between mt-4 text-xs">
-            <span
-              className={
-                currentStep >= 0
-                  ? "text-primary font-semibold"
-                  : "text-muted-foreground"
-              }
-            >
-              Thông tin cơ bản
-            </span>
-            <span
-              className={
-                currentStep >= 1
-                  ? "text-primary font-semibold"
-                  : "text-muted-foreground"
-              }
-            >
-              Chọn phương thức
-            </span>
-            <span
-              className={
-                currentStep >= 2
-                  ? "text-primary font-semibold"
-                  : "text-muted-foreground"
-              }
-            >
-              Upload video
-            </span>
-          </div>
-        </Card>
+        {/* Hero Banner Cloudy Blue */}
+        <section className="relative mb-6 overflow-hidden rounded-[28px] border border-primary-pastel/80 bg-gradient-to-br from-primary-light/85 via-surface to-info-bg/50 p-6 shadow-[0_24px_48px_-16px_rgba(53,111,167,0.14)] sm:p-7">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full bg-white/75 blur-3xl"
+          />
 
-        {/* Success Message */}
-        {successMessage && (
-          <div className="mb-6">
-            <Alert variant="success" title="Thành công!">
-              <p>{successMessage}</p>
-              {successMessage.includes("chuyển hướng") && (
-                <div className="mt-2 flex items-center gap-2 text-xs">
-                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
-                  <span>Đang chuyển hướng về trang quản lý bài học...</span>
-                </div>
-              )}
-            </Alert>
-          </div>
-        )}
-
-        {/* Error Message */}
-        {error && (
-          <div className="mb-6">
-            <Alert variant="destructive">{error}</Alert>
-          </div>
-        )}
-
-        {/* Upload Progress */}
-        {showUploadProgress && uploadProgress && (
-          <Card variant="pastel-blue" className="p-6 mb-6 border border-border">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 bg-primary text-white rounded-xl flex items-center justify-center shadow-xs">
-                    <UploadCloud className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-foreground">
-                      Đang upload và xử lý video
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      Video đang được upload và xử lý ở nền. Bạn có thể quay lại
-                      sau.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Progress Bar */}
-                <div className="mb-4">
-                  <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
-                    <span className="font-medium text-foreground">
-                      Tiến độ: {uploadProgress.percent.toFixed(1)}%
+          <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="max-w-2xl">
+              <div className="mb-2.5 flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-primary-pastel bg-surface/90 px-3 py-1 text-xs font-semibold text-primary shadow-xs">
+                  <Video className="h-3.5 w-3.5" />
+                  <span>Biên tập bài học Video</span>
+                </span>
+                {sectionName && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface/85 px-3 py-1 text-xs font-semibold text-foreground">
+                    <span>Chương:</span>
+                    <span className="max-w-[260px] truncate text-primary">
+                      {sectionName}
                     </span>
-                    {uploadProgress.speed_mb_s > 0 && (
-                      <span className="text-muted-foreground">
-                        {uploadProgress.speed_mb_s.toFixed(2)} MB/s
-                      </span>
-                    )}
-                  </div>
-                  <div className="w-full bg-primary-light/60 rounded-full h-2.5 overflow-hidden">
-                    <div
-                      className="bg-primary h-2.5 rounded-full transition-all duration-300"
-                      style={{ width: `${uploadProgress.percent}%` }}
-                    />
-                  </div>
-                  {uploadProgress.total_mb > 0 && (
-                    <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
-                      <span>
-                        Đã upload: {uploadProgress.uploaded_mb.toFixed(2)} MB
-                      </span>
-                      <span>Tổng: {uploadProgress.total_mb.toFixed(2)} MB</span>
-                    </div>
+                  </span>
+                )}
+                {hasChanges && (
+                  <span className="inline-flex items-center rounded-full border border-warning-border bg-warning-bg px-2.5 py-1 text-xs font-semibold text-warning-foreground">
+                    Có thay đổi chưa lưu
+                  </span>
+                )}
+              </div>
+
+              <h1 className="font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+                {formData.title.trim() || "Chỉnh sửa bài học Video"}
+              </h1>
+              <p className="mt-1.5 text-sm text-muted-foreground">
+                Cập nhật nội dung, thay đổi nguồn video và quản lý trạng thái
+                chỉ mục AI trực tiếp trên cùng một màn hình.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2.5">
+              {videoData && !videoData404Ref.current && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="md"
+                  onClick={handleReindex}
+                  isLoading={isReindexing}
+                  loadingText="Đang chạy..."
+                  leftIcon={
+                    !isReindexing ? <RefreshCw className="h-4 w-4" /> : undefined
+                  }
+                >
+                  Chạy lại chỉ mục AI
+                </Button>
+              )}
+              <Button
+                type="button"
+                variant="primary"
+                size="md"
+                onClick={handleSubmit}
+                disabled={isSubmitting || isUploading || !hasChanges}
+                isLoading={isSubmitting || isUploading}
+                loadingText={isUploading ? "Đang tải video..." : "Đang lưu..."}
+                leftIcon={
+                  !isSubmitting && !isUploading ? (
+                    <Save className="h-4 w-4" />
+                  ) : undefined
+                }
+              >
+                Lưu thay đổi
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        {/* Alerts */}
+        {error && (
+          <Alert variant="destructive" className="mb-5">
+            {error}
+          </Alert>
+        )}
+        {successMessage && !pipelineState && (
+          <Alert variant="success" className="mb-5">
+            {successMessage}
+          </Alert>
+        )}
+
+        {/* WebSocket Realtime Pipeline Progress */}
+        {pipelineState && (
+          <Card
+            className={`mb-6 border-2 p-6 ${
+              pipelineState.stage === "failed"
+                ? "border-destructive-border bg-destructive-bg/40"
+                : pipelineState.stage === "retrying"
+                  ? "border-warning-border bg-warning-bg/45"
+                  : pipelineState.is_completed
+                    ? "border-success-border bg-success-bg/40"
+                    : "border-primary-pastel bg-primary-light/30"
+            }`}
+          >
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex items-start gap-3.5">
+                <div
+                  className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-xs ${
+                    pipelineState.stage === "failed"
+                      ? "border border-destructive-border bg-destructive-bg text-destructive-foreground"
+                      : pipelineState.stage === "retrying"
+                        ? "border border-warning-border bg-warning-bg text-warning-foreground"
+                        : pipelineState.is_completed
+                          ? "border border-success-border bg-success-bg text-success-foreground"
+                          : "bg-primary text-primary-foreground"
+                  }`}
+                >
+                  {pipelineState.stage === "failed" ? (
+                    <AlertTriangle className="h-6 w-6" />
+                  ) : pipelineState.stage === "retrying" ? (
+                    <RefreshCw className="h-6 w-6 animate-spin" />
+                  ) : pipelineState.is_completed ? (
+                    <CheckCircle2 className="h-6 w-6" />
+                  ) : (
+                    <UploadCloud className="h-6 w-6" />
                   )}
                 </div>
-
-                {uploadProgress.is_completed && (
-                  <div className="mb-4">
-                    <Alert variant="success">
-                      Video đã được upload và xử lý thành công!
-                    </Alert>
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-base font-bold text-foreground">
+                      {pipelineState.stage_label}
+                    </h2>
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${
+                        wsConnected
+                          ? "border-success-border bg-success-bg text-success-foreground"
+                          : "border-border bg-surface text-muted-foreground"
+                      }`}
+                    >
+                      <Wifi animated={false} className="h-3 w-3" />
+                      <span>
+                        {wsConnected ? "WebSocket trực tiếp" : "Đồng bộ định kỳ"}
+                      </span>
+                    </span>
                   </div>
-                )}
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {pipelineState.message}
+                  </p>
+                  {pipelineState.source_label && (
+                    <p className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border border-primary-pastel bg-surface/90 px-2.5 py-0.5 text-[11px] font-semibold text-primary">
+                      <Bot animated={false} className="h-3 w-3" />
+                      <span>Nguồn dữ liệu: {pipelineState.source_label}</span>
+                    </p>
+                  )}
+                </div>
+              </div>
 
-                <div className="flex items-center gap-3 flex-wrap">
+              <div className="shrink-0 text-left sm:text-right">
+                <p className="text-2xl font-bold text-foreground">
+                  {pipelineState.percent.toFixed(0)}%
+                </p>
+                {pipelineState.stage === "failed" && (
                   <Button
                     type="button"
                     variant="primary"
                     size="sm"
-                    onClick={handleBackToChapters}
+                    onClick={handleReindex}
+                    isLoading={isReindexing}
+                    className="mt-2"
+                    leftIcon={
+                      !isReindexing ? (
+                        <RefreshCw className="h-3.5 w-3.5" />
+                      ) : undefined
+                    }
                   >
-                    Quay về danh sách bài học
+                    Thử lại ngay
                   </Button>
-                  {uploadProgress.is_completed ? (
-                    <p className="text-xs text-success-foreground font-medium">
-                      Upload hoàn tất. Đang chuyển hướng về danh sách bài học
-                      trong 3 giây...
-                    </p>
-                  ) : (
-                    <p className="text-xs text-muted-foreground">
-                      Upload sẽ tiếp tục chạy ở nền. Bạn có thể quay lại bất cứ
-                      lúc nào.
-                    </p>
-                  )}
-                </div>
+                )}
               </div>
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-border/70 bg-surface p-4">
+              <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {PIPELINE_STEPS.map((step, idx) => {
+                  const currentIdx = getPipelineStepIndex(pipelineState.stage);
+                  const done = currentIdx > idx || pipelineState.is_completed;
+                  const active =
+                    currentIdx === idx &&
+                    !pipelineState.is_completed &&
+                    pipelineState.stage !== "failed";
+                  return (
+                    <div
+                      key={step.key}
+                      className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold ${
+                        done
+                          ? "border-success-border bg-success-bg/70 text-success-foreground"
+                          : active
+                            ? "border-primary bg-primary-light/70 text-primary"
+                            : "border-border bg-background/60 text-muted-foreground"
+                      }`}
+                    >
+                      {done ? (
+                        <CheckCircle2
+                          animated={false}
+                          className="h-4 w-4 shrink-0"
+                        />
+                      ) : (
+                        <Circle
+                          animated={false}
+                          className={`h-4 w-4 shrink-0 ${
+                            active ? "animate-pulse" : "opacity-60"
+                          }`}
+                        />
+                      )}
+                      <span className="truncate">{step.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="h-2 w-full overflow-hidden rounded-full bg-primary-light">
+                <div
+                  className="h-full rounded-full bg-primary transition-all duration-300"
+                  style={{
+                    width: `${Math.min(100, Math.max(0, pipelineState.percent))}%`,
+                  }}
+                />
+              </div>
+              {pipelineState.error && (
+                <p className="mt-2 rounded-xl border border-destructive-border bg-destructive-bg/70 px-3 py-2 text-xs text-destructive-foreground">
+                  Chi tiết lỗi: {pipelineState.error}
+                </p>
+              )}
             </div>
           </Card>
         )}
 
-        {/* Step Content */}
-        <Card className="border border-border bg-surface shadow-xs p-8 mb-6">
-          {/* Step 0: Basic Info */}
-          {currentStep === 0 && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-bold font-display text-foreground mb-1">
-                  Thông tin cơ bản về bài học
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  Cập nhật thông tin cơ bản để mô tả bài học video của bạn
-                </p>
+        {/* Bố cục Studio 2 cột (8/4) */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+          {/* CỘT TRÁI (8/12) */}
+          <div className="space-y-6 lg:col-span-8">
+            {/* 1. Nội dung bài học */}
+            <Card className="p-6">
+              <div className="mb-5 flex items-center gap-2.5 border-b border-border/70 pb-4">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-primary-pastel bg-primary-light text-primary">
+                  <FileText className="h-4 w-4" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-foreground">
+                    1. Thông tin bài học
+                  </h2>
+                  <p className="text-xs text-muted-foreground">
+                    Chỉnh sửa tiêu đề, mô tả và quyền xem thử miễn phí
+                  </p>
+                </div>
               </div>
 
               <div className="space-y-5">
-                {/* Title */}
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm font-semibold text-foreground">
-                      Tiêu đề bài học <span className="text-destructive">*</span>
+                  <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
+                    <label className="text-sm font-semibold text-foreground">
+                      Tiêu đề bài học{" "}
+                      <span className="text-destructive-foreground">*</span>
                     </label>
                     <Button
                       type="button"
-                      variant="outline"
+                      variant="pastel"
                       size="sm"
                       onClick={handleGenerateTitle}
                       disabled={isGeneratingTitle || !formData.title.trim()}
                       isLoading={isGeneratingTitle}
-                      loadingText="Đang tạo..."
-                      className="border-primary text-primary hover:bg-primary-light/50"
+                      loadingText="AI đang viết..."
+                      leftIcon={
+                        !isGeneratingTitle ? (
+                          <Bot className="h-3.5 w-3.5" />
+                        ) : undefined
+                      }
                     >
-                      Tạo tiêu đề tự động
+                      AI tối ưu tiêu đề
                     </Button>
                   </div>
                   <input
                     type="text"
                     value={formData.title}
-                    onChange={(e) =>
+                    onChange={(e) => {
                       setFormData((prev) => ({
                         ...prev,
                         title: e.target.value,
-                      }))
-                    }
-                    placeholder="Ví dụ: Giới thiệu về Python"
-                    className={`w-full px-4 py-3 border rounded-xl bg-surface text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 transition-all ${
+                      }));
+                      if (errors.title) {
+                        setErrors((prev) => ({ ...prev, title: undefined }));
+                      }
+                    }}
+                    placeholder="Nhập tiêu đề bài học..."
+                    className={`w-full rounded-xl border bg-surface px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 transition-all ${
                       errors.title
-                        ? "border-destructive focus:ring-destructive"
-                        : "border-border focus:ring-primary focus:border-transparent"
+                        ? "border-destructive-border focus:border-destructive-foreground focus:ring-destructive-border/40"
+                        : "border-border focus:border-primary focus:ring-primary/20"
                     }`}
                   />
                   {errors.title && (
-                    <p className="text-destructive text-sm mt-1">
+                    <p className="mt-1 text-xs font-medium text-destructive-foreground">
                       {errors.title}
                     </p>
                   )}
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Nhập tiêu đề và nhấn &ldquo;Tạo tiêu đề tự động&rdquo; để AI tối ưu
-                    tiêu đề cho bạn
-                  </p>
                 </div>
 
-                {/* Description */}
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm font-semibold text-foreground">
-                      Mô tả bài học <span className="text-destructive">*</span>
+                  <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
+                    <label className="text-sm font-semibold text-foreground">
+                      Mô tả bài học{" "}
+                      <span className="text-destructive-foreground">*</span>
                     </label>
                     <Button
                       type="button"
-                      variant="outline"
+                      variant="pastel"
                       size="sm"
                       onClick={handleGenerateDescription}
                       disabled={
-                        isGeneratingDescription ||
-                        !formData.title.trim() ||
-                        !sectionName
+                        isGeneratingDescription || !formData.title.trim()
                       }
                       isLoading={isGeneratingDescription}
-                      loadingText="Đang tạo..."
-                      className="border-primary text-primary hover:bg-primary-light/50"
+                      loadingText="AI đang soạn..."
+                      leftIcon={
+                        !isGeneratingDescription ? (
+                          <Bot className="h-3.5 w-3.5" />
+                        ) : undefined
+                      }
                     >
-                      Tạo mô tả tự động
+                      AI viết mô tả
                     </Button>
                   </div>
-                  <div
-                    className={`rounded-xl overflow-hidden ${
-                      errors.description
-                        ? "border-2 border-destructive"
-                        : "border border-border"
-                    }`}
-                  >
-                    <TiptapEditor
-                      value={formData.description}
-                      onChange={(markdown) =>
-                        setFormData((prev) => ({
+                  <TiptapEditor
+                    value={formData.description}
+                    onChange={(content) => {
+                      setFormData((prev) => ({ ...prev, description: content }));
+                      if (errors.description) {
+                        setErrors((prev) => ({
                           ...prev,
-                          description: markdown,
-                        }))
+                          description: undefined,
+                        }));
                       }
-                      placeholder="Mô tả chi tiết về nội dung bài học video này..."
-                      minHeight="200px"
-                    />
-                  </div>
+                    }}
+                    placeholder="Nhập mô tả chi tiết bài học..."
+                  />
                   {errors.description && (
-                    <p className="text-destructive text-sm mt-1">
+                    <p className="mt-1.5 text-xs font-medium text-destructive-foreground">
                       {errors.description}
                     </p>
                   )}
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Nhập tiêu đề và nhấn &ldquo;Tạo mô tả tự động&rdquo; để AI tạo mô tả
-                    chi tiết cho bạn
-                  </p>
                 </div>
 
-                {/* Is Preview */}
-                <div className="flex items-center gap-3 pt-2">
-                  <input
-                    type="checkbox"
-                    id="is_preview"
-                    checked={formData.is_preview}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        is_preview: e.target.checked,
-                      }))
-                    }
-                    className="w-5 h-5 text-primary border-border rounded focus:ring-primary cursor-pointer"
-                  />
-                  <label
-                    htmlFor="is_preview"
-                    className="text-sm font-medium text-foreground cursor-pointer"
-                  >
-                    Cho phép xem trước bài học này (Preview)
+                <div className="flex items-center justify-between gap-4 rounded-2xl border border-info-border bg-info-bg/55 p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-surface shadow-xs">
+                      {formData.is_preview ? (
+                        <Unlock className="h-4 w-4 text-success-foreground" />
+                      ) : (
+                        <Lock className="h-4 w-4 text-info-foreground" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-foreground">
+                        Cho phép xem thử miễn phí (Preview)
+                      </p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {formData.is_preview
+                          ? "Học viên chưa mua khóa học vẫn xem được bài giảng này."
+                          : "Chỉ học viên đã đăng ký khóa học mới xem được bài giảng."}
+                      </p>
+                    </div>
+                  </div>
+                  <label className="relative inline-flex shrink-0 cursor-pointer items-center">
+                    <input
+                      type="checkbox"
+                      checked={formData.is_preview}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          is_preview: e.target.checked,
+                        }))
+                      }
+                      className="peer sr-only"
+                    />
+                    <div className="peer h-6 w-11 rounded-full bg-border after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-border after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/25" />
                   </label>
                 </div>
-                <p className="text-xs text-muted-foreground ml-8">
-                  Học viên có thể xem bài học này miễn phí mà không cần đăng ký
-                  khóa học
-                </p>
               </div>
-            </div>
-          )}
+            </Card>
 
-          {/* Step 1: Upload Method */}
-          {currentStep === 1 && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-bold font-display text-foreground mb-1">
-                  Chọn phương thức upload video
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  Video hiện tại hoặc chọn phương thức upload mới
-                </p>
-              </div>
-
-              {/* Current Video Info */}
-              {videoData && !videoData404Ref.current && (
-                <Card variant="pastel-blue" className="p-6 border border-border">
-                  <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0">
-                      <div className="w-14 h-14 bg-primary text-white rounded-xl flex items-center justify-center shadow-xs">
-                        <Video className="h-7 w-7" />
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-bold text-foreground mb-2">
-                        Video hiện tại
-                      </h3>
-                      {isYouTubeVideo ? (
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-2">
-                            <LinkIcon className="h-4 w-4 text-primary" />
-                            <span className="text-sm font-medium text-foreground">
-                              YouTube Video
-                            </span>
-                          </div>
-                          <div className="bg-surface rounded-xl p-3 border border-border">
-                            <p className="text-sm text-foreground break-all">
-                              {videoData.video_url}
-                            </p>
-                            {videoData.duration_seconds && (
-                              <p className="text-xs text-muted-foreground mt-1">
-                                Thời lượng:{" "}
-                                {formatDuration(videoData.duration_seconds)}
-                              </p>
-                            )}
-                          </div>
-                          {videoData.file_id && (
-                            <div className="mt-3">
-                              <div className="w-full aspect-video rounded-xl overflow-hidden border border-border bg-slate-900">
-                                <iframe
-                                  src={`https://www.youtube.com/embed/${videoData.file_id}`}
-                                  title="YouTube video player"
-                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                                  allowFullScreen
-                                  className="w-full h-full"
-                                />
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <UploadCloud className="h-4 w-4 text-primary" />
-                            <span className="text-sm font-medium text-foreground">
-                              Video File
-                            </span>
-                          </div>
-                          <div className="bg-surface rounded-xl p-3 border border-border">
-                            <p className="text-sm text-foreground">
-                              File ID: {videoData.file_id || "N/A"}
-                            </p>
-                            {videoData.duration_seconds && (
-                              <p className="text-xs text-muted-foreground mt-1">
-                                Thời lượng:{" "}
-                                {formatDuration(videoData.duration_seconds)}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                      <p className="text-xs text-muted-foreground mt-3">
-                        Bạn có thể giữ nguyên video hiện tại hoặc chọn phương
-                        thức khác bên dưới để thay đổi
-                      </p>
-                    </div>
+            {/* 2. Thay đổi nguồn Video */}
+            <Card className="p-6">
+              <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-border/70 pb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-primary-pastel bg-primary-light text-primary">
+                    <Film className="h-4 w-4" />
                   </div>
-                </Card>
-              )}
+                  <div>
+                    <h2 className="text-base font-bold text-foreground">
+                      2. Nguồn Video bài giảng
+                    </h2>
+                    <p className="text-xs text-muted-foreground">
+                      Giữ nguyên video cũ hoặc cập nhật link YouTube / tải tệp
+                      video mới
+                    </p>
+                  </div>
+                </div>
 
-              <div>
-                <h3 className="text-lg font-semibold text-foreground mb-4">
-                  Chọn phương thức upload (hoặc giữ nguyên video hiện tại)
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* YouTube Option */}
+                <div className="inline-flex rounded-xl border border-border bg-background p-1">
                   <button
                     type="button"
-                    onClick={() =>
+                    onClick={() => setParam("source", "youtube")}
+                    className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                      activeSource === "youtube"
+                        ? "bg-primary text-primary-foreground shadow-xs"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <LinkIcon className="h-3.5 w-3.5" />
+                    <span>Link YouTube</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setParam("source", "file")}
+                    className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                      activeSource === "file"
+                        ? "bg-primary text-primary-foreground shadow-xs"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <UploadCloud className="h-3.5 w-3.5" />
+                    <span>Tải tệp mới</span>
+                  </button>
+                </div>
+              </div>
+
+              {activeSource === "youtube" ? (
+                <div className="space-y-3">
+                  <label className="block text-sm font-semibold text-foreground">
+                    Đường dẫn video YouTube
+                  </label>
+                  <input
+                    type="url"
+                    value={formData.video_url}
+                    onChange={(e) => {
                       setFormData((prev) => ({
                         ...prev,
-                        uploadMethod: "youtube",
-                      }))
-                    }
-                    className={`p-6 border-2 rounded-2xl transition-all text-left cursor-pointer ${
-                      formData.uploadMethod === "youtube"
-                        ? "border-primary bg-primary-light/40 shadow-xs"
-                        : isCurrentVideoYouTube
-                        ? "border-primary-pastel bg-primary-light/20"
-                        : "border-border hover:border-primary-pastel hover:bg-surface-muted bg-surface"
+                        video_url: e.target.value,
+                      }));
+                      if (errors.video_url) {
+                        setErrors((prev) => ({ ...prev, video_url: undefined }));
+                      }
+                    }}
+                    placeholder="https://www.youtube.com/watch?v=..."
+                    className={`w-full rounded-xl border bg-surface px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 transition-all ${
+                      errors.video_url
+                        ? "border-destructive-border focus:border-destructive-foreground focus:ring-destructive-border/40"
+                        : "border-border focus:border-primary focus:ring-primary/20"
                     }`}
-                  >
-                    <div className="flex items-center gap-4 mb-3">
-                      <div
-                        className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-xs ${
-                          formData.uploadMethod === "youtube" ||
-                          isCurrentVideoYouTube
-                            ? "bg-primary text-white"
-                            : "bg-primary-light text-primary"
-                        }`}
-                      >
-                        <Video className="h-6 w-6" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-bold text-foreground">YouTube URL</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Liên kết video từ YouTube
-                        </p>
-                        {isCurrentVideoYouTube && (
-                          <Badge variant="success" size="sm" className="mt-1">
-                            Đang sử dụng
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Dán link YouTube vào bước tiếp theo. Video sẽ được tự động
-                      tải lên hệ thống.
+                  />
+                  {errors.video_url && (
+                    <p className="text-xs font-medium text-destructive-foreground">
+                      {errors.video_url}
                     </p>
-                  </button>
-
-                  {/* File Upload Option */}
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setFormData((prev) => ({ ...prev, uploadMethod: "file" }))
-                    }
-                    className={`p-6 border-2 rounded-2xl transition-all text-left cursor-pointer ${
-                      formData.uploadMethod === "file"
-                        ? "border-primary bg-primary-light/40 shadow-xs"
-                        : isCurrentVideoFile
-                        ? "border-primary-pastel bg-primary-light/20"
-                        : "border-border hover:border-primary-pastel hover:bg-surface-muted bg-surface"
+                  )}
+                  <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Lightbulb className="h-3.5 w-3.5 shrink-0 text-primary" />
+                    <span>
+                      Khi bạn đổi sang link YouTube khác và bấm Lưu thay đổi, hệ
+                      thống sẽ tự động lập lại chỉ mục AI cho video mới.
+                    </span>
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setIsDraggingFile(true);
+                    }}
+                    onDragLeave={() => setIsDraggingFile(false)}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setIsDraggingFile(false);
+                      const file = e.dataTransfer.files?.[0];
+                      if (file) applyVideoFile(file);
+                    }}
+                    className={`rounded-2xl border-2 border-dashed p-7 text-center transition-all ${
+                      isDraggingFile
+                        ? "border-primary bg-primary-light/50"
+                        : "border-primary-pastel/80 bg-background/60 hover:border-primary"
                     }`}
                   >
-                    <div className="flex items-center gap-4 mb-3">
-                      <div
-                        className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-xs ${
-                          formData.uploadMethod === "file" || isCurrentVideoFile
-                            ? "bg-primary text-white"
-                            : "bg-primary-light text-primary"
-                        }`}
-                      >
+                    <input
+                      id="edit-video-file-input"
+                      type="file"
+                      accept="video/*"
+                      onChange={(e) =>
+                        applyVideoFile(e.target.files?.[0] || null)
+                      }
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor="edit-video-file-input"
+                      className="block cursor-pointer"
+                    >
+                      <div className="mx-auto flex h-13 w-13 items-center justify-center rounded-2xl border border-primary-pastel bg-primary-light text-primary">
                         <UploadCloud className="h-6 w-6" />
                       </div>
-                      <div className="flex-1">
-                        <h3 className="font-bold text-foreground">Upload File</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Tải video từ máy tính
-                        </p>
-                        {isCurrentVideoFile && (
-                          <Badge variant="success" size="sm" className="mt-1">
-                            Đang sử dụng
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Upload file video trực tiếp. Hỗ trợ định dạng MP4, MOV,
-                      AVI (tối đa 2GB).
-                    </p>
-                  </button>
-                </div>
-              </div>
-
-              {errors.uploadMethod && (
-                <p className="text-destructive text-sm mt-2">
-                  {errors.uploadMethod}
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Step 2: Upload Video */}
-          {currentStep === 2 && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-bold font-display text-foreground mb-1">
-                  {formData.uploadMethod === "youtube"
-                    ? "Nhập URL video YouTube"
-                    : "Upload file video"}
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  {formData.uploadMethod === "youtube"
-                    ? isCurrentVideoYouTube &&
-                      formData.video_url === videoData?.video_url
-                      ? "Video YouTube hiện tại sẽ được giữ nguyên. Để thay đổi, nhập URL mới vào ô bên dưới."
-                      : "Dán link video YouTube của bạn vào ô bên dưới"
-                    : isCurrentVideoFile
-                    ? "Video file hiện tại sẽ được giữ nguyên. Để thay đổi, chọn file mới bên dưới."
-                    : "Chọn file video từ máy tính của bạn"}
-                </p>
-              </div>
-
-              {formData.uploadMethod === "youtube" && (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-foreground mb-2">
-                      URL Video YouTube
-                      {!isCurrentVideoYouTube ||
-                      formData.video_url !== videoData?.video_url ? (
-                        <span className="text-destructive"> *</span>
-                      ) : (
-                        <span className="text-muted-foreground text-xs font-normal ml-2">
-                          (Để giữ nguyên, không cần nhập)
-                        </span>
-                      )}
+                      <p className="mt-3 text-sm font-bold text-foreground">
+                        {formData.video_file
+                          ? formData.video_file.name
+                          : "Kéo thả tệp video mới để thay thế video cũ"}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        MP4, MOV, WebM (tối đa 2GB) · Tự động tách âm thanh &
+                        lập chỉ mục AI
+                      </p>
                     </label>
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1 relative">
-                        <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                        <input
-                          type="text"
-                          value={formData.video_url}
-                          onChange={(e) =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              video_url: e.target.value,
-                            }))
-                          }
-                          placeholder={
-                            isCurrentVideoYouTube
-                              ? videoData?.video_url ||
-                                "https://www.youtube.com/watch?v=..."
-                              : "https://www.youtube.com/watch?v=..."
-                          }
-                          className={`w-full pl-10 pr-4 py-3 border rounded-xl bg-surface text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 transition-all ${
-                            errors.video_url
-                              ? "border-destructive focus:ring-destructive"
-                              : "border-border focus:ring-primary focus:border-transparent"
-                          }`}
-                        />
-                      </div>
-                    </div>
-                    {errors.video_url && (
-                      <p className="text-destructive text-sm mt-1">
-                        {errors.video_url}
-                      </p>
-                    )}
-                    <p className="text-xs text-muted-foreground mt-2">
-                      {isCurrentVideoYouTube &&
-                      formData.video_url === videoData?.video_url ? (
-                        <span className="text-success-foreground font-medium">
-                          ✓ Video hiện tại sẽ được giữ nguyên
-                        </span>
-                      ) : (
-                        <>
-                          Ví dụ: https://www.youtube.com/watch?v=dQw4w9WgXcQ
-                          hoặc https://youtu.be/dQw4w9WgXcQ
-                        </>
-                      )}
-                    </p>
-                  </div>
-
-                  {formData.video_url &&
-                    !errors.video_url &&
-                    (formData.video_url.includes("youtube.com") ||
-                      formData.video_url.includes("youtu.be")) &&
-                    formData.video_url !== videoData?.video_url && (
-                      <Alert variant="info" icon={<Video className="h-5 w-5" />}>
-                        <p className="font-semibold text-foreground">
-                          Video YouTube mới đã được nhận diện
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          Video sẽ được tự động cập nhật trên hệ thống sau khi
-                          bạn hoàn tất
-                        </p>
-                      </Alert>
-                    )}
-                </div>
-              )}
-
-              {formData.uploadMethod === "file" && (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-foreground mb-2">
-                      File Video
-                      {isYouTubeVideo ? (
-                        <span className="text-destructive"> *</span>
-                      ) : (
-                        <span className="text-muted-foreground text-xs font-normal ml-2">
-                          (Để giữ nguyên video hiện tại, không cần chọn file mới)
-                        </span>
-                      )}
-                    </label>
-                    {isCurrentVideoFile && (
-                      <div className="bg-surface-muted border border-border rounded-xl p-3 mb-3 flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-lg bg-primary-light text-primary flex items-center justify-center">
-                          <UploadCloud className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-foreground">
-                            Video hiện tại: {videoData?.file_id || "N/A"}
-                          </p>
-                          {videoData?.duration_seconds && (
-                            <p className="text-xs text-muted-foreground">
-                              Thời lượng:{" "}
-                              {formatDuration(videoData.duration_seconds)}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    <div className="border-2 border-dashed border-border hover:border-primary rounded-2xl p-8 text-center bg-surface-muted/30 transition-colors">
-                      <input
-                        type="file"
-                        accept="video/*"
-                        onChange={handleFileChange}
-                        className="hidden"
-                        id="video-file-input"
-                      />
-                      <label
-                        htmlFor="video-file-input"
-                        className="cursor-pointer flex flex-col items-center"
-                      >
-                        <div className="w-14 h-14 rounded-2xl bg-primary-light text-primary flex items-center justify-center mb-3 shadow-xs">
-                          <UploadCloud className="h-7 w-7" />
-                        </div>
-                        <p className="text-sm font-medium text-foreground mb-1">
-                          {isCurrentVideoFile
-                            ? "Click để chọn file video mới"
-                            : "Click để chọn file video"}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          MP4, MOV, AVI (tối đa 2GB)
-                        </p>
-                        {isCurrentVideoFile && (
-                          <p className="text-xs text-primary font-medium mt-2">
-                            Để giữ nguyên video hiện tại, không chọn file mới
-                          </p>
-                        )}
-                      </label>
-                    </div>
-                    {errors.video_file && (
-                      <p className="text-destructive text-sm mt-2">
-                        {errors.video_file}
-                      </p>
-                    )}
-                    {!formData.video_file && isCurrentVideoFile && (
-                      <p className="text-xs text-success-foreground mt-2 flex items-center gap-1 font-medium">
-                        <CheckCircle2 className="h-4 w-4" />
-                        Video hiện tại sẽ được giữ nguyên
-                      </p>
-                    )}
                   </div>
 
                   {formData.video_file && (
-                    <div className="bg-surface-muted border border-border rounded-xl p-4 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-primary-light text-primary flex items-center justify-center">
-                          <Play className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-foreground">
+                    <div className="flex items-center justify-between gap-3 rounded-2xl border border-success-border bg-success-bg/70 px-4 py-3">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <CheckCircle2 className="h-5 w-5 shrink-0 text-success-foreground" />
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-success-foreground">
                             {formData.video_file.name}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {(
-                              formData.video_file.size /
-                              (1024 * 1024)
-                            ).toFixed(2)}{" "}
+                            {(formData.video_file.size / 1_048_576).toFixed(2)}{" "}
                             MB
-                          </p>
-                          <p className="text-xs text-primary font-medium mt-0.5">
-                            File mới sẽ thay thế video hiện tại
                           </p>
                         </div>
                       </div>
                       <button
                         type="button"
-                        onClick={() => {
-                          setFormData((prev) => ({
-                            ...prev,
-                            video_file: null,
-                          }));
-                          setVideoPreview(null);
-                        }}
-                        className="text-muted-foreground hover:text-destructive p-1 rounded-lg hover:bg-destructive-bg transition-colors"
-                        aria-label="Xóa video mới đã chọn"
+                        aria-label="Gỡ tệp video"
+                        onClick={() => applyVideoFile(null)}
+                        className="cursor-pointer rounded-lg p-1.5 text-destructive-foreground hover:bg-destructive-bg"
                       >
-                        <XCircle className="h-5 w-5" />
+                        <X className="h-4 w-4" />
                       </button>
                     </div>
                   )}
+
+                  {errors.video_file && (
+                    <p className="text-xs font-medium text-destructive-foreground">
+                      {errors.video_file}
+                    </p>
+                  )}
                 </div>
               )}
+            </Card>
+
+            {/* Thanh hành động dưới cùng */}
+            <Card className="p-4 sm:p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="md"
+                  onClick={() =>
+                    router.push(
+                      courseId
+                        ? `/lecturer/chapters?course_id=${courseId}`
+                        : "/lecturer/courses"
+                    )
+                  }
+                  leftIcon={<Layers className="h-4 w-4" />}
+                >
+                  Về Chương & bài học
+                </Button>
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="md"
+                  onClick={handleSubmit}
+                  disabled={isSubmitting || isUploading || !hasChanges}
+                  isLoading={isSubmitting || isUploading}
+                  loadingText={
+                    isUploading ? "Đang tải video..." : "Đang lưu..."
+                  }
+                  leftIcon={
+                    !isSubmitting && !isUploading ? (
+                      <CheckCircle2 className="h-4 w-4" />
+                    ) : undefined
+                  }
+                >
+                  Lưu thay đổi
+                </Button>
+              </div>
+            </Card>
+          </div>
+
+          {/* CỘT PHẢI (4/12): Live Player Preview & Trạng thái Chỉ mục AI */}
+          <aside className="space-y-5 lg:sticky lg:top-6 lg:col-span-4 lg:self-start">
+            <div className="overflow-hidden rounded-3xl border border-primary-pastel/80 bg-surface shadow-[0_18px_40px_-16px_rgba(53,111,167,0.16)]">
+              <div className="flex items-center justify-between border-b border-border/70 bg-primary-light/50 px-4 py-3">
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary">
+                  <Eye className="h-3.5 w-3.5" />
+                  <span>Xem trước bài giảng</span>
+                </span>
+                <span
+                  className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
+                    formData.is_preview
+                      ? "border-success-border bg-success-bg text-success-foreground"
+                      : "border-border bg-surface text-muted-foreground"
+                  }`}
+                >
+                  {formData.is_preview ? "Học thử miễn phí" : "Dành cho học viên"}
+                </span>
+              </div>
+
+              <div className="aspect-video w-full bg-gradient-to-br from-primary-light via-surface-muted to-accent/35">
+                {activeSource === "file" && videoObjectUrl ? (
+                  <video
+                    src={videoObjectUrl}
+                    controls
+                    onLoadedMetadata={(e) => {
+                      const d = e.currentTarget.duration;
+                      if (Number.isFinite(d) && d > 0) setLocalDurationSec(d);
+                    }}
+                    className="h-full w-full bg-black object-contain"
+                  />
+                ) : previewYoutubeUrl ? (
+                  <iframe
+                    src={previewYoutubeUrl}
+                    title="Xem trước video bài học"
+                    className="h-full w-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                ) : videoData?.video_url ? (
+                  <video
+                    src={videoData.video_url}
+                    controls
+                    className="h-full w-full bg-black object-contain"
+                  />
+                ) : (
+                  <div className="flex h-full w-full flex-col items-center justify-center gap-2 p-4 text-center">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-primary-pastel bg-surface/90 text-primary">
+                      <Play className="h-6 w-6" />
+                    </div>
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Bài học này chưa có video
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="p-4">
+                <p className="text-[11px] font-semibold text-primary">
+                  {sectionName || "Bài học Video"}
+                </p>
+                <h3 className="mt-1 line-clamp-2 text-sm font-bold text-foreground">
+                  {formData.title.trim() || "Chưa có tiêu đề"}
+                </h3>
+                {displayDuration > 0 && (
+                  <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-primary-light/70 px-2.5 py-1 text-[11px] font-semibold text-primary">
+                    <Clock className="h-3 w-3" />
+                    <span>Thời lượng: {formatDuration(displayDuration)}</span>
+                  </div>
+                )}
+              </div>
             </div>
-          )}
-        </Card>
 
-        {/* Navigation Buttons */}
-        <Card className="flex items-center justify-between p-6 border border-border bg-surface shadow-xs">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleBack}
-            disabled={currentStep === 0 || isSubmitting || isUploading}
-            leftIcon={<ChevronLeft className="h-4 w-4" />}
-          >
-            Quay lại
-          </Button>
+            {/* Thẻ trạng thái Chỉ mục AI (Gia sư AI RAG) */}
+            <Card className="p-5">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary-light text-primary">
+                    <Bot className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-foreground">
+                      Chỉ mục Gia sư AI (RAG)
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {hasTranscript
+                        ? "Đã có dữ liệu transcript cho AI"
+                        : "Chưa có transcript chi tiết"}
+                    </p>
+                  </div>
+                </div>
+                <span
+                  className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
+                    hasTranscript
+                      ? "border-success-border bg-success-bg text-success-foreground"
+                      : "border-warning-border bg-warning-bg text-warning-foreground"
+                  }`}
+                >
+                  {hasTranscript ? "Sẵn sàng" : "Chưa có"}
+                </span>
+              </div>
 
-          {currentStep < totalSteps - 1 ? (
-            <Button
-              type="button"
-              variant="primary"
-              onClick={handleNext}
-              disabled={isSubmitting || isUploading}
-              rightIcon={<ChevronRight className="h-4 w-4" />}
-            >
-              Tiếp theo
-            </Button>
-          ) : (
-            <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3">
-              {!hasChanges && (
-                <Alert variant="warning" className="py-2 px-3 text-xs">
-                  Chưa có thay đổi nào. Vui lòng chỉnh sửa thông tin trước khi lưu.
-                </Alert>
+              {videoData && !videoData404Ref.current && (
+                <Button
+                  type="button"
+                  variant="pastel"
+                  size="sm"
+                  onClick={handleReindex}
+                  isLoading={isReindexing}
+                  loadingText="Đang chạy lại..."
+                  leftIcon={
+                    !isReindexing ? (
+                      <RefreshCw className="h-3.5 w-3.5" />
+                    ) : undefined
+                  }
+                  className="mt-4 w-full"
+                >
+                  Chạy lại trích xuất & chỉ mục AI
+                </Button>
               )}
-              <Button
-                type="button"
-                variant="primary"
-                onClick={handleSubmit}
-                disabled={
-                  isSubmitting ||
-                  isUploading ||
-                  showUploadProgress ||
-                  !hasChanges
-                }
-                isLoading={isSubmitting || isUploading || showUploadProgress}
-                loadingText={showUploadProgress ? "Đang upload..." : "Đang xử lý..."}
-                leftIcon={<CheckCircle2 className="h-4 w-4" />}
-                title={
-                  !hasChanges
-                    ? "Vui lòng thay đổi thông tin trước khi lưu"
-                    : showUploadProgress
-                    ? "Đang upload video, vui lòng đợi..."
-                    : undefined
-                }
-              >
-                Hoàn tất
-              </Button>
-            </div>
-          )}
-        </Card>
+            </Card>
+          </aside>
+        </div>
       </div>
     </div>
   );
