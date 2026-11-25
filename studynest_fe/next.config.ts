@@ -84,6 +84,7 @@ const csp = Object.entries(cspDirectives)
   .join("; ");
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   // Cho phép mở dev server từ localhost/127.0.0.1 và thiết bị khác qua IP LAN/Tailscale.
   allowedDevOrigins: [
     "127.0.0.1",
