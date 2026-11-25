@@ -1,0 +1,46 @@
+name: Deploy Mây Mây
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "studynest_be/**"
+      - "studynest_fe/**"
+      - "deploy/maymay/**"
+      - ".github/workflows/deploy-maymay.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-maymay
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # Self-hosted runner on the webdeploy server (labels: self-hosted, maymay).
+    runs-on: [self-hosted, maymay]
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and start containers
+        working-directory: deploy/maymay
+        run: |
+          test -f /home/admin/maymay/deploy/be.env
+          # One-time takeover of the container created by the manual setup.
+          docker rm -f maymay_backend maymay_frontend 2>/dev/null || true
+          nice -n 19 docker compose build
+          docker compose up -d
+
+      - name: Health check
+        run: |
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:13100/ || true)
+            [ "$code" = "200" ] || [ "$code" = "307" ] || [ "$code" = "308" ] && { echo "frontend $code"; exit 0; }
+            sleep 5
+          done
+          docker compose -f deploy/maymay/docker-compose.yml logs --tail 50
+          exit 1
+
+      - name: Prune old images
+        if: success()
+        run: docker image prune -f

@@ -1,0 +1,38 @@
+# Production stack for https://may-may.tech (frontend) and https://api.may-may.tech (backend).
+# Secrets live on the server only: /home/admin/maymay/deploy/be.env (never committed).
+name: maymay-prod
+
+services:
+  backend:
+    build:
+      context: ../../studynest_be
+      dockerfile: ../deploy/maymay/Dockerfile.be
+    container_name: maymay_backend
+    restart: unless-stopped
+    env_file: /home/admin/maymay/deploy/be.env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "127.0.0.1:18100:8000"
+    mem_limit: 1536m
+    memswap_limit: 1536m
+
+  frontend:
+    build:
+      context: ../../studynest_fe
+      args:
+        NEXT_PUBLIC_URL_BACKEND: https://api.may-may.tech
+        NEXT_PUBLIC_URL_BACKEND_WS: wss://api.may-may.tech
+        NEXT_PUBLIC_URL_FRONTEND: https://may-may.tech
+        NEXT_PUBLIC_AUTH_MODE: dpop
+        NEXT_PUBLIC_DPOP_API_ORIGIN: https://api.may-may.tech
+        INTERNAL_BACKEND_URL: http://backend:8000
+        NODE_MAX_OLD_SPACE: "1536"
+    container_name: maymay_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "127.0.0.1:13100:3000"
+    mem_limit: 768m
+    memswap_limit: 768m
