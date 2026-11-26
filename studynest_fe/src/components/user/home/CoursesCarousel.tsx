@@ -127,7 +127,7 @@ const CoursesCarousel = memo(
 
           <div className="relative overflow-hidden">
             {isLoadingFeeds ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                 {skeletonCards}
               </div>
             ) : (
@@ -137,7 +137,7 @@ const CoursesCarousel = memo(
               >
                 {Array.from({ length: totalPages }).map((_, pageIndex) => (
                   <div key={pageIndex} className="w-full flex-shrink-0">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                       {(items?.length ? items : [])
                         .slice(
                           pageIndex * itemsPerPage,
@@ -155,7 +155,7 @@ const CoursesCarousel = memo(
                 ))}
                 {isFetchingMore && (
                   <div className="w-full flex-shrink-0">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                       {fetchingSkeletonCards}
                     </div>
                   </div>

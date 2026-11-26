@@ -769,7 +769,7 @@ export function PersonalizedRoadmapView() {
                   Chưa có khóa học thuộc môn đang lọc ở Trạm 01.
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                   {stage1.courses.map((course, idx) => (
                     <RoadmapCourseCard
                       key={course.id}
@@ -818,7 +818,7 @@ export function PersonalizedRoadmapView() {
                   Chưa có khóa học thuộc môn đang lọc ở Trạm 02.
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                   {stage2.courses.map((course, idx) => (
                     <RoadmapCourseCard
                       key={course.id}
@@ -870,7 +870,7 @@ export function PersonalizedRoadmapView() {
                   Chưa có khóa học thuộc môn đang lọc ở Trạm 03.
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                   {stage3.courses.map((course, idx) => (
                     <RoadmapCourseCard
                       key={course.id}

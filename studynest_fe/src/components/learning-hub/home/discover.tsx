@@ -20,16 +20,12 @@ async function fetchCombos(url: string): Promise<CatalogCombosResponse> {
   return response.json();
 }
 
-function GridSkeleton({ label, cols = 4 }: { label: string; cols?: 3 | 4 }) {
+function GridSkeleton({ label, cols = 5 }: { label: string; cols?: 5 }) {
   return (
     <div
       role="status"
       aria-label={label}
-      className={
-        cols === 3
-          ? "grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3 [&_.animate-pulse]:motion-reduce:animate-none"
-          : "grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 [&_.animate-pulse]:motion-reduce:animate-none"
-      }
+      className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 [&_.animate-pulse]:motion-reduce:animate-none"
     >
       {Array.from({ length: cols }, (_, i) => (
         <Skeleton key={i} className="aspect-[16/12] w-full rounded-3xl" />
@@ -125,9 +121,9 @@ function Recommended() {
       </div>
       {error ? (
         <HubLoadError title="Chưa tải được khóa gợi ý" message="Tải lại để xem khóa hợp sở thích." onRetry={() => void mutate().catch(() => undefined)} isRetrying={isValidating} />
-      ) : !data ? <GridSkeleton label="Đang tải khóa học gợi ý" cols={4} /> : data.items.length ? (
-        <ul aria-label="Khóa học gợi ý" className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {data.items.slice(0, 8).map((course) => <RecommendedTile key={course.id} course={course} />)}
+      ) : !data ? <GridSkeleton label="Đang tải khóa học gợi ý" cols={5} /> : data.items.length ? (
+        <ul aria-label="Khóa học gợi ý" className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          {data.items.slice(0, 10).map((course) => <RecommendedTile key={course.id} course={course} />)}
         </ul>
       ) : (
         <div className="flex items-center gap-4 rounded-3xl border border-primary-pastel bg-primary-light/60 p-4">
@@ -140,7 +136,7 @@ function Recommended() {
 }
 
 function Combos() {
-  const { data, error, isLoading, isValidating, mutate } = useSWR<CatalogCombosResponse>("/api/catalog/combos?limit=3&sort=recent", fetchCombos,
+  const { data, error, isLoading, isValidating, mutate } = useSWR<CatalogCombosResponse>("/api/catalog/combos?limit=5&sort=recent", fetchCombos,
     { keepPreviousData: true, dedupingInterval: 30_000, focusThrottleInterval: 60_000, shouldRetryOnError: false });
   const items = data?.items ?? [];
   return (
@@ -154,8 +150,8 @@ function Combos() {
       </div>
       {error ? (
         <HubLoadError title="Chưa tải được combo" message="Tải lại để xem giá và ưu đãi đang mở." onRetry={() => void mutate().catch(() => undefined)} isRetrying={isValidating} />
-      ) : isLoading || !data ? <GridSkeleton label="Đang tải combo" cols={3} /> : items.length ? (
-        <ul aria-label="Combo lộ trình" className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+      ) : isLoading || !data ? <GridSkeleton label="Đang tải combo" cols={5} /> : items.length ? (
+        <ul aria-label="Combo lộ trình" className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {items.map((combo) => <ComboTile key={combo.id} combo={combo} />)}
         </ul>
       ) : (

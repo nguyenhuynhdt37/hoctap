@@ -342,7 +342,7 @@ export default function InstructorCourses({ instructorId }: InstructorCoursesPro
 
       {/* Danh sách hiển thị khóa học */}
       {isLoading && items.length === 0 ? (
-        <div role="status" className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div role="status" className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div
               key={i}
@@ -391,7 +391,7 @@ export default function InstructorCourses({ instructorId }: InstructorCoursesPro
         />
       ) : (
         <>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {items.map((course) => {
               const isFree = course.base_price === 0;
               const hasReviews = course.rating_count > 0 && course.rating_avg > 0;

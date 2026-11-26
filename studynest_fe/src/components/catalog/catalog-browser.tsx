@@ -669,7 +669,7 @@ export default function CatalogBrowser() {
               role="status"
               className={
                 viewMode === "grid"
-                  ? "grid gap-6 sm:grid-cols-2 xl:grid-cols-3"
+                  ? "grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
                   : "flex flex-col gap-4"
               }
             >
@@ -728,7 +728,7 @@ export default function CatalogBrowser() {
               <div
                 className={
                   viewMode === "grid"
-                    ? "grid gap-6 sm:grid-cols-2 xl:grid-cols-3"
+                    ? "grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
                     : "flex flex-col gap-4"
                 }
               >

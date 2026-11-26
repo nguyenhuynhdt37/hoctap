@@ -145,7 +145,7 @@ export default function InstructorsSection() {
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {Array.from({ length: 4 }).map((_, i) => (
               <Card key={i} className="text-center rounded-[24px] p-6 space-y-4">
                 <Skeleton variant="circle" className="w-20 h-20 mx-auto" />
@@ -159,7 +159,7 @@ export default function InstructorsSection() {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {instructors.map((instructor) => (
               <TopInstructorCard key={instructor.id} instructor={instructor} />
             ))}

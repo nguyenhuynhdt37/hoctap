@@ -18,7 +18,7 @@ export default function SavedInstructorsPage() {
         fallback={
           <div className="space-y-6 animate-pulse">
             <div className="h-20 w-full rounded-2xl bg-surface border border-border" />
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
               {[1, 2, 3].map((i) => (
                 <div key={i} className="h-64 rounded-[24px] bg-surface border border-border" />
               ))}

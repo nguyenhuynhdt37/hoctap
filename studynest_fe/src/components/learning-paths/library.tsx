@@ -682,7 +682,7 @@ function CompareModal({
           </button>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {items.map((item) => (
             <div key={item.bundle_id} className="flex flex-col rounded-2xl border border-border bg-background/70 p-4">
               <div className="mb-3 flex items-start justify-between gap-2">

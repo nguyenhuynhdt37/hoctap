@@ -52,7 +52,7 @@ export default function InstructorsPage() {
             <div className="h-10 w-full max-w-md rounded-xl bg-surface border border-border" />
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div className="hidden md:block h-96 rounded-[24px] bg-surface border border-border" />
-              <div className="md:col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="md:col-span-3 grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                 {[1, 2, 3, 4, 5, 6].map((i) => (
                   <div key={i} className="h-64 rounded-[24px] bg-surface border border-border" />
                 ))}
