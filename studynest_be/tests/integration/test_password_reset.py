@@ -69,6 +69,44 @@ async def test_unknown_email_is_reported_as_not_registered(db_session, service_f
     mailer.send_reset_password_email.assert_not_awaited()
 
 
+@pytest.mark.parametrize("pattern", ["%@example-mail.com", "_%@example-mail.com", "%"])
+async def test_wildcards_in_the_address_never_match_another_account(db_session, service_factory, pattern):
+    victim = await add_user(db_session)
+    service, mailer, _ = service_factory(db_session)
+    email = pattern if "@" in pattern else f"{pattern}@example-mail.com"
+
+    with pytest.raises(HTTPException) as error:
+        await service.forgot_password_async(ForgotPasswordRequest(email=email))
+
+    assert error.value.status_code == 404
+    mailer.send_reset_password_email.assert_not_awaited()
+    assert await reset_rows(db_session, victim.id) == []
+
+
+async def test_stored_mixed_case_email_still_receives_the_code(db_session, service_factory):
+    user = await add_user(db_session, email=f"Mixed.{uuid4().hex}@Example-Mail.com")
+    service, mailer, _ = service_factory(db_session)
+
+    sent = await request_code(service, mailer, user.email.upper())
+
+    assert sent["email"] == user.email  # mail goes to the address as stored
+    assert len(await reset_rows(db_session, user.id)) == 1
+
+
+async def test_rate_limit_runs_before_the_account_lookup(db_session, service_factory, monkeypatch):
+    limiter = AsyncMock(side_effect=HTTPException(429, "slow down"))
+    monkeypatch.setattr(auth, "limit_issue_async", limiter)
+    service, mailer, _ = service_factory(db_session)
+    monkeypatch.setattr(auth, "limit_issue_async", limiter)
+
+    with pytest.raises(HTTPException) as error:
+        await service.forgot_password_async(ForgotPasswordRequest(email=f"{uuid4().hex}@example-mail.com"))
+
+    assert error.value.status_code == 429
+    limiter.assert_awaited_once()
+    mailer.send_reset_password_email.assert_not_awaited()
+
+
 @pytest.mark.parametrize("field,value,status_code", [("is_banned", True, 403), ("deleted_at", get_now(), 404)])
 async def test_inactive_accounts_get_no_code(db_session, service_factory, field, value, status_code):
     user = await add_user(db_session, **{field: value})
