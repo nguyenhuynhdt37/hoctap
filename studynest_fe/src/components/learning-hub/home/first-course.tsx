@@ -35,7 +35,7 @@ export function FirstCourse({ level, course, onLevel, onCourse }: {
 
   return (
     <div className="relative isolate">
-      <div aria-hidden="true" className="absolute inset-0 -z-10 rotate-[0.8deg] rounded-[2.5rem] bg-primary-light" />
+      <div aria-hidden="true" className="absolute inset-0 -z-10 rounded-3xl border border-primary-pastel bg-primary-light/60" />
       <div className="p-5 sm:p-8">
         <fieldset id="choose-grade" tabIndex={-1} className="min-w-0 scroll-mt-24 focus-visible:outline-2 focus-visible:outline-ring">
           <legend className="mb-4 text-3xl font-extrabold tracking-tight sm:text-4xl">Bạn đang học cấp nào?</legend>

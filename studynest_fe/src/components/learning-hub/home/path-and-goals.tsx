@@ -99,24 +99,27 @@ export function PathAndGoals({ course, children }: { course?: CoursesMeItem | nu
 
   return (
     <section aria-labelledby="path-title" className="relative">
-      <h2 id="path-title" className="mb-5 text-3xl font-extrabold tracking-tight sm:text-4xl">Lộ trình và mục tiêu</h2>
+      <div className="mb-4">
+        <h2 id="path-title" className="text-xl font-extrabold tracking-tight text-foreground sm:text-2xl">Lộ trình và mục tiêu</h2>
+        <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">Theo dõi các mốc đang học, ngày về đích và báo cáo tuần.</p>
+      </div>
       {empty ? (
-        <>
-        <div className="relative isolate flex min-h-72 flex-col justify-end overflow-hidden rounded-[2.5rem] bg-primary-light text-primary-foreground">
-          <StudyImage fallback={pathCover} sizes="(min-width: 1280px) 1200px, 92vw" className="absolute inset-0 -z-10 rounded-none" />
-          <div aria-hidden="true" className="absolute inset-0 -z-10 bg-linear-to-t from-foreground via-foreground/70 to-transparent" />
-          <div className="max-w-xl space-y-3 p-6 pt-32 sm:p-8">
-            <h3 className="text-2xl font-extrabold">Chia mục tiêu thành từng mốc học</h3>
-            <p className="text-base">Chọn một lộ trình, Mây sẽ nhắc bạn từng mốc.</p>
-            <HomeLink href="/combo" endIcon={false} className={lightLink}>Chọn lộ trình</HomeLink>
+        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
+          <div className="relative isolate flex min-h-64 flex-col justify-end overflow-hidden rounded-3xl border border-primary-pastel bg-primary-light text-primary-foreground lg:col-span-7">
+            <StudyImage fallback={pathCover} sizes="(min-width: 1280px) 800px, 92vw" className="absolute inset-0 -z-10 rounded-none" />
+            <div aria-hidden="true" className="absolute inset-0 -z-10 bg-linear-to-t from-foreground via-foreground/70 to-transparent" />
+            <div className="max-w-xl space-y-3 p-6 pt-24 sm:p-7">
+              <h3 className="text-xl font-extrabold sm:text-2xl">Chia mục tiêu thành từng mốc học</h3>
+              <p className="text-sm sm:text-base">Chọn một lộ trình, Mây sẽ nhắc bạn từng mốc.</p>
+              <HomeLink href="/learning-paths" endIcon={false} className={lightLink}>Chọn lộ trình</HomeLink>
+            </div>
           </div>
+          {children && <div className="min-w-0 lg:col-span-5">{children}</div>}
         </div>
-        {children && <div className="mt-6 max-w-xl">{children}</div>}
-        </>
       ) : (
-        <div className="grid min-w-0 gap-6 lg:grid-cols-12 lg:items-start">
+        <div className="grid min-w-0 items-start gap-6 lg:grid-cols-12">
           {showPath && <div className="min-w-0 lg:col-span-8">{pathBlock}</div>}
-          <div className={cn("flex min-w-0 flex-col gap-6", showPath ? "lg:col-span-4 lg:mt-10" : "lg:col-span-12 lg:flex-row lg:[&>*]:flex-1")}>
+          <div className={cn("flex min-w-0 flex-col gap-6", showPath ? "lg:col-span-4" : "lg:col-span-12 lg:grid lg:grid-cols-2")}>
             {showGoal && goalBlock}
             {children}
           </div>

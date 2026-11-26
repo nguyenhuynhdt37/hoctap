@@ -36,9 +36,8 @@ export function WeeklyReport() {
   }
 
   return (
-    <section aria-label="Chia sẻ kết quả học tập" className="relative isolate">
-      <div aria-hidden="true" className="absolute inset-0 -z-10 -rotate-1 rounded-[1.75rem] border-2 border-secondary-pastel bg-secondary" />
-      <div className="p-5">
+    <section aria-label="Chia sẻ kết quả học tập" className="rounded-3xl border border-secondary-pastel bg-surface p-5 shadow-ambient-sm sm:p-6">
+      <div>
         {report.error ? (
           <HubLoadError error={report.error} title="Chưa tải được tóm tắt tuần" message="Tải lại để lấy nội dung chia sẻ với phụ huynh." onRetry={report.retry} isRetrying={report.isValidating} />
         ) : !data ? (

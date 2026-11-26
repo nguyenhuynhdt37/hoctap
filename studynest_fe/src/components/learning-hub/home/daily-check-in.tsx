@@ -15,12 +15,14 @@ const WEEKDAY_FULL = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Th
 
 function Frame({ children }: { children: ReactNode }) {
   return (
-    <section id="diem-danh-hom-nay" tabIndex={-1} aria-labelledby="checkin-title" className="relative isolate scroll-mt-24 focus-visible:outline-2 focus-visible:outline-ring">
-      <div aria-hidden="true" className="absolute inset-0 -z-10 rotate-[1.5deg] rounded-[2rem] border-2 border-primary-pastel bg-primary-light" />
-      <div className="p-5 sm:p-6">
-        <h2 id="checkin-title" className="mb-3 text-2xl font-extrabold tracking-tight">Điểm danh</h2>
-        {children}
-      </div>
+    <section
+      id="diem-danh-hom-nay"
+      tabIndex={-1}
+      aria-labelledby="checkin-title"
+      className="scroll-mt-24 rounded-3xl border border-primary-pastel bg-surface p-5 shadow-ambient-sm focus-visible:outline-2 focus-visible:outline-ring sm:p-6"
+    >
+      <h2 id="checkin-title" className="mb-3.5 text-xl font-extrabold tracking-tight text-foreground sm:text-2xl">Điểm danh hằng ngày</h2>
+      {children}
     </section>
   );
 }
@@ -63,7 +65,7 @@ export function CheckInCard({ daily, onClaimReward, onCheckIn, inPrimary }: {
               ? `Lịch điểm danh tuần này, hôm nay là ${WEEKDAY_FULL[(data?.current_day_in_cycle ?? 1) - 1] ?? `Ngày ${data?.current_day_in_cycle}`}`
               : `Lịch điểm danh, ngày ${data?.current_day_in_cycle} trong chu kỳ ${data?.cycle_days} ngày`
           }
-          className="mb-4 flex flex-wrap gap-2.5"
+          className="mb-4 grid grid-cols-7 gap-2"
         >
           {days.map((day) => {
             const today = day.is_today ?? day.day_number === data?.current_day_in_cycle;

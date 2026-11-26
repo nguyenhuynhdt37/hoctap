@@ -167,17 +167,24 @@ export function LearnerHome() {
       </SkyHero>
       <div className="relative">
         <div className={`${homeWidth} relative space-y-10 pt-8 pb-14 lg:space-y-12 lg:pt-10 lg:pb-16`}>
-          {journey.isNew && <FirstCourse level={level} course={trialCourse} onLevel={(next) => {
-            if (level === next) return;
-            setLevel(next);
-            setTrialCourse(undefined);
-            setTrialDone(false);
-          }} onCourse={(next) => {
-            if (trialCourse?.id === next.id) return;
-            setTrialCourse(next);
-            setTrialDone(false);
-            requestAnimationFrame(() => document.getElementById("journey-status")?.focus());
-          }} />}
+          {/* Cụm 1: Khóa học đang học (hoặc Chọn khóa đầu tiên cho học viên mới) */}
+          {journey.isNew ? (
+            <FirstCourse level={level} course={trialCourse} onLevel={(next) => {
+              if (level === next) return;
+              setLevel(next);
+              setTrialCourse(undefined);
+              setTrialDone(false);
+            }} onCourse={(next) => {
+              if (trialCourse?.id === next.id) return;
+              setTrialCourse(next);
+              setTrialDone(false);
+              requestAnimationFrame(() => document.getElementById("journey-status")?.focus());
+            }} />
+          ) : (
+            <MyCourses current={current} purchases={purchases} />
+          )}
+
+          {/* Cụm 2: Hoạt động hằng ngày (Nhiệm vụ | Điểm danh & Quà thưởng) */}
           <div className="grid min-w-0 items-start gap-6 lg:grid-cols-12">
             <div className="min-w-0 lg:col-span-7"><StickerBook daily={daily} heroClaimId={heroClaimId} /></div>
             <div className="flex min-w-0 flex-col gap-6 lg:col-span-5">
@@ -185,8 +192,11 @@ export function LearnerHome() {
               <VoucherShelf daily={daily} />
             </div>
           </div>
-          <MyCourses current={current} purchases={purchases} />
+
+          {/* Cụm 3: Lộ trình, Mục tiêu & Báo cáo tuần */}
           <PathAndGoals course={current.course}><WeeklyReport /></PathAndGoals>
+
+          {/* Cụm 4: Khám phá thêm (Khóa gợi ý & Combo tiết kiệm) */}
           <Discover />
         </div>
       </div>

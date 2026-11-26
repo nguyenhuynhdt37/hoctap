@@ -27,13 +27,13 @@ const icons: Partial<Record<Mission["template"], PulsoIcon>> = {
 
 function Frame({ children, id = "daily-missions" }: { children: ReactNode; id?: string }) {
   return (
-    <section id={id} tabIndex={-1} aria-labelledby="missions-title" className="relative isolate scroll-mt-24 focus-visible:outline-2 focus-visible:outline-ring">
-      {/* Trang sổ nghiêng nhẹ phía sau, nội dung vẫn thẳng hàng để dễ đọc. */}
-      <div aria-hidden="true" className="absolute inset-0 -z-10 -rotate-1 rounded-[2.5rem] border-2 border-accent-vanilla-border bg-accent-vanilla/55 lg:-rotate-[1.2deg]" />
-      <div aria-hidden="true" className="absolute inset-y-8 left-3 -z-10 hidden w-3 flex-col justify-between sm:flex">
-        {Array.from({ length: 7 }, (_, i) => <span key={i} className="size-3 rounded-full bg-background shadow-[inset_0_1px_2px_var(--sn-vanilla-200)]" />)}
-      </div>
-      <div className="px-5 py-6 sm:pr-8 sm:pl-12 sm:py-8 lg:pr-14">{children}</div>
+    <section
+      id={id}
+      tabIndex={-1}
+      aria-labelledby="missions-title"
+      className="scroll-mt-24 rounded-3xl border border-accent-vanilla-border bg-surface p-5 shadow-ambient-sm focus-visible:outline-2 focus-visible:outline-ring sm:p-6"
+    >
+      {children}
     </section>
   );
 }
@@ -56,14 +56,14 @@ function StampCard({ mission, now, board, checkInAvailable, heroClaimId }: {
   const blocked = Boolean(pendingId);
 
   return (
-    <li className="relative grid min-w-0 grid-cols-[6rem_minmax(0,1fr)] items-center gap-x-4">
+    <li className="relative grid min-w-0 grid-cols-[4.75rem_minmax(0,1fr)] items-center gap-x-3.5 rounded-2xl border border-border bg-background/60 p-3.5">
       <span aria-hidden="true" className={cn(
-        "relative grid size-24 place-items-center rounded-[1.6rem] border-2 border-dashed",
+        "relative grid size-[4.75rem] place-items-center rounded-2xl border",
         claimed ? "border-success-border bg-success-bg" : completed ? "border-primary bg-primary-light" : "border-primary-pastel bg-surface",
       )}>
-        {claimed ? <Seal fresh={!wasClaimed}><Check className="size-8" strokeWidth={3} /></Seal> : (
-          <ProgressRing value={completed ? mission.progress.target : mission.progress.current} max={mission.progress.target} size={64} stroke={6} label={`Tiến độ ${mission.title}`}>
-            {completed ? <Gift className="size-6 text-primary" /> : <Icon className="size-6 text-foreground" />}
+        {claimed ? <Seal fresh={!wasClaimed}><Check className="size-7" strokeWidth={3} /></Seal> : (
+          <ProgressRing value={completed ? mission.progress.target : mission.progress.current} max={mission.progress.target} size={56} stroke={5} label={`Tiến độ ${mission.title}`}>
+            {completed ? <Gift className="size-5 text-primary" /> : <Icon className="size-5 text-foreground" />}
           </ProgressRing>
         )}
       </span>
@@ -119,18 +119,18 @@ export function StickerBook({ daily, heroClaimId }: { daily: DailyLearningState;
 
   return (
     <Frame>
-      <div className="mb-6 flex flex-wrap items-center gap-x-5 gap-y-3">
-        <ProgressRing value={finished} max={Math.max(1, list.length)} size={76} stroke={8} tone={list.length > 0 && finished === list.length ? "success" : "primary"} label="Nhiệm vụ hoàn thành hôm nay">
-          <span className="text-base font-extrabold tabular-nums">{finished}/{list.length}</span>
+      <div className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-3">
+        <ProgressRing value={finished} max={Math.max(1, list.length)} size={60} stroke={6} tone={list.length > 0 && finished === list.length ? "success" : "primary"} label="Nhiệm vụ hoàn thành hôm nay">
+          <span className="text-sm font-extrabold tabular-nums">{finished}/{list.length}</span>
         </ProgressRing>
         <div className="min-w-0 flex-1">
-          <h2 id="missions-title" className="text-3xl font-extrabold tracking-tight">Sổ tem hôm nay</h2>
-          <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">Làm mới lúc 00:00 (giờ Việt Nam) {source === "mock" && <MockDataChip source="mock" />}</p>
+          <h2 id="missions-title" className="text-xl font-extrabold tracking-tight text-foreground sm:text-2xl">Nhiệm vụ hôm nay</h2>
+          <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground sm:text-sm">Làm mới lúc 00:00 (giờ Việt Nam) {source === "mock" && <MockDataChip source="mock" />}</p>
         </div>
-        <HomeLink href="/missions" endIcon={false} className="bg-surface/80 text-sm">Tất cả nhiệm vụ</HomeLink>
+        <HomeLink href="/missions" endIcon={false} className="bg-surface text-sm">Tất cả nhiệm vụ</HomeLink>
       </div>
       {list.length ? (
-        <ul className="grid gap-x-8 gap-y-7 sm:grid-cols-2">
+        <ul className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
           {list.map((mission) => <StampCard key={mission.id} mission={mission} now={now} board={board} heroClaimId={heroClaimId}
             checkInAvailable={mission.template === "daily_checkin.completed" && checkIn.data?.checked_today === false} />)}
         </ul>
