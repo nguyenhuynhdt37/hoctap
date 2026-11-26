@@ -160,9 +160,9 @@ export function CourseCard(props: CourseCardProps) {
   const levels = courseLevels(course.grades);
   const badges = (
     <div className="absolute -bottom-2.5 left-2 right-2 flex flex-wrap items-center gap-1.5 sm:left-4">
-      {featured && <Pill className="shadow-ambient-md">Nổi bật</Pill>}
-      {course.is_new && <Pill className="shadow-ambient-sm" tone="lavender">Mới</Pill>}
-      {course.is_bestseller && <Pill className="shadow-ambient-sm" tone="lavender">Bán chạy</Pill>}
+      {featured && <Pill className="-rotate-2 shadow-ambient-md">Nổi bật</Pill>}
+      {course.is_new && <Pill className="rotate-1 shadow-ambient-sm" tone="lavender">Mới</Pill>}
+      {course.is_bestseller && <Pill className="rotate-1 shadow-ambient-sm" tone="lavender">Bán chạy</Pill>}
     </div>
   );
 

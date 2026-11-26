@@ -127,7 +127,7 @@ function ParentTrustSection({
                   {pillar.description}
                 </p>
                 <div className="col-span-2 lg:col-span-1 lg:col-start-2">
-                  <Pill tone="vanilla" className="shadow-sm">
+                  <Pill tone="vanilla" className="shadow-sm group-odd:-rotate-1 group-even:rotate-1">
                     {pillar.badge}
                   </Pill>
                 </div>

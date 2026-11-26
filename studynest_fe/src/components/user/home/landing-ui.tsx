@@ -95,7 +95,7 @@ export function SectionShell({
           <CloudBlob className="-right-32 bottom-8 h-72 w-[28rem] bg-primary-pastel/40" />
         </>
       )}
-      <div className={cx("relative mx-auto w-full max-w-none px-3 py-12 sm:px-5 md:py-16 lg:px-8", innerClassName)}>{children}</div>
+      <div className={cx("relative mx-auto w-full max-w-none px-3 py-16 sm:px-5 md:py-24 lg:px-8", innerClassName)}>{children}</div>
     </section>
   );
 }

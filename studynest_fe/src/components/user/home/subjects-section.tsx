@@ -182,7 +182,7 @@ export default function SubjectsSection({ selectedLevel, onChangeLevel, onExplor
       <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,18rem)_minmax(0,1fr)] lg:gap-9 xl:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
         <Reveal delay={0.08} className="min-w-0">
           <GlassCard tilt={false} className="relative p-4 sm:p-5 lg:p-6">
-            <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 rounded-3xl border border-primary-pastel bg-primary-light/70" />
+            <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 -rotate-2 rounded-3xl border border-primary-pastel bg-primary-light/70" />
             <div className="flex items-center gap-2.5 text-sm font-bold text-foreground">
               <IconBubble className="h-8! w-8! rounded-xl!">
                 <SlidersHorizontal aria-hidden="true" className="size-4" />
@@ -261,7 +261,7 @@ export default function SubjectsSection({ selectedLevel, onChangeLevel, onExplor
             <p role="status" aria-live="polite" aria-atomic="true" className="text-sm font-semibold text-foreground">
               <span className="sr-only">{selectedGrade?.name ?? levelLabel}. </span>{status}
             </p>
-            <Pill tone="lavender" className="shadow-sm">{selectedGrade?.name ?? levelLabel}</Pill>
+            <Pill tone="lavender" className="rotate-1 shadow-sm">{selectedGrade?.name ?? levelLabel}</Pill>
           </div>
 
           <div id={resultsId} aria-busy={pending}>
@@ -270,7 +270,7 @@ export default function SubjectsSection({ selectedLevel, onChangeLevel, onExplor
                 <GlassCard tilt={false} className="relative isolate flex min-h-64 flex-col items-start justify-center gap-4 overflow-hidden p-6 sm:p-8">
                   <div aria-hidden="true" className="pointer-events-none absolute -top-20 -right-24 -z-10 size-64 rounded-full border border-accent-border/65 bg-accent/45 sm:-right-10" />
                   <CloudBlob className="-right-20 -bottom-10 -z-10 h-32 w-72 bg-primary-light" />
-                  <IconBubble tone="lavender" className="shadow-md">
+                  <IconBubble tone="lavender" className="-rotate-6 shadow-md">
                     <BookOpen aria-hidden="true" className="size-6" />
                   </IconBubble>
                   <p className="max-w-md text-sm leading-relaxed text-foreground sm:text-base">

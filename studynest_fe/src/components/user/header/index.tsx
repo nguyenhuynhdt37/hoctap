@@ -332,6 +332,11 @@ function SkyIsland({ pathname }: { pathname: string }) {
 
 const Header = () => {
   const pathname = usePathname();
+  const user = useUserStore((state) => state.user);
+  const authStatus = useHubAuthStatus();
+
+  // Trang chủ của khách có thanh điều hướng riêng (CloudArcNav).
+  if (pathname === "/" && (authStatus !== "ready" || !user)) return null;
 
   return (
     <header className="pointer-events-none sticky top-0 z-40 h-[72px] px-3 pt-2 font-sans sm:px-5 lg:px-8">
