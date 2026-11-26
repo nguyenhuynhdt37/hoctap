@@ -6,7 +6,6 @@ import AuthShell, {
   authLinkClass,
   authSubmitClass,
   type AuthRequestError,
-  type AuthVariant,
 } from "@/components/user/auth/AuthShell";
 import { IconBubble, Pill } from "@/components/user/home/landing-ui";
 import { Alert, Button } from "@/components/ui";
@@ -20,15 +19,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, CheckCircle2, Clock, Mail, RotateCw } from "pulsoicon-react";
 import { sanitizeRedirect } from "@/lib/auth/safe-redirect";
-import { useAuthModalStore } from "@/stores/auth-modal";
 
-const EmailAuthentication = ({ variant = "page" }: { variant?: AuthVariant }) => {
+const EmailAuthentication = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const inModal = variant === "modal";
-  const returnTo = useAuthModalStore((state) => state.returnTo);
   const emailFromQuery = (searchParams.get("email") || "").trim();
-  const redirectUrl = sanitizeRedirect(searchParams.get("redirect"), inModal ? returnTo : "/");
+  const redirectUrl = sanitizeRedirect(searchParams.get("redirect"));
 
   const [email, setEmail] = useState(emailFromQuery);
   const [otp, setOtp] = useState<string[]>(["", "", "", "", "", ""]);
@@ -143,9 +139,7 @@ const EmailAuthentication = ({ variant = "page" }: { variant?: AuthVariant }) =>
       });
       setIsVerified(true);
       setTimeout(() => {
-        // The dialog closes onto the page the user came from; the full page navigates.
-        if (inModal) router.back();
-        else router.push(redirectUrl);
+        router.push(redirectUrl);
         router.refresh();
       }, 1000);
     } catch (cause) {
@@ -221,7 +215,7 @@ const EmailAuthentication = ({ variant = "page" }: { variant?: AuthVariant }) =>
 
   if (isVerified) {
     return (
-      <AuthShell screen="verify" title="Xác thực thành công!" variant={variant}>
+      <AuthShell screen="verify" title="Xác thực thành công!">
         <div role="status" className="flex items-center gap-3 rounded-2xl border border-success-border bg-success-bg p-4 text-sm leading-relaxed text-success-foreground">
           <IconBubble tone="success" shape="circle" className="size-10! bg-surface!">
             <CheckCircle2 aria-hidden="true" className="size-5" />
@@ -235,7 +229,6 @@ const EmailAuthentication = ({ variant = "page" }: { variant?: AuthVariant }) =>
   return (
     <AuthShell
       screen="verify"
-      variant={variant}
       title="Xác thực email"
       description={
         emailFromQuery ? (
@@ -383,7 +376,7 @@ const EmailAuthentication = ({ variant = "page" }: { variant?: AuthVariant }) =>
         </p>
         <div className="flex flex-wrap items-center justify-center gap-x-1.5 text-sm text-foreground/85">
           <span>Đã xác thực tài khoản?</span>
-          <Link href="/login" replace={inModal} className={authLinkClass}>Đăng nhập</Link>
+          <Link href="/login" className={authLinkClass}>Đăng nhập</Link>
         </div>
       </div>
     </AuthShell>

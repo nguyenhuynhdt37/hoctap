@@ -82,11 +82,8 @@ const preHydrationCleanupScript = `
 
 export default function RootLayout({
   children,
-  modal,
 }: Readonly<{
   children: React.ReactNode;
-  /** `@modal` parallel slot: login/register dialogs over the current page. */
-  modal: React.ReactNode;
 }>) {
   const content = <AssistantRoot>{children}</AssistantRoot>;
   return (
@@ -114,7 +111,6 @@ export default function RootLayout({
           <NotificationToastListener />
           <Suspense fallback={null}><AuthBootstrap /></Suspense>
           {isDpopMode ? content : <UserLoader>{content}</UserLoader>}
-          {modal}
         </QueryProvider>
       </body>
     </html>

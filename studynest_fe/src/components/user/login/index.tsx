@@ -7,7 +7,6 @@ import AuthShell, {
   authLinkClass,
   authSubmitClass,
   type AuthRequestError,
-  type AuthVariant,
 } from "@/components/user/auth/AuthShell";
 import { Alert, Button, Modal } from "@/components/ui";
 import { postAuthSession } from "@/lib/auth/login";
@@ -24,7 +23,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useActionState, useCallback, useEffect, useState } from "react";
 import { ArrowRight, LockKeyhole, Mail } from "pulsoicon-react";
 import { sanitizeRedirect } from "@/lib/auth/safe-redirect";
-import { useAuthModalStore } from "@/stores/auth-modal";
 
 // ============================================
 // VALIDATION FUNCTIONS
@@ -135,23 +133,15 @@ const ErrorDialog = ({
 // LOGIN COMPONENT
 // ============================================
 
-const Login = ({ variant = "page" }: { variant?: AuthVariant }) => {
+const Login = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const inModal = variant === "modal";
-  const returnTo = useAuthModalStore((state) => state.returnTo);
-  const requestedRedirect = searchParams.get("redirect");
-  // In the modal the user is already on the page they want to stay on.
-  const redirectUrl = sanitizeRedirect(requestedRedirect, inModal ? returnTo : "/");
-  /** Close the dialog in place; the full page variant still navigates to the target. */
+  const redirectUrl = sanitizeRedirect(searchParams.get("redirect"));
   const finishLogin = () => {
-    if (inModal) router.back();
-    else router.push(redirectUrl);
+    router.push(redirectUrl);
     router.refresh();
   };
-  /** Move to the verification step; inside the modal it replaces the dialog content. */
-  const goToVerification = (target: string) =>
-    inModal ? router.replace(target) : router.push(target);
+  const goToVerification = (target: string) => router.push(target);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -200,8 +190,8 @@ const Login = ({ variant = "page" }: { variant?: AuthVariant }) => {
         setIsGoogleLoading(false);
       }
     },
-    // finishLogin/handleLoginError only close over router, redirectUrl and inModal.
-    [router, redirectUrl, inModal]
+    // finishLogin/handleLoginError only close over router and redirectUrl.
+    [router, redirectUrl]
   );
 
   // ============================================
@@ -467,7 +457,6 @@ const Login = ({ variant = "page" }: { variant?: AuthVariant }) => {
         screen="login"
         title="Đăng nhập"
         description="Đăng nhập để tiếp tục học cùng Mây Mây."
-        variant={variant}
       >
         <AuthProviders
           onCredential={handleGoogleCredentialResponse}
@@ -546,7 +535,7 @@ const Login = ({ variant = "page" }: { variant?: AuthVariant }) => {
 
         <div className="mt-3 flex flex-wrap items-center justify-center gap-x-1.5 border-t border-border pt-1 text-sm text-foreground/85">
           <span>Chưa có tài khoản?</span>
-          <Link href="/register" replace={inModal} className={authLinkClass}>Đăng ký ngay</Link>
+          <Link href="/register" className={authLinkClass}>Đăng ký ngay</Link>
         </div>
       </AuthShell>
 

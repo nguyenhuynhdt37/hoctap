@@ -8,7 +8,6 @@ import AuthShell, {
   authLinkClass,
   authSubmitClass,
   type AuthRequestError,
-  type AuthVariant,
 } from "@/components/user/auth/AuthShell";
 import { Alert, Button } from "@/components/ui";
 import { postAuthSession } from "@/lib/auth/login";
@@ -19,13 +18,10 @@ import { useRouter } from "next/navigation";
 import { useActionState, useCallback, useState } from "react";
 import { ArrowRight, LockKeyhole, Mail, UserRound } from "pulsoicon-react";
 
-const Register = ({ variant = "page" }: { variant?: AuthVariant }) => {
+const Register = () => {
   const router = useRouter();
-  const inModal = variant === "modal";
-  /** Close the dialog in place; the full page variant goes home as before. */
   const finishRegister = () => {
-    if (inModal) router.back();
-    else router.push("/");
+    router.push("/");
     router.refresh();
   };
   const [email, setEmail] = useState("");
@@ -251,9 +247,7 @@ const Register = ({ variant = "page" }: { variant?: AuthVariant }) => {
       const verifyUrl =
         "/email_authentication?registered=true&email=" +
         encodeURIComponent(email.trim());
-      // In the dialog the verification step replaces the form instead of leaving the page.
-      if (inModal) router.replace(verifyUrl);
-      else router.push(verifyUrl);
+      router.push(verifyUrl);
     } catch (cause) {
       const e = cause as AuthRequestError | undefined;
       const status = e?.response?.status ?? e?.status;
@@ -284,7 +278,6 @@ const Register = ({ variant = "page" }: { variant?: AuthVariant }) => {
       screen="register"
       title="Đăng ký"
       description="Tạo tài khoản để bắt đầu học cùng Mây Mây."
-      variant={variant}
     >
       {generalError && (
         <Alert
@@ -461,7 +454,7 @@ const Register = ({ variant = "page" }: { variant?: AuthVariant }) => {
 
       <div className="mt-3 flex flex-wrap items-center justify-center gap-x-1.5 border-t border-border pt-1 text-sm text-foreground/85">
         <span>Đã có tài khoản?</span>
-        <Link href="/login" replace={inModal} className={authLinkClass}>Đăng nhập ngay</Link>
+        <Link href="/login" className={authLinkClass}>Đăng nhập ngay</Link>
       </div>
     </AuthShell>
   );
