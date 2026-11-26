@@ -660,9 +660,15 @@ class AuthService:
         self._require_active_google_account(user)
         # Google controls consumer Gmail addresses. Neither a current Workspace
         # address nor a verified third-party email proves historical ownership.
+        # A personal Gmail address that Google reports as verified AND that the
+        # account already verified by email proves the same person owns both, so it may
+        # link even when the account signs in with a password. Legacy Google accounts
+        # keep linking without the token's verification flag, as before.
+        is_personal_gmail = email.rsplit("@", 1)[1].lower() == "gmail.com" and "hd" not in info
+        google_confirms_email = info.get("email_verified") is True
         can_link_legacy = (
-            user.password == LEGACY_GOOGLE_PASSWORD and user.is_verified_email is True
-            and email.rsplit("@", 1)[1].lower() == "gmail.com" and "hd" not in info
+            user.is_verified_email is True and is_personal_gmail
+            and (user.password == LEGACY_GOOGLE_PASSWORD or google_confirms_email)
         )
         if not can_link_legacy or await self.db.scalar(
             select(UserIdentity.user_id).where(

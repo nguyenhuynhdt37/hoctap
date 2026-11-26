@@ -105,17 +105,44 @@ async def test_existing_personal_gmail_user_is_linked_once(db_session, google_lo
     assert error.value.status_code == 409
 
 
+@pytest.mark.parametrize("password", ["local-password-hash", ""])
+async def test_password_account_with_verified_personal_gmail_is_linked(db_session, google_login, password):
+    user = await add_user(db_session, f"{uuid4().hex}@gmail.com", password=password)
+    user_id, email = user.id, user.email
+    subject = uuid4().hex
+
+    assert (await google_login(db_session, subject, email=email))[0] == user_id
+    identity = await db_session.get(UserIdentity, ("google", subject))
+    assert identity.user_id == user_id and identity.email_at_link == email
+    with pytest.raises(HTTPException) as error:
+        await google_login(db_session, uuid4().hex, email=email)
+    assert error.value.status_code == 409
+
+
+async def test_unverified_google_email_never_links_a_password_account(db_session, google_login):
+    user = await add_user(db_session, f"{uuid4().hex}@gmail.com", password="local-password-hash")
+    subject = uuid4().hex
+
+    with pytest.raises(HTTPException) as error:
+        await google_login(db_session, subject, email=user.email, email_verified=False)
+
+    assert error.value.status_code == 401
+    assert await db_session.get(UserIdentity, ("google", subject)) is None
+
+
 @pytest.mark.parametrize(
     "password,verified,domain,extra_claims",
     [
-        ("local-password-hash", True, "gmail.com", {}),
-        ("", True, "gmail.com", {}),
+        ("local-password-hash", False, "gmail.com", {}),
+        ("", False, "gmail.com", {}),
+        ("local-password-hash", True, "workspace.example.test", {"hd": "workspace.example.test"}),
+        ("local-password-hash", True, "gmail.com", {"hd": "workspace.example.test"}),
         ("google-oauth", False, "gmail.com", {}),
         ("google-oauth", True, "workspace.example.test", {"hd": "workspace.example.test"}),
         ("google-oauth", True, "gmail.com", {"hd": "workspace.example.test"}),
     ],
 )
-async def test_same_email_requires_eligible_legacy_account(
+async def test_same_email_requires_eligible_account(
     db_session, google_login, password, verified, domain, extra_claims,
 ):
     user = await add_user(db_session, f"{uuid4().hex}@{domain}", password=password, verified=verified)
