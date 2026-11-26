@@ -1,4 +1,4 @@
-"""Authenticated Grok Voice relay. Audio is transient; transcripts reuse tutor chat."""
+"""Authenticated Qwen 3.8 Omni Flash Realtime voice relay. Audio is transient; transcripts reuse tutor chat."""
 import asyncio
 import base64
 import json
@@ -20,9 +20,9 @@ from sqlalchemy import desc, select
 from app.core.auth_encryption import open_auth_payload, seal_auth_payload
 from app.core.deps import AccessCredentials, AccessIdentity, AuthorizationService
 from app.core.embedding import EmbeddingService
+from app.core.qwen_voice import VoiceName, normalize_voice, open_realtime, realtime_api_key, send_event
 from app.core.redis import get_redis
 from app.core.settings import settings
-from app.core.xai_voice import VoiceName, normalize_voice, open_realtime, send_event
 from app.db.models.database import TutorChatMessages, TutorChatThreads
 from app.db.sesson import AsyncSessionLocal
 from app.services.user.tutor_chat import TutorChatService
@@ -32,10 +32,16 @@ from app.services.user.tutor_chat_message import TutorChatMessageService
 def origin_allowed(origin):
     if not origin:  # Native clients authenticate with Authorization, not browser cookies.
         return True
-    origins = {x.strip().rstrip('/') for x in settings.TUTOR_VOICE_ORIGINS.split(',') if x.strip()}
+    origins = {
+        x.strip().rstrip('/')
+        for raw in (settings.TUTOR_VOICE_ORIGINS, settings.CORS_ALLOWED_ORIGINS)
+        for x in (raw or '').split(',')
+        if x.strip()
+    }
     if settings.FRONTEND_URL:
         p = urlsplit(settings.FRONTEND_URL)
-        origins.add(f'{p.scheme}://{p.netloc}')
+        if p.scheme and p.netloc:
+            origins.add(f'{p.scheme}://{p.netloc}')
     return origin.rstrip('/') in origins
 
 
@@ -290,7 +296,7 @@ Lịch sử gần đây: {json.dumps(context, ensure_ascii=False)}'''
 
                     kind = event['type']
                     if kind == 'error':
-                        raise ConnectionError('xAI rejected a realtime event')
+                        raise ConnectionError('Qwen Realtime rejected a realtime event')
                     if kind == 'input_audio_buffer.speech_started':
                         await self.emit('interrupted')
                         if response_id or finishing or self.model_text:
@@ -306,16 +312,24 @@ Lịch sử gần đây: {json.dumps(context, ensure_ascii=False)}'''
                     elif kind == 'input_audio_buffer.committed':
                         input_item_id = event.get('item_id') or input_item_id
                     elif kind in {
+                        'conversation.item.input_audio_transcription.text',
                         'conversation.item.input_audio_transcription.updated',
                         'conversation.item.input_audio_transcription.completed',
                     }:
-                        if not input_item_id or event.get('item_id') != input_item_id or transcript_ready.is_set():
+                        item_id = event.get('item_id')
+                        if not input_item_id and item_id:
+                            input_item_id = item_id
+                        if (input_item_id and item_id and item_id != input_item_id) or transcript_ready.is_set():
                             continue
-                        final = kind.endswith('.completed') and event.get('status') != 'in_progress'
-                        text = event.get('transcript') or ''
+                        if kind.endswith('.text'):
+                            text = f"{event.get('text') or ''}{event.get('stash') or ''}".strip()
+                            final = False
+                        else:
+                            final = kind.endswith('.completed') and event.get('status') != 'in_progress'
+                            text = (event.get('transcript') or '').strip()
                         if len(text) > 20000:
                             raise ValueError('Transcript too long')
-                        if text != self.user_text or final:
+                        if text and (text != self.user_text or final):
                             self.user_text = text
                             await self.emit('transcript', role='user', text=text, delta=text if final else '')
                         if final:
@@ -327,12 +341,12 @@ Lịch sử gần đây: {json.dumps(context, ensure_ascii=False)}'''
                         response_id = None
                         status = event['response'].get('status')
                         if status == 'failed':
-                            raise ConnectionError('xAI voice response failed')
+                            raise ConnectionError('Qwen voice response failed')
                         if status == 'cancelled':
                             await self.save_turn(interrupted=True)
                         else:
                             finishing = asyncio.create_task(finish_turn(calls, transcript_ready))
-                    elif response_id and event.get('response_id') == response_id:
+                    elif response_id and event.get('response_id', response_id) == response_id:
                         if kind in {'response.output_audio_transcript.delta', 'response.audio_transcript.delta'}:
                             delta = event['delta']
                             self.model_text += delta
@@ -418,7 +432,7 @@ async def run_tutor_voice(websocket: WebSocket, lesson_id: uuid.UUID | None = No
     lease_key, lease_id = f'tutor:voice:{user.id}', uuid.uuid4().hex
     locked = False
     try:
-        if not settings.TUTOR_VOICE_ENABLED or not settings.XAI_API_KEY:
+        if not settings.TUTOR_VOICE_ENABLED or not realtime_api_key():
             raise HTTPException(503, 'Voice chưa được bật trên hệ thống.')
         prompt, supported = await relay.prepare()
         voice_name = normalize_voice(getattr(websocket, 'query_params', {}).get('voice', settings.TUTOR_VOICE_NAME))

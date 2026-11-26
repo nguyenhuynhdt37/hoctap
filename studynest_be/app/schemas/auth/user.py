@@ -74,3 +74,13 @@ class VerifyOtp(BaseModel):
     otp_code: str
     purpose: str
     device_type: str | None = None
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    email: EmailStr
+    code: Annotated[str, Field(min_length=6, max_length=12)]
+    new_password: Annotated[str, Field(min_length=6, max_length=72)] = Field(repr=False)

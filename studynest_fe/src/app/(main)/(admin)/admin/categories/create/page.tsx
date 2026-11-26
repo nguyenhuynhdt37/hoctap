@@ -1,7 +1,5 @@
-import CreateCategory from "@/components/admin/categories/create";
+import { redirect } from "next/navigation";
 
-const CreateCategoryPage = () => {
-  return <CreateCategory />;
-};
-
-export default CreateCategoryPage;
+export default function AdminCreateCategoryRedirectPage() {
+  redirect("/admin/catalog");
+}

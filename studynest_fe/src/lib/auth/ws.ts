@@ -22,9 +22,12 @@ export function takeInitialWebSocketMessage(socket: WebSocket): MessageEvent | u
 
 function isLegacyMediaReady(socket: WebSocket, path: string, frame: Record<string, unknown>): boolean {
   if (frame.type !== "ready") return false;
-  // Both media endpoints emit this control frame only after authorizing the session.
+  // Media endpoints emit this control frame only after authorizing the session.
   if (socket.protocol === "studynest-dictation" && path.endsWith("/api/v1/agent/dictation")) {
     return frame.sample_rate === 16000 && typeof frame.max_seconds === "number";
+  }
+  if (socket.protocol === "studynest-speaking" && /\/api\/v1\/learning\/speaking\/[^/]+\/realtime$/.test(path)) {
+    return typeof frame.voice === "string" && typeof frame.max_seconds === "number";
   }
   return socket.protocol === "studynest-voice" &&
     /\/api\/v1\/tutor-chat\/(?:lessons\/[^/]+\/)?voice$/.test(path) &&

@@ -1,6 +1,7 @@
 // Auth API Types
 
 export type LoginErrorCode =
+  | "ACCOUNT_NOT_FOUND"
   | "INVALID_CREDENTIALS"
   | "EMAIL_NOT_VERIFIED"
   | "ACCOUNT_DELETED"
@@ -12,6 +13,7 @@ export interface LoginErrorDetail {
   message: string;
   // Optional fields based on error type
   email?: string; // EMAIL_NOT_VERIFIED
+  otp_sent?: boolean; // EMAIL_NOT_VERIFIED
   deleted_at?: string; // ACCOUNT_DELETED
   reason?: string; // DELETED, BANNED_*
   banned_until?: string | null; // BANNED_*

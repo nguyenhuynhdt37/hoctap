@@ -42,7 +42,7 @@ function AccountAvatar({ user, pathname }: { user: User; pathname: string }) {
     <Link href="/profile" aria-label={[`Hồ sơ của ${user.fullname || "bạn"}`, ...labels].join(", ")}
       aria-current={pathname === "/profile" ? "page" : undefined}
       className={cn("flex min-h-11 shrink-0 items-center gap-1.5 rounded-full", focusRing, "aria-[current=page]:ring-2 aria-[current=page]:ring-primary")}>
-      <TitleBadge item={equipment?.title} className="hidden max-w-24 lg:max-2xl:inline-flex min-[1600px]:inline-flex [&>span]:truncate [&>span]:whitespace-nowrap" />
+      <TitleBadge item={equipment?.title} className="hidden max-w-28 lg:inline-flex [&>span]:truncate [&>span]:whitespace-nowrap" />
       <span className="relative inline-grid place-items-center">
         <FramedAvatar src={user.avatar} name={user.fullname} equipment={equipment} className="text-xs" />
         <EmblemIcon item={equipment?.emblem} decorative className="absolute right-0 bottom-0 size-[1.0625rem] rounded-full ring-1 ring-surface" />
@@ -167,7 +167,7 @@ function SkyIsland({ pathname }: { pathname: string }) {
           open
             ? "fixed inset-0 z-50 h-dvh w-screen max-w-none rounded-none border-0 bg-surface/95 shadow-none"
             : cn(
-                "relative mx-auto w-full max-w-[68rem] rounded-[28px] border border-primary-pastel/70 bg-surface/85 2xl:max-w-[80rem]",
+                "relative mx-auto w-full max-w-none rounded-[28px] border border-primary-pastel/70 bg-surface/85",
                 scrolled ? "shadow-lg" : "shadow-md",
               ),
         )}
@@ -198,7 +198,7 @@ function SkyIsland({ pathname }: { pathname: string }) {
             <span className="whitespace-nowrap text-base font-semibold text-foreground sm:text-lg">Mây Mây</span>
           </Link>
 
-          <nav aria-label="Điều hướng chính" className="ml-1 hidden items-center gap-0.5 2xl:flex">
+          <nav aria-label="Điều hướng chính" className="ml-2 hidden items-center gap-0.5 xl:flex">
             {links.map((link) => {
               const sections = link.href === "/combo" ? ["/combo", "/learning-paths"] : [link.href];
               const current = isCurrentPage(pathname, link.href);
@@ -223,7 +223,7 @@ function SkyIsland({ pathname }: { pathname: string }) {
           ) : viewer.signedIn && user ? (
             <>
               {dashboard && (
-                <Link href={dashboard.href} className={cn(pillLink, focusRing, "hidden border border-accent-border bg-accent text-accent-foreground hover:bg-accent-border/70 hover:text-accent-foreground 2xl:inline-flex")}>
+                <Link href={dashboard.href} className={cn(pillLink, focusRing, "hidden border border-accent-border bg-accent text-accent-foreground hover:bg-accent-border/70 hover:text-accent-foreground xl:inline-flex")}>
                   <LayoutGrid aria-hidden="true" className="mr-1.5 size-4" />
                   {dashboard.label}
                 </Link>
@@ -339,7 +339,7 @@ const Header = () => {
   if (pathname === "/" && (authStatus !== "ready" || !user)) return null;
 
   return (
-    <header className="pointer-events-none sticky top-0 z-40 h-[72px] px-2 pt-2 font-sans md:px-4">
+    <header className="pointer-events-none sticky top-0 z-40 h-[72px] px-3 pt-2 font-sans sm:px-5 lg:px-8">
       <SkyIsland pathname={pathname} />
     </header>
   );

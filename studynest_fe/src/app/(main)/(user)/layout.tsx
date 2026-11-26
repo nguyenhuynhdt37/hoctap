@@ -16,9 +16,11 @@ export default function RootLayout({
       <UserNotificationsBootstrap />
       <NotificationWS role_name="USER" />
       <Header />
-      <UserRouteGuard>
-        <Suspense fallback={null}>{children}</Suspense>
-      </UserRouteGuard>
+      <div className="user-full-canvas w-full">
+        <UserRouteGuard>
+          <Suspense fallback={null}>{children}</Suspense>
+        </UserRouteGuard>
+      </div>
       <Footer />
       <LevelUpCelebration />
     </>

@@ -5,9 +5,12 @@ import useSWR from "swr";
 import {
   ArrowRight,
   BarChart3,
+  CheckCircle2,
+  FileText,
   Library,
   Plus,
   RotateCcw,
+  ShieldCheck,
   Tag,
   Video,
 } from "pulsoicon-react";
@@ -142,6 +145,23 @@ const LecturerDashboard = ({
       return response.data;
     },
     { revalidateOnFocus: false },
+  );
+
+  const { data: contractStatus } = useSWR<{
+    has_signed_master: boolean;
+    contract_number: string | null;
+    status: string | null;
+  } | null>(
+    "/lecturer/contracts/status",
+    async (url) => {
+      try {
+        const res = await api.get(url);
+        return res.data;
+      } catch {
+        return null;
+      }
+    },
+    { revalidateOnFocus: false, shouldRetryOnError: false },
   );
 
   const holdCount = holdData?.total ?? 0;
@@ -284,6 +304,45 @@ const LecturerDashboard = ({
 
             {/* Hold Pulse Card */}
             <HoldPulseCard holdCount={holdCount} />
+
+            {/* Legal Contract Trust Card */}
+            {contractStatus?.has_signed_master && (
+              <Card
+                variant="surface"
+                density="none"
+                className="overflow-hidden rounded-[28px] border border-primary-pastel/80 bg-gradient-to-br from-primary-light/60 via-surface to-success-bg/40 p-5 shadow-xs"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-primary-pastel bg-surface text-primary shadow-2xs">
+                      <ShieldCheck size={19} animated={false} />
+                    </span>
+                    <div className="min-w-0">
+                      <span className="inline-flex items-center gap-1 rounded-full border border-success-border bg-success-bg px-2 py-0.5 text-[10px] font-bold text-success-foreground">
+                        <CheckCircle2 size={10} animated={false} />
+                        {contractStatus.status === "countersigned"
+                          ? "Đã đồng ký 2 bên"
+                          : "Đã ký điện tử PKI"}
+                      </span>
+                      <h3 className="mt-1.5 text-sm font-bold text-foreground">
+                        Hợp đồng Đối tác Giảng viên
+                      </h3>
+                      <p className="mt-0.5 font-mono text-[11px] font-semibold text-primary">
+                        {contractStatus.contract_number}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => router.push("/lecturer/contracts")}
+                    className="inline-flex shrink-0 items-center gap-1 rounded-xl border border-primary-pastel bg-surface px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary-light"
+                  >
+                    <FileText size={13} animated={false} />
+                    Xem A4
+                  </button>
+                </div>
+              </Card>
+            )}
           </div>
         </div>
       </div>

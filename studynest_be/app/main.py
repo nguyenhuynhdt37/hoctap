@@ -12,6 +12,8 @@ from fastapi_pagination import add_pagination
 # --- ADMIN ROUTES ---
 from app.api.v1 import catalog, learning_paths, bundle_management
 from app.api.v1.admin import category as admin_category
+from app.api.v1.admin import contracts as admin_contracts
+from app.api.v1.admin import courses as admin_courses
 from app.api.v1.admin import discounts as admin_discounts
 from app.api.v1.admin import lecturer as admin_lecturer
 from app.api.v1.admin import platform_wallet_service, role
@@ -31,6 +33,7 @@ from app.api.v1.chat.user import profile as chat_profile_user
 
 # --- LECTURER ROUTES ---
 from app.api.v1.lecturer import chapter, lesson
+from app.api.v1.lecturer import contracts as lecturer_contracts
 from app.api.v1.lecturer import courses as lecturer_courses
 from app.api.v1.lecturer import discounts as lecturer_discounts
 from app.api.v1.lecturer import payout as lecturer_payout
@@ -234,8 +237,12 @@ app.include_router(lecturer_refunds.router, prefix=prefix)
 app.include_router(lecturer_payout.router, prefix=prefix)
 app.include_router(lecturer_withdraw.router, prefix=prefix)
 app.include_router(lecturer_statistics.router, prefix=prefix)
+app.include_router(lecturer_contracts.router, prefix=prefix)
+app.include_router(lecturer_contracts.public_router, prefix=prefix)
 
 # --- ADMIN ROUTES ---
+app.include_router(admin_contracts.router, prefix=prefix)
+app.include_router(admin_courses.router, prefix=prefix)
 app.include_router(admin_user.router, prefix=prefix)
 app.include_router(admin_platform_settings.router, prefix=prefix)
 app.include_router(admin_lecturer.router, prefix=prefix)

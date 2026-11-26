@@ -287,8 +287,51 @@ class AuthorizationService:
 
     async def require_role(self, required_roles: list[str] | None = None) -> User:
         user = await self.get_current_user()
-        if required_roles and not any(role in required_roles for role in await self.get_list_role_in_user(user)):
+        user_roles = await self.get_list_role_in_user(user)
+        if required_roles and not any(role in required_roles for role in user_roles):
             raise HTTPException(status_code=403, detail="Permission denied")
+
+        # Chốt chặn bảo vệ toàn bộ endpoint LECTURER: bắt buộc đã ký Hợp đồng Khung điện tử
+        if (
+            required_roles
+            and "LECTURER" in required_roles
+            and "ADMIN" not in required_roles
+        ):
+            req_path = ""
+            try:
+                req_path = get_request().url.path or ""
+            except Exception:
+                req_path = ""
+
+            if not req_path.startswith("/api/v1/lecturer/contracts"):
+                from app.db.models.contracts import DigitalContracts
+
+                master_statuses = (
+                    await self.db.scalars(
+                        select(DigitalContracts.status).where(
+                            DigitalContracts.party_b_user_id == user.id,
+                            DigitalContracts.contract_type == "LECTURER_MASTER",
+                            DigitalContracts.status.in_(["signed", "countersigned"]),
+                        )
+                    )
+                ).all()
+
+                if "countersigned" not in master_statuses:
+                    if "signed" in master_statuses:
+                        raise HTTPException(
+                            status_code=403,
+                            detail={
+                                "code": "LECTURER_CONTRACT_PENDING_COUNTERSIGN",
+                                "message": "Hợp đồng Đối tác của bạn đã được ký (Bên B) và đang chờ Ban Quản Trị Mây Mây đồng ký xác nhận (Bên A). Không gian Giảng viên sẽ tự động mở khóa ngay khi đủ chữ ký 2 bên.",
+                            },
+                        )
+                    raise HTTPException(
+                        status_code=403,
+                        detail={
+                            "code": "LECTURER_CONTRACT_REQUIRED",
+                            "message": "Tài khoản giảng viên của bạn chưa ký Hợp đồng Khung điện tử. Vui lòng hoàn tất ký hợp đồng để truy cập không gian Giảng viên.",
+                        },
+                    )
         return user
 
     @staticmethod

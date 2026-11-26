@@ -648,3 +648,82 @@ textarea {
   70% { transform: scale(0.92) rotate(-8deg); opacity: 1; }
   to { transform: scale(1) rotate(-8deg); opacity: 1; }
 }
+
+/* ==========================================================================
+   8. CLOUDY GLASS FLOATING TOAST ANIMATIONS
+   ========================================================================== */
+@media (prefers-reduced-motion: no-preference) {
+  .cloudy-toast-enter {
+    animation: cloudy-toast-enter 320ms var(--ease-soft) both;
+  }
+
+  .cloudy-toast-leave {
+    animation: cloudy-toast-leave 220ms cubic-bezier(0.4, 0, 1, 1) both;
+  }
+
+  .cloudy-toast-progress {
+    transform-origin: left center;
+    animation-name: cloudy-toast-progress;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+  }
+
+  .cloudy-toast-indeterminate {
+    animation: cloudy-toast-indeterminate 1.4s var(--ease-soft) infinite;
+  }
+}
+
+@keyframes cloudy-toast-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(20px, -8px, 0) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes cloudy-toast-leave {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(16px, -6px, 0) scale(0.96);
+  }
+}
+
+@keyframes cloudy-toast-progress {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes cloudy-toast-indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
+}
+
+/* ==========================================================================
+   9. USER FULL CANVAS — FULL-WIDTH WORKSPACE LAYOUT (ĐỒNG BỘ BẢNG TIỆN ÍCH)
+   Mở rộng toàn bộ page-level container trong khu vực Người dùng tràn full
+   màn hình, giữ nguyên độ rộng gọn cho Modal, Dialog, Drawer và thẻ hẹp.
+   ========================================================================== */
+.user-full-canvas :is(.max-w-7xl, .max-w-6xl, .max-w-5xl, .container):not([role="dialog"]):not([aria-modal="true"]):not([data-narrow-container]) {
+  max-width: none;
+  width: 100%;
+}
+
+.user-full-canvas :is([role="dialog"], [aria-modal="true"], [data-narrow-container]) :is(.max-w-7xl, .max-w-6xl, .max-w-5xl, .container) {
+  max-width: revert-layer;
+  width: revert-layer;
+}

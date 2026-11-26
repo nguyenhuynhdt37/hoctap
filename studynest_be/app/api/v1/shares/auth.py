@@ -18,9 +18,11 @@ from app.core.settings import settings
 from app.core.ws_manager import ws_manager
 from app.schemas.auth.github import GitHubExchangeRequest, GitHubExchangeResponse, GitHubStartResponse
 from app.schemas.auth.user import (
+    ForgotPasswordRequest,
     GoogleLogin,
     LoginUser,
     RefreshEmail,
+    ResetPasswordRequest,
     SendOtp,
     UserCreate,
     VerifyEmail,
@@ -269,6 +271,26 @@ async def verify_otp(
     user_agent = req.headers.get("user-agent")
     ip = req.client.host if req.client else None
     return await auth_service.verify_otp_login_async(schema, res, user_agent=user_agent, ip=ip, request=req)
+
+
+@router.post("/forgot-password", status_code=status.HTTP_200_OK)
+async def forgot_password(
+    req: Request,
+    schema: ForgotPasswordRequest = Body(),
+    auth_service: AuthService = Depends(AuthService),
+):
+    ip = req.client.host if req.client else None
+    return await auth_service.forgot_password_async(schema, ip=ip)
+
+
+@router.post("/reset-password", status_code=status.HTTP_200_OK)
+async def reset_password(
+    req: Request,
+    schema: ResetPasswordRequest = Body(),
+    auth_service: AuthService = Depends(AuthService),
+):
+    ip = req.client.host if req.client else None
+    return await auth_service.reset_password_async(schema, ip=ip)
 
 
 @router.post("/github/start", response_model=GitHubStartResponse)

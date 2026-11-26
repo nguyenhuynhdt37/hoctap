@@ -1,6 +1,7 @@
 import toast from "react-hot-toast";
 
 interface ToastOptions {
+  id?: string;
   duration?: number;
   onClick?: () => void;
 }
@@ -8,38 +9,37 @@ interface ToastOptions {
 export const showToast = {
   success: (message: string, options?: ToastOptions) => {
     return toast.success(message, {
-      duration: options?.duration || 4000,
-      style: {
-        borderLeft: "4px solid #276749",
-      },
+      id: options?.id,
+      duration: options?.duration ?? 4200,
     });
   },
 
   error: (message: string, options?: ToastOptions) => {
     return toast.error(message, {
-      duration: options?.duration || 4000,
-      style: {
-        borderLeft: "4px solid #A23C46",
-      },
+      id: options?.id,
+      duration: options?.duration ?? 5000,
+    });
+  },
+
+  warning: (message: string, options?: ToastOptions) => {
+    return toast(message, {
+      id: options?.id,
+      duration: options?.duration ?? 4500,
+      className: "cloudy-toast-warning",
     });
   },
 
   info: (message: string, options?: ToastOptions) => {
     return toast(message, {
-      duration: options?.duration || 4000,
-      icon: "ℹ️",
-      style: {
-        borderLeft: "4px solid #356FA7",
-      },
+      id: options?.id,
+      duration: options?.duration ?? 4200,
     });
   },
 
   loading: (message: string, options?: ToastOptions) => {
     return toast.loading(message, {
-      duration: options?.duration || 4000,
-      style: {
-        borderLeft: "4px solid #356FA7",
-      },
+      id: options?.id,
+      duration: options?.duration ?? Infinity,
     });
   },
 
@@ -49,7 +49,7 @@ export const showToast = {
       loading: string;
       success: string;
       error: string;
-    }
+    },
   ) => {
     return toast.promise(promise, {
       loading: messages.loading,

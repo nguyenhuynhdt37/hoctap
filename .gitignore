@@ -41,6 +41,7 @@
 **/.ruff_cache/
 
 # Database dumps and local backups
+data/backups/
 studynest_be/backups/
 studynest_be/backup_*.sql
 

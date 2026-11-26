@@ -51,9 +51,9 @@ export default function VoiceDialog({ lessonId, lessonTitle, onClose, onSourceCl
     onSourceClick(source);
   };
   if (minimized) return (
-    <aside aria-label="Cuộc gọi Hannes đang chạy" className="fixed bottom-4 left-4 right-4 z-[100] flex items-center gap-3 rounded-2xl border border-primary-pastel bg-surface p-3 shadow-lg sm:left-auto sm:w-auto sm:min-w-80">
+    <aside aria-label="Cuộc gọi Mây Mây đang chạy" className="fixed bottom-4 left-4 right-4 z-[100] flex items-center gap-3 rounded-2xl border border-primary-pastel bg-surface p-3 shadow-lg sm:left-auto sm:w-auto sm:min-w-80">
       <span className={`h-2.5 w-2.5 rounded-full ${voice.muted ? "bg-muted-foreground" : "bg-primary animate-pulse"}`} />
-      <div className="min-w-0 flex-1"><p className="text-sm font-semibold">Hannes · {voice.muted ? "Mic tắt" : labels[voice.state]}</p><p className="max-w-72 truncate text-xs text-muted-foreground">{voice.draft.assistant || voice.draft.user || voice.turns.at(-1)?.content || lessonTitle}</p></div>
+      <div className="min-w-0 flex-1"><p className="text-sm font-semibold">Mây Mây · {voice.muted ? "Mic tắt" : labels[voice.state]}</p><p className="max-w-72 truncate text-xs text-muted-foreground">{voice.draft.assistant || voice.draft.user || voice.turns.at(-1)?.content || lessonTitle}</p></div>
       <Button size="icon" variant="ghost" onClick={voice.toggleMute} aria-label={voice.muted ? "Bật micro" : "Tắt micro"}><Mic size="1em" /></Button>
       <Button size="icon" variant="ghost" onClick={onExpand} aria-label="Mở lại cuộc gọi"><Maximize size="1em" /></Button>
       <Button size="icon" variant="destructive" onClick={close} aria-label="Kết thúc cuộc gọi"><PhoneMissed size="1em" /></Button>

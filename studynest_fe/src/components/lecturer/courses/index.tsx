@@ -121,6 +121,22 @@ const LecturerCourses = () => {
   const [courseToDelete, setCourseToDelete] = useState<string | null>(null);
   const [deleteReason, setDeleteReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [resubmittingId, setResubmittingId] = useState<string | null>(null);
+
+  const handleResubmitCourse = async (courseId: string) => {
+    setResubmittingId(courseId);
+    try {
+      const res = await api.post(`/lecturer/courses/${courseId}/resubmit`);
+      showToast.success(
+        res.data?.message || "Đã gửi khóa học vào hàng đợi thẩm định lại!",
+      );
+      await mutate();
+    } catch {
+      showToast.error("Không thể gửi duyệt lại khóa học. Vui lòng thử lại.");
+    } finally {
+      setResubmittingId(null);
+    }
+  };
 
   const { data, error, isLoading, isValidating, mutate } =
     useSWR<LecturerCoursesResponse>(
@@ -796,6 +812,43 @@ const LecturerCourses = () => {
                         >
                           {course.title}
                         </Link>
+
+                        {course.approval_status === "rejected" && (
+                          <div className="space-y-2 rounded-2xl border border-destructive-border/80 bg-destructive-bg/65 p-3 text-xs text-destructive-foreground">
+                            <p className="flex items-center gap-1.5 font-bold">
+                              <AlertTriangle
+                                animated={false}
+                                className="h-3.5 w-3.5 shrink-0"
+                              />
+                              Cần chỉnh sửa (Vòng #{course.review_round || 1})
+                            </p>
+                            {course.approval_note && (
+                              <p className="line-clamp-2 text-[11px] leading-relaxed opacity-90">
+                                {course.approval_note}
+                              </p>
+                            )}
+                            <Button
+                              type="button"
+                              size="sm"
+                              fullWidth
+                              disabled={resubmittingId === course.id}
+                              onClick={() => void handleResubmitCourse(course.id)}
+                              leftIcon={
+                                <RefreshCw
+                                  className={`h-3.5 w-3.5 ${
+                                    resubmittingId === course.id
+                                      ? "animate-spin"
+                                      : ""
+                                  }`}
+                                />
+                              }
+                            >
+                              {resubmittingId === course.id
+                                ? "Đang gửi..."
+                                : "Đã sửa xong · Gửi duyệt lại"}
+                            </Button>
+                          </div>
+                        )}
 
                         {/* 3 chỉ số nhỏ + Doanh thu Coin vàng */}
                         <div className="rounded-2xl border border-border/80 bg-background/70 p-3">

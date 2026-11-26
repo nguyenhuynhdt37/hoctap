@@ -1,5 +1,6 @@
-"""Authenticated transient PCM -> live input transcription, with no chat/tool execution."""
+"""Authenticated transient PCM -> live input transcription via Qwen3 ASR Flash Realtime."""
 import asyncio
+import base64
 import hashlib
 import json
 import secrets
@@ -9,12 +10,13 @@ from types import SimpleNamespace
 from uuid import UUID
 
 from fastapi import HTTPException, WebSocket, WebSocketDisconnect
-from app.agent.runtime import AgentService
+
 from app.agent.multimodal import rate_limit
+from app.agent.runtime import AgentService
 from app.core.deps import AuthorizationService
+from app.core.qwen_voice import open_asr_realtime, realtime_api_key, send_event
 from app.core.redis import get_redis
 from app.core.settings import settings
-from app.core.xai_voice import open_audio, send_event, wait_for_event
 from app.db.sesson import AsyncSessionLocal
 from app.services.user.tutor_voice import AudioBudget, origin_allowed
 
@@ -25,38 +27,55 @@ RELEASE = 'if redis.call("get",KEYS[1]) == ARGV[1] then return redis.call("del",
 
 async def principal(user_id, sid):
     async with AsyncSessionLocal() as db:
-        service=AgentService(db,SimpleNamespace(id=UUID(str(user_id))),sid)
+        service = AgentService(db, SimpleNamespace(id=UUID(str(user_id))), sid)
         await service.principal_async()
 
 
 def enabled():
     if not settings.AGENT_ENABLED or not settings.TUTOR_DICTATION_ENABLED:
-        raise HTTPException(503,'Nhập giọng nói realtime chưa được bật.')
-    if not settings.XAI_API_KEY:
-        raise HTTPException(503,'Chưa cấu hình nhận dạng giọng nói realtime.')
+        raise HTTPException(503, 'Nhập giọng nói realtime chưa được bật.')
+    if not realtime_api_key():
+        raise HTTPException(503, 'Chưa cấu hình nhận dạng giọng nói Qwen Realtime.')
     if settings.AGENT_MAX_RUN_COST_USD is not None:
-        raise HTTPException(503,'Chưa cấu hình ngân sách âm thanh realtime.')
+        raise HTTPException(503, 'Chưa cấu hình ngân sách âm thanh realtime.')
 
 
 async def ticket(service):
     enabled()
     await service.principal_async()
-    await rate_limit(service.user.id,'dictation-live-ticket',8)
-    value=secrets.token_urlsafe(32)
-    await get_redis().set('dictation:ticket:'+hashlib.sha256(value.encode()).hexdigest(),
-        json.dumps({'user_id':str(service.user.id),'sid':service.auth_sid}),ex=30,nx=True)
-    return {'ticket':value,'expires_in':30}
+    await rate_limit(service.user.id, 'dictation-live-ticket', 8)
+    value = secrets.token_urlsafe(32)
+    await get_redis().set(
+        'dictation:ticket:' + hashlib.sha256(value.encode()).hexdigest(),
+        json.dumps({'user_id': str(service.user.id), 'sid': service.auth_sid}),
+        ex=30,
+        nx=True,
+    )
+    return {'ticket': value, 'expires_in': 30}
 
 
-async def relay(ws, live, check_auth, *, max_seconds=120, finalize_seconds=3):
+async def relay(ws, live, check_auth, *, max_seconds=120, finalize_seconds=2.5):
     transcript = ''
-    segments = {}
+    segment_order: list[str] = []
+    segments: dict[str, str] = {}
+    pending_items: set[str] = set()
+    stop_requested = asyncio.Event()
+    all_finalized = asyncio.Event()
+    all_finalized.set()
     seq = 0
+
+    def rebuild_transcript() -> str:
+        return ' '.join(
+            segments[item_id].strip()
+            for item_id in segment_order
+            if segments.get(item_id, '').strip()
+        ).strip()
 
     async def audio():
         budget = AudioBudget()
         total = 0
         checked = time.monotonic()
+        sent_audio = False
         while True:
             event = await asyncio.wait_for(ws.receive(), timeout=15)
             if event['type'] == 'websocket.disconnect':
@@ -70,14 +89,26 @@ async def relay(ws, live, check_auth, *, max_seconds=120, finalize_seconds=3):
                 total += len(data)
                 if total > max_seconds * 32000 + 64000:
                     raise ValueError('Audio duration limit')
-                await live.send(data)
+                await send_event(
+                    live,
+                    'input_audio_buffer.append',
+                    audio=base64.b64encode(data).decode(),
+                )
+                sent_audio = True
                 continue
             text = event.get('text') or ''
             if len(text) > 256:
                 raise ValueError('Control frame limit')
             command = json.loads(text).get('type')
             if command == 'stop':
-                await send_event(live, 'audio.done')
+                stop_requested.set()
+                if sent_audio:
+                    # Feed trailing silence so server_vad cleanly commits the active utterance.
+                    await send_event(
+                        live,
+                        'input_audio_buffer.append',
+                        audio=base64.b64encode(bytes(25600)).decode(),
+                    )
                 return
             if command != 'ping':
                 raise ValueError('Unsupported control')
@@ -87,47 +118,75 @@ async def relay(ws, live, check_auth, *, max_seconds=120, finalize_seconds=3):
         nonlocal transcript, seq
         async for raw in live:
             event = json.loads(raw)
-            kind = event['type']
+            kind = event.get('type') or ''
             if kind == 'error':
-                raise ConnectionError('xAI transcription failed')
-            if kind == 'transcript.done':
-                text = (event.get('text') or '').strip()
-                if len(text) > MAX_TEXT:
-                    raise ValueError('Transcript limit')
-                if text and text != transcript:
-                    transcript = text
-                    seq += 1
-                return
-            if kind != 'transcript.partial':
+                err_msg = (event.get('error') or {}).get('message') or ''
+                if stop_requested.is_set() and 'commit' in err_msg.lower():
+                    return
+                raise ConnectionError('Qwen ASR transcription failed')
+
+            if kind == 'input_audio_buffer.speech_started':
+                item_id = str(event.get('item_id') or f'seg-{len(segment_order)}')
+                if item_id not in segments:
+                    segment_order.append(item_id)
+                    segments[item_id] = ''
+                pending_items.add(item_id)
+                all_finalized.clear()
                 continue
-            text = (event.get('text') or '').strip()
-            if not text:
-                continue
-            start = event['start']
-            final = bool(event.get('is_final'))
-            if segments.get(start) == text:
-                continue
-            chunks = {**segments, start: text}
-            transcript = ' '.join(chunks[offset] for offset in sorted(chunks))
-            if len(transcript) > MAX_TEXT:
-                raise ValueError('Transcript limit')
-            if final:
-                segments[start] = text
-            seq += 1
-            await ws.send_json({'type': 'transcript', 'seq': seq, 'text': transcript, 'final': final})
-        raise ConnectionError('xAI ended transcription before final text')
+
+            if kind in {
+                'conversation.item.input_audio_transcription.text',
+                'conversation.item.input_audio_transcription.updated',
+                'conversation.item.input_audio_transcription.completed',
+            }:
+                item_id = str(event.get('item_id') or (segment_order[-1] if segment_order else 'seg-0'))
+                if item_id not in segments:
+                    segment_order.append(item_id)
+                    segments[item_id] = ''
+
+                if kind.endswith('.text'):
+                    piece = f"{event.get('text') or ''}{event.get('stash') or ''}".strip()
+                    is_final = False
+                else:
+                    piece = str(event.get('transcript') or '').strip()
+                    is_final = kind.endswith('.completed')
+
+                if piece:
+                    segments[item_id] = piece
+                    merged = rebuild_transcript()
+                    if len(merged) > MAX_TEXT:
+                        raise ValueError('Transcript limit')
+                    if merged != transcript or is_final:
+                        transcript = merged
+                        seq += 1
+                        await ws.send_json({
+                            'type': 'transcript',
+                            'seq': seq,
+                            'text': transcript,
+                            'final': is_final,
+                        })
+
+                if is_final:
+                    pending_items.discard(item_id)
+                    if not pending_items:
+                        all_finalized.set()
+                        if stop_requested.is_set():
+                            return
 
     audio_task = asyncio.create_task(audio())
     transcript_task = asyncio.create_task(transcription())
     tasks = [audio_task, transcript_task]
     try:
-        async with asyncio.timeout(max_seconds + finalize_seconds + 1):
+        async with asyncio.timeout(max_seconds + finalize_seconds + 2):
             done, _ = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
             for task in done:
                 task.result()
-            if transcript_task not in done:
+            if stop_requested.is_set() and not transcript_task.done():
                 with suppress(TimeoutError):
-                    await asyncio.wait_for(transcript_task, timeout=finalize_seconds)
+                    await asyncio.sleep(0.35)
+                    if pending_items:
+                        await asyncio.wait_for(all_finalized.wait(), timeout=finalize_seconds)
+            seq += 1
             await ws.send_json({'type': 'complete', 'seq': seq, 'text': transcript, 'final': True})
     finally:
         for task in tasks:
@@ -175,21 +234,17 @@ async def run(ws: WebSocket):
         await principal(user_id, sid)
         if credential is None:
             await AuthorizationService.acknowledge_ws_auth_async(ws)
-        lease_key='dictation:live:'+user_id
-        lease=secrets.token_urlsafe(24)
-        seconds=max(10,min(settings.TUTOR_DICTATION_MAX_SECONDS,300))
-        if not await get_redis().set(lease_key,lease,ex=seconds+30,nx=True):
-            lease_key=None
-            raise HTTPException(409,'Một phiên nhập giọng nói khác đang chạy.')
+        lease_key = 'dictation:live:' + user_id
+        lease = secrets.token_urlsafe(24)
+        seconds = max(10, min(settings.TUTOR_DICTATION_MAX_SECONDS, 300))
+        if not await get_redis().set(lease_key, lease, ex=seconds + 30, nx=True):
+            lease_key = None
+            raise HTTPException(409, 'Một phiên nhập giọng nói khác đang chạy.')
         if not accepted:
             await ws.accept(subprotocol=PROTOCOL)
             accepted = True
-        async with open_audio(
-            'stt', sample_rate=16000, encoding='pcm', language='vi',
-            interim_results='true', model=settings.TUTOR_DICTATION_MODEL or 'grok-voice-transcribe-2.0',
-        ) as live:
-            await wait_for_event(live, 'transcript.created')
-            await ws.send_json({'type':'ready','sample_rate':16000,'max_seconds':seconds})
+        async with open_asr_realtime(language='vi', silence_duration_ms=600) as live:
+            await ws.send_json({'type': 'ready', 'sample_rate': 16000, 'max_seconds': seconds})
             await relay(ws, live, check_auth, max_seconds=seconds)
     except WebSocketDisconnect:
         pass
@@ -197,12 +252,18 @@ async def run(ws: WebSocket):
         raise
     except Exception as exc:
         if accepted:
-            message=exc.detail if isinstance(exc,HTTPException) else 'Kết nối nhận dạng đã dừng. Phần chữ nhận được vẫn được giữ; bạn có thể bật mic lại.'
-            with suppress(Exception):await ws.send_json({'type':'error','message':message})
+            message = (
+                exc.detail
+                if isinstance(exc, HTTPException)
+                else 'Kết nối nhận dạng đã dừng. Phần chữ nhận được vẫn được giữ; bạn có thể bật mic lại.'
+            )
+            with suppress(Exception):
+                await ws.send_json({'type': 'error', 'message': message})
     finally:
         if lease_key and lease:
             with suppress(Exception):
-                async with asyncio.timeout(3):await get_redis().eval(RELEASE,1,lease_key,lease)
+                async with asyncio.timeout(3):
+                    await get_redis().eval(RELEASE, 1, lease_key, lease)
         if not closed:
             with suppress(Exception):
                 await ws.close(code=1000 if accepted else 1008)

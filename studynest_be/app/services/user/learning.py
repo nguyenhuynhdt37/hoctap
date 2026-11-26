@@ -2791,15 +2791,14 @@ Rules:
 - Only mark a mission ID in `newly_completed_mission_ids` if the student genuinely expressed that idea in their messages (do not invent or grant it for empty/unrelated text).
 - Keep `reply` concise (under 35 words) so spoken playback feels snappy and natural.
 """
-        llm = get_llm_service()
+        from app.core.qwen_voice import call_qwen_json_async
+
         try:
-            raw = await llm.call_model(
+            parsed = await call_qwen_json_async(
                 prompt,
-                mime_type="application/json",
                 temperature=0.45,
-                max_output_tokens=900,
+                max_tokens=900,
             )
-            parsed = self._parse_speaking_json(raw)
         except Exception as exc:
             raise HTTPException(500, f"Không thể xử lý lượt hội thoại AI: {exc}")
 
@@ -2886,15 +2885,15 @@ Quy tắc chấm:
 - `overall_score` = 45% * mission_score + 30% * grammar_score + 25% * fluency_score.
 - Nếu học viên chỉ nói vài từ vô nghĩa hoặc lạc đề hoàn toàn, chấm dưới 40.
 """
-        llm = get_llm_service()
+        from app.core.qwen_voice import call_qwen_json_async
+
         try:
-            raw = await llm.call_model(
+            parsed = await call_qwen_json_async(
                 prompt,
-                mime_type="application/json",
                 temperature=0.3,
-                max_output_tokens=1600,
+                max_tokens=1600,
+                timeout_seconds=45.0,
             )
-            parsed = self._parse_speaking_json(raw)
         except Exception as exc:
             raise HTTPException(500, f"Không thể chấm điểm bài giao tiếp: {exc}")
 

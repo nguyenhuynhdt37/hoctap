@@ -37,6 +37,10 @@ async def get_lecturers(
         None, description="Lọc theo email đã xác minh"
     ),
     is_banned: bool | None = Query(None, description="Lọc theo trạng thái bị cấm"),
+    contract_status: str | None = Query(
+        None,
+        description="Lọc theo hợp đồng đối tác: countersigned | signed | unsigned",
+    ),
     search: str | None = Query(None, description="Tìm kiếm theo tên hoặc email"),
     sort_by: str = Query("create_at", description="Cột sắp xếp"),
     order: str = Query("desc", description="Hướng sắp xếp asc|desc"),
@@ -54,6 +58,7 @@ async def get_lecturers(
         order,
         page,
         size,
+        contract_status=contract_status,
     )
 
 

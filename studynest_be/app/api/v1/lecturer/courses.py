@@ -225,6 +225,16 @@ async def update_course(
     )
 
 
+@router.post("/{course_id}/resubmit", status_code=status.HTTP_200_OK)
+async def resubmit_course_for_review(
+    course_id: uuid.UUID,
+    course_service: CourseService = Depends(CourseService),
+    authorization: AuthorizationService = Depends(AuthorizationService),
+):
+    lecturer = await authorization.require_role(["LECTURER"])
+    return await course_service.resubmit_course_for_review_async(course_id, lecturer)
+
+
 @router.delete("/{course_id}", status_code=status.HTTP_200_OK)
 async def delete_course(
     course_id: uuid.UUID,

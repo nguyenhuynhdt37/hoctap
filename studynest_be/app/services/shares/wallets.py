@@ -108,14 +108,17 @@ class WalletsService:
             usd_str = f"{usd_value:.2f}"
             # 2️⃣ Tạo order redirect PayPal
             if request:
+                forwarded_host = request.headers.get("x-forwarded-host")
                 proto = request.headers.get("x-forwarded-proto") or request.url.scheme
-                host = request.headers.get("x-forwarded-host") or request.headers.get("host") or request.url.netloc
+                host = forwarded_host or request.headers.get("host") or request.url.netloc
                 base_url = f"{proto}://{host}"
+                api_prefix = "/api" if forwarded_host else "/api/v1"
             else:
                 base_url = settings.BACKEND_URL
+                api_prefix = "/api/v1"
 
-            return_url = f"{base_url}/api/v1/wallets/callback"
-            cancel_url = f"{base_url}/api/v1/wallets/cancel"
+            return_url = f"{base_url}{api_prefix}/wallets/callback"
+            cancel_url = f"{base_url}{api_prefix}/wallets/cancel"
 
             result = await paypal.create_order_redirect(
                 value=usd_str,

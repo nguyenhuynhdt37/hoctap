@@ -20,6 +20,7 @@ import {
   Command,
   Eye,
   EyeOff,
+  FileText,
   GraduationCap,
   LayoutDashboard,
   Library,
@@ -138,7 +139,7 @@ const navGroups: { label: string; dotClass: string; items: NavItem[] }[] = [
     ],
   },
   {
-    label: "Tài chính",
+    label: "Tài chính & Pháp lý",
     dotClass: "bg-success-foreground",
     items: [
       { href: "/lecturer/wallets", label: "Ví giảng viên", icon: Wallet },
@@ -147,6 +148,11 @@ const navGroups: { label: string; dotClass: string; items: NavItem[] }[] = [
         label: "Rút tiền",
         icon: ArrowDownToLine,
         badgeKey: "withdraw",
+      },
+      {
+        href: "/lecturer/contracts",
+        label: "Hợp đồng điện tử",
+        icon: FileText,
       },
     ],
   },

@@ -6,16 +6,21 @@ import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import toast from "react-hot-toast";
 import {
+  AlertTriangle,
+  ArrowUpRight,
   Ban,
   BookOpen,
-  ChevronLeft,
-  ChevronRight,
+  Clock,
   Coins,
+  Copy,
   Download,
   Eye,
+  FileCheck2,
+  FileText,
   GraduationCap,
   LayoutGrid,
   Mail,
+  MapPin,
   Pencil,
   Plus,
   RefreshCw,
@@ -42,6 +47,7 @@ import type {
   Lecturer,
   LecturersQueryParams,
   LecturersResponse,
+  MasterContractStatus,
 } from "@/types/admin/lecturer";
 import LecturerDrawer from "./lecturer-drawer";
 
@@ -86,7 +92,42 @@ const LECTURERS_QUERY_SCHEMA = {
     default: "" as "" | "true" | "false",
     allowed: ["", "true", "false"] as const,
   },
+  contract_status: {
+    type: "string",
+    default: "" as "" | "countersigned" | "signed" | "unsigned",
+    allowed: ["", "countersigned", "signed", "unsigned"] as const,
+  },
 } as const;
+
+function contractLabel(status?: MasterContractStatus): string {
+  switch (status) {
+    case "countersigned":
+      return "Đã đồng ký 2 bên";
+    case "signed":
+      return "Chờ Bên A đồng ký";
+    case "pending_otp":
+      return "Đang chờ OTP";
+    case "draft":
+      return "Bản nháp";
+    case "revoked":
+      return "Đã thu hồi";
+    default:
+      return "Chưa ký HĐ";
+  }
+}
+
+function formatShortDate(val?: string | null): string {
+  if (!val) return "—";
+  try {
+    return new Intl.DateTimeFormat("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    }).format(new Date(val));
+  } catch {
+    return "—";
+  }
+}
 
 function exportLecturersCsv(items: Lecturer[]) {
   const header = [
@@ -96,8 +137,11 @@ function exportLecturersCsv(items: Lecturer[]) {
     "Khóa học",
     "Học viên",
     "Đánh giá TB",
-    "Số dư ví",
-    "Trạng thái",
+    "Coin thật",
+    "Coin thưởng",
+    "Trạng thái Hợp đồng",
+    "Số Hợp đồng",
+    "Trạng thái tài khoản",
   ];
   const esc = (v: string) => `"${v.replace(/"/g, '""')}"`;
   const lines = [
@@ -105,12 +149,15 @@ function exportLecturersCsv(items: Lecturer[]) {
     ...items.map((l) =>
       [
         l.id,
-        l.fullname,
+        l.fullname || "",
         l.email,
         String(l.course_count ?? 0),
         String(l.student_count ?? 0),
         String(l.rating_avg ?? 0),
-        String(l.wallet_balance ?? 0),
+        String(l.paid_coins ?? l.wallet_balance ?? 0),
+        String(l.bonus_coins ?? 0),
+        contractLabel(l.master_contract_status),
+        l.master_contract_number || "",
         l.is_banned ? "Đã khóa" : "Hoạt động",
       ]
         .map(esc)
@@ -128,6 +175,53 @@ function exportLecturersCsv(items: Lecturer[]) {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+function ContractBadge({ lecturer }: { lecturer: Lecturer }) {
+  const st = lecturer.master_contract_status ?? "none";
+  const num = lecturer.master_contract_number;
+
+  if (st === "countersigned") {
+    return (
+      <Link
+        href={`/admin/contracts?status=countersigned${num ? `&search=${encodeURIComponent(num)}` : ""}`}
+        onClick={(e) => e.stopPropagation()}
+        className="inline-flex items-center gap-1.5 rounded-xl border border-success-border bg-success-bg/90 px-2.5 py-1 text-[11px] font-semibold text-success-foreground transition-colors hover:bg-success-bg"
+        title="Mở kiểm toán Hợp đồng Đối tác"
+      >
+        <FileCheck2 size={12} animated={false} />
+        <span className="truncate">
+          {num ? `HĐ ${num}` : "Đã đồng ký"}
+        </span>
+        <ArrowUpRight size={11} animated={false} className="shrink-0 opacity-70" />
+      </Link>
+    );
+  }
+
+  if (st === "signed") {
+    return (
+      <Link
+        href={`/admin/contracts?status=signed${num ? `&search=${encodeURIComponent(num)}` : ""}`}
+        onClick={(e) => e.stopPropagation()}
+        className="inline-flex items-center gap-1.5 rounded-xl border border-warning-border bg-warning-bg px-2.5 py-1 text-[11px] font-semibold text-warning-foreground transition-colors hover:brightness-95"
+        title="Giảng viên đã ký — bấm để Bên A đồng ký"
+      >
+        <Clock size={12} animated={false} />
+        <span className="truncate">Chờ Bên A đồng ký</span>
+        <ArrowUpRight size={11} animated={false} className="shrink-0 opacity-75" />
+      </Link>
+    );
+  }
+
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 rounded-xl border border-destructive-border/70 bg-destructive-bg/80 px-2.5 py-1 text-[11px] font-semibold text-destructive-foreground"
+      title="Giảng viên cần ký Hợp đồng Đối tác tại /welcome/sign-contract để truy cập cổng giảng viên"
+    >
+      <AlertTriangle size={12} animated={false} />
+      <span>{contractLabel(st)}</span>
+    </span>
+  );
 }
 
 export default function LecturersManagement() {
@@ -162,6 +256,7 @@ export default function LecturersManagement() {
     order: sortOrder,
     is_verified_email: emailParam,
     is_banned: bannedParam,
+    contract_status: contractParam,
   } = values;
 
   const { inputValue: searchInput, setInputValue: setSearchInput } =
@@ -177,8 +272,18 @@ export default function LecturersManagement() {
     if (search.trim()) p.search = search.trim();
     if (emailParam !== "") p.is_verified_email = emailParam === "true";
     if (bannedParam !== "") p.is_banned = bannedParam === "true";
+    if (contractParam !== "") p.contract_status = contractParam;
     return p;
-  }, [page, pageSize, sortBy, sortOrder, search, emailParam, bannedParam]);
+  }, [
+    page,
+    pageSize,
+    sortBy,
+    sortOrder,
+    search,
+    emailParam,
+    bannedParam,
+    contractParam,
+  ]);
 
   const { data, error, isLoading, isValidating, mutate } =
     useSWR<LecturersResponse>(
@@ -209,20 +314,26 @@ export default function LecturersManagement() {
   const items = data?.items ?? [];
   const totalItems = data?.total_items ?? 0;
   const totalPages = Math.max(1, data?.total_pages ?? 1);
+  const summary = data?.summary;
 
-  const pageTotalCourses = items.reduce((s, l) => s + (l.course_count ?? 0), 0);
-  const pageTotalStudents = items.reduce(
-    (s, l) => s + (l.student_count ?? 0),
-    0,
-  );
-  const pageTotalPaidCoins = items.reduce(
-    (s, l) => s + (l.paid_coins ?? l.wallet_balance ?? 0),
-    0,
-  );
-  const pageTotalBonusCoins = items.reduce(
-    (s, l) => s + (l.bonus_coins ?? 0),
-    0,
-  );
+  const totalLecturers = summary?.total_lecturers ?? totalItems;
+  const activeLecturers = summary?.active_lecturers ?? 0;
+  const bannedLecturers = summary?.banned_lecturers ?? 0;
+  const countersignedCount = summary?.countersigned_contracts ?? 0;
+  const pendingCountersignCount = summary?.pending_countersign_contracts ?? 0;
+  const unsignedCount = summary?.unsigned_contracts ?? 0;
+  const totalCourses =
+    summary?.total_courses ??
+    items.reduce((s, l) => s + (l.course_count ?? 0), 0);
+  const totalStudents =
+    summary?.total_students ??
+    items.reduce((s, l) => s + (l.student_count ?? 0), 0);
+  const totalPaidCoins =
+    summary?.total_paid_coins ??
+    items.reduce((s, l) => s + (l.paid_coins ?? l.wallet_balance ?? 0), 0);
+  const totalBonusCoins =
+    summary?.total_bonus_coins ??
+    items.reduce((s, l) => s + (l.bonus_coins ?? 0), 0);
 
   async function submitBan() {
     if (!banTarget) return;
@@ -308,7 +419,9 @@ export default function LecturersManagement() {
     }
   }
 
-  const hasFilter = Boolean(search || emailParam || bannedParam);
+  const hasFilter = Boolean(
+    search || emailParam || bannedParam || contractParam,
+  );
 
   return (
     <main className="relative mx-auto max-w-[1440px] space-y-6 p-4 text-foreground sm:p-6 lg:p-8">
@@ -317,13 +430,13 @@ export default function LecturersManagement() {
         aria-hidden="true"
         className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
       >
-        <div className="absolute -left-24 top-16 h-96 w-96 rounded-full bg-primary-light/55 blur-3xl" />
-        <div className="absolute right-0 top-1/3 h-80 w-80 rounded-full bg-accent-vanilla/40 blur-3xl" />
-        <div className="absolute bottom-10 left-1/3 h-80 w-80 rounded-full bg-accent/30 blur-3xl" />
+        <div className="absolute -left-24 top-12 h-96 w-96 rounded-full bg-primary-light/55 blur-3xl" />
+        <div className="absolute right-0 top-1/3 h-80 w-80 rounded-full bg-accent-vanilla/45 blur-3xl" />
+        <div className="absolute bottom-10 left-1/3 h-80 w-80 rounded-full bg-accent/35 blur-3xl" />
       </div>
 
-      {/* Cloud Hero Banner */}
-      <section className="relative overflow-hidden rounded-[2.5rem] border border-white/90 bg-gradient-to-br from-primary-light/95 via-surface/95 to-accent-vanilla/45 p-6 shadow-[0_28px_64px_-22px_rgba(53,111,167,0.20)] backdrop-blur-md sm:p-8">
+      {/* Editorial Cloud Hero */}
+      <section className="relative overflow-hidden rounded-[2.25rem] border border-white/90 bg-gradient-to-br from-primary-light/95 via-surface/95 to-accent-vanilla/45 p-6 shadow-[0_24px_60px_-22px_rgba(53,111,167,0.18)] backdrop-blur-md sm:p-8">
         <div
           aria-hidden="true"
           className="pointer-events-none absolute -right-14 -top-14 h-56 w-56 rounded-full bg-white/85 blur-3xl"
@@ -335,15 +448,27 @@ export default function LecturersManagement() {
 
         <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-2.5">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-accent-vanilla-border bg-surface/95 px-3.5 py-1 text-xs font-semibold text-accent-vanilla-foreground shadow-2xs">
-              <GraduationCap size={13} animated={false} />
-              Mây Mây Faculty &amp; Lecturer Studio
-            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-accent-vanilla-border bg-surface/95 px-3.5 py-1 text-xs font-semibold text-accent-vanilla-foreground shadow-2xs">
+                <GraduationCap size={13} animated={false} />
+                Mây Mây Faculty Command Center
+              </span>
+              <Link
+                href="/admin/contracts"
+                className="inline-flex items-center gap-1 rounded-full border border-primary-pastel bg-surface/90 px-3 py-1 text-xs font-semibold text-primary transition-colors hover:bg-primary-light"
+              >
+                <FileText size={12} animated={false} />
+                Trung tâm Hợp đồng PKI
+                <ArrowUpRight size={12} animated={false} />
+              </Link>
+            </div>
             <h1 className="font-display text-2xl font-bold tracking-tight text-foreground sm:text-4xl">
               Đội ngũ Giảng viên &amp; Đối tác
             </h1>
             <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
-              Quản trị trọn vòng đời giảng viên: tạo mới, thăng cấp 1 chạm từ thành viên, chỉnh sửa hồ sơ chuyên môn, theo dõi doanh thu ví và kiểm soát quyền hạn.
+              Quản trị trọn vòng đời giảng viên trên một màn hình: kiểm soát
+              trạng thái Hợp đồng Đối tác PKI, số dư Coin thật, hiệu suất khóa
+              học và phân quyền giảng dạy.
             </p>
           </div>
 
@@ -385,111 +510,296 @@ export default function LecturersManagement() {
           </div>
         </div>
 
-        {/* 4 Floating Glass KPIs */}
-        <div className="relative z-10 mt-6 grid grid-cols-2 gap-3.5 lg:grid-cols-4">
-          <div className="rounded-2xl border border-white/80 bg-surface/85 p-4 backdrop-blur-sm">
-            <p className="text-xs font-medium text-muted-foreground">
-              Tổng giảng viên
+        {/* 4 Interactive Click-to-Filter KPIs */}
+        <div className="relative z-10 mt-6 grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
+          <button
+            type="button"
+            onClick={() =>
+              setParams({
+                is_verified_email: "",
+                is_banned: "",
+                contract_status: "",
+                page: 1,
+              })
+            }
+            className={`group rounded-2xl border p-4 text-left backdrop-blur-sm transition-all hover:-translate-y-0.5 ${
+              !hasFilter
+                ? "border-primary/60 bg-surface shadow-sm"
+                : "border-white/80 bg-surface/85 hover:border-primary-pastel"
+            }`}
+          >
+            <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
+              <span>Đội ngũ Giảng viên</span>
+              <Users size={14} animated={false} className="text-primary" />
+            </div>
+            <p className="mt-1.5 text-2xl font-bold text-foreground">
+              {totalLecturers.toLocaleString("vi-VN")}
+              <span className="ml-1.5 text-xs font-medium text-muted-foreground">
+                giảng viên
+              </span>
             </p>
-            <p className="mt-1 text-2xl font-bold text-foreground">
-              {totalItems} giảng viên
+            <p className="mt-1 flex items-center gap-2 text-[11px]">
+              <span className="font-semibold text-success-foreground">
+                {activeLecturers} hoạt động
+              </span>
+              {bannedLecturers > 0 && (
+                <span className="font-semibold text-destructive-foreground">
+                  · {bannedLecturers} bị khóa
+                </span>
+              )}
             </p>
-            <p className="mt-0.5 text-[11px] text-primary">
-              Đội ngũ giảng dạy trên Mây Mây
-            </p>
-          </div>
+          </button>
 
-          <div className="rounded-2xl border border-white/80 bg-surface/85 p-4 backdrop-blur-sm">
-            <p className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
-              <BookOpen size={13} className="text-primary" />
-              Khóa học đang sở hữu
+          <button
+            type="button"
+            onClick={() =>
+              setParams({
+                contract_status:
+                  pendingCountersignCount > 0
+                    ? "signed"
+                    : unsignedCount > 0
+                      ? "unsigned"
+                      : "countersigned",
+                page: 1,
+              })
+            }
+            className={`group rounded-2xl border p-4 text-left backdrop-blur-sm transition-all hover:-translate-y-0.5 ${
+              contractParam !== ""
+                ? "border-primary/60 bg-surface shadow-sm"
+                : "border-white/80 bg-surface/85 hover:border-primary-pastel"
+            }`}
+          >
+            <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
+              <span>Hợp đồng Đối tác PKI</span>
+              <FileCheck2
+                size={14}
+                animated={false}
+                className="text-success-foreground"
+              />
+            </div>
+            <p className="mt-1.5 text-2xl font-bold text-success-foreground">
+              {countersignedCount}
+              <span className="ml-1 text-xs font-medium text-muted-foreground">
+                / {totalLecturers} đã đồng ký
+              </span>
             </p>
-            <p className="mt-1 text-2xl font-bold text-primary">
-              {pageTotalCourses} khóa
+            <p className="mt-1 flex flex-wrap items-center gap-2 text-[11px]">
+              {pendingCountersignCount > 0 && (
+                <span className="font-semibold text-warning-foreground">
+                  {pendingCountersignCount} chờ đồng ký
+                </span>
+              )}
+              {unsignedCount > 0 && (
+                <span className="font-semibold text-destructive-foreground">
+                  {pendingCountersignCount > 0 ? "· " : ""}
+                  {unsignedCount} chưa ký HĐ
+                </span>
+              )}
+              {pendingCountersignCount === 0 && unsignedCount === 0 && (
+                <span className="text-muted-foreground">
+                  100% đã hoàn tất pháp lý
+                </span>
+              )}
             </p>
-            <p className="mt-0.5 text-[11px] text-muted-foreground">
-              Tổng trên trang hiện tại
-            </p>
-          </div>
+          </button>
 
-          <div className="rounded-2xl border border-white/80 bg-surface/85 p-4 backdrop-blur-sm">
-            <p className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
-              <Users size={13} className="text-info-foreground" />
-              Học viên theo học
+          <button
+            type="button"
+            onClick={() =>
+              setParams({ sort_by: "student_count", order: "desc", page: 1 })
+            }
+            className="group rounded-2xl border border-white/80 bg-surface/85 p-4 text-left backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-primary-pastel"
+          >
+            <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
+              <span>Quy mô Giảng dạy</span>
+              <BookOpen
+                size={14}
+                animated={false}
+                className="text-info-foreground"
+              />
+            </div>
+            <p className="mt-1.5 text-2xl font-bold text-primary">
+              {totalCourses.toLocaleString("vi-VN")}
+              <span className="ml-1.5 text-xs font-medium text-muted-foreground">
+                khóa học
+              </span>
             </p>
-            <p className="mt-1 text-2xl font-bold text-info-foreground">
-              {pageTotalStudents.toLocaleString("vi-VN")} HV
+            <p className="mt-1 text-[11px] font-medium text-info-foreground">
+              {totalStudents.toLocaleString("vi-VN")} lượt học viên theo học
             </p>
-            <p className="mt-0.5 text-[11px] text-muted-foreground">
-              Tổng lượt ghi danh
-            </p>
-          </div>
+          </button>
 
-          <div className="rounded-2xl border border-white/80 bg-surface/85 p-4 backdrop-blur-sm">
-            <p className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
-              <Coins size={13} className="text-accent-vanilla-foreground" />
-              Tổng số dư Coin GV
+          <button
+            type="button"
+            onClick={() =>
+              setParams({ sort_by: "wallet_balance", order: "desc", page: 1 })
+            }
+            className="group rounded-2xl border border-white/80 bg-surface/85 p-4 text-left backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-primary-pastel"
+          >
+            <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
+              <span>Tổng số dư Coin GV</span>
+              <Coins
+                size={14}
+                animated={false}
+                className="text-accent-vanilla-foreground"
+              />
+            </div>
+            <p className="mt-1.5 text-2xl font-bold text-accent-vanilla-foreground">
+              {formatCoin(totalPaidCoins)}
             </p>
-            <p className="mt-1 text-2xl font-bold text-accent-vanilla-foreground">
-              {formatCoin(pageTotalPaidCoins)}
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              +{formatCoin(totalBonusCoins)} Coin thưởng
             </p>
-            <p className="mt-0.5 text-[11px] text-muted-foreground">
-              +{formatCoin(pageTotalBonusCoins)} Coin thưởng
-            </p>
-          </div>
+          </button>
         </div>
       </section>
+
+      {/* Actionable Legal Compliance Notice */}
+      {(pendingCountersignCount > 0 || unsignedCount > 0) && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-warning-border bg-warning-bg/75 px-4 py-3 text-xs text-warning-foreground">
+          <div className="flex items-center gap-2.5">
+            <AlertTriangle size={16} animated={false} className="shrink-0" />
+            <p className="leading-relaxed">
+              {pendingCountersignCount > 0 && (
+                <>
+                  Có <strong>{pendingCountersignCount} giảng viên</strong> đã ký
+                  và đang chờ Bên A đồng ký.{" "}
+                </>
+              )}
+              {unsignedCount > 0 && (
+                <>
+                  Có <strong>{unsignedCount} giảng viên</strong> chưa ký Hợp
+                  đồng Đối tác (hệ thống tự động chặn vào cổng{" "}
+                  <code className="rounded bg-surface/70 px-1 py-0.5 font-mono text-[11px]">
+                    /lecturer
+                  </code>{" "}
+                  cho đến khi hoàn tất ký số).
+                </>
+              )}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {pendingCountersignCount > 0 && (
+              <Link
+                href="/admin/contracts?status=signed"
+                className="inline-flex items-center gap-1 rounded-xl border border-warning-border bg-surface px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-primary-light hover:text-primary"
+              >
+                Đồng ký ngay
+                <ArrowUpRight size={12} animated={false} />
+              </Link>
+            )}
+            {unsignedCount > 0 && (
+              <button
+                type="button"
+                onClick={() =>
+                  setParams({ contract_status: "unsigned", page: 1 })
+                }
+                className="inline-flex items-center gap-1 rounded-xl bg-warning-foreground/15 px-3 py-1.5 text-xs font-semibold text-warning-foreground hover:bg-warning-foreground/25"
+              >
+                Lọc {unsignedCount} người chưa ký
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Filters & View Mode Toolbar */}
       <section className="space-y-4 rounded-3xl border border-primary-pastel/60 bg-surface/90 p-4 shadow-[0_12px_32px_-16px_rgba(53,111,167,0.14)] backdrop-blur-md sm:p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
+          {/* Account & Contract Segmented Filters */}
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() =>
-                setParams({ is_verified_email: "", is_banned: "", page: 1 })
-              }
-              className={`rounded-2xl border px-3.5 py-1.5 text-xs font-semibold transition-all ${
-                emailParam === "" && bannedParam === ""
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border bg-background text-muted-foreground hover:border-primary-pastel hover:text-primary"
-              }`}
-            >
-              Tất cả
-            </button>
-            <button
-              type="button"
-              onClick={() => setParams({ is_verified_email: "true", page: 1 })}
-              className={`rounded-2xl border px-3.5 py-1.5 text-xs font-semibold transition-all ${
-                emailParam === "true"
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-success-border bg-success-bg text-success-foreground"
-              }`}
-            >
-              Email đã xác thực
-            </button>
-            <button
-              type="button"
-              onClick={() => setParams({ is_verified_email: "false", page: 1 })}
-              className={`rounded-2xl border px-3.5 py-1.5 text-xs font-semibold transition-all ${
-                emailParam === "false"
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-accent-vanilla-border bg-accent-vanilla text-accent-vanilla-foreground"
-              }`}
-            >
-              Chưa xác thực
-            </button>
-            <button
-              type="button"
-              onClick={() => setParams({ is_banned: "true", page: 1 })}
-              className={`rounded-2xl border px-3.5 py-1.5 text-xs font-semibold transition-all ${
-                bannedParam === "true"
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-destructive-border bg-destructive-bg text-destructive-foreground"
-              }`}
-            >
-              Đang bị khóa
-            </button>
+            <div className="flex flex-wrap items-center gap-1.5 rounded-2xl border border-border bg-background/80 p-1">
+              <button
+                type="button"
+                onClick={() =>
+                  setParams({ is_verified_email: "", is_banned: "", page: 1 })
+                }
+                className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${
+                  emailParam === "" && bannedParam === ""
+                    ? "bg-primary text-primary-foreground shadow-2xs"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Tất cả TK
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setParams({
+                    is_verified_email: "true",
+                    is_banned: "",
+                    page: 1,
+                  })
+                }
+                className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${
+                  emailParam === "true" && bannedParam === ""
+                    ? "bg-primary text-primary-foreground shadow-2xs"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Email xác thực
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setParams({
+                    is_verified_email: "false",
+                    is_banned: "",
+                    page: 1,
+                  })
+                }
+                className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${
+                  emailParam === "false" && bannedParam === ""
+                    ? "bg-primary text-primary-foreground shadow-2xs"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Chưa xác thực
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setParams({
+                    is_verified_email: "",
+                    is_banned: "true",
+                    page: 1,
+                  })
+                }
+                className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${
+                  bannedParam === "true"
+                    ? "bg-destructive text-destructive-foreground shadow-2xs"
+                    : "text-destructive-foreground/80 hover:bg-destructive-bg/60"
+                }`}
+              >
+                Đang bị khóa
+              </button>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1.5 rounded-2xl border border-border bg-background/80 p-1">
+              {(
+                [
+                  { value: "", label: "Mọi HĐ" },
+                  { value: "countersigned", label: "Đã đồng ký" },
+                  { value: "signed", label: "Chờ đồng ký" },
+                  { value: "unsigned", label: "Chưa ký HĐ" },
+                ] as const
+              ).map((opt) => (
+                <button
+                  key={opt.value || "all"}
+                  type="button"
+                  onClick={() =>
+                    setParams({ contract_status: opt.value, page: 1 })
+                  }
+                  className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${
+                    contractParam === opt.value
+                      ? "bg-primary text-primary-foreground shadow-2xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="flex items-center gap-1 rounded-xl border border-border bg-background p-1">
@@ -503,7 +813,7 @@ export default function LecturersManagement() {
               }`}
             >
               <LayoutGrid size={14} animated={false} />
-              Thẻ Giảng viên
+              Thẻ Hồ sơ
             </button>
             <button
               type="button"
@@ -531,7 +841,7 @@ export default function LecturersManagement() {
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Tìm tên giảng viên hoặc email..."
+              placeholder="Tìm tên giảng viên, email hoặc số CCCD..."
               className="h-10 w-full rounded-xl border border-border bg-background pl-10 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
             />
           </div>
@@ -553,7 +863,7 @@ export default function LecturersManagement() {
               <option value="course_count:desc">Nhiều khóa học nhất</option>
               <option value="student_count:desc">Nhiều học viên nhất</option>
               <option value="rating_avg:desc">Đánh giá cao nhất</option>
-              <option value="wallet_balance:desc">Số dư ví cao nhất</option>
+              <option value="wallet_balance:desc">Số dư Coin cao nhất</option>
             </select>
 
             {hasFilter && (
@@ -590,25 +900,46 @@ export default function LecturersManagement() {
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div
               key={i}
-              className="h-60 animate-pulse rounded-[2rem] border border-border bg-surface p-5"
+              className="h-64 animate-pulse rounded-[2rem] border border-border bg-surface p-5"
             />
           ))}
         </div>
       ) : items.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-border bg-surface p-14 text-center">
-          <p className="text-sm font-semibold text-foreground">
-            Chưa có giảng viên nào khớp bộ lọc
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-light text-primary">
+            <GraduationCap size={22} animated={false} />
+          </div>
+          <p className="mt-3 text-sm font-semibold text-foreground">
+            Không có giảng viên nào khớp bộ lọc hiện tại
           </p>
-          <Button
-            className="mt-4"
-            onClick={() => {
-              setEditingLecturer(null);
-              setDrawerOpen(true);
-            }}
-          >
-            <Plus size={15} />
-            Thêm Giảng viên đầu tiên
-          </Button>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Thử đặt lại bộ lọc hoặc thêm mới / thăng cấp thành viên thành giảng
+            viên.
+          </p>
+          <div className="mt-4 flex justify-center gap-2">
+            {hasFilter && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSearchInput("");
+                  resetParams();
+                }}
+              >
+                Xóa bộ lọc
+              </Button>
+            )}
+            <Button
+              size="sm"
+              onClick={() => {
+                setEditingLecturer(null);
+                setDrawerOpen(true);
+              }}
+            >
+              <Plus size={15} />
+              Thêm Giảng viên
+            </Button>
+          </div>
         </div>
       ) : layout === "cards" ? (
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
@@ -627,41 +958,71 @@ export default function LecturersManagement() {
               }`}
             >
               <div>
+                {/* Header Row */}
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-3.5">
-                    {l.avatar ? (
-                      <img
-                        src={getImageUrl(l.avatar)}
-                        alt={l.fullname}
-                        className="h-14 w-14 shrink-0 rounded-2xl border border-border object-cover"
+                    <div className="relative shrink-0">
+                      {l.avatar ? (
+                        <img
+                          src={getImageUrl(l.avatar)}
+                          alt={l.fullname}
+                          className={`h-14 w-14 rounded-2xl border-2 object-cover ${
+                            l.is_banned
+                              ? "border-destructive-border opacity-75"
+                              : "border-primary-pastel"
+                          }`}
+                        />
+                      ) : (
+                        <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-accent-vanilla-border bg-accent-vanilla text-lg font-bold text-accent-vanilla-foreground">
+                          {(l.fullname || l.email).slice(0, 1).toUpperCase()}
+                        </div>
+                      )}
+                      <span
+                        title={l.is_banned ? "Đã khóa" : "Đang hoạt động"}
+                        className={`absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full border-2 border-surface ${
+                          l.is_banned ? "bg-destructive" : "bg-success"
+                        }`}
                       />
-                    ) : (
-                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-accent-vanilla-border bg-accent-vanilla text-lg font-bold text-accent-vanilla-foreground">
-                        {(l.fullname || l.email).slice(0, 1).toUpperCase()}
-                      </div>
-                    )}
+                    </div>
+
                     <div className="min-w-0">
                       <h3 className="truncate text-base font-bold text-foreground group-hover:text-primary">
                         {l.fullname || "Chưa đặt tên"}
                       </h3>
-                      <p className="flex items-center gap-1 truncate text-xs text-muted-foreground">
-                        <Mail size={11} animated={false} />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigator.clipboard.writeText(l.email);
+                          toast.success("Đã sao chép Email");
+                        }}
+                        className="flex max-w-full items-center gap-1 truncate text-xs text-muted-foreground hover:text-primary"
+                        title="Bấm để sao chép email"
+                      >
+                        <Mail size={11} animated={false} className="shrink-0" />
                         <span className="truncate">{l.email}</span>
-                      </p>
+                        <Copy
+                          size={10}
+                          animated={false}
+                          className="shrink-0 opacity-0 transition-opacity group-hover:opacity-70"
+                        />
+                      </button>
                       <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px]">
-                        <span
-                          className={`inline-flex items-center gap-0.5 rounded-full border px-2 py-0.5 font-semibold ${
-                            l.is_banned
-                              ? "border-destructive-border bg-destructive-bg text-destructive-foreground"
-                              : "border-success-border bg-success-bg text-success-foreground"
-                          }`}
-                        >
-                          {l.is_banned ? "Đã khóa" : "Hoạt động"}
-                        </span>
+                        {l.is_banned && (
+                          <span className="inline-flex items-center gap-0.5 rounded-full border border-destructive-border bg-destructive-bg px-2 py-0.5 font-semibold text-destructive-foreground">
+                            Đã khóa
+                          </span>
+                        )}
                         {l.is_verified_email && (
                           <span className="inline-flex items-center gap-0.5 rounded-full border border-info-border bg-info-bg px-2 py-0.5 font-semibold text-info-foreground">
                             <ShieldCheck size={10} animated={false} />
                             Verified
+                          </span>
+                        )}
+                        {l.conscious && (
+                          <span className="inline-flex items-center gap-0.5 text-muted-foreground">
+                            <MapPin size={10} animated={false} />
+                            {l.conscious}
                           </span>
                         )}
                       </div>
@@ -674,6 +1035,14 @@ export default function LecturersManagement() {
                   </span>
                 </div>
 
+                {/* Legal Contract Status Strip */}
+                <div className="mt-3.5 flex items-center justify-between gap-2 rounded-2xl border border-border/70 bg-background/60 px-3 py-2">
+                  <ContractBadge lecturer={l} />
+                  <span className="shrink-0 text-[10px] text-muted-foreground">
+                    TG: {formatShortDate(l.create_at)}
+                  </span>
+                </div>
+
                 {l.bio && (
                   <p className="mt-3 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
                     {l.bio}
@@ -681,20 +1050,24 @@ export default function LecturersManagement() {
                 )}
 
                 {/* 3 Compact Metrics */}
-                <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
-                  <div className="rounded-2xl bg-background/70 p-2.5">
-                    <p className="text-[10px] text-muted-foreground">Khóa học</p>
+                <div className="mt-3.5 grid grid-cols-3 gap-2 text-center text-xs">
+                  <div className="rounded-2xl bg-background/75 p-2.5">
+                    <p className="text-[10px] text-muted-foreground">
+                      Khóa học
+                    </p>
                     <p className="mt-0.5 font-bold text-foreground">
                       {l.course_count ?? 0}
                     </p>
                   </div>
-                  <div className="rounded-2xl bg-background/70 p-2.5">
-                    <p className="text-[10px] text-muted-foreground">Học viên</p>
+                  <div className="rounded-2xl bg-background/75 p-2.5">
+                    <p className="text-[10px] text-muted-foreground">
+                      Học viên
+                    </p>
                     <p className="mt-0.5 font-bold text-primary">
-                      {l.student_count ?? 0}
+                      {(l.student_count ?? 0).toLocaleString("vi-VN")}
                     </p>
                   </div>
-                  <div className="rounded-2xl bg-primary-light/50 p-2.5">
+                  <div className="rounded-2xl bg-primary-light/55 p-2.5">
                     <p className="text-[10px] text-muted-foreground">Ví Coin</p>
                     <p className="mt-0.5 truncate font-bold text-primary">
                       {formatCoin(l.paid_coins ?? l.wallet_balance ?? 0)}
@@ -788,10 +1161,11 @@ export default function LecturersManagement() {
             <thead className="border-b border-border bg-primary-light/60 text-xs font-semibold text-foreground">
               <tr>
                 <th className="px-5 py-3.5">Giảng viên</th>
-                <th className="px-5 py-3.5">Khóa / HV</th>
-                <th className="px-5 py-3.5">Đánh giá</th>
-                <th className="px-5 py-3.5">Số dư ví</th>
-                <th className="px-5 py-3.5">Trạng thái</th>
+                <th className="px-4 py-3.5">Hợp đồng PKI</th>
+                <th className="px-4 py-3.5">Khóa / HV</th>
+                <th className="px-4 py-3.5">Đánh giá</th>
+                <th className="px-4 py-3.5">Số dư Coin</th>
+                <th className="px-4 py-3.5">Trạng thái</th>
                 <th className="px-5 py-3.5 text-right">Thao tác</th>
               </tr>
             </thead>
@@ -803,18 +1177,45 @@ export default function LecturersManagement() {
                   className="cursor-pointer transition-colors hover:bg-primary-light/25"
                 >
                   <td className="px-5 py-3.5">
-                    <p className="font-semibold text-foreground">{l.fullname}</p>
-                    <p className="text-xs text-muted-foreground">{l.email}</p>
+                    <div className="flex items-center gap-3">
+                      {l.avatar ? (
+                        <img
+                          src={getImageUrl(l.avatar)}
+                          alt={l.fullname}
+                          className="h-9 w-9 shrink-0 rounded-xl border border-border object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-accent-vanilla-border bg-accent-vanilla text-xs font-bold text-accent-vanilla-foreground">
+                          {(l.fullname || l.email).slice(0, 1).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-foreground">
+                          {l.fullname || "Chưa đặt tên"}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {l.email}
+                        </p>
+                      </div>
+                    </div>
                   </td>
-                  <td className="px-5 py-3.5 text-xs">
+                  <td className="px-4 py-3.5">
+                    <ContractBadge lecturer={l} />
+                  </td>
+                  <td className="px-4 py-3.5 text-xs">
                     <strong>{l.course_count}</strong> khóa ·{" "}
-                    <strong className="text-primary">{l.student_count}</strong>{" "}
+                    <strong className="text-primary">
+                      {(l.student_count ?? 0).toLocaleString("vi-VN")}
+                    </strong>{" "}
                     HV
                   </td>
-                  <td className="px-5 py-3.5 font-semibold text-accent-vanilla-foreground">
-                    ★ {(l.rating_avg ?? 0).toFixed(1)}
+                  <td className="px-4 py-3.5 font-semibold text-accent-vanilla-foreground">
+                    <span className="inline-flex items-center gap-1">
+                      <Star size={12} animated={false} />
+                      {(l.rating_avg ?? 0).toFixed(1)}
+                    </span>
                   </td>
-                  <td className="px-5 py-3.5">
+                  <td className="px-4 py-3.5">
                     <p className="font-bold text-primary">
                       {formatCoin(l.paid_coins ?? l.wallet_balance ?? 0)}
                     </p>
@@ -824,7 +1225,7 @@ export default function LecturersManagement() {
                       </p>
                     )}
                   </td>
-                  <td className="px-5 py-3.5">
+                  <td className="px-4 py-3.5">
                     <span
                       className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-semibold ${
                         l.is_banned
@@ -840,23 +1241,59 @@ export default function LecturersManagement() {
                     onClick={(e) => e.stopPropagation()}
                   >
                     <div className="inline-flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
+                      <Link
+                        href={`/admin/lecturers/${l.id}`}
+                        title="Xem hồ sơ 360°"
+                        aria-label={`Xem ${l.fullname}`}
+                        className="flex h-8 w-8 items-center justify-center rounded-xl text-primary hover:bg-primary-light"
+                      >
+                        <Eye size={14} animated={false} />
+                      </Link>
+                      <button
+                        type="button"
                         onClick={() => {
                           setEditingLecturer(l);
                           setDrawerOpen(true);
                         }}
+                        title="Chỉnh sửa"
+                        aria-label={`Sửa ${l.fullname}`}
+                        className="flex h-8 w-8 items-center justify-center rounded-xl text-muted-foreground hover:bg-primary-light hover:text-primary"
                       >
-                        Sửa
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
+                        <Pencil size={14} animated={false} />
+                      </button>
+                      {l.is_banned ? (
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => void handleUnban(l)}
+                          title="Mở khóa"
+                          aria-label={`Mở khóa ${l.fullname}`}
+                          className="flex h-8 w-8 items-center justify-center rounded-xl text-success-foreground hover:bg-success-bg"
+                        >
+                          <Unlock size={14} animated={false} />
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => setBanTarget(l)}
+                          title="Khóa tài khoản"
+                          aria-label={`Khóa ${l.fullname}`}
+                          className="flex h-8 w-8 items-center justify-center rounded-xl text-muted-foreground hover:bg-warning-bg hover:text-warning-foreground"
+                        >
+                          <Ban size={14} animated={false} />
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        disabled={busy}
                         onClick={() => setDeleteTarget(l)}
+                        title="Xóa mềm"
+                        aria-label={`Xóa ${l.fullname}`}
+                        className="flex h-8 w-8 items-center justify-center rounded-xl text-muted-foreground hover:bg-destructive-bg hover:text-destructive-foreground"
                       >
-                        Xóa
-                      </Button>
+                        <Trash2 size={14} animated={false} />
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -904,6 +1341,7 @@ export default function LecturersManagement() {
               </h2>
               <button
                 type="button"
+                aria-label="Đóng"
                 onClick={() => setBanTarget(null)}
                 className="flex h-8 w-8 items-center justify-center rounded-xl text-muted-foreground hover:bg-background"
               >
@@ -983,6 +1421,7 @@ export default function LecturersManagement() {
               </h2>
               <button
                 type="button"
+                aria-label="Đóng"
                 onClick={() => setDeleteTarget(null)}
                 className="flex h-8 w-8 items-center justify-center rounded-xl text-muted-foreground hover:bg-background"
               >
@@ -1040,6 +1479,19 @@ export default function LecturersManagement() {
                 setMenuState(null);
               },
             },
+            ...(menuState.lecturer.master_contract_number
+              ? [
+                  {
+                    label: `Kiểm toán HĐ ${menuState.lecturer.master_contract_number}`,
+                    onClick: () => {
+                      router.push(
+                        `/admin/contracts?search=${encodeURIComponent(menuState.lecturer.master_contract_number || "")}`,
+                      );
+                      setMenuState(null);
+                    },
+                  },
+                ]
+              : []),
             {
               label: "Sao chép Email",
               onClick: () => {

@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 from datetime import timedelta
 from typing import Any
+from urllib.parse import quote
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, Request, Response, status
@@ -29,9 +31,11 @@ from app.db.sesson import get_session
 from app.libs.formats.datetime import now as get_now
 from app.libs.formats.datetime import has_expired, now_tzinfo
 from app.schemas.auth.user import (
+    ForgotPasswordRequest,
     GoogleLogin,
     LoginUser,
     RefreshEmail,
+    ResetPasswordRequest,
     SendOtp,
     UserCreate,
     VerifyEmail,
@@ -40,7 +44,15 @@ from app.schemas.auth.user import (
 from app.schemas.shares.notification import NotificationCreateSchema
 from app.services.gamification.shop_service import ShopService
 from app.services.shares.mailer import MailerService
-from app.services.shares.otp import LOGIN, OTP_TTL, VERIFY_EMAIL, limit_attempt_async, limit_issue_async
+from app.services.shares.otp import (
+    LOGIN,
+    OTP_TTL,
+    RESET_PASSWORD,
+    RESET_PASSWORD_TTL,
+    VERIFY_EMAIL,
+    limit_attempt_async,
+    limit_issue_async,
+)
 from app.services.shares.notification import NotificationService
 from app.services.shares.wallets import WalletsService
 
@@ -233,28 +245,26 @@ class AuthService:
         ip: str | None = None, *, request: Request | None = None,
     ):
         jkt = await self._login_jkt(request)
+        clean_email = schema.email.strip().lower()
         try:
             stmt = (
                 select(User)
-                .where(User.email == schema.email)
+                .where(User.email.ilike(clean_email))
                 .options(selectinload(User.user_roles).selectinload(UserRoles.role))
             )
             result = await self.db.execute(stmt)
             user: User | None = result.scalar()
 
-            # 1️⃣ KHÔNG TÌM THẤY USER HOẶC SAI MẬT KHẨU
-            if not user or not await self.security.verify_password(schema.password, user.password or ""):
-                if jkt is not None:
-                    raise AuthError("invalid_token")
+            # 1️⃣ CHƯA CÓ THÔNG TIN EMAIL TRÊN HỆ THỐNG
+            if not user:
                 raise HTTPException(
                     status_code=401,
                     detail={
-                        "error_code": "INVALID_CREDENTIALS",
-                        "message": "Email hoặc mật khẩu không đúng",
+                        "error_code": "ACCOUNT_NOT_FOUND",
+                        "message": "Thông tin tài khoản không chính xác (Email chưa được đăng ký trên hệ thống).",
                     },
                 )
 
-            # 2️⃣ TÀI KHOẢN ĐÃ BỊ XÓA, EMAIL CHƯA VERIFY, BANNED...
             if user.deleted_at:
                 raise HTTPException(
                     status_code=403,
@@ -265,15 +275,88 @@ class AuthService:
                         "reason": user.banned_reason,
                     },
                 )
+
+            # 2️⃣ KIỂM TRA MẬT KHẨU (hỗ trợ phục hồi tự động cho tài khoản chưa verify cũ bị lưu password rỗng)
+            stored_pw = user.password or ""
+            latest_pending: EmailVerifications | None = None
             if not user.is_verified_email:
+                latest_pending = await self.db.scalar(
+                    select(EmailVerifications)
+                    .where(
+                        EmailVerifications.user_id == user.id,
+                        EmailVerifications.purpose == VERIFY_EMAIL,
+                    )
+                    .order_by(desc(EmailVerifications.created_at), desc(EmailVerifications.id))
+                    .limit(1)
+                )
+                if not stored_pw and latest_pending and latest_pending.pending_password_hash:
+                    stored_pw = latest_pending.pending_password_hash
+
+            password_ok = False
+            if stored_pw:
+                password_ok = await self.security.verify_password(schema.password, stored_pw)
+            elif not user.is_verified_email:
+                # Tự chữa lành cho tài khoản chưa xác thực cũ từng bị xóa rỗng mật khẩu khi resend
+                new_pw_hash = await self.security.hash_password(schema.password)
+                user.password = new_pw_hash
+                stored_pw = new_pw_hash
+                password_ok = True
+
+            if not password_ok:
+                raise HTTPException(
+                    status_code=401,
+                    detail={
+                        "error_code": "INVALID_CREDENTIALS",
+                        "message": "Thông tin tài khoản hoặc mật khẩu không chính xác.",
+                    },
+                )
+
+            # Đồng bộ lại user.password nếu vừa lấy từ pending_password_hash
+            if not user.password and stored_pw:
+                user.password = stored_pw
+
+            # 3️⃣ TÀI KHOẢN CHƯA XÁC THỰC EMAIL -> TỰ ĐỘNG GỬI LẠI MAIL OTP CHUẨN
+            if not user.is_verified_email:
+                otp_sent_now = False
+                now_dt = get_now()
+                recently_sent = (
+                    latest_pending is not None
+                    and latest_pending.created_at is not None
+                    and latest_pending.expired_at is not None
+                    and not has_expired(latest_pending.expired_at)
+                    and (now_dt - latest_pending.created_at).total_seconds() < 55
+                )
+                if not recently_sent:
+                    try:
+                        await limit_issue_async(user.email, VERIFY_EMAIL, ip)
+                        await self._issue_otp_async(
+                            user,
+                            VERIFY_EMAIL,
+                            pending_password_hash=user.password or stored_pw,
+                        )
+                        otp_sent_now = True
+                    except HTTPException as mail_exc:
+                        if mail_exc.status_code != 429:
+                            raise
+                        await self.db.commit()
+                else:
+                    await self.db.commit()
+
                 raise HTTPException(
                     status_code=403,
                     detail={
                         "error_code": "EMAIL_NOT_VERIFIED",
-                        "message": "Vui lòng xác thực email",
+                        "message": (
+                            f"Tài khoản chưa được xác thực email. Đã gửi mã xác thực 6 chữ số tới {user.email}."
+                            if otp_sent_now
+                            else f"Tài khoản chưa được xác thực email. Vui lòng nhập mã xác thực 6 chữ số đã gửi tới {user.email}."
+                        ),
                         "email": user.email,
+                        "otp_sent": otp_sent_now,
                     },
                 )
+
+            # 4️⃣ TÀI KHOẢN BỊ KHÓA
             if user.is_banned:
                 if user.banned_until and has_expired(user.banned_until):
                     user.is_banned = False
@@ -302,8 +385,7 @@ class AuthService:
 
             # 5️⃣ TẠO PHIÊN (SESSION) MỚI
             login_result = await self._create_session(user.id, res, user_agent, ip, jkt=jkt)
-            
-            # Cập nhật last_login_at
+
             user.last_login_at = get_now()
             await self.db.commit()
             await self._broadcast_new_session(
@@ -314,8 +396,10 @@ class AuthService:
                 login_method="password",
                 explicit_device_type=schema.device_type,
             )
-            
+
             return login_result
+        except HTTPException:
+            raise
         except Exception:
             await self.db.rollback()
             raise
@@ -346,20 +430,22 @@ class AuthService:
         await self._send_mail_or_503(send(email=user.email, fullname=user.fullname or "", code=code))
 
     async def register_async(self, schema: UserCreate, *, ip: str | None = None) -> dict[str, Any]:
-        await limit_issue_async(schema.email, VERIFY_EMAIL, ip)
+        clean_email = schema.email.strip().lower()
+        await limit_issue_async(clean_email, VERIFY_EMAIL, ip)
         password_hash = await self.security.hash_password(schema.password)
         try:
-            user = await self.db.scalar(select(User).where(User.email == schema.email).with_for_update())
+            user = await self.db.scalar(select(User).where(User.email.ilike(clean_email)).with_for_update())
             if user is not None and (user.is_verified_email or user.deleted_at or user.is_banned):
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
-                    detail={"error_code": "EMAIL_TAKEN", "message": "Email đã được sử dụng"},
+                    detail={"error_code": "EMAIL_TAKEN", "message": "Email đã được sử dụng trên hệ thống."},
                 )
             if user is None:
                 user = User(
-                    email=schema.email,
-                    fullname=schema.full_name or "",
-                    password="",
+                    email=clean_email,
+                    fullname=(schema.full_name or "").strip(),
+                    password=password_hash,
+                    is_verified_email=False,
                     create_at=get_now(),
                     grade_level=schema.grade_level,
                     learning_track=schema.learning_track,
@@ -373,14 +459,20 @@ class AuthService:
                     await self.db.flush()
                 self.db.add(UserRoles(user_id=user.id, role_id=role.id))
             else:
-                user.password = ""
-                user.fullname = schema.full_name or ""
+                user.email = clean_email
+                user.password = password_hash
+                user.fullname = (schema.full_name or user.fullname or "").strip()
                 if schema.grade_level is not None:
                     user.grade_level = schema.grade_level
                 if schema.learning_track is not None:
                     user.learning_track = schema.learning_track
             await self._issue_otp_async(user, VERIFY_EMAIL, pending_password_hash=password_hash)
-            return {"message": "send Email ok"}
+            return {
+                "message": f"Đã gửi mã xác thực 6 chữ số tới {clean_email}.",
+                "email": clean_email,
+            }
+        except HTTPException:
+            raise
         except Exception:
             await self.db.rollback()
             raise
@@ -403,19 +495,46 @@ class AuthService:
             raise
 
     async def refesh_email_async(self, schema: RefreshEmail, *, ip: str | None = None):
-        await limit_issue_async(schema.email, VERIFY_EMAIL, ip)
+        clean_email = schema.email.strip().lower()
+        await limit_issue_async(clean_email, VERIFY_EMAIL, ip)
         try:
-            user = await self.db.scalar(select(User).where(User.email == schema.email).with_for_update())
+            user = await self.db.scalar(select(User).where(User.email.ilike(clean_email)).with_for_update())
             if not user:
-                raise HTTPException(404, {"error_code": "USER_NOT_FOUND", "message": "Không tìm thấy người dùng"})
+                raise HTTPException(
+                    404,
+                    {
+                        "error_code": "ACCOUNT_NOT_FOUND",
+                        "message": "Thông tin tài khoản không chính xác (Email chưa được đăng ký trên hệ thống).",
+                    },
+                )
             if user.deleted_at or user.is_banned:
                 raise HTTPException(403, "Tài khoản đã bị khóa hoặc xóa.")
             if user.is_verified_email:
-                raise HTTPException(409, {"error_code": "EMAIL_ALREADY_VERIFIED", "message": "Email đã được xác thực"})
-            # An email-only resend cannot endorse a password from an earlier registration.
-            user.password = ""
-            await self._issue_otp_async(user, VERIFY_EMAIL)
-            return True
+                raise HTTPException(
+                    409,
+                    {"error_code": "EMAIL_ALREADY_VERIFIED", "message": "Email đã được xác thực. Bạn có thể đăng nhập ngay."},
+                )
+            # Giữ nguyên mật khẩu người dùng đã đặt lúc đăng ký (tuyệt đối không xóa trắng mật khẩu)
+            prev_verif = await self.db.scalar(
+                select(EmailVerifications)
+                .where(
+                    EmailVerifications.user_id == user.id,
+                    EmailVerifications.purpose == VERIFY_EMAIL,
+                )
+                .order_by(desc(EmailVerifications.created_at), desc(EmailVerifications.id))
+                .limit(1)
+            )
+            preserved_hash = user.password or (
+                prev_verif.pending_password_hash if prev_verif else None
+            )
+            if preserved_hash and not user.password:
+                user.password = preserved_hash
+            await self._issue_otp_async(
+                user, VERIFY_EMAIL, pending_password_hash=preserved_hash
+            )
+            return {"sent": True, "message": f"Đã gửi mã xác thực mới tới {user.email}."}
+        except HTTPException:
+            raise
         except Exception:
             await self.db.rollback()
             raise
@@ -450,15 +569,22 @@ class AuthService:
 
     async def verify_email_async(self, schema: VerifyEmail, res: Response, *, request: Request | None = None):
         jkt = await self._login_jkt(request)
+        clean_email = schema.email.strip().lower()
+        user_agent = request.headers.get("user-agent") if request is not None else None
+        ip = request.client.host if request is not None and request.client else None
         try:
             user: User | None = await self.db.scalar(
                 select(User)
                 .options(selectinload(User.user_roles).selectinload(UserRoles.role))
-                .where(User.email == schema.email)
+                .where(User.email.ilike(clean_email))
             )
             if not user:
                 raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND, detail={"error_code": "USER_NOT_FOUND", "message": "Không tìm thấy người dùng"}
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail={
+                        "error_code": "ACCOUNT_NOT_FOUND",
+                        "message": "Thông tin tài khoản không chính xác (Email chưa được đăng ký trên hệ thống).",
+                    },
                 )
 
             if user.deleted_at or user.is_banned:
@@ -470,39 +596,44 @@ class AuthService:
             if user.is_verified_email:
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
-                    detail="Người dùng đã xác thực email",
+                    detail="Email này đã được xác thực. Vui lòng đăng nhập.",
                 )
             error = HTTPException(400, "Mã xác thực không hợp lệ hoặc đã hết hạn.")
-            ip = request.client.host if request is not None and request.client else None
             verification = await self._check_otp_async(user, VERIFY_EMAIL, schema.code, ip, error)
-            password_hash = (await self.security.hash_password(schema.new_password)
-                             if schema.new_password is not None else verification.pending_password_hash)
-            await self.db.refresh(user, attribute_names=["is_verified_email", "is_banned", "deleted_at"],
+            password_hash = (
+                await self.security.hash_password(schema.new_password)
+                if schema.new_password is not None
+                else (verification.pending_password_hash or user.password)
+            )
+            await self.db.refresh(user, attribute_names=["is_verified_email", "is_banned", "deleted_at", "password"],
                                   with_for_update=True)
             if user.deleted_at or user.is_banned:
                 raise HTTPException(403, "Tài khoản đã bị khóa hoặc xóa.")
             if user.is_verified_email:
-                raise HTTPException(409, "Người dùng đã xác thực email")
+                raise HTTPException(409, "Email này đã được xác thực. Vui lòng đăng nhập.")
             await self._consume_otp_async(user, verification, error)
-            user.password = password_hash or ""
+            if password_hash:
+                user.password = password_hash
             user.is_verified_email = True
             user.email_verified_at = get_now()
             user.update_at = get_now()
-            
-            # Cập nhật last_login_at vì user sẽ được login ngay sau khi verify
             user.last_login_at = get_now()
-            
-            # Tạo session mới
-            login_result = await self._create_session(user.id, res, jkt=jkt)
-            
+
+            # Tạo phiên đăng nhập ngay sau khi xác nhận mã số (Auto-login)
+            login_result = await self._create_session(
+                user.id, res, user_agent=user_agent, ip=ip, jkt=jkt
+            )
+
             # Tự động tạo ví cho người dùng mới xác thực
             await self.wallet_service.get_or_create_wallet_async(user.id)
-            
+
             await self.db.commit()
             await self.db.refresh(user)
             await self._broadcast_new_session(
                 user.id,
                 login_result["session_id"],
+                user_agent,
+                ip,
                 login_method="email_verify",
             )
             
@@ -1051,6 +1182,157 @@ class AuthService:
                 explicit_device_type=schema.device_type,
             )
             return login_result
+        except Exception:
+            await self.db.rollback()
+            raise
+
+    @staticmethod
+    def _hash_reset_code(user_id: UUID, code: str) -> str:
+        return hashlib.sha256(f"reset:{user_id}:{code.strip()}".encode("utf-8")).hexdigest()
+
+    async def forgot_password_async(
+        self, schema: ForgotPasswordRequest, *, ip: str | None = None
+    ) -> dict[str, Any]:
+        email = schema.email.strip().lower()
+
+        try:
+            user = await self.db.scalar(
+                select(User).where(User.email.ilike(email)).with_for_update()
+            )
+            if user is None or user.deleted_at is not None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail={
+                        "error_code": "ACCOUNT_NOT_FOUND",
+                        "message": "Thông tin tài khoản không chính xác (Email chưa được đăng ký trên hệ thống).",
+                    },
+                )
+            if user.is_banned:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail={
+                        "error_code": "ACCOUNT_BANNED",
+                        "message": "Tài khoản đang bị khóa, không thể đặt lại mật khẩu.",
+                    },
+                )
+
+            await limit_issue_async(user.email, RESET_PASSWORD, ip)
+
+            await self.db.execute(
+                delete(EmailVerifications).where(
+                    EmailVerifications.user_id == user.id,
+                    EmailVerifications.purpose == RESET_PASSWORD,
+                )
+            )
+            code = await self.security.generate_otp()
+            code_hash = self._hash_reset_code(user.id, code)
+            self.db.add(
+                EmailVerifications(
+                    user_id=user.id,
+                    purpose=RESET_PASSWORD,
+                    code=code_hash,
+                    expired_at=get_now() + timedelta(seconds=RESET_PASSWORD_TTL),
+                )
+            )
+            await self.db.commit()
+
+            frontend_base = str(
+                getattr(settings, "FRONTEND_URL", "http://localhost:3000")
+            ).rstrip("/")
+            reset_link = (
+                f"{frontend_base}/reset-password"
+                f"?email={quote(user.email)}&code={quote(code)}"
+            )
+            await self._send_mail_or_503(
+                self.mail_service.send_reset_password_email(
+                    email=user.email,
+                    fullname=user.fullname or "",
+                    reset_link=reset_link,
+                    code=code,
+                )
+            )
+            return {
+                "message": f"Đã gửi mã xác thực 6 chữ số và liên kết đặt lại mật khẩu tới {user.email}.",
+                "email": user.email,
+                "expires_in_seconds": RESET_PASSWORD_TTL,
+                "resend_cooldown_seconds": 60,
+            }
+        except HTTPException:
+            raise
+        except Exception:
+            await self.db.rollback()
+            raise
+
+    async def reset_password_async(
+        self, schema: ResetPasswordRequest, *, ip: str | None = None
+    ) -> dict[str, Any]:
+        email = schema.email.strip().lower()
+        provided_code = schema.code.strip()
+
+        invalid_err = HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error_code": "INVALID_RESET_CODE",
+                "message": "Mã xác thực không chính xác hoặc đã hết hạn. Vui lòng yêu cầu mã mới.",
+            },
+        )
+
+        try:
+            user = await self.db.scalar(
+                select(User).where(User.email == email).with_for_update()
+            )
+            if user is None or user.deleted_at is not None or user.is_banned:
+                await limit_attempt_async(email, None, ip)
+                raise invalid_err
+
+            verification = await self.db.scalar(
+                select(EmailVerifications)
+                .where(
+                    EmailVerifications.user_id == user.id,
+                    EmailVerifications.purpose == RESET_PASSWORD,
+                )
+                .order_by(desc(EmailVerifications.created_at))
+                .with_for_update()
+            )
+            await limit_attempt_async(
+                str(user.id),
+                str(verification.id) if verification else None,
+                ip,
+            )
+
+            if (
+                verification is None
+                or not verification.code
+                or verification.expired_at is None
+                or has_expired(verification.expired_at)
+            ):
+                if verification is not None:
+                    await self.db.delete(verification)
+                    await self.db.commit()
+                raise invalid_err
+
+            expected_hash = self._hash_reset_code(user.id, provided_code)
+            if not secret_matches(expected_hash, verification.code):
+                raise invalid_err
+
+            user.password = await self.security.hash_password(schema.new_password)
+            user.is_verified_email = True
+
+            # Xóa toàn bộ mã reset cũ (dùng 1 lần) & thu hồi toàn bộ phiên đăng nhập cũ
+            await self.db.execute(
+                delete(EmailVerifications).where(
+                    EmailVerifications.user_id == user.id,
+                    EmailVerifications.purpose == RESET_PASSWORD,
+                )
+            )
+            await revoke_user_sessions_async(self.db, user.id)
+            await self.db.commit()
+
+            return {
+                "message": "Đặt lại mật khẩu thành công! Tất cả phiên đăng nhập cũ đã được đăng xuất. Vui lòng đăng nhập bằng mật khẩu mới.",
+            }
+        except HTTPException:
+            raise
         except Exception:
             await self.db.rollback()
             raise

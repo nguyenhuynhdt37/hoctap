@@ -12,12 +12,14 @@ import useSWR from "swr";
 import {
   ArrowLeftRight,
   Banknote,
+  BookOpen,
   ChevronLeft,
   ChevronRight,
   Cloud,
   Command,
   Compass,
   ExternalLink,
+  FileText,
   Folder,
   GraduationCap,
   LogOut,
@@ -42,7 +44,7 @@ interface MenuItem {
   href: string;
   icon: ComponentType<{ className?: string; size?: number; animated?: boolean }>;
   exact?: boolean;
-  badgeKey?: "refunds" | "withdraws";
+  badgeKey?: "refunds" | "withdraws" | "contracts" | "courses";
 }
 
 interface MenuGroup {
@@ -60,6 +62,13 @@ const MENU_GROUPS: MenuGroup[] = [
         href: "/admin",
         icon: Compass,
         exact: true,
+      },
+      {
+        title: "Kiểm duyệt Khóa học",
+        subtitle: "Xem trước & phê duyệt",
+        href: "/admin/courses",
+        icon: BookOpen,
+        badgeKey: "courses",
       },
       {
         title: "Khối lớp & Môn học",
@@ -81,6 +90,13 @@ const MENU_GROUPS: MenuGroup[] = [
         title: "Giảng viên",
         href: "/admin/lecturers",
         icon: GraduationCap,
+      },
+      {
+        title: "Hợp đồng số",
+        subtitle: "Chữ ký điện tử PKI",
+        href: "/admin/contracts",
+        icon: FileText,
+        badgeKey: "contracts",
       },
       {
         title: "Vai trò & Quyền hạn",
@@ -154,9 +170,26 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
     { revalidateOnFocus: false, dedupingInterval: 30000 },
   );
 
-  const badgeCounts: Record<"refunds" | "withdraws", number> = {
+  const { data: contractStats } = useSWR<{ signed?: number }>(
+    "/admin/contracts/stats",
+    (url: string) => api.get(url).then((r) => r.data).catch(() => null),
+    { revalidateOnFocus: false, dedupingInterval: 30000 },
+  );
+
+  const { data: courseStats } = useSWR<{ pending?: number }>(
+    "/admin/courses/stats",
+    (url: string) => api.get(url).then((r) => r.data).catch(() => null),
+    { revalidateOnFocus: false, dedupingInterval: 30000 },
+  );
+
+  const badgeCounts: Record<
+    "refunds" | "withdraws" | "contracts" | "courses",
+    number
+  > = {
     refunds: Number(refundStats?.requested ?? refundStats?.pending ?? 0),
     withdraws: Number(withdrawStats?.pending ?? 0),
+    contracts: Number(contractStats?.signed ?? 0),
+    courses: Number(courseStats?.pending ?? 0),
   };
 
   const getUserInitials = () => {

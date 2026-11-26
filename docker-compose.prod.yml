@@ -1,0 +1,153 @@
+# =============================================================================
+# Mây Mây Education Platform — Production Docker Compose Stack
+# Bao gồm: PostgreSQL 16 (pgvector) + Redis 7 + Piston + FastAPI BE + Next.js FE
+# Khởi chạy:
+#   docker compose -f docker-compose.prod.yml --env-file studynest_be/.env up -d --build
+# =============================================================================
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: studynest_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    command:
+      - "postgres"
+      - "-c"
+      - "max_connections=200"
+      - "-c"
+      - "shared_buffers=256MB"
+      - "-c"
+      - "effective_cache_size=768MB"
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db.sql:/docker-entrypoint-initdb.d/01-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+    networks:
+      - maymay_net
+
+  redis:
+    image: redis:7-alpine
+    container_name: studynest_redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - maymay_net
+
+  piston:
+    image: ghcr.io/engineer-man/piston:latest
+    platform: linux/amd64
+    container_name: studynest_piston
+    restart: unless-stopped
+    privileged: true
+    ports:
+      - "127.0.0.1:4000:2000"
+    volumes:
+      - piston_packages:/piston/packages
+    tmpfs:
+      - /tmp:exec
+    networks:
+      - maymay_net
+
+  backend:
+    build:
+      context: ./studynest_be
+      dockerfile: Dockerfile
+    container_name: studynest_be_prod
+    restart: unless-stopped
+    env_file:
+      - ./studynest_be/.env
+    environment:
+      # Override host kết nối nội bộ qua mạng Docker maymay_net
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      REDIS_URL: redis://redis:6379/0
+      PISTON_URL: http://piston:2000
+      UVICORN_WORKERS: ${UVICORN_WORKERS:-2}
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - backend_r2_cache:/app/.cache/r2
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/health"]
+      interval: 15s
+      timeout: 5s
+      start_period: 30s
+      retries: 5
+    networks:
+      - maymay_net
+
+  frontend:
+    build:
+      context: ./studynest_fe
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_URL_BACKEND: ${BACKEND_URL:-https://macbook-pro-7.tail6d3a82.ts.net:8443}
+        NEXT_PUBLIC_URL_BACKEND_WS: ${NEXT_PUBLIC_URL_BACKEND_WS:-wss://macbook-pro-7.tail6d3a82.ts.net:8443}
+        NEXT_PUBLIC_URL_FRONTEND: ${FRONTEND_URL:-https://macbook-pro-7.tail6d3a82.ts.net}
+        NEXT_PUBLIC_AUTH_MODE: ${NEXT_PUBLIC_AUTH_MODE:-dpop}
+        NEXT_PUBLIC_DPOP_API_ORIGIN: ${PUBLIC_API_URL:-https://macbook-pro-7.tail6d3a82.ts.net:8443}
+        INTERNAL_BACKEND_URL: http://backend:8000
+    container_name: studynest_fe_prod
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      INTERNAL_BACKEND_URL: http://backend:8000
+      NEXT_PUBLIC_URL_BACKEND: ${BACKEND_URL:-https://macbook-pro-7.tail6d3a82.ts.net:8443}
+      NEXT_PUBLIC_URL_BACKEND_WS: ${NEXT_PUBLIC_URL_BACKEND_WS:-wss://macbook-pro-7.tail6d3a82.ts.net:8443}
+      NEXT_PUBLIC_URL_FRONTEND: ${FRONTEND_URL:-https://macbook-pro-7.tail6d3a82.ts.net}
+      NEXT_PUBLIC_AUTH_MODE: ${NEXT_PUBLIC_AUTH_MODE:-dpop}
+      NEXT_PUBLIC_DPOP_API_ORIGIN: ${PUBLIC_API_URL:-https://macbook-pro-7.tail6d3a82.ts.net:8443}
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/login >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      start_period: 20s
+      retries: 5
+    networks:
+      - maymay_net
+
+networks:
+  maymay_net:
+    driver: bridge
+
+volumes:
+  # Giữ nguyên 100% volume dữ liệu thật đã có của PostgreSQL, Redis & Piston
+  postgres_data:
+    external: true
+    name: studynest_be_postgres_data
+  redis_data:
+    external: true
+    name: studynest_be_redis_data
+  piston_packages:
+    external: true
+    name: studynest_be_piston_packages
+  backend_r2_cache:

@@ -1466,3 +1466,61 @@ class CourseService:
                 status_code=500,
                 detail=f"Lỗi khi lấy danh sách danh mục: {e}",
             )
+
+    async def resubmit_course_for_review_async(
+        self, course_id: uuid.UUID, lecturer: User
+    ):
+        """Giảng viên gửi duyệt lại khóa học sau khi đã chỉnh sửa theo góp ý của Admin."""
+        course = await self.db.scalar(
+            select(Courses).where(
+                Courses.id == course_id,
+                Courses.instructor_id == lecturer.id,
+                Courses.deleted_at.is_(None),
+            )
+        )
+        if not course:
+            raise HTTPException(404, "Không tìm thấy khóa học hoặc không có quyền truy cập.")
+
+        if course.approval_status == "pending":
+            return {
+                "id": str(course.id),
+                "approval_status": "pending",
+                "review_round": int(course.review_round or 1),
+                "message": "Khóa học đã nằm trong hàng đợi phê duyệt.",
+            }
+
+        next_round = int(course.review_round or 1) + 1
+        course.approval_status = "pending"
+        course.review_round = next_round
+        course.updated_at = await to_utc_naive(get_now())
+        await self.db.commit()
+        await self.db.refresh(course)
+
+        try:
+            from app.schemas.shares.notification import NotificationCreateSchema
+            from app.services.shares.notification import NotificationService
+
+            notif_service = NotificationService(self.db)
+            await notif_service.create_notification_async(
+                NotificationCreateSchema(
+                    user_id=None,
+                    title=f"Khóa học gửi duyệt lại (Vòng #{next_round})",
+                    content=(
+                        f"Giảng viên {lecturer.fullname or lecturer.email} vừa gửi duyệt lại khóa học "
+                        f"“{course.title}”."
+                    ),
+                    url=f"/admin/courses/{course.id}",
+                    type="course",
+                    role_target=["ADMIN"],
+                    metadata={"course_id": str(course.id), "review_round": next_round},
+                )
+            )
+        except Exception:
+            pass
+
+        return {
+            "id": str(course.id),
+            "approval_status": course.approval_status,
+            "review_round": next_round,
+            "message": f"Đã gửi khóa học vào hàng đợi thẩm định (Vòng #{next_round}).",
+        }

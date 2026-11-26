@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, FolderTree, Layers } from "pulsoicon-react";
+import { BookOpen, Layers } from "pulsoicon-react";
 
 interface CatalogAdminNavProps {
   unclassifiedCount?: number;
@@ -30,19 +30,12 @@ export default function CatalogAdminNav({
           ? unclassifiedCount
           : undefined,
     },
-    {
-      href: "/admin/categories",
-      title: "Cây điều hướng Legacy",
-      description: "Quản lý cấu trúc danh mục điều hướng truyền thống",
-      icon: FolderTree,
-      badge: undefined as number | undefined,
-    },
   ];
 
   return (
     <nav
       aria-label="Quản lý học tập"
-      className="grid grid-cols-1 gap-2.5 rounded-3xl border border-border bg-surface/90 p-2 shadow-[0_10px_28px_-14px_rgba(53,111,167,0.12)] sm:grid-cols-3"
+      className="grid grid-cols-1 gap-2.5 rounded-3xl border border-border bg-surface/90 p-2 shadow-[0_10px_28px_-14px_rgba(53,111,167,0.12)] sm:grid-cols-2"
     >
       {links.map(({ href, title, description, icon: Icon, badge }) => {
         const active = pathname === href;

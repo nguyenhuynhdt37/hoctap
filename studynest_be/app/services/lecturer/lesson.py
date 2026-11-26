@@ -3216,25 +3216,12 @@ class LessonService:
             raise HTTPException(403, "Bạn không có quyền chỉnh sửa bài học này")
 
         persona_data = schema.ai_persona.model_dump()
-        opening_line = (persona_data.get("opening_line") or "").strip()
         opening_audio_url = (persona_data.get("opening_audio_url") or "").strip() or None
-        voice_id = (persona_data.get("voice_id") or "").strip() or None
+        voice_id = (persona_data.get("voice_id") or "").strip() or "Tina"
 
-        if schema.auto_render_opening_audio and opening_line and not opening_audio_url:
-            try:
-                tts = get_tts_service()
-                rendered = await tts.synthesize_to_r2(
-                    text=opening_line[:1000],
-                    lang_code=schema.lang_code,
-                    voice_id=voice_id,
-                )
-                opening_audio_url = rendered.get("audio_url") or None
-                voice_id = rendered.get("voice_id") or voice_id
-            except Exception as exc:
-                logger.warning(f"Không thể tạo audio câu mở màn speaking: {exc}")
-
+        # Giọng mở màn nay được phát trực tiếp bằng Qwen 3.8 Omni Flash Realtime (không dùng TTS rời)
         persona_data["opening_audio_url"] = opening_audio_url or ""
-        persona_data["voice_id"] = voice_id or ""
+        persona_data["voice_id"] = voice_id
 
         missions_data = [
             {

@@ -38,9 +38,18 @@ export function AssistantSettings() {
   </>;
 }
 
+const QWEN_VOICE_OPTIONS = [
+  { value: "Tina", label: "Tina · Nữ ấm áp, tự nhiên (Mặc định)" },
+  { value: "Serena", label: "Serena · Nữ dịu dàng, truyền cảm" },
+  { value: "Mia", label: "Mia · Nữ trẻ trung, thân thiện" },
+  { value: "Chloe", label: "Chloe · Nữ rõ ràng, thanh lịch" },
+  { value: "Ryan", label: "Ryan · Nam trầm ấm, điềm đạm" },
+  { value: "Aiden", label: "Aiden · Nam năng động, hiện đại" },
+] as const;
+
 function VoicePreferences() {
   const voice = useAssistantVoice();
-  const [values, setValues] = useState({ voice: "eve", speed: 1, mic_threshold: 0.012 });
+  const [values, setValues] = useState({ voice: "Tina", speed: 1, mic_threshold: 0.012 });
   const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -48,7 +57,7 @@ function VoicePreferences() {
   useEffect(() => {
     let live = true;
     void api.get("/agent/voice-settings").then(({ data }) => {
-      if (live) { setValues({ voice: data.voice, speed: data.speed, mic_threshold: data.mic_threshold }); setLoaded(true); }
+      if (live) { setValues({ voice: data.voice || "Tina", speed: data.speed, mic_threshold: data.mic_threshold }); setLoaded(true); }
     }).catch(() => { if (live) setError("Chưa tải được cài đặt giọng nói. Đóng và mở lại để thử lại."); });
     return () => { live = false; };
   }, []);
@@ -60,18 +69,18 @@ function VoicePreferences() {
     catch { setError("Chưa lưu được cài đặt. Vui lòng thử lại."); }
     finally { setBusy(false); }
   }}>
-    <Select label="Giọng đọc" value={values.voice} disabled={disabled} onChange={event => setValues(current => ({ ...current, voice: event.target.value }))}>
-      {["Eve", "Ara", "Rex", "Sal", "Leo"].map(name => <option key={name} value={name.toLowerCase()}>{name}</option>)}
+    <Select label="Giọng đọc (Qwen 3.8 Omni Realtime)" value={values.voice} disabled={disabled} onChange={event => setValues(current => ({ ...current, voice: event.target.value }))}>
+      {QWEN_VOICE_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
     </Select>
     <label className="block text-sm">Nhịp nói · {values.speed.toFixed(2)}×<input aria-label="Tốc độ đọc" className="mt-3 block w-full accent-primary" type="range" min="0.75" max="1.25" step="0.05" value={values.speed} disabled={disabled} onChange={event => setValues(current => ({ ...current, speed: Number(event.target.value) }))} /></label>
     <label className="block text-sm">Lọc tiếng nhỏ · {Math.round(values.mic_threshold * 1000)}<input aria-label="Lọc tiếng nhỏ của micro" className="mt-3 block w-full accent-primary" type="range" min="0.008" max="0.045" step="0.001" value={values.mic_threshold} disabled={disabled} onChange={event => setValues(current => ({ ...current, mic_threshold: Number(event.target.value) }))} /></label>
-    <p className="text-xs leading-relaxed text-muted-foreground">Tăng mức lọc nếu tiếng nền dễ ngắt lời. Nhịp nói là mức yêu cầu gần đúng và giữ nguyên âm sắc.</p>
+    <p className="text-xs leading-relaxed text-muted-foreground">Tăng mức lọc nếu tiếng nền dễ ngắt lời. Trợ lý trò chuyện trực tiếp bằng Qwen 3.8 Omni Flash Realtime.</p>
     {voice?.active && <Alert variant="info" className="text-xs">Kết thúc cuộc gọi hiện tại để đổi cài đặt giọng nói.</Alert>}
     {error && <Alert variant="warning" className="text-xs">{error}</Alert>}
     {saved && <p role="status" className="text-xs text-primary">Đã lưu cài đặt cho tài khoản của bạn.</p>}
     <div className="flex flex-wrap gap-2">
       <Button type="submit" size="sm" disabled={disabled} isLoading={busy}>Lưu cài đặt</Button>
-      <Button type="button" size="sm" variant="ghost" disabled={disabled} onClick={() => { setValues({ voice: "eve", speed: 1, mic_threshold: 0.012 }); setSaved(false); }}>Khôi phục giọng gốc</Button>
+      <Button type="button" size="sm" variant="ghost" disabled={disabled} onClick={() => { setValues({ voice: "Tina", speed: 1, mic_threshold: 0.012 }); setSaved(false); }}>Khôi phục giọng gốc</Button>
     </div>
   </form>;
 }

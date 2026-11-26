@@ -67,7 +67,7 @@ function AssistantSurface() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "j") {
         event.preventDefault();
         setLoaded(true);
         updateOpen(value => !value);
@@ -87,6 +87,11 @@ function AssistantSurface() {
     };
   }, []);
 
+  // Ẩn trợ lý nổi trên trang ký hợp đồng toàn màn hình để giữ không gian pháp lý tập trung
+  if (pathname?.startsWith("/welcome/sign-contract")) {
+    return null;
+  }
+
   const modeLabel =
     agent?.permissionMode === "autoPilot"
       ? "Auto-Pilot"
@@ -102,42 +107,61 @@ function AssistantSurface() {
 
   return (
     <div>
-      {/* Floating Co-Pilot Launcher Pill */}
-      <button
-        type="button"
-        onClick={() => {
-          setLoaded(true);
-          updateOpen(value => !value);
-        }}
-        aria-label={open ? "Thu nhỏ Mây Mây Co-Pilot" : "Mở Mây Mây Co-Pilot"}
-        aria-expanded={open}
-        className={`group fixed ${voice?.active ? "bottom-28" : "bottom-6"} right-6 z-50 flex items-center gap-2.5 rounded-full border border-primary-pastel bg-surface/95 py-2 pl-2.5 pr-4 shadow-[0_12px_36px_rgba(53,111,167,0.22)] backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 hover:border-primary hover:shadow-[0_16px_42px_rgba(53,111,167,0.28)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring`}
-      >
-        <span className="relative flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xs">
-          {agent?.busy ? (
-            <Zap animated={false} className="h-5 w-5 animate-pulse motion-reduce:animate-none" />
-          ) : (
-            <Bot animated={false} className="h-5 w-5" />
-          )}
-          <span
-            aria-hidden="true"
-            className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-surface ${
-              agent?.busy ? "animate-ping bg-primary" : "bg-success-foreground"
+      {/* Edge-Docked Cloud Rail Tab — siêu gọn bám mép phải, không chiếm diện tích góc dưới */}
+      {!open && (
+        <button
+          type="button"
+          onClick={() => {
+            setLoaded(true);
+            updateOpen(true);
+          }}
+          aria-label="Mở Mây Mây Trợ lý (⌘J)"
+          title="Mây Mây Trợ lý (⌘J)"
+          className={`group fixed right-0 ${
+            voice?.active ? "bottom-36" : "bottom-1/3"
+          } z-50 flex items-center gap-2 rounded-l-2xl border border-r-0 border-primary-pastel/90 bg-surface/92 py-2 pl-2 pr-2 shadow-[-6px_8px_28px_-8px_rgba(53,111,167,0.28)] backdrop-blur-xl transition-all duration-300 hover:border-primary hover:bg-primary-light/95 hover:pr-3.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring`}
+        >
+          <span className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-hover text-primary-foreground shadow-2xs transition-transform duration-200 group-hover:scale-105">
+            {agent?.busy ? (
+              <Zap
+                animated={false}
+                className="h-4 w-4 animate-pulse motion-reduce:animate-none"
+              />
+            ) : (
+              <Bot animated={false} className="h-4 w-4" />
+            )}
+            <span
+              aria-hidden="true"
+              className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-surface ${
+                agent?.busy ? "animate-ping bg-primary" : "bg-success-foreground"
+              }`}
+            />
+          </span>
+
+          {/* Chỉ trượt mở nhãn chữ gọn gàng khi hover hoặc khi AI đang xử lý */}
+          <div
+            className={`overflow-hidden text-left transition-all duration-300 ${
+              agent?.busy
+                ? "max-w-[140px] opacity-100"
+                : "max-w-0 opacity-0 group-hover:max-w-[130px] group-hover:opacity-100"
             }`}
-          />
-        </span>
-        <div className="text-left">
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs font-bold tracking-tight text-foreground">Mây Mây Co-Pilot</span>
-            <span className="rounded-md border border-primary-pastel bg-primary-light px-1.5 py-0.2 text-[10px] font-semibold text-primary">
-              ⌘K
-            </span>
+          >
+            <div className="flex items-center gap-1.5 whitespace-nowrap">
+              <span className="text-xs font-bold tracking-tight text-foreground">
+                Mây Mây AI
+              </span>
+              <kbd className="rounded border border-primary-pastel bg-surface px-1 py-0.2 font-mono text-[9px] font-semibold text-primary">
+                ⌘J
+              </kbd>
+            </div>
+            {agent?.busy && (
+              <p className="max-w-[130px] truncate text-[10px] text-primary">
+                {agent.status || "Đang xử lý…"}
+              </p>
+            )}
           </div>
-          <p className="max-w-[155px] truncate text-[11px] text-muted-foreground">
-            {agent?.busy ? agent.status || "Đang điều khiển màn hình…" : "Điều khiển màn hình · Học tập"}
-          </p>
-        </div>
-      </button>
+        </button>
+      )}
 
       {/* Floating Hannes-Lite Co-Pilot Studio Panel */}
       {loaded && (
@@ -146,10 +170,10 @@ function AssistantSurface() {
           aria-label="Mây Mây · Co-Pilot Studio"
           className={`${
             open ? "flex" : "hidden"
-          } fixed bottom-24 left-3 right-3 z-50 flex-col overflow-hidden rounded-3xl border border-primary-pastel bg-surface/95 shadow-[0_24px_64px_rgba(40,92,144,0.22)] backdrop-blur-xl transition-all duration-300 sm:left-auto sm:right-6 ${
+          } fixed bottom-4 left-3 right-3 z-50 flex-col overflow-hidden rounded-3xl border border-primary-pastel bg-surface/95 shadow-[0_24px_64px_rgba(40,92,144,0.22)] backdrop-blur-xl transition-all duration-300 sm:left-auto sm:right-4 ${
             expanded
-              ? "h-[min(820px,calc(100dvh-110px))] sm:w-[600px]"
-              : "h-[min(700px,calc(100dvh-116px))] sm:w-[460px]"
+              ? "h-[min(840px,calc(100dvh-90px))] sm:w-[600px]"
+              : "h-[min(720px,calc(100dvh-96px))] sm:w-[440px]"
           }`}
         >
           {/* Ambient Pastel Top Header */}

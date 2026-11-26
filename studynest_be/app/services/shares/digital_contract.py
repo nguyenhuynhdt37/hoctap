@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import datetime
+import hashlib
+import logging
 import math
 import secrets
 import time
@@ -36,9 +38,28 @@ from app.services.shares.contract_crypto import (
 )
 from app.services.shares.mailer import MailerService
 
-# Bộ nhớ OTP dự phòng trong tiến trình (TTL 5 phút) — đảm bảo chạy mượt cả khi Redis không bật
-_OTP_STORE: dict[str, tuple[str, float]] = {}
+logger = logging.getLogger(__name__)
+
+# Bộ nhớ OTP bảo mật (lưu SHA-256 hash, TTL 5 phút, cooldown 45s, tối đa 5 lần nhập sai)
+_OTP_STORE: dict[str, dict[str, Any]] = {}
 _OTP_TTL_SECONDS = 300
+_OTP_RESEND_COOLDOWN_SECONDS = 45
+_OTP_MAX_ATTEMPTS = 5
+
+
+def _hash_otp(cache_key: str, otp_code: str) -> str:
+    return hashlib.sha256(f"{cache_key}:{otp_code}".encode("utf-8")).hexdigest()
+
+
+def _mask_email(email: str) -> str:
+    if "@" not in email:
+        return email
+    local, domain = email.split("@", 1)
+    if len(local) <= 2:
+        masked_local = local[0] + "*" * max(1, len(local) - 1)
+    else:
+        masked_local = f"{local[:2]}{'*' * min(6, len(local) - 3)}{local[-1]}"
+    return f"{masked_local}@{domain}"
 
 
 def _fmt_money(value: float | int) -> str:
@@ -112,6 +133,70 @@ class DigitalContractService:
                 details=details or {},
             )
         )
+
+    # ============================================================
+    # 0. KIỂM TRA NHANH TRẠNG THÁI HỢP ĐỒNG KHUNG GIẢNG VIÊN
+    # ============================================================
+    async def get_master_contract_status_async(self, user: User) -> dict[str, Any]:
+        # Ưu tiên tìm bản đã đồng ký đủ 2 bên (countersigned) trước
+        countersigned = await self.db.scalar(
+            select(DigitalContracts)
+            .where(
+                DigitalContracts.party_b_user_id == user.id,
+                DigitalContracts.contract_type == "LECTURER_MASTER",
+                DigitalContracts.status == "countersigned",
+            )
+            .order_by(desc(DigitalContracts.countersigned_at), desc(DigitalContracts.signed_at))
+            .limit(1)
+        )
+        if countersigned:
+            return {
+                "has_signed_master": True,
+                "is_countersigned": True,
+                "is_pending_countersign": False,
+                "can_access_portal": True,
+                "contract_id": str(countersigned.id),
+                "contract_number": countersigned.contract_number,
+                "status": countersigned.status,
+                "signed_at": countersigned.signed_at,
+                "countersigned_at": countersigned.countersigned_at,
+            }
+
+        # Nếu chưa đồng ký, kiểm tra bản Bên B đã ký đang chờ Bên A đồng ký
+        pending = await self.db.scalar(
+            select(DigitalContracts)
+            .where(
+                DigitalContracts.party_b_user_id == user.id,
+                DigitalContracts.contract_type == "LECTURER_MASTER",
+                DigitalContracts.status == "signed",
+            )
+            .order_by(desc(DigitalContracts.signed_at))
+            .limit(1)
+        )
+        if pending:
+            return {
+                "has_signed_master": True,
+                "is_countersigned": False,
+                "is_pending_countersign": True,
+                "can_access_portal": False,
+                "contract_id": str(pending.id),
+                "contract_number": pending.contract_number,
+                "status": pending.status,
+                "signed_at": pending.signed_at,
+                "countersigned_at": None,
+            }
+
+        return {
+            "has_signed_master": False,
+            "is_countersigned": False,
+            "is_pending_countersign": False,
+            "can_access_portal": False,
+            "contract_id": None,
+            "contract_number": None,
+            "status": None,
+            "signed_at": None,
+            "countersigned_at": None,
+        }
 
     # ============================================================
     # 1. CHỨNG THƯ SỐ X.509 CHO GIẢNG VIÊN
@@ -223,6 +308,23 @@ class DigitalContractService:
         if code not in ("LECTURER_MASTER", "COURSE_PUBLISHING", "COURSE_PURCHASE"):
             raise HTTPException(400, "Loại hợp đồng không hợp lệ.")
 
+        # Với LECTURER_MASTER: mỗi giảng viên chỉ có 1 bản hợp đồng duy nhất
+        if code == "LECTURER_MASTER":
+            existing_master = await self.db.scalar(
+                select(DigitalContracts)
+                .where(
+                    DigitalContracts.party_b_user_id == user.id,
+                    DigitalContracts.contract_type == "LECTURER_MASTER",
+                    DigitalContracts.status != "revoked",
+                )
+                .order_by(desc(DigitalContracts.signed_at), desc(DigitalContracts.created_at))
+                .limit(1)
+            )
+            if existing_master:
+                return await self.get_contract_detail_async(
+                    existing_master.id, user, is_admin=False
+                )
+
         tpl = await self.db.scalar(
             select(ContractTemplates)
             .where(
@@ -241,6 +343,21 @@ class DigitalContractService:
         coin_vnd_rate = int(getattr(ps, "coin_vnd_rate", 10000) or 10000)
         hold_days = int(getattr(ps, "hold_days", 7) or 7)
         payout_min_balance = float(getattr(ps, "payout_min_balance", 100000) or 100000)
+        payout_schedule = str(getattr(ps, "payout_schedule", "mon-wed-fri") or "mon-wed-fri")
+        discount_max_percent = int(getattr(ps, "discount_max_percent", 90) or 90)
+        max_discounts_per_course = int(getattr(ps, "max_discounts_per_course", 2) or 2)
+        refund_max_courses = int(getattr(ps, "refund_max_courses_per_month", 3) or 3)
+        course_min_price = float(getattr(ps, "course_min_price", 10000) or 10000)
+        course_max_price = float(getattr(ps, "course_max_price", 20000000) or 20000000)
+        activation_fee_vnd = 1_000_000
+        activation_fee_coin = math.ceil(activation_fee_vnd / coin_vnd_rate)
+
+        schedule_vi = {
+            "mon-wed-fri": "Thứ 2, Thứ 4, Thứ 6 hàng tuần",
+            "daily": "Hàng ngày",
+            "weekly": "Hàng tuần",
+            "monthly": "Hàng tháng",
+        }.get(payout_schedule, payout_schedule)
 
         course: Courses | None = None
         if course_id:
@@ -280,12 +397,24 @@ class DigitalContractService:
             "lecturer_name": user.fullname or user.email,
             "lecturer_email": user.email,
             "signer_cccd": cccd_val,
+            "lecturer_address": ", ".join(
+                [p for p in [getattr(user, "district", None), getattr(user, "conscious", None)] if p]
+            )
+            or "Theo hồ sơ định danh điện tử",
             "platform_fee_pct": f"{platform_fee_pct:g}",
             "instructor_share_pct": f"{instructor_share_pct:g}",
             "coin_vnd_rate": _fmt_money(coin_vnd_rate),
             "hold_days": hold_days,
             "payout_min_balance": _fmt_money(payout_min_balance),
             "payout_min_coin": _fmt_money(math.ceil(payout_min_balance / coin_vnd_rate)),
+            "payout_schedule": schedule_vi,
+            "activation_fee_coin": _fmt_money(activation_fee_coin),
+            "activation_fee_vnd": _fmt_money(activation_fee_vnd),
+            "discount_max_percent": discount_max_percent,
+            "max_discounts_per_course": max_discounts_per_course,
+            "refund_max_courses_per_month": refund_max_courses,
+            "course_min_price": _fmt_money(course_min_price),
+            "course_max_price": _fmt_money(course_max_price),
             "course_title": course.title if course else "Toàn bộ khóa học thuộc sở hữu Giảng viên",
             "course_price_vnd": _fmt_money(course_price_vnd),
             "course_price_coin": _fmt_money(course_price_coin),
@@ -342,36 +471,54 @@ class DigitalContractService:
         if contract.status not in ("draft", "pending_otp"):
             raise HTTPException(400, "Hợp đồng không ở trạng thái chờ ký.")
 
-        otp_code = f"{secrets.randbelow(1_000_000):06d}"
+        now_ts = time.time()
         cache_key = f"{contract.id}:{user.id}"
-        _OTP_STORE[cache_key] = (otp_code, time.time() + _OTP_TTL_SECONDS)
+        existing = _OTP_STORE.get(cache_key)
+        if existing:
+            elapsed = now_ts - float(existing.get("last_sent_at", 0))
+            if elapsed < _OTP_RESEND_COOLDOWN_SECONDS:
+                wait_s = int(math.ceil(_OTP_RESEND_COOLDOWN_SECONDS - elapsed))
+                raise HTTPException(
+                    429,
+                    f"Vui lòng đợi {wait_s} giây trước khi yêu cầu gửi lại mã OTP.",
+                )
+
+        otp_code = f"{secrets.randbelow(1_000_000):06d}"
+
+        try:
+            mailer = MailerService()
+            await mailer.send_contract_signing_otp_email(
+                email=user.email,
+                fullname=user.fullname or user.email,
+                code=otp_code,
+                contract_number=contract.contract_number,
+                contract_title=contract.title,
+            )
+        except Exception as exc:
+            logger.exception("Không thể gửi email OTP ký hợp đồng cho %s: %s", user.email, exc)
+            raise HTTPException(
+                503,
+                "Hệ thống gửi Email xác thực tạm thời gián đoạn. Vui lòng thử lại sau ít phút.",
+            ) from exc
+
+        _OTP_STORE[cache_key] = {
+            "otp_hash": _hash_otp(cache_key, otp_code),
+            "expires_at": now_ts + _OTP_TTL_SECONDS,
+            "last_sent_at": now_ts,
+            "attempts": 0,
+        }
 
         contract.status = "pending_otp"
         await self._log_audit(contract.id, user.id, "otp_sent", ip=ip, ua=ua)
         await self.db.commit()
 
-        email_sent = False
-        try:
-            mailer = MailerService()
-            await mailer.send_login_otp_email(
-                user.email,
-                user.fullname or user.email,
-                otp_code,
-            )
-            email_sent = True
-        except Exception:
-            email_sent = False
-
-        # Trong môi trường local/dev nếu SMTP chưa bật, trả dev_otp_hint để test mượt mà
+        masked_email = _mask_email(user.email)
         return {
-            "message": (
-                f"Đã gửi mã OTP xác thực ký hợp đồng tới {user.email}."
-                if email_sent
-                else "Đã tạo mã OTP xác thực ký hợp đồng (chế độ thử nghiệm nội bộ)."
-            ),
-            "email_sent": email_sent,
+            "message": f"Đã gửi mã OTP 6 chữ số tới hộp thư {masked_email}.",
+            "email_sent": True,
+            "masked_email": masked_email,
             "expires_in_seconds": _OTP_TTL_SECONDS,
-            "dev_otp_hint": None if email_sent else otp_code,
+            "resend_cooldown_seconds": _OTP_RESEND_COOLDOWN_SECONDS,
         }
 
     # ============================================================
@@ -402,17 +549,30 @@ class DigitalContractService:
         if contract.status not in ("draft", "pending_otp"):
             raise HTTPException(400, "Hợp đồng đã được ký hoặc đã đóng.")
 
-        # 1. Xác thực OTP
+        # 1. Xác thực OTP (SHA-256 hash + giới hạn số lần nhập sai chống brute-force)
         cache_key = f"{contract.id}:{user.id}"
         stored = _OTP_STORE.get(cache_key)
         if not stored:
-            raise HTTPException(400, "Vui lòng bấm gửi mã OTP xác thực trước khi ký.")
-        expected_otp, expires_at = stored
-        if time.time() > expires_at:
+            raise HTTPException(400, "Vui lòng bấm gửi mã OTP xác thực qua Email trước khi ký.")
+        if time.time() > float(stored["expires_at"]):
             _OTP_STORE.pop(cache_key, None)
             raise HTTPException(400, "Mã OTP đã hết hạn. Vui lòng yêu cầu mã mới.")
-        if (otp_code or "").strip() != expected_otp:
-            raise HTTPException(400, "Mã OTP không chính xác.")
+        provided_otp = (otp_code or "").strip()
+        if not secrets.compare_digest(
+            _hash_otp(cache_key, provided_otp), str(stored["otp_hash"])
+        ):
+            stored["attempts"] = int(stored.get("attempts", 0)) + 1
+            remaining = _OTP_MAX_ATTEMPTS - stored["attempts"]
+            if remaining <= 0:
+                _OTP_STORE.pop(cache_key, None)
+                raise HTTPException(
+                    400,
+                    "Bạn đã nhập sai mã OTP quá 5 lần. Mã OTP đã bị hủy, vui lòng gửi lại mã mới.",
+                )
+            raise HTTPException(
+                400,
+                f"Mã OTP không chính xác (còn {remaining} lần thử).",
+            )
 
         clean_cccd = (signer_cccd or user.citizenship_identity or "").strip()
         if len(clean_cccd) < 9:
@@ -645,7 +805,8 @@ class DigitalContractService:
             else "Chưa ký"
         )
 
-        pdf_bytes = generate_signed_contract_pdf(
+        is_draft = contract.status not in ("signed", "countersigned")
+        pdf_bytes = await generate_signed_contract_pdf(
             contract_number=contract.contract_number,
             title=contract.title,
             rendered_content=contract.rendered_content,
@@ -657,9 +818,10 @@ class DigitalContractService:
             cert_serial=(contract.terms_snapshot or {}).get("cert_serial"),
             signature_image_data=contract.signature_image_data,
             verify_url=verify_url,
-            ca_private_key_pem=ca_key_pem,
-            ca_cert_pem=ca.certificate_pem,
+            ca_private_key_pem=None if is_draft else ca_key_pem,
+            ca_cert_pem=None if is_draft else ca.certificate_pem,
             is_countersigned=contract.status == "countersigned",
+            is_draft=is_draft,
         )
 
         await self._log_audit(contract.id, user.id, "pdf_downloaded", ip=ip, ua=ua)

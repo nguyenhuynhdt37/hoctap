@@ -254,36 +254,37 @@ const Login = () => {
     const error = cause as (AuthRequestError & { response?: { data?: { code?: string } } }) | undefined;
     const detail = error?.response?.data?.detail;
 
-    if (isDpopMode && method === "password" && error?.response?.data?.code === "invalid_token") {
-      setErrors((prev) => ({ ...prev, general: "Email hoặc mật khẩu không đúng" }));
-      return;
-    }
-
     if (isLoginErrorDetail(detail)) {
       handleErrorByCode(detail);
       return;
     }
 
-    if (!isDpopMode && (error?.status === 401 || error?.response?.status === 401)) {
-      const redirectParam =
-        redirectUrl !== "/"
-          ? `&redirect=${encodeURIComponent(redirectUrl)}`
-          : "";
-      router.push(
-        "/email_authentication?email=" +
-          encodeURIComponent(email) +
-          redirectParam
-      );
-    } else if (error?.status === 404 || error?.response?.status === 404) {
+    if (isDpopMode && method === "password" && error?.response?.data?.code === "invalid_token") {
       setErrors((prev) => ({
         ...prev,
-        general: "Tài khoản hoặc mật khẩu không đúng. Vui lòng kiểm tra lại.",
+        general: "Thông tin tài khoản hoặc mật khẩu không chính xác.",
+      }));
+      return;
+    }
+
+    if (
+      error?.status === 401 ||
+      error?.response?.status === 401 ||
+      error?.status === 404 ||
+      error?.response?.status === 404
+    ) {
+      setErrors((prev) => ({
+        ...prev,
+        general:
+          typeof detail === "string" && detail.trim()
+            ? detail
+            : "Thông tin tài khoản hoặc mật khẩu không chính xác.",
       }));
     } else {
       setErrors((prev) => ({
         ...prev,
         general:
-          typeof detail === "string"
+          typeof detail === "string" && detail.trim()
             ? detail
             : "Đã có lỗi xảy ra. Vui lòng thử lại sau.",
       }));
@@ -292,27 +293,45 @@ const Login = () => {
 
   const handleErrorByCode = (detail: LoginErrorDetail) => {
     switch (detail.error_code) {
-      case "INVALID_CREDENTIALS":
+      case "ACCOUNT_NOT_FOUND":
         setErrors((prev) => ({
           ...prev,
-          general: detail.message || "Email hoặc mật khẩu không đúng",
+          email:
+            detail.message ||
+            "Thông tin tài khoản không chính xác (Email chưa được đăng ký).",
+          general:
+            detail.message ||
+            "Thông tin tài khoản không chính xác (Email chưa được đăng ký trên hệ thống).",
         }));
         break;
 
-      case "EMAIL_NOT_VERIFIED":
-        if (detail.email) {
-          localStorage.setItem("pending_verify_email", detail.email);
+      case "INVALID_CREDENTIALS":
+        setErrors((prev) => ({
+          ...prev,
+          general:
+            detail.message ||
+            "Thông tin tài khoản hoặc mật khẩu không chính xác.",
+        }));
+        break;
+
+      case "EMAIL_NOT_VERIFIED": {
+        const targetVerifyEmail = detail.email || email.trim();
+        if (targetVerifyEmail) {
+          localStorage.setItem("pending_verify_email", targetVerifyEmail);
         }
         const redirectParam =
           redirectUrl !== "/"
             ? `&redirect=${encodeURIComponent(redirectUrl)}`
             : "";
+        const sentParam = detail.otp_sent ? "&sent=1" : "";
         router.push(
           "/email_authentication?email=" +
-            encodeURIComponent(detail.email || email) +
+            encodeURIComponent(targetVerifyEmail) +
+            sentParam +
             redirectParam
         );
         break;
+      }
 
       case "ACCOUNT_DELETED":
         setDialogState({

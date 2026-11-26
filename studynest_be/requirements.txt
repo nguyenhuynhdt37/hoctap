@@ -86,3 +86,8 @@ ddgs>=9,<10
 
 # Encrypt account-linked GitHub OAuth tokens at rest.
 cryptography
+
+# Digital Contract PKI X.509 & PAdES PDF Engine
+reportlab>=4.2.5
+pyhanko>=0.25.0
+qrcode>=8.0

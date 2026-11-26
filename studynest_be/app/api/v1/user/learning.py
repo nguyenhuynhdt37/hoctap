@@ -506,6 +506,28 @@ async def speaking_tts_inline(
     return Response(content=mp3_bytes, media_type="audio/mpeg")
 
 
+@router.post("/speaking/voice-ticket")
+async def speaking_voice_ticket(
+    response: Response,
+    authorization: AuthorizationService = Depends(AuthorizationService),
+):
+    from app.services.user.tutor_voice import issue_tutor_voice_ticket_async
+
+    ticket = await issue_tutor_voice_ticket_async(authorization)
+    response.headers["Cache-Control"] = "no-store"
+    return {"ticket": ticket}
+
+
+@router.websocket("/speaking/{lesson_id}/realtime")
+async def speaking_roleplay_realtime(
+    websocket: WebSocket,
+    lesson_id: uuid.UUID,
+):
+    from app.services.user.speaking_realtime import run_speaking_realtime
+
+    await run_speaking_realtime(websocket, lesson_id)
+
+
 @router.post("/speaking/{lesson_id}/turn")
 async def speaking_roleplay_turn(
     lesson_id: uuid.UUID,

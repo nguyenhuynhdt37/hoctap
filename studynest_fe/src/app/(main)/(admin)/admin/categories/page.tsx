@@ -1,7 +1,5 @@
-import Categories from "@/components/admin/categories";
+import { redirect } from "next/navigation";
 
-const CategoriesPage = () => {
-  return <Categories />;
-};
-
-export default CategoriesPage;
+export default function AdminCategoriesRedirectPage() {
+  redirect("/admin/catalog");
+}

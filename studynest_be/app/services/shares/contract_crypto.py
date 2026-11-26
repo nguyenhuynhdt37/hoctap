@@ -43,46 +43,88 @@ from reportlab.platypus import (
 from app.core.settings import settings
 
 _FONT_REGISTERED = False
-_FONT_REGULAR = "Helvetica"
-_FONT_BOLD = "Helvetica-Bold"
+_FONT_REGULAR = "Times-Roman"
+_FONT_BOLD = "Times-Bold"
+_FONT_ITALIC = "Times-Italic"
 
 
-def _ensure_vietnamese_fonts() -> tuple[str, str]:
-    """Đăng ký font Unicode hỗ trợ 100% tiếng Việt cho ReportLab."""
-    global _FONT_REGISTERED, _FONT_REGULAR, _FONT_BOLD
+def _ensure_vietnamese_fonts() -> tuple[str, str, str]:
+    """Đăng ký bộ font Times New Roman chuẩn hợp đồng Việt Nam (Nghị định 30/2020/NĐ-CP)."""
+    global _FONT_REGISTERED, _FONT_REGULAR, _FONT_BOLD, _FONT_ITALIC
     if _FONT_REGISTERED:
-        return _FONT_REGULAR, _FONT_BOLD
+        return _FONT_REGULAR, _FONT_BOLD, _FONT_ITALIC
 
     candidates_regular = [
+        "/System/Library/Fonts/Supplemental/Times New Roman.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf",
+        "/usr/share/fonts/truetype/liberation2/LiberationSerif-Regular.ttf",
         "/Library/Fonts/Arial Unicode.ttf",
-        "/System/Library/Fonts/Supplemental/Arial.ttf",
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf",
     ]
     candidates_bold = [
+        "/System/Library/Fonts/Supplemental/Times New Roman Bold.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf",
+        "/usr/share/fonts/truetype/liberation2/LiberationSerif-Bold.ttf",
         "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
-        "/Library/Fonts/Arial Unicode.ttf",
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf",
+    ]
+    candidates_italic = [
+        "/System/Library/Fonts/Supplemental/Times New Roman Italic.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSerif-Italic.ttf",
+        "/usr/share/fonts/truetype/liberation2/LiberationSerif-Italic.ttf",
+        "/System/Library/Fonts/Supplemental/Arial Italic.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Italic.ttf",
+    ]
+    candidates_bold_italic = [
+        "/System/Library/Fonts/Supplemental/Times New Roman Bold Italic.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSerif-BoldItalic.ttf",
+        "/usr/share/fonts/truetype/liberation2/LiberationSerif-BoldItalic.ttf",
+        "/System/Library/Fonts/Supplemental/Arial Bold Italic.ttf",
     ]
 
     reg_path = next((p for p in candidates_regular if Path(p).exists()), None)
     bold_path = next((p for p in candidates_bold if Path(p).exists()), reg_path)
+    italic_path = next((p for p in candidates_italic if Path(p).exists()), reg_path)
+    bi_path = next((p for p in candidates_bold_italic if Path(p).exists()), bold_path)
 
     if reg_path:
         try:
-            pdfmetrics.registerFont(TTFont("MayMayVN", reg_path))
-            _FONT_REGULAR = "MayMayVN"
+            pdfmetrics.registerFont(TTFont("MMTimes", reg_path))
+            _FONT_REGULAR = "MMTimes"
+        except Exception:
+            pass
+    if bold_path:
+        try:
+            pdfmetrics.registerFont(TTFont("MMTimesBold", bold_path))
+            _FONT_BOLD = "MMTimesBold"
+        except Exception:
+            _FONT_BOLD = _FONT_REGULAR
+    if italic_path:
+        try:
+            pdfmetrics.registerFont(TTFont("MMTimesItalic", italic_path))
+            _FONT_ITALIC = "MMTimesItalic"
+        except Exception:
+            _FONT_ITALIC = _FONT_REGULAR
+    if bi_path:
+        try:
+            pdfmetrics.registerFont(TTFont("MMTimesBoldItalic", bi_path))
         except Exception:
             pass
 
-    if bold_path:
+    if _FONT_REGULAR == "MMTimes":
         try:
-            pdfmetrics.registerFont(TTFont("MayMayVNBold", bold_path))
-            _FONT_BOLD = "MayMayVNBold"
+            pdfmetrics.registerFontFamily(
+                "MMTimes",
+                normal="MMTimes",
+                bold=_FONT_BOLD,
+                italic=_FONT_ITALIC,
+                boldItalic="MMTimesBoldItalic" if bi_path else _FONT_BOLD,
+            )
         except Exception:
-            _FONT_BOLD = _FONT_REGULAR
+            pass
 
     _FONT_REGISTERED = True
-    return _FONT_REGULAR, _FONT_BOLD
+    return _FONT_REGULAR, _FONT_BOLD, _FONT_ITALIC
 
 
 def _platform_secret_bytes() -> bytes:
@@ -383,7 +425,7 @@ def _build_qr_png(url: str) -> io.BytesIO:
     return buf
 
 
-def generate_signed_contract_pdf(
+async def generate_signed_contract_pdf(
     *,
     contract_number: str,
     title: str,
@@ -399,16 +441,17 @@ def generate_signed_contract_pdf(
     ca_private_key_pem: bytes | None = None,
     ca_cert_pem: str | None = None,
     is_countersigned: bool = False,
+    is_draft: bool = False,
 ) -> bytes:
-    """Sinh PDF chuẩn A4 tiếng Việt và nhúng chữ ký số PAdES (PKCS#7) bằng pyHanko."""
-    font_reg, font_bold = _ensure_vietnamese_fonts()
+    """Sinh PDF chuẩn A4 tiếng Việt (Times New Roman + Bảng biểu) và nhúng chữ ký số PAdES."""
+    font_reg, font_bold, font_italic = _ensure_vietnamese_fonts()
     pdf_buf = io.BytesIO()
 
     doc = SimpleDocTemplate(
         pdf_buf,
         pagesize=A4,
-        leftMargin=20 * mm,
-        rightMargin=20 * mm,
+        leftMargin=22 * mm,
+        rightMargin=18 * mm,
         topMargin=18 * mm,
         bottomMargin=18 * mm,
         title=f"{contract_number} - {title}",
@@ -420,79 +463,186 @@ def generate_signed_contract_pdf(
         "MMCenterBold",
         parent=styles["Normal"],
         fontName=font_bold,
-        fontSize=11,
-        leading=15,
+        fontSize=12,
+        leading=16,
         alignment=1,
-        textColor=colors.HexColor("#18314F"),
+        textColor=colors.black,
     )
     style_center_sub = ParagraphStyle(
         "MMCenterSub",
         parent=styles["Normal"],
-        fontName=font_reg,
-        fontSize=9.5,
-        leading=13,
+        fontName=font_bold,
+        fontSize=11,
+        leading=15,
         alignment=1,
-        textColor=colors.HexColor("#4B6482"),
+        textColor=colors.black,
+    )
+    style_italic_note = ParagraphStyle(
+        "MMItalicNote",
+        parent=styles["Normal"],
+        fontName=font_italic,
+        fontSize=10,
+        leading=14,
+        alignment=0,
+        textColor=colors.HexColor("#1F2937"),
     )
     style_title = ParagraphStyle(
         "MMTitle",
         parent=styles["Heading1"],
         fontName=font_bold,
         fontSize=14,
-        leading=20,
+        leading=19,
         alignment=1,
         spaceBefore=8,
         spaceAfter=4,
-        textColor=colors.HexColor("#1D4E89"),
+        textColor=colors.black,
     )
     style_heading = ParagraphStyle(
         "MMHeading",
         parent=styles["Heading2"],
         fontName=font_bold,
-        fontSize=10.5,
-        leading=15,
-        spaceBefore=8,
-        spaceAfter=3,
-        textColor=colors.HexColor("#18314F"),
+        fontSize=11.5,
+        leading=16,
+        spaceBefore=10,
+        spaceAfter=4,
+        textColor=colors.black,
     )
     style_body = ParagraphStyle(
         "MMBody",
         parent=styles["Normal"],
         fontName=font_reg,
+        fontSize=11,
+        leading=16,
+        alignment=4,  # Justify
+        spaceAfter=3.5,
+        textColor=colors.black,
+    )
+    style_table_head = ParagraphStyle(
+        "MMTableHead",
+        parent=styles["Normal"],
+        fontName=font_bold,
         fontSize=9.5,
-        leading=14.5,
-        spaceAfter=3,
-        textColor=colors.HexColor("#1F2937"),
+        leading=13,
+        textColor=colors.black,
+    )
+    style_table_cell = ParagraphStyle(
+        "MMTableCell",
+        parent=styles["Normal"],
+        fontName=font_reg,
+        fontSize=9.5,
+        leading=13.5,
+        textColor=colors.black,
     )
     style_stamp = ParagraphStyle(
         "MMStamp",
         parent=styles["Normal"],
         fontName=font_reg,
-        fontSize=8,
-        leading=11.5,
-        textColor=colors.HexColor("#1D4E89"),
+        fontSize=8.5,
+        leading=12,
+        textColor=colors.black,
     )
+
+    def _esc(txt: str) -> str:
+        return (
+            txt.replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+        )
 
     story: list[Any] = [
         Paragraph("CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM", style_center_bold),
         Paragraph("Độc lập - Tự do - Hạnh phúc", style_center_sub),
-        Paragraph("────────── ✦ ──────────", style_center_sub),
+        Paragraph("───────────────", style_center_sub),
         Spacer(1, 6),
-        Paragraph(title.upper(), style_title),
-        Paragraph(f"Số hợp đồng điện tử: <b>{contract_number}</b>", style_center_sub),
-        Spacer(1, 10),
+        Paragraph(_esc(title.upper()), style_title),
+        Paragraph(f"Số: <b>{_esc(contract_number)}</b>", style_center_sub),
     ]
 
-    for raw_line in rendered_content.splitlines():
-        line = raw_line.strip()
-        if not line:
-            story.append(Spacer(1, 4))
-            continue
-        safe = (
-            line.replace("&", "&amp;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;")
+    if is_draft:
+        story.append(Spacer(1, 4))
+        story.append(
+            Paragraph(
+                "<i>(BẢN THẢO XEM TRƯỚC — CHƯA ĐƯỢC KÝ ĐIỆN TỬ &amp; CHƯA CÓ GIÁ TRỊ PHÁP LÝ)</i>",
+                ParagraphStyle(
+                    "MMDraftBanner",
+                    parent=style_italic_note,
+                    alignment=1,
+                    textColor=colors.HexColor("#7F1D1D"),
+                ),
+            )
         )
+
+    story.append(Spacer(1, 8))
+    story.append(
+        Paragraph(
+            "- Căn cứ Bộ luật Dân sự nước Cộng hòa Xã hội Chủ nghĩa Việt Nam hiện hành;<br/>"
+            "- Căn cứ Luật Giao dịch điện tử số 20/2023/QH15 về giá trị pháp lý của hợp đồng và chữ ký điện tử;<br/>"
+            "- Căn cứ nhu cầu và năng lực hợp tác giữa Nền tảng Giáo dục Mây Mây và Giảng viên / Đối tác.",
+            style_italic_note,
+        )
+    )
+    story.append(Spacer(1, 8))
+
+    # Parse toàn văn + bảng Markdown (| col1 | col2 |) thành ReportLab Flowables
+    lines = rendered_content.splitlines()
+    idx = 0
+    usable_width = 170 * mm
+    while idx < len(lines):
+        raw_line = lines[idx].strip()
+        if not raw_line:
+            story.append(Spacer(1, 3))
+            idx += 1
+            continue
+
+        # Phát hiện bảng Markdown
+        if raw_line.startswith("|") and raw_line.endswith("|"):
+            table_lines: list[str] = []
+            while idx < len(lines) and lines[idx].strip().startswith("|") and lines[idx].strip().endswith("|"):
+                table_lines.append(lines[idx].strip())
+                idx += 1
+
+            parsed_rows: list[list[str]] = []
+            for tl in table_lines:
+                cells = [c.strip() for c in tl.strip("|").split("|")]
+                # Bỏ dòng phân cách |---|---|
+                if all(set(c.replace(":", "").replace("-", "").strip()) == set() for c in cells):
+                    continue
+                parsed_rows.append(cells)
+
+            if parsed_rows:
+                col_count = max(len(r) for r in parsed_rows)
+                col_widths = [usable_width / col_count] * col_count
+                if col_count == 2:
+                    col_widths = [56 * mm, 114 * mm]
+                elif col_count == 3:
+                    col_widths = [48 * mm, 52 * mm, 70 * mm]
+
+                rl_rows = []
+                for r_i, row in enumerate(parsed_rows):
+                    padded = row + [""] * (col_count - len(row))
+                    cell_style = style_table_head if r_i == 0 else style_table_cell
+                    rl_rows.append([Paragraph(_esc(c), cell_style) for c in padded])
+
+                tbl = Table(rl_rows, colWidths=col_widths, repeatRows=1)
+                tbl.setStyle(
+                    TableStyle(
+                        [
+                            ("GRID", (0, 0), (-1, -1), 0.6, colors.black),
+                            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#F3F4F6")),
+                            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                            ("TOPPADDING", (0, 0), (-1, -1), 5),
+                            ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+                            ("LEFTPADDING", (0, 0), (-1, -1), 6),
+                            ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+                        ]
+                    )
+                )
+                story.append(Spacer(1, 4))
+                story.append(tbl)
+                story.append(Spacer(1, 6))
+            continue
+
+        safe = _esc(raw_line)
         if safe.startswith("## ") or safe.startswith("### "):
             clean = safe.lstrip("#").strip()
             story.append(Paragraph(clean, style_heading))
@@ -500,6 +650,7 @@ def generate_signed_contract_pdf(
             story.append(Paragraph(f"• {safe[2:]}", style_body))
         else:
             story.append(Paragraph(safe, style_body))
+        idx += 1
 
     story.append(Spacer(1, 14))
 
@@ -562,7 +713,7 @@ def generate_signed_contract_pdf(
 
     # Footer QR + SHA-256 Verification Strip
     qr_buf = _build_qr_png(verify_url)
-    qr_img = RLImage(ImageReader(qr_buf), width=22 * mm, height=22 * mm)
+    qr_img = RLImage(qr_buf, width=22 * mm, height=22 * mm)
     hash_display = document_hash or "Chưa đóng dấu"
     verify_info = Paragraph(
         f"<b>XÁC THỰC TÍNH TOÀN VẸN ĐIỆN TỬ</b><br/>"
@@ -618,7 +769,7 @@ def generate_signed_contract_pdf(
                     location="May May Education Platform (Vietnam)",
                     subfilter=SigSeedSubFilter.PADES,
                 )
-                signed_out = signers.sign_pdf(writer, meta, signer=cms_signer)
+                signed_out = await signers.async_sign_pdf(writer, meta, signer=cms_signer)
                 return signed_out.getvalue()
             finally:
                 if key_tmp and os.path.exists(key_tmp):

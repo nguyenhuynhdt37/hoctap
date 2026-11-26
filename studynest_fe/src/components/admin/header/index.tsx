@@ -12,11 +12,13 @@ import { useEffect, useMemo, useRef, useState, type ComponentType } from "react"
 import {
   ArrowLeftRight,
   Banknote,
+  BookOpen,
   ChevronRight,
   Command,
   Compass,
   CornerDownLeft,
   ExternalLink,
+  FileText,
   Folder,
   GraduationCap,
   LogOut,
@@ -52,6 +54,10 @@ const ROUTE_MAP: Array<{ prefix: string; exact?: boolean; meta: RouteMeta }> = [
     meta: { title: "Đài Quan Sát", section: "Tổng quan", icon: Compass },
   },
   {
+    prefix: "/admin/courses",
+    meta: { title: "Kiểm duyệt Khóa học", section: "Học thuật", icon: BookOpen },
+  },
+  {
     prefix: "/admin/catalog",
     meta: { title: "Khối lớp & Môn học", section: "Học thuật", icon: Folder },
   },
@@ -62,6 +68,10 @@ const ROUTE_MAP: Array<{ prefix: string; exact?: boolean; meta: RouteMeta }> = [
   {
     prefix: "/admin/lecturers",
     meta: { title: "Giảng viên", section: "Con người", icon: GraduationCap },
+  },
+  {
+    prefix: "/admin/contracts",
+    meta: { title: "Hợp đồng Điện tử", section: "Pháp lý & PKI", icon: FileText },
   },
   {
     prefix: "/admin/roles",
@@ -114,6 +124,15 @@ const COMMAND_ENTRIES: CommandEntry[] = [
     icon: Compass,
   },
   {
+    id: "courses",
+    title: "Kiểm duyệt & Xem trước Khóa học",
+    hint: "Thẩm định video, bài tập tương tác & phê duyệt lên sàn",
+    group: "Điều hướng nhanh",
+    href: "/admin/courses",
+    keywords: "courses khoa hoc phe duyet review preview video quiz",
+    icon: BookOpen,
+  },
+  {
     id: "catalog",
     title: "Khối lớp & Môn học",
     hint: "Curriculum Studio · Ma trận môn học",
@@ -148,6 +167,15 @@ const COMMAND_ENTRIES: CommandEntry[] = [
     href: "/admin/lecturers",
     keywords: "lecturer giang vien doi tac",
     icon: GraduationCap,
+  },
+  {
+    id: "contracts",
+    title: "Hợp đồng Điện tử & PKI",
+    hint: "Quản lý hợp đồng số, đồng ký CA & kiểm toán SHA-256",
+    group: "Con người",
+    href: "/admin/contracts",
+    keywords: "contract hop dong chu ky dien tu pki x509 pades",
+    icon: FileText,
   },
   {
     id: "roles",

@@ -127,7 +127,7 @@ const Footer = () => {
       </SectionShell>
 
       <div className="border-t border-border">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-6 gap-y-3 px-5 py-5 text-sm text-foreground/85 sm:px-8">
+        <div className="mx-auto flex w-full max-w-none flex-wrap items-center justify-between gap-x-6 gap-y-3 px-3 py-5 text-sm text-foreground/85 sm:px-5 lg:px-8">
           <p>© 2026 Mây Mây</p>
           <span className="inline-flex items-center gap-2 rounded-full border border-primary-pastel bg-primary-light px-3 py-1.5 text-xs font-semibold text-primary">
             <Globe aria-hidden="true" className="size-4" />

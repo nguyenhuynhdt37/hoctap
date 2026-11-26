@@ -7,7 +7,9 @@ from app.core.redis import get_redis
 
 VERIFY_EMAIL = "verify-email"
 LOGIN = "login"
+RESET_PASSWORD = "reset-password"
 OTP_TTL = 600
+RESET_PASSWORD_TTL = 900
 
 # A fixed counter lifetime bounds lockouts even during sustained traffic.
 # Individual challenges have a hard ceiling, independent of the source IP.

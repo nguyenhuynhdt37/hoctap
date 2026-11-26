@@ -32,6 +32,14 @@ const skyCopy = {
     title: "Thêm một bước để chạm mây",
     mobileTitle: "Sắp tới lớp học rồi!",
   },
+  forgot: {
+    title: "Khôi phục quyền truy cập an toàn",
+    mobileTitle: "Khôi phục mật khẩu",
+  },
+  reset: {
+    title: "Thiết lập mật khẩu mới vững chắc",
+    mobileTitle: "Tạo mật khẩu mới",
+  },
 } as const;
 
 const benefits = [

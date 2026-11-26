@@ -220,12 +220,12 @@ async def github_disconnect(service: AgentService = Depends(agent_service)):
 
 
 from pydantic import BaseModel, Field, ConfigDict, field_validator
-from app.core.xai_voice import VoiceName, normalize_voice
+from app.core.qwen_voice import VoiceName, normalize_voice
 
 
 class VoicePreferences(BaseModel):
     model_config = ConfigDict(extra='forbid')
-    voice: VoiceName = 'eve'
+    voice: VoiceName = 'Tina'
     speed: float = Field(default=1, ge=.75, le=1.25)
     mic_threshold: float = Field(default=.012, ge=.008, le=.045)
 

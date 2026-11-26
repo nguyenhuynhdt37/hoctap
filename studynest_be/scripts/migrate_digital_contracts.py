@@ -24,31 +24,66 @@ from app.services.shares.contract_crypto import generate_platform_ca_cert  # noq
 DEFAULT_TEMPLATES = [
     {
         "code": "LECTURER_MASTER",
-        "version": "v1.0",
+        "version": "v1.1",
         "title": "Hợp đồng Khung Hợp tác Giảng viên Điện tử",
-        "description": "Hợp đồng khung pháp lý giữa Nền tảng Mây Mây và Giảng viên khi kích hoạt tư cách đối tác giảng dạy.",
-        "body_markdown": """## ĐIỀU 1. CÁC BÊN THAM GIA HỢP ĐỒNG
-BÊN A (Nền tảng cung cấp hạ tầng giáo dục): Nền tảng Học tập Trực tuyến Mây Mây (May May Education Platform).
-BÊN B (Giảng viên / Đối tác nội dung): {{lecturer_name}} — Email: {{lecturer_email}} — CCCD/Định danh: {{signer_cccd}}.
-Ngày lập hợp đồng: {{signed_date}} · Số hợp đồng: {{contract_number}}.
+        "description": "Hợp đồng khung pháp lý đầy đủ 9 Điều khoản và 3 Bảng biểu chuẩn hệ thống Mây Mây giữa Nền tảng và Giảng viên.",
+        "body_markdown": """Hôm nay, ngày {{signed_date}}, tại Hệ thống Giao dịch Điện tử Mây Mây (May May Education Platform), chúng tôi gồm có:
 
-## ĐIỀU 2. PHẠM VI HỢP TÁC & QUYỀN SỞ HỮU TRÍ TUỆ
-- Bên B cam kết toàn bộ giáo trình, bài giảng video, câu hỏi trắc nghiệm và tài liệu đăng tải lên Mây Mây thuộc quyền sở hữu hợp pháp của Bên B và không xâm phạm quyền tác giả của bất kỳ bên thứ ba nào.
-- Bên B cấp cho Bên A quyền không độc quyền để lưu trữ, phân phối, hiển thị và quảng bá khóa học của Bên B trên hệ thống Mây Mây.
+## ĐIỀU 1. THÔNG TIN PHÁP LÝ CÁC BÊN THAM GIA HỢP ĐỒNG
+| Hạng mục | BÊN A (Nền tảng Mây Mây) | BÊN B (Giảng viên / Đối tác) |
+| --- | --- | --- |
+| Tên tổ chức / Cá nhân | Nền tảng Học tập Trực tuyến Mây Mây | {{lecturer_name}} |
+| Thư điện tử định danh | admin@maymay.edu.vn | {{lecturer_email}} |
+| Giấy tờ pháp lý / CCCD | Chứng thư Mây Mây Digital CA (X.509) | {{signer_cccd}} |
+| Địa chỉ liên hệ | Hệ thống Giáo dục Trực tuyến Việt Nam | {{lecturer_address}} |
+| Vai trò hợp tác | Đơn vị cung cấp hạ tầng, thanh toán & phân phối | Tác giả, chủ sở hữu nội dung & giảng dạy |
 
-## ĐIỀU 3. TỶ LỆ CHIA SẺ DOANH THU & KINH TẾ COIN
-- Tỷ lệ chia sẻ doanh thu áp dụng tại thời điểm ký: Giảng viên hưởng {{instructor_share_pct}}% và Phí hạ tầng Nền tảng là {{platform_fee_pct}}%.
-- Tỷ giá quy đổi đơn vị thanh toán Coin: 1 Coin = {{coin_vnd_rate}} VNĐ.
-- Doanh thu từ học viên được giữ đối soát trong thời gian {{hold_days}} ngày để đảm bảo quyền lợi hoàn tiền minh bạch trước khi ghi có vào số dư Coin thật khả dụng của Bên B.
-- Hạn mức rút tiền tối thiểu: {{payout_min_balance}} VNĐ (tương đương {{payout_min_coin}} Coin).
+## ĐIỀU 2. ĐỐI TƯỢNG VÀ PHẠM VI HỢP TÁC
+- Bên A cung cấp cho Bên B hạ tầng công nghệ giảng dạy (Studio quản lý bài giảng Video, hệ thống AI tạo bài tập tương tác Quiz/Listening/Speaking/Flashcards, cổng thanh toán Coin và hệ thống đối soát doanh thu).
+- Bên B đăng tải, giảng dạy, cập nhật nội dung khóa học và chịu trách nhiệm toàn diện về tính chính xác, tính hợp pháp và bản quyền của toàn bộ học liệu đăng tải.
 
-## ĐIỀU 4. CHÍNH SÁCH HOÀN TIỀN & KHUYẾN MÃI
-- Bên B đồng ý tuân thủ quy trình xử lý hoàn tiền của Mây Mây khi học viên có yêu cầu hợp lệ trong thời hạn quy định.
-- Mã giảm giá do Bên B phát hành được chịu sự giám sát minh bạch của Bên A nhằm bảo vệ trải nghiệm học viên.
+## ĐIỀU 3. BẢNG BIỂU TÀI CHÍNH, CHIA SẺ DOANH THU & KINH TẾ COIN
+Toàn bộ thông số tài chính dưới đây được trích xuất trực tiếp từ Cấu hình Hệ thống Mây Mây tại thời điểm ký kết ({{signed_date}}):
 
-## ĐIỀU 5. HIỆU LỰC CHỮ KÝ ĐIỆN TỬ
-- Hai bên công nhận giá trị pháp lý của chữ ký điện tử theo chuẩn PKI X.509 / PAdES và mã băm SHA-256 gắn liền với hợp đồng này theo Luật Giao dịch điện tử 2023.
-- Hợp đồng có hiệu lực kể từ thời điểm Bên B hoàn tất ký số và được lưu trữ bất biến trên hệ thống Mây Mây.""",
+| Khoản mục tài chính | Giá trị áp dụng | Ghi chú & Cơ chế thực hiện |
+| --- | --- | --- |
+| Phí kích hoạt Giảng viên | {{activation_fee_coin}} Coin (≈ {{activation_fee_vnd}} VNĐ) | Thu 01 lần duy nhất, hiệu lực trọn đời |
+| Tỷ lệ doanh thu Bên B (Giảng viên) | {{instructor_share_pct}}% doanh thu thực thu | Ghi có tự động vào sổ cái sau khi hết thời hạn đối soát |
+| Phí hạ tầng Bên A (Nền tảng) | {{platform_fee_pct}}% doanh thu thực thu | Bao gồm hạ tầng máy chủ, AI, thanh toán & hỗ trợ |
+| Tỷ giá quy đổi đơn vị Coin | 1 Coin = {{coin_vnd_rate}} VNĐ | Áp dụng thống nhất cho nạp, thanh toán và rút Coin |
+| Thời gian tạm giữ đối soát | {{hold_days}} ngày kể từ khi thanh toán | Bảo đảm xử lý yêu cầu hoàn tiền hợp lệ của học viên |
+| Hạn mức rút tiền tối thiểu | {{payout_min_coin}} Coin (≈ {{payout_min_balance}} VNĐ) | Rút từ số dư Coin thật khả dụng về tài khoản nhận tiền |
+| Lịch xử lý giải ngân | {{payout_schedule}} | Admin đối soát ví và phê duyệt giải ngân minh bạch |
+| Khung giá niêm yết khóa học | {{course_min_price}} – {{course_max_price}} VNĐ | Bên B chủ động định giá trong khung cho phép |
+
+## ĐIỀU 4. CHÍNH SÁCH KHUYẾN MÃI, MÃ GIẢM GIÁ VÀ HOÀN TIỀN
+- Bên B được chủ động phát hành tối đa {{max_discounts_per_course}} mã giảm giá đang hoạt động cho mỗi khóa học với mức giảm tối đa {{discount_max_percent}}%. Bên A có quyền giám sát, tạm tắt mã giảm giá nếu phát hiện dấu hiệu gian lận hoặc gây ảnh hưởng trải nghiệm học viên.
+- Trong thời hạn đối soát {{hold_days}} ngày, nếu học viên gửi yêu cầu hoàn tiền hợp lệ (tối đa {{refund_max_courses_per_month}} khóa/tháng theo chính sách nền tảng) và được Bên A phê duyệt, phần doanh thu tạm giữ tương ứng của đơn hàng đó sẽ được hoàn trả cho học viên.
+
+## ĐIỀU 5. QUYỀN SỞ HỮU TRÍ TUỆ VÀ BẢN QUYỀN HỌC LIỆU
+- Bên B khẳng định là chủ sở hữu hợp pháp hoặc có đầy đủ quyền cấp phép đối với toàn bộ video, giáo trình, hình ảnh, âm thanh và bài tập đăng tải lên Mây Mây.
+- Bên B cấp cho Bên A quyền không độc quyền để lưu trữ, mã hóa truyền phát, hiển thị và quảng bá khóa học của Bên B trên hệ thống Mây Mây trong suốt thời gian khóa học được mở bán.
+
+## ĐIỀU 6. BẢNG QUYỀN LỢI, NGHĨA VỤ VÀ CHẾ TÀI XỬ LÝ VI PHẠM
+| Hạng mục | Nghĩa vụ cam kết | Biện pháp xử lý khi vi phạm |
+| --- | --- | --- |
+| Bản quyền nội dung | Không sao chép trái phép, không vi phạm thuần phong mỹ tục | Gỡ khóa học ngay lập tức; Bên B chịu trách nhiệm pháp lý |
+| Chất lượng giảng dạy | Đảm bảo đầy đủ lộ trình, hỗ trợ giải đáp học viên | Tạm dừng phân phối hoặc yêu cầu hoàn thiện nội dung |
+| Gian lận giao dịch / Voucher | Không tự mua/tạo đơn ảo trục lợi Coin thưởng hoặc trợ giá | Khóa tài khoản vĩnh viễn và đóng băng số dư vi phạm |
+| Bảo mật dữ liệu học viên | Không thu thập, mua bán thông tin cá nhân học viên trái phép | Thu hồi hợp đồng, chấm dứt hợp tác & bồi thường thiệt hại |
+
+## ĐIỀU 7. NGHĨA VỤ THUẾ VÀ KÊ KHAI THU NHẬP
+- Mỗi bên tự chịu trách nhiệm kê khai và nộp các khoản thuế phát sinh từ phần doanh thu thực nhận của mình theo quy định pháp luật thuế hiện hành tại Việt Nam.
+- Hệ thống Mây Mây cung cấp đầy đủ lịch sử giao dịch, chứng từ rút tiền và bản PDF hợp đồng điện tử để phục vụ công tác đối soát và kê khai.
+
+## ĐIỀU 8. HIỆU LỰC CHỮ KÝ ĐIỆN TỬ VÀ TÍNH TOÀN VẸN DỮ LIỆU
+- Hai bên thống nhất công nhận giá trị pháp lý của hợp đồng điện tử này theo Luật Giao dịch điện tử số 20/2023/QH15.
+- Hợp đồng được bảo vệ bởi 03 lớp mật mã: (1) Mã băm toàn văn SHA-256, (2) Chữ ký số bất đối xứng RSA-PSS theo chứng thư X.509 định danh Bên B, và (3) Dấu niêm phong HMAC-SHA256 kèm chữ ký số PAdES nhúng trực tiếp trong tệp PDF.
+- Bất kỳ sự thay đổi nào dù chỉ một ký tự sau thời điểm ký sẽ làm sai lệch mã băm SHA-256 và bị hệ thống xác thực công khai cảnh báo ngay lập tức.
+
+## ĐIỀU 9. ĐIỀU KHOẢN THI HÀNH VÀ GIẢI QUYẾT TRANH CHẤP
+- Hợp đồng có hiệu lực kể từ thời điểm Bên B hoàn tất ký điện tử và thanh toán phí kích hoạt {{activation_fee_coin}} Coin.
+- Mọi tranh chấp phát sinh được ưu tiên giải quyết thông qua thương lượng trên cơ sở hồ sơ nhật ký pháp lý (Audit Trail) lưu trữ trên hệ thống; trường hợp không đạt được thỏa thuận sẽ được đưa ra Tòa án có thẩm quyền tại Việt Nam giải quyết.""",
     },
     {
         "code": "COURSE_PUBLISHING",
@@ -152,18 +187,30 @@ async def run_migration():
         else:
             print(f"  ✔ Mây Mây Digital CA đã tồn tại (Serial: {ca.serial_number})")
 
-        # 2. Seed 3 mẫu hợp đồng chuẩn
+        # 2. Seed / nâng cấp 3 mẫu hợp đồng chuẩn
         seeded = 0
         for tpl in DEFAULT_TEMPLATES:
-            existing = await db.scalar(
-                select(ContractTemplates).where(
-                    ContractTemplates.code == tpl["code"],
-                    ContractTemplates.version == tpl["version"],
+            existing_all = (
+                await db.execute(
+                    select(ContractTemplates).where(
+                        ContractTemplates.code == tpl["code"]
+                    )
                 )
-            )
-            if not existing:
+            ).scalars().all()
+            found = None
+            for old in existing_all:
+                if old.version == tpl["version"]:
+                    found = old
+                else:
+                    old.is_active = False
+            if not found:
                 db.add(ContractTemplates(**tpl, is_active=True))
                 seeded += 1
+            else:
+                found.title = tpl["title"]
+                found.description = tpl["description"]
+                found.body_markdown = tpl["body_markdown"]
+                found.is_active = True
         await db.commit()
         print(f"  ✔ Seeded {seeded} mẫu hợp đồng mới (tổng {len(DEFAULT_TEMPLATES)} mẫu chuẩn).")
 

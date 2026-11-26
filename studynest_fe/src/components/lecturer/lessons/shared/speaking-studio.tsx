@@ -9,7 +9,6 @@ import { Alert } from "@/components/ui/states";
 import { formatApiError } from "@/lib/utils";
 import api from "@/lib/utils/fetcher/client/axios";
 import { showToast } from "@/lib/utils/helpers/toast";
-import { TtsVoiceOption } from "@/types/lecturer/flashcard";
 import {
   SpeakingMission,
   SpeakingPersona,
@@ -29,11 +28,9 @@ import {
   Target,
   Trash2,
   User,
-  Volume2,
   X,
 } from "pulsoicon-react";
 import { useMemo, useState } from "react";
-import useSWR from "swr";
 
 // ============================================
 // HELPERS & TYPES
@@ -44,6 +41,15 @@ export function createSpeakingUid(prefix = "sp"): string {
 }
 
 export const SPEAKING_LEVELS = ["A1", "A2", "B1", "B2", "C1", "HSK2", "HSK3", "HSK4", "N4", "N3"] as const;
+
+export const QWEN_OMNI_REALTIME_VOICES = [
+  { voice_id: "Tina", label: "Tina (Nữ · Ấm áp, tự nhiên)" },
+  { voice_id: "Serena", label: "Serena (Nữ · Dịu dàng, truyền cảm)" },
+  { voice_id: "Mia", label: "Mia (Nữ · Trẻ trung, thân thiện)" },
+  { voice_id: "Chloe", label: "Chloe (Nữ · Rõ ràng, thanh lịch)" },
+  { voice_id: "Ryan", label: "Ryan (Nam · Trầm ấm, điềm đạm)" },
+  { voice_id: "Aiden", label: "Aiden (Nam · Năng động, hiện đại)" },
+] as const;
 
 export interface SpeakingStudioState {
   lessonTitle: string;
@@ -100,8 +106,6 @@ export function SpeakingStudio({
     () => mode === "create" && !state.scenario.trim()
   );
 
-  const [previewingVoice, setPreviewingVoice] = useState(false);
-
   // AI Generator state
   const [aiSourceMode, setAiSourceMode] = useState<"topic" | "video">("topic");
   const [aiTopic, setAiTopic] = useState("");
@@ -109,55 +113,6 @@ export function SpeakingStudio({
   const [aiMissionCount, setAiMissionCount] = useState<number>(4);
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
-
-  const { data: voicesRes } = useSWR<{ voices: TtsVoiceOption[] }>(
-    "/lecturer/lessons/flashcards/voices",
-    async (url: string) => {
-      const res = await api.get(url);
-      return res.data;
-    },
-    { revalidateOnFocus: false }
-  );
-
-  const voices = useMemo(() => voicesRes?.voices || [], [voicesRes]);
-
-  const filteredVoices = useMemo(() => {
-    if (!voices.length) return [];
-    const prefix = state.langCode.split("-")[0].toLowerCase();
-    const sameLang = voices.filter((v) =>
-      v.lang_code.toLowerCase().startsWith(prefix)
-    );
-    return sameLang.length > 0 ? sameLang : voices;
-  }, [voices, state.langCode]);
-
-  const handlePreviewOpening = async () => {
-    const text =
-      state.aiPersona.opening_line.trim() ||
-      `Hello, I am ${state.aiPersona.name || "Alex"}. How can I help you today?`;
-    setPreviewingVoice(true);
-    try {
-      const res = await api.post("/lecturer/lessons/flashcards/tts/preview", {
-        text,
-        lang_code: state.langCode,
-        voice_id: state.aiPersona.voice_id || null,
-      });
-      if (res.data?.audio_url) {
-        onChange((prev) => ({
-          ...prev,
-          aiPersona: {
-            ...prev.aiPersona,
-            opening_audio_url: res.data.audio_url,
-          },
-        }));
-        const audio = new Audio(res.data.audio_url);
-        await audio.play();
-      }
-    } catch (err) {
-      showToast.error(formatApiError(err, "Không thể phát thử giọng nhân vật AI"));
-    } finally {
-      setPreviewingVoice(false);
-    }
-  };
 
   const handleGenerateWithAi = async () => {
     if (aiSourceMode === "topic" && !aiTopic.trim()) {
@@ -654,21 +609,10 @@ export function SpeakingStudio({
                 <h2 className="text-base font-semibold text-foreground">
                   Nhân vật AI &amp; Câu mở màn
                 </h2>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handlePreviewOpening}
-                  disabled={previewingVoice}
-                  className="gap-1.5"
-                >
-                  {previewingVoice ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Volume2 className="h-4 w-4" />
-                  )}
-                  Nghe thử câu mở màn
-                </Button>
+                <Badge variant="outline" className="border-primary-pastel bg-primary-light/60 text-primary">
+                  <Mic className="mr-1 h-3.5 w-3.5" />
+                  Đàm thoại trực tiếp Qwen 3.8 Omni Realtime
+                </Badge>
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -708,7 +652,7 @@ export function SpeakingStudio({
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-muted-foreground">
-                    Giọng đọc bản xứ (9Router TTS)
+                    Giọng nhân vật (Qwen 3.8 Omni Realtime)
                   </label>
                   <select
                     value={state.aiPersona.voice_id}
@@ -724,10 +668,10 @@ export function SpeakingStudio({
                     }
                     className="w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm text-foreground outline-none focus:border-primary"
                   >
-                    <option value="">Giọng mặc định theo ngôn ngữ</option>
-                    {filteredVoices.map((v) => (
+                    <option value="">Tự động chọn theo nhân vật</option>
+                    {QWEN_OMNI_REALTIME_VOICES.map((v) => (
                       <option key={v.voice_id} value={v.voice_id}>
-                        {v.label} ({v.badge})
+                        {v.label}
                       </option>
                     ))}
                   </select>

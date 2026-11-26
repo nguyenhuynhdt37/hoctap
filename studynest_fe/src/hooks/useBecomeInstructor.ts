@@ -2,49 +2,80 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { showToast } from "@/lib/utils/helpers/toast";
 import api from "@/lib/utils/fetcher/client/axios";
+import { useUserStore } from "@/stores/user";
 
 export const INSTRUCTOR_FEE = 1_000_000;
 
+export interface BecomeInstructorOptions {
+  autoRedirect?: boolean;
+  redirectDelayMs?: number;
+}
+
 export function useBecomeInstructor() {
   const router = useRouter();
+  const setUser = useUserStore((s) => s.setUser);
   const [isLoading, setIsLoading] = useState(false);
+  const [lastError, setLastError] = useState<string | null>(null);
 
-  const becomeInstructor = async (): Promise<boolean> => {
+  const becomeInstructor = async (
+    options?: BecomeInstructorOptions,
+  ): Promise<boolean> => {
+    const autoRedirect = options?.autoRedirect ?? true;
+    const redirectDelayMs = options?.redirectDelayMs ?? 1500;
+
     setIsLoading(true);
+    setLastError(null);
 
     try {
       await api.post("/users/instructors/become");
 
-      showToast.success("🎉 Chúc mừng! Bạn đã trở thành giảng viên");
+      // Đồng bộ lại thông tin user (đã có thêm role LECTURER) trước khi điều hướng
+      try {
+        const meRes = await api.get("/auth/me");
+        if (meRes.data?.id) {
+          setUser(meRes.data);
+        }
+      } catch {
+        // Không chặn luồng thành công nếu refresh store tạm lỗi
+      }
 
-      // Redirect after a short delay
-      setTimeout(() => {
-        router.push("/lecturer");
-      }, 1500);
+      showToast.success("Chúc mừng! Đã thanh toán 100 Coin & kích hoạt Giảng viên thành công.");
+
+      if (autoRedirect) {
+        window.setTimeout(() => {
+          router.push("/lecturer");
+          router.refresh();
+        }, redirectDelayMs);
+      }
 
       return true;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errObj = error as {
+        response?: { data?: { detail?: string; message?: string } };
+      };
       let errorMessage = "Đăng ký thất bại. Vui lòng thử lại sau.";
-      if (error?.response?.data?.detail) {
-        errorMessage = error.response.data.detail;
-      } else if (error?.response?.data?.message) {
-        errorMessage = error.response.data.message;
+      if (errObj?.response?.data?.detail) {
+        errorMessage = errObj.response.data.detail;
+      } else if (errObj?.response?.data?.message) {
+        errorMessage = errObj.response.data.message;
       }
 
+      setLastError(errorMessage);
+
       if (errorMessage.toLowerCase().includes("bạn đã là giảng viên")) {
-        showToast.error("Bạn đã là giảng viên rồi");
-        router.push("/lecturer");
-      } else if (errorMessage.toLowerCase().includes("không đủ")) {
-        // Could handle specific balance error logic here if needed
-        showToast.error(errorMessage);
-      } else {
-        showToast.error(errorMessage);
+        showToast.info("Tài khoản của bạn đã là Giảng viên rồi.");
+        if (autoRedirect) {
+          router.push("/lecturer");
+        }
+        return true;
       }
+
+      showToast.error(errorMessage);
       return false;
     } finally {
       setIsLoading(false);
     }
   };
 
-  return { becomeInstructor, isLoading };
+  return { becomeInstructor, isLoading, lastError };
 }

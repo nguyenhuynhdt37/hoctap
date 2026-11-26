@@ -9,6 +9,7 @@ from sqlalchemy.orm import selectinload
 
 from app.services.shares.auth import revoke_user_sessions_async
 from app.db.models.coins import UserPaidCoinBalances
+from app.db.models.contracts import DigitalContracts
 from app.db.models.database import (
     Courses,
     CourseSections,
@@ -41,12 +42,13 @@ class LecturerService:
         order: str,
         page: int,
         size: int,
+        contract_status: str | None = None,
     ):
         # 🔹 Base query: lấy user có role 'LECTURER' kèm số dư Coin thật & Coin thưởng
         paid_col = func.coalesce(UserPaidCoinBalances.balance, 0)
         bonus_col = func.coalesce(UserPeakBalances.current_balance, 0)
 
-        stmt = (
+        base_stmt = (
             select(
                 User,
                 paid_col.label("paid_coins"),
@@ -62,14 +64,93 @@ class LecturerService:
                 Role.role_name != "ADMIN",
                 User.deleted_at.is_(None),
             )
-            .group_by(User.id, UserPaidCoinBalances.balance, UserPeakBalances.current_balance)
+            .group_by(
+                User.id,
+                UserPaidCoinBalances.balance,
+                UserPeakBalances.current_balance,
+            )
         )
 
+        # 🔹 Lấy toàn bộ hợp đồng khung LECTURER_MASTER mới nhất theo user_id
+        contracts_res = await self.db.execute(
+            select(DigitalContracts)
+            .where(DigitalContracts.contract_type == "LECTURER_MASTER")
+            .order_by(DigitalContracts.created_at.desc())
+        )
+        master_contracts_by_user: dict[uuid.UUID, DigitalContracts] = {}
+        for c in contracts_res.scalars().all():
+            existing = master_contracts_by_user.get(c.party_b_user_id)
+            # Ưu tiên hợp đồng đã có hiệu lực (countersigned > signed > mới nhất)
+            if existing is None:
+                master_contracts_by_user[c.party_b_user_id] = c
+            elif existing.status not in ("countersigned", "signed") and c.status in (
+                "countersigned",
+                "signed",
+            ):
+                master_contracts_by_user[c.party_b_user_id] = c
+            elif existing.status == "signed" and c.status == "countersigned":
+                master_contracts_by_user[c.party_b_user_id] = c
+
+        # 🔹 Tính summary toàn hệ thống (không bị cắt theo trang)
+        all_rows = (await self.db.execute(base_stmt)).all()
+        summary = {
+            "total_lecturers": len(all_rows),
+            "active_lecturers": 0,
+            "banned_lecturers": 0,
+            "verified_emails": 0,
+            "countersigned_contracts": 0,
+            "pending_countersign_contracts": 0,
+            "unsigned_contracts": 0,
+            "total_courses": 0,
+            "total_students": 0,
+            "total_paid_coins": 0,
+            "total_bonus_coins": 0,
+        }
+        countersigned_ids: set[uuid.UUID] = set()
+        signed_pending_ids: set[uuid.UUID] = set()
+
+        for u, pc, bc in all_rows:
+            if u.is_banned:
+                summary["banned_lecturers"] += 1
+            else:
+                summary["active_lecturers"] += 1
+            if u.is_verified_email:
+                summary["verified_emails"] += 1
+            summary["total_courses"] += int(u.course_count or 0)
+            summary["total_students"] += int(u.student_count or 0)
+            summary["total_paid_coins"] += int(pc or 0)
+            summary["total_bonus_coins"] += int(bc or 0)
+
+            mc = master_contracts_by_user.get(u.id)
+            if mc and mc.status == "countersigned":
+                summary["countersigned_contracts"] += 1
+                countersigned_ids.add(u.id)
+            elif mc and mc.status == "signed":
+                summary["pending_countersign_contracts"] += 1
+                signed_pending_ids.add(u.id)
+            else:
+                summary["unsigned_contracts"] += 1
+
         # 🔹 Bộ lọc nâng cao
+        stmt = base_stmt
         if is_verified_email is not None:
             stmt = stmt.where(User.is_verified_email.is_(is_verified_email))
         if is_banned is not None:
             stmt = stmt.where(User.is_banned.is_(is_banned))
+        if contract_status == "countersigned":
+            if countersigned_ids:
+                stmt = stmt.where(User.id.in_(countersigned_ids))
+            else:
+                stmt = stmt.where(User.id.is_(None))
+        elif contract_status == "signed":
+            if signed_pending_ids:
+                stmt = stmt.where(User.id.in_(signed_pending_ids))
+            else:
+                stmt = stmt.where(User.id.is_(None))
+        elif contract_status == "unsigned":
+            valid_ids = countersigned_ids | signed_pending_ids
+            if valid_ids:
+                stmt = stmt.where(~User.id.in_(valid_ids))
         if search:
             stmt = stmt.where(
                 or_(
@@ -79,7 +160,7 @@ class LecturerService:
                 )
             )
 
-        # 🔹 Đếm tổng số giảng viên
+        # 🔹 Đếm tổng số giảng viên sau lọc
         subquery = stmt.subquery()
         total_items = (
             await self.db.scalar(select(func.count()).select_from(subquery)) or 0
@@ -107,6 +188,8 @@ class LecturerService:
         for user, paid_coins, bonus_coins in records:
             paid_int = int(paid_coins or 0)
             bonus_int = int(bonus_coins or 0)
+            mc = master_contracts_by_user.get(user.id)
+            mc_status = mc.status if mc else "none"
             lecturers.append(
                 {
                     "id": user.id,
@@ -128,6 +211,14 @@ class LecturerService:
                     "bonus_coins": bonus_int,
                     "is_verified_email": user.is_verified_email,
                     "is_banned": user.is_banned,
+                    "master_contract_status": mc_status,
+                    "master_contract_id": str(mc.id) if mc else None,
+                    "master_contract_number": mc.contract_number if mc else None,
+                    "master_contract_signed_at": (
+                        mc.signed_at.isoformat()
+                        if mc and mc.signed_at
+                        else None
+                    ),
                     "create_at": user.create_at,
                     "update_at": user.update_at,
                 }
@@ -142,6 +233,7 @@ class LecturerService:
             "total_pages": total_pages,
             "has_next": page < total_pages,
             "has_previous": page > 1,
+            "summary": summary,
             "items": lecturers,
         }
 

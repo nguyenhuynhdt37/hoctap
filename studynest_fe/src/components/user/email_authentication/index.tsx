@@ -24,18 +24,30 @@ const EmailAuthentication = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const emailFromQuery = (searchParams.get("email") || "").trim();
+  const justRegistered = searchParams.get("registered") === "true";
+  const justSentFromLogin = searchParams.get("sent") === "1";
   const redirectUrl = sanitizeRedirect(searchParams.get("redirect"));
 
   const [email, setEmail] = useState(emailFromQuery);
   const [otp, setOtp] = useState<string[]>(["", "", "", "", "", ""]);
   const [otpError, setOtpError] = useState<string>("");
-  const [infoMessage, setInfoMessage] = useState<string>("");
+  const [infoMessage, setInfoMessage] = useState<string>(
+    justSentFromLogin
+      ? "Tài khoản của bạn chưa xác thực email. Hệ thống vừa gửi mã 6 chữ số mới tới hộp thư của bạn."
+      : justRegistered
+        ? "Đăng ký thành công! Vui lòng nhập mã 6 chữ số vừa được gửi tới email của bạn để đăng nhập ngay."
+        : "",
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
 
-  const [countdown, setCountdown] = useState(0);
-  const [canResend, setCanResend] = useState(true);
+  const [countdown, setCountdown] = useState(
+    justRegistered || justSentFromLogin ? 60 : 0,
+  );
+  const [canResend, setCanResend] = useState(
+    !(justRegistered || justSentFromLogin),
+  );
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -134,14 +146,15 @@ const EmailAuthentication = () => {
 
     try {
       await postAuthSession("/auth/verify-email", {
-        email: targetEmail,
+        email: targetEmail.toLowerCase(),
         code: otpString,
       });
       setIsVerified(true);
+      localStorage.removeItem("pending_verify_email");
       setTimeout(() => {
-        router.push(redirectUrl);
+        router.replace(redirectUrl);
         router.refresh();
-      }, 1000);
+      }, 600);
     } catch (cause) {
       const error = cause as AuthRequestError | undefined;
       const status = error?.response?.status ?? error?.status;
@@ -150,7 +163,9 @@ const EmailAuthentication = () => {
           formatApiError(error, "Mã xác thực không đúng hoặc đã hết hạn.")
         );
       } else if (status === 404) {
-        setOtpError("Không tìm thấy tài khoản với email này.");
+        setOtpError(
+          "Thông tin tài khoản không chính xác (Email chưa được đăng ký trên hệ thống)."
+        );
       } else if (status === 409) {
         setOtpError("Email này đã được xác thực. Bạn có thể đăng nhập ngay.");
       } else {

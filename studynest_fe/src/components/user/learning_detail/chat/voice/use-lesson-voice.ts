@@ -27,7 +27,7 @@ interface Resources {
 const empty = (): Resources => ({ playback: new Set(), nextPlay: 0, ready: false, muted: false, stopped: false });
 
 export function useLessonVoice(lessonId: string | undefined, _accessToken?: string, agentSessionId?: string, onAgentEvent?: (event: AgentEvent) => Promise<void>) {
-  const [voiceName, setVoiceName] = useState("eve");
+  const [voiceName, setVoiceName] = useState("Tina");
   const [speed, setSpeed] = useState(1);
   const [micThreshold, setMicThreshold] = useState(0.012);
   const [preferencesLoaded, setPreferencesLoaded] = useState(false);
@@ -184,14 +184,13 @@ export function useLessonVoice(lessonId: string | undefined, _accessToken?: stri
             for (let i = 0; i < channel.length; i++) channel[i] = view.getInt16(i * 2, true) / 32768;
             if (r.nextPlay - context.currentTime > 45) { fail("Câu trả lời voice quá dài. Hãy thử hỏi ngắn hơn."); return; }
             const node = context.createBufferSource(); node.buffer = buffer;
-            // The backend adjusts pace while preserving the voice's pitch.
-            node.playbackRate.value = 1;
+            node.playbackRate.value = speed;
             node.connect(context.destination);
             node.connect(analyser);
             r.playback.add(node);
             // Small startup buffer absorbs packet jitter; later chunks stay contiguous.
             const when = r.nextPlay > context.currentTime ? r.nextPlay : context.currentTime + 0.08;
-            node.start(when); r.nextPlay = when + buffer.duration;
+            node.start(when); r.nextPlay = when + (buffer.duration / Math.max(0.5, speed));
             node.onended = () => {
               r.playback.delete(node);
               if (!r.stopped && r.playback.size === 0 && stateRef.current === "speaking") setStatus("listening");
