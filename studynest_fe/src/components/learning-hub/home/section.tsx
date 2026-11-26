@@ -9,7 +9,7 @@ import type { MouseEventHandler, ReactNode } from "react";
 
 export { vietnamTimeZone } from "./journey-state";
 export const number = new Intl.NumberFormat("vi-VN");
-export const homeWidth = "mx-auto w-full max-w-7xl px-5 sm:px-8";
+export const homeWidth = "mx-auto w-full px-3 sm:px-5 lg:px-8";
 
 export function HomeLink({ href, children, primary, icon, className, endIcon = true, onClick, describedBy }: {
   href: string;

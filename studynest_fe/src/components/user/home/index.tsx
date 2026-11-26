@@ -2,18 +2,16 @@
 
 import { useCallback, useRef, useState } from "react";
 import BenefitsSection from "./benefits-section";
-import CloudArcNav from "./cloud-nav/CloudArcNav";
 import CombosSection from "./combos-section";
-import ScrollThreeHero from "./three-hero/ScrollThreeHero";
-import PageSky from "./may-world/PageSky";
 import CoursesSection from "./courses-section";
 import CTASection from "./cta-section";
 import GradeLevelsSection, { SchoolLevelId } from "./grade-levels-section";
+import GuestHero from "./guest-hero";
+import PageSky from "./may-world/PageSky";
 import ParentTrustSection from "./parent-trust-section";
 import SubjectsSection from "./subjects-section";
 
 const Home = () => {
-  const contentSectionRef = useRef<HTMLDivElement | null>(null);
   const coursesSectionRef = useRef<HTMLDivElement | null>(null);
   const subjectsSectionRef = useRef<HTMLDivElement | null>(null);
   const [selectedLevel, setSelectedLevel] = useState<SchoolLevelId>("all");
@@ -22,53 +20,32 @@ const Home = () => {
     coursesSectionRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
 
-  const scrollToContent = useCallback(() => {
-    contentSectionRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, []);
-
   const handleSelectGradeLevel = useCallback(
     (level: Exclude<SchoolLevelId, "all">) => {
       setSelectedLevel(level);
       subjectsSectionRef.current?.scrollIntoView({ behavior: "smooth" });
     },
-    []
+    [],
   );
 
   return (
     <main className="relative isolate min-h-screen">
       <PageSky />
-      <CloudArcNav onSkipHero={scrollToContent} />
 
-      {/* Section B: Scroll-Driven 3D Cinematic Hero */}
-      <ScrollThreeHero
+      {/* Hero sáng thoáng có tìm kiếm trực tiếp & chọn cấp học 1 chạm */}
+      <GuestHero
         onExploreCourses={scrollToCourses}
-        onSelectGradeLevel={(level) =>
-          handleSelectGradeLevel(
-            level === "middle"
-              ? "secondary"
-              : level === "high"
-                ? "highschool"
-                : "primary"
-          )
-        }
+        onSelectGradeLevel={handleSelectGradeLevel}
       />
 
-      {/* Điểm neo nội dung chính sau khi bỏ qua phần lướt video */}
-      <div
-        id="home-main-content"
-        ref={contentSectionRef}
-        className="scroll-mt-6"
-        aria-hidden="true"
-      />
-
-      {/* Section C: Choose Your Learning Level (Grades 1–5, 6–9, 10–12) */}
+      {/* Chọn cấp học chi tiết (Lớp 1–5, 6–9, 10–12) */}
       <GradeLevelsSection
         selectedLevel={selectedLevel}
         onSelectLevel={handleSelectGradeLevel}
         onExploreCourses={scrollToCourses}
       />
 
-      {/* Section D: Explore Subjects & Real Categories */}
+      {/* Khám phá môn học theo cấp đã chọn */}
       <div ref={subjectsSectionRef}>
         <SubjectsSection
           selectedLevel={selectedLevel}
@@ -77,19 +54,19 @@ const Home = () => {
         />
       </div>
 
-      {/* Section E: Public courses from the official catalog */}
+      {/* Khóa học nổi bật & Combo tiết kiệm */}
       <div ref={coursesSectionRef}>
         <CoursesSection />
       </div>
       <CombosSection />
 
-      {/* Section F: Why Mây Mây? */}
+      {/* Vì sao chọn Mây Mây */}
       <BenefitsSection />
 
-      {/* Section H & I: Parent Trust & Transparent Commitments */}
+      {/* Cam kết minh bạch cho phụ huynh & học sinh */}
       <ParentTrustSection onExploreCourses={scrollToCourses} />
 
-      {/* Section J: Final Conversion CTA */}
+      {/* CTA chuyển đổi cuối trang */}
       <CTASection onExploreCourses={scrollToCourses} />
     </main>
   );

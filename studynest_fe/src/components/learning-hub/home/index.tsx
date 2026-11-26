@@ -166,11 +166,7 @@ export function LearnerHome() {
         {rewardFeedback}
       </SkyHero>
       <div className="relative">
-        {/* Đường bay của Mây đi xuyên các khối khi cuộn (chỉ trang trí, chỉ trên màn hình rộng). */}
-        <svg aria-hidden="true" viewBox="0 0 1000 1600" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 hidden h-full w-full lg:block">
-          <path d="M120 0 C 900 200, 1000 380, 520 560 S -40 820, 480 1040 S 1010 1260, 700 1600" fill="none" strokeWidth="3" strokeDasharray="2 14" strokeLinecap="round" vectorEffect="non-scaling-stroke" className="stroke-primary-pastel" />
-        </svg>
-        <div className={`${homeWidth} relative space-y-14 pt-12 pb-16 lg:space-y-16 lg:pt-16 lg:pb-20`}>
+        <div className={`${homeWidth} relative space-y-10 pt-8 pb-14 lg:space-y-12 lg:pt-10 lg:pb-16`}>
           {journey.isNew && <FirstCourse level={level} course={trialCourse} onLevel={(next) => {
             if (level === next) return;
             setLevel(next);
@@ -182,11 +178,11 @@ export function LearnerHome() {
             setTrialDone(false);
             requestAnimationFrame(() => document.getElementById("journey-status")?.focus());
           }} />}
-          <div className="grid min-w-0 gap-10 lg:grid-cols-12 lg:gap-x-6">
+          <div className="grid min-w-0 items-start gap-6 lg:grid-cols-12">
             <div className="min-w-0 lg:col-span-7"><StickerBook daily={daily} heroClaimId={heroClaimId} /></div>
-            <div className="flex min-w-0 flex-col gap-10 lg:col-span-5 lg:mt-14 lg:-ml-6 lg:gap-8">
+            <div className="flex min-w-0 flex-col gap-6 lg:col-span-5">
               <CheckInCard daily={daily} onClaimReward={() => claimFromHero(checkInState.mission, "check-in")} onCheckIn={() => checkInFromHero("check-in")} inPrimary={checkInInPrimary} />
-              <div className="lg:ml-6"><VoucherShelf daily={daily} /></div>
+              <VoucherShelf daily={daily} />
             </div>
           </div>
           <MyCourses current={current} purchases={purchases} />

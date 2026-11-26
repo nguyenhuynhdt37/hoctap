@@ -6,7 +6,16 @@ import { useLearnerEquipment } from "@/lib/learning-hub/shop-hooks";
 import type { useCurrentLesson } from "@/lib/learning-hub/home-api";
 import { cn } from "@/lib/utils";
 import { useUserStore } from "@/stores/user";
-import { Flame, MessageCircle, Trophy } from "pulsoicon-react";
+import {
+  BookOpen,
+  Brain,
+  Compass,
+  Flame,
+  MessageCircle,
+  Target,
+  Trophy,
+  Wallet,
+} from "pulsoicon-react";
 import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 import { HubLoadError } from "../hub-page-state";
@@ -39,8 +48,7 @@ export function phaseOf(hour: number): Phase {
   return "night";
 }
 
-// Bầu trời đổi tông theo 5 khung giờ (sáng / trưa / chiều / tối / đêm) bằng màu pastel Cloudy Blue.
-// Tối và đêm dùng nền xanh-tím đậm để chữ trắng đạt WCAG AA/AAA.
+// Bầu trời đổi sắc nhẹ theo 5 khung giờ nhưng luôn giữ 100% nền pastel sáng Cloudy Blue (WCAG AA).
 export const sky: Record<Phase, {
   background: string;
   dark: boolean;
@@ -49,41 +57,49 @@ export const sky: Record<Phase, {
   cloudOpacity: string;
 }> = {
   morning: {
-    background: "linear-gradient(180deg, var(--sn-blue-100) 0%, var(--sn-pink-100) 52%, var(--sn-vanilla-100) 100%)",
+    background: "linear-gradient(135deg, var(--sn-blue-100) 0%, var(--sn-background) 52%, var(--sn-vanilla-50) 100%)",
     dark: false,
     greeting: "Chào buổi sáng",
     mayLine: "Sáng trong lành, học một bài nhé.",
-    cloudOpacity: "opacity-95",
+    cloudOpacity: "opacity-90",
   },
   noon: {
-    background: "linear-gradient(180deg, var(--sn-blue-300) 0%, var(--sn-blue-200) 48%, var(--sn-blue-50) 100%)",
+    background: "linear-gradient(135deg, var(--sn-blue-100) 0%, var(--sn-blue-50) 56%, var(--sn-white) 100%)",
     dark: false,
     greeting: "Chào buổi trưa",
     mayLine: "Trưa rồi, học nhẹ rồi nghỉ nhé.",
-    cloudOpacity: "opacity-100",
+    cloudOpacity: "opacity-95",
   },
   afternoon: {
-    background: "linear-gradient(180deg, var(--sn-lavender-200) 0%, var(--sn-pink-200) 56%, var(--sn-vanilla-100) 100%)",
+    background: "linear-gradient(135deg, var(--sn-lavender-50) 0%, var(--sn-pink-50) 54%, var(--sn-vanilla-50) 100%)",
     dark: false,
     greeting: "Chào buổi chiều",
     mayLine: "Chiều dịu rồi, tiến thêm chút nhé.",
-    cloudOpacity: "opacity-90",
+    cloudOpacity: "opacity-85",
   },
   evening: {
-    background: "linear-gradient(180deg, var(--sn-blue-800) 0%, var(--sn-lavender-700) 58%, var(--sn-pink-800) 100%)",
-    dark: true,
+    background: "linear-gradient(135deg, var(--sn-blue-100) 0%, var(--sn-lavender-100) 55%, var(--sn-pink-50) 100%)",
+    dark: false,
     greeting: "Chào buổi tối",
     mayLine: "Tối nay mình học cùng bạn nhé.",
-    cloudOpacity: "opacity-25",
+    cloudOpacity: "opacity-80",
   },
   night: {
-    background: "linear-gradient(180deg, var(--sn-blue-900) 0%, var(--sn-blue-800) 55%, var(--sn-lavender-800) 100%)",
-    dark: true,
-    greeting: "Đêm khuya rồi",
+    background: "linear-gradient(135deg, var(--sn-blue-100) 0%, var(--sn-background) 55%, var(--sn-lavender-100) 100%)",
+    dark: false,
+    greeting: "Chào buổi tối muộn",
     mayLine: "Xong bài này nhớ ngủ sớm nhé.",
-    cloudOpacity: "opacity-15",
+    cloudOpacity: "opacity-75",
   },
 };
+
+const QUICK_LINKS = [
+  { href: "/my-learning", label: "Khóa học của tôi", icon: BookOpen, tone: "bg-primary-light text-primary border-primary-pastel" },
+  { href: "/learning-paths/my", label: "Lộ trình 1–12", icon: Compass, tone: "bg-accent text-accent-foreground border-accent-border" },
+  { href: "/missions", label: "Nhiệm vụ Coin", icon: Target, tone: "bg-accent-vanilla text-accent-vanilla-foreground border-accent-vanilla-border" },
+  { href: "/review", label: "Ôn tập hôm nay", icon: Brain, tone: "bg-secondary-light text-secondary-foreground border-secondary-pastel" },
+  { href: "/wallets", label: "Ví & Coin", icon: Wallet, tone: "bg-success-bg text-success-foreground border-success-border" },
+] as const;
 
 const eveningStars: [number, number, number][] = [
   [12, 16, 2], [28, 12, 3], [44, 20, 2], [62, 10, 3], [74, 24, 2], [86, 14, 2], [93, 28, 3],
@@ -191,7 +207,7 @@ function HeroTicket({ current, isNew }: { current: ReturnType<typeof useCurrentL
   }
   return (
     <TicketCard src={course?.thumbnail_url} alt={course ? `Ảnh bìa khóa học ${course.title}` : ""} priority fallback={academyCover}
-      sizes="(min-width: 1280px) 520px, (min-width: 1024px) 40vw, 88vw" className="rotate-1 drop-shadow-xl lg:rotate-2" captionClassName="flex min-h-24 items-center gap-3 py-3.5">
+      sizes="(min-width: 1280px) 520px, (min-width: 1024px) 40vw, 88vw" className="drop-shadow-lg" captionClassName="flex min-h-24 items-center gap-3 py-3.5">
       <div className="min-w-0 flex-1">
         {course ? (
           <>
@@ -251,10 +267,9 @@ export function SkyHero({ daily, journey, action, actionDetail, current, chapter
   const name = useUserStore((state) => state.user?.fullname?.trim());
   const avatar = useUserStore((state) => state.user?.avatar);
   const equipment = useLearnerEquipment();
-  const { streak } = daily;
   const hour = getVietnamHour(daily.now);
   const phase = phaseOf(hour);
-  const { dark, greeting, mayLine: phaseMayLine } = sky[phase];
+  const { greeting, mayLine: phaseMayLine } = sky[phase];
   const { active, isNew, complete, hasError, loading, remaining, returning } = journey;
 
   let status: string;
@@ -273,60 +288,68 @@ export function SkyHero({ daily, journey, action, actionDetail, current, chapter
               : active === "reward" ? "Có phần thưởng đang chờ"
                 : "Hành trình hôm nay";
   const mayLine = returning ? "Bắt đầu nhẹ nhàng, 5 phút thôi." : isNew ? "Mình sẽ dẫn bạn chọn khóa nhé." : complete ? "Nghỉ ngơi một chút nhé." : phaseMayLine;
-  const days = streak.data?.current_streak ?? 0;
 
   return (
     <section aria-labelledby="learning-home-title" className="relative">
-      <div data-sky-phase={phase} className={cn("relative isolate overflow-hidden pt-8 pb-28 sm:pt-12 lg:pb-36", dark ? "text-primary-foreground" : "text-foreground")} style={{ background: sky[phase].background }}>
+      <div data-sky-phase={phase} className="relative isolate overflow-hidden border-b border-border/70 pt-6 pb-20 text-foreground sm:pt-8 lg:pb-24" style={{ background: sky[phase].background }}>
         <SkyScene phase={phase} />
-        {days > 0 && (
-          <span aria-hidden="true" className={cn("pointer-events-none absolute -top-2 right-0 -z-10 text-[clamp(7rem,16vw,14rem)] leading-none font-extrabold tracking-tighter text-transparent select-none [-webkit-text-stroke:2px_var(--color-surface)] lg:right-[3%]", dark ? "opacity-35" : "opacity-60")}>
-            {days}
-          </span>
-        )}
-        <div className={cn(homeWidth, "grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,34rem)] lg:gap-10")}>
+        <div className={cn(homeWidth, "grid items-center gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)] lg:gap-10")}>
           <div className="min-w-0">
-            <div className="flex min-w-0 items-center gap-2.5">
+            <div className="flex min-w-0 items-center gap-3">
               <FramedAvatar src={avatar} name={name} equipment={equipment} className="size-12 text-sm" />
               <div className="min-w-0">
-                <p className="text-base font-semibold wrap-anywhere">{greeting}, {name || "bạn"}</p>
+                <p className="text-sm font-semibold text-primary sm:text-base wrap-anywhere">{greeting}, {name || "bạn"}</p>
                 <EquippedMarks equipment={equipment} className="mt-1" />
               </div>
             </div>
-            <h1 id="learning-home-title" className="mt-3 font-display text-[clamp(2.4rem,6.4vw,5rem)] leading-[1.04] font-bold tracking-tight text-balance">{headline}</h1>
-            <p id="journey-status" tabIndex={-1} role="status" className={cn("mt-3 w-fit rounded-sm text-base leading-relaxed focus-visible:outline-2", dark ? "focus-visible:outline-surface" : "focus-visible:outline-ring")}>{status}</p>
+            <h1 id="learning-home-title" className="mt-3 font-display text-[clamp(2rem,4.5vw,3.4rem)] leading-[1.12] font-bold tracking-tight text-foreground text-balance">{headline}</h1>
+            <p id="journey-status" tabIndex={-1} role="status" className="mt-2.5 w-fit rounded-sm text-base leading-relaxed text-muted-foreground focus-visible:outline-2 focus-visible:outline-ring">{status}</p>
             {action && (
-              <div data-journey-action className="mt-6 min-w-0">
+              <div data-journey-action className="mt-5 flex flex-wrap items-center gap-3">
                 <div className="[&>a]:w-full [&>button]:w-full sm:[&>a]:w-auto sm:[&>button]:w-auto">{action}</div>
-                {actionDetail && <p id="journey-action-detail" title={actionDetail} className="mt-2.5 max-w-[34rem] truncate text-sm font-medium">{actionDetail}</p>}
+                {actionDetail && <p id="journey-action-detail" title={actionDetail} className="max-w-[28rem] truncate text-sm font-medium text-muted-foreground">{actionDetail}</p>}
               </div>
             )}
             {(chapterReview || (active === "study" && current.tutorHref)) && (
-              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm font-medium">
+              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm font-medium text-foreground">
                 {chapterReview && <span className="inline-flex flex-wrap items-center gap-2">{chapterReview.title} cần ôn {chapterReview.sample && <MockDataChip source="mock" />}</span>}
                 {active === "study" && current.tutorHref && (
-                  <Link href={current.tutorHref} className={cn("inline-flex min-h-10 items-center gap-1.5 rounded-sm font-semibold underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2", dark ? "focus-visible:outline-surface" : "focus-visible:outline-ring")}>
+                  <Link href={current.tutorHref} className="inline-flex min-h-10 items-center gap-1.5 rounded-sm font-semibold text-primary underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
                     <MessageCircle aria-hidden="true" className="size-4" /> Hỏi Mây về bài này
                   </Link>
                 )}
               </div>
             )}
-            <div className="mt-6 flex min-w-0 flex-wrap items-center gap-2.5"><LearningStats daily={daily} /></div>
+            <div className="mt-5 flex min-w-0 flex-wrap items-center gap-2.5"><LearningStats daily={daily} /></div>
+
+            {/* Thanh lối tắt học nhanh 1 chạm */}
+            <nav aria-label="Lối tắt học nhanh" className="mt-5 flex flex-wrap items-center gap-2">
+              {QUICK_LINKS.map(({ href, label, icon: Icon, tone }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className="inline-flex items-center gap-2 rounded-full border border-border bg-surface/95 px-3.5 py-2 text-xs font-semibold text-foreground shadow-2xs transition-colors hover:border-primary-pastel hover:bg-primary-light/70 hover:text-primary sm:text-sm"
+                >
+                  <span className={cn("flex size-6 items-center justify-center rounded-full border", tone)}>
+                    <Icon size={13} animated={false} aria-hidden="true" />
+                  </span>
+                  <span>{label}</span>
+                </Link>
+              ))}
+            </nav>
           </div>
-          <div className="relative mx-auto w-full max-w-[26rem] pt-24 sm:max-w-[30rem] lg:max-w-none lg:pt-40 lg:pl-8">
-            <div aria-hidden="true" className="absolute top-0 right-3 z-10 flex items-start lg:right-8">
-              <p className="mt-3 mr-1 w-max max-w-[8.5rem] -rotate-3 rounded-2xl rounded-br-sm bg-surface px-3 py-1.5 text-xs font-semibold text-foreground shadow-ambient-md sm:max-w-[11rem] sm:text-sm lg:mt-8">{mayLine}</p>
-              <div className="may-bob">
-                <StudyImage src={mayPortrait} sizes="(min-width: 1024px) 176px, 112px" priority
-                  className="size-28 rounded-full bg-transparent lg:size-44 [-webkit-mask-image:radial-gradient(closest-side,black_66%,transparent_100%)] [mask-image:radial-gradient(closest-side,black_66%,transparent_100%)]" />
-              </div>
+          <div className="relative mx-auto w-full max-w-[26rem] sm:max-w-[30rem] lg:max-w-none">
+            <div className="mb-3 flex items-center justify-end gap-2.5">
+              <p className="rounded-2xl rounded-br-sm border border-primary-pastel/70 bg-surface/95 px-3.5 py-2 text-xs font-semibold text-foreground shadow-ambient-sm sm:text-sm">{mayLine}</p>
+              <StudyImage src={mayPortrait} sizes="56px" priority
+                className="size-12 shrink-0 rounded-full border-2 border-surface bg-primary-light shadow-ambient-sm sm:size-14" />
             </div>
             <HeroTicket current={current} isNew={isNew} />
           </div>
         </div>
         <CloudBank />
       </div>
-      <div className={cn(homeWidth, "relative z-10 -mt-20 lg:-mt-28")}>{children}</div>
+      <div className={cn(homeWidth, "relative z-10 -mt-12 lg:-mt-16")}>{children}</div>
     </section>
   );
 }
