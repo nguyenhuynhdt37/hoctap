@@ -131,8 +131,15 @@ export default function RequireLecturerContract({
         contract_type: "LECTURER_MASTER",
       });
       setSigningDraft(res.data);
-    } catch {
-      toast.error("Không thể khởi tạo văn bản hợp đồng điện tử.");
+    } catch (error: unknown) {
+      const detail = (
+        error as { response?: { data?: { detail?: string } } }
+      )?.response?.data?.detail;
+      toast.error(
+        typeof detail === "string" && detail.trim()
+          ? detail
+          : "Không thể khởi tạo văn bản hợp đồng điện tử.",
+      );
     } finally {
       setOpeningDraft(false);
     }
