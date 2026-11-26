@@ -194,18 +194,34 @@ function FloatingLearningCards() {
   );
 }
 
+export type AuthVariant = "page" | "modal";
+
 export default function AuthShell({
   screen,
   title,
   description,
   children,
+  variant = "page",
 }: {
   screen: keyof typeof skyCopy;
   title: string;
   description?: ReactNode;
   children: ReactNode;
+  /** `modal`: only the form body; the dialog supplies the title, so no full-page scenery. */
+  variant?: AuthVariant;
 }) {
   const copy = skyCopy[screen];
+
+  if (variant === "modal") {
+    return (
+      <div>
+        {description && (
+          <div className="mb-4 text-sm leading-relaxed text-foreground/85">{description}</div>
+        )}
+        {children}
+      </div>
+    );
+  }
 
   return (
     <main>

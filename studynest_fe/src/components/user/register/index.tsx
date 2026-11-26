@@ -8,6 +8,7 @@ import AuthShell, {
   authLinkClass,
   authSubmitClass,
   type AuthRequestError,
+  type AuthVariant,
 } from "@/components/user/auth/AuthShell";
 import { Alert, Button } from "@/components/ui";
 import { postAuthSession } from "@/lib/auth/login";
@@ -15,11 +16,18 @@ import api from "@/lib/utils/fetcher/client/axios";
 import { formatApiError } from "@/lib/utils/helpers/error";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useActionState, useCallback, useState } from "react";
 import { ArrowRight, LockKeyhole, Mail, UserRound } from "pulsoicon-react";
 
-const Register = () => {
+const Register = ({ variant = "page" }: { variant?: AuthVariant }) => {
   const router = useRouter();
+  const inModal = variant === "modal";
+  /** Close the dialog in place; the full page variant goes home as before. */
+  const finishRegister = () => {
+    if (inModal) router.back();
+    else router.push("/");
+    router.refresh();
+  };
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
   const [password, setPassword] = useState("");
@@ -27,7 +35,6 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [gradeLevel, setGradeLevel] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
 
   const validateEmail = (value: string) => {
     if (!value.trim())
@@ -86,8 +93,7 @@ const Register = () => {
       setGeneralError("");
       try {
         await postAuthSession("/auth/google", { credential: response.credential });
-        router.push("/");
-        router.refresh();
+        finishRegister();
       } catch (error) {
         setGeneralError(
           formatApiError(error, "Đăng ký với Google thất bại. Vui lòng thử lại.")
@@ -223,8 +229,8 @@ const Register = () => {
     );
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // React 19 form action: pending state without manual flags; stays client-side like login.
+  const [, submitAction, isLoading] = useActionState(async () => {
     setTouched({
       fullName: true,
       email: true,
@@ -233,9 +239,8 @@ const Register = () => {
     });
     setGeneralError("");
 
-    if (!validateForm()) return;
+    if (!validateForm()) return null;
 
-    setIsLoading(true);
     try {
       await api.post("/auth/register", {
         email: email.trim(),
@@ -243,10 +248,12 @@ const Register = () => {
         password,
         ...(gradeLevel ? { grade_level: gradeLevel } : {}),
       });
-      router.push(
+      const verifyUrl =
         "/email_authentication?registered=true&email=" +
-          encodeURIComponent(email.trim())
-      );
+        encodeURIComponent(email.trim());
+      // In the dialog the verification step replaces the form instead of leaving the page.
+      if (inModal) router.replace(verifyUrl);
+      else router.push(verifyUrl);
     } catch (cause) {
       const e = cause as AuthRequestError | undefined;
       const status = e?.response?.status ?? e?.status;
@@ -260,10 +267,9 @@ const Register = () => {
           formatApiError(e, "Không thể tạo tài khoản lúc này. Vui lòng thử lại.")
         );
       }
-    } finally {
-      setIsLoading(false);
     }
-  };
+    return null;
+  }, null);
 
   const passwordStrength = validatePassword(password).isValid
     ? 1 +
@@ -278,6 +284,7 @@ const Register = () => {
       screen="register"
       title="Đăng ký"
       description="Tạo tài khoản để bắt đầu học cùng Mây Mây."
+      variant={variant}
     >
       {generalError && (
         <Alert
@@ -291,7 +298,7 @@ const Register = () => {
 
       <AuthProviders onCredential={handleGoogleCredentialResponse} busy={isGoogleLoading} />
 
-      <form noValidate className="mt-3 space-y-3" onSubmit={handleSubmit}>
+      <form noValidate className="mt-3 space-y-3" action={submitAction}>
         <div className="grid gap-3 sm:grid-cols-2">
           <AuthInput
             id="fullName"
@@ -454,7 +461,7 @@ const Register = () => {
 
       <div className="mt-3 flex flex-wrap items-center justify-center gap-x-1.5 border-t border-border pt-1 text-sm text-foreground/85">
         <span>Đã có tài khoản?</span>
-        <Link href="/login" className={authLinkClass}>Đăng nhập ngay</Link>
+        <Link href="/login" replace={inModal} className={authLinkClass}>Đăng nhập ngay</Link>
       </div>
     </AuthShell>
   );

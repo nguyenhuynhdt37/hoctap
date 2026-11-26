@@ -7,6 +7,7 @@ import AuthShell, {
   authLinkClass,
   authSubmitClass,
   type AuthRequestError,
+  type AuthVariant,
 } from "@/components/user/auth/AuthShell";
 import { Alert, Button, Modal } from "@/components/ui";
 import { postAuthSession } from "@/lib/auth/login";
@@ -20,9 +21,10 @@ import {
 } from "@/types/shared/auth";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useActionState, useCallback, useEffect, useState } from "react";
 import { ArrowRight, LockKeyhole, Mail } from "pulsoicon-react";
 import { sanitizeRedirect } from "@/lib/auth/safe-redirect";
+import { useAuthModalStore } from "@/stores/auth-modal";
 
 // ============================================
 // VALIDATION FUNCTIONS
@@ -133,15 +135,27 @@ const ErrorDialog = ({
 // LOGIN COMPONENT
 // ============================================
 
-const Login = () => {
+const Login = ({ variant = "page" }: { variant?: AuthVariant }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectUrl = sanitizeRedirect(searchParams.get("redirect"));
+  const inModal = variant === "modal";
+  const returnTo = useAuthModalStore((state) => state.returnTo);
+  const requestedRedirect = searchParams.get("redirect");
+  // In the modal the user is already on the page they want to stay on.
+  const redirectUrl = sanitizeRedirect(requestedRedirect, inModal ? returnTo : "/");
+  /** Close the dialog in place; the full page variant still navigates to the target. */
+  const finishLogin = () => {
+    if (inModal) router.back();
+    else router.push(redirectUrl);
+    router.refresh();
+  };
+  /** Move to the verification step; inside the modal it replaces the dialog content. */
+  const goToVerification = (target: string) =>
+    inModal ? router.replace(target) : router.push(target);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{
     email?: string;
     password?: string;
@@ -179,15 +193,15 @@ const Login = () => {
       setErrors((prev) => ({ ...prev, general: "" }));
       try {
         await postAuthSession("/auth/google", { credential: response.credential });
-        router.push(redirectUrl);
-        router.refresh();
+        finishLogin();
       } catch (error) {
         handleLoginError(error, "google");
       } finally {
         setIsGoogleLoading(false);
       }
     },
-    [router, redirectUrl]
+    // finishLogin/handleLoginError only close over router, redirectUrl and inModal.
+    [router, redirectUrl, inModal]
   );
 
   // ============================================
@@ -269,7 +283,7 @@ const Login = () => {
         redirectUrl !== "/"
           ? `&redirect=${encodeURIComponent(redirectUrl)}`
           : "";
-      router.push(
+      goToVerification(
         "/email_authentication?email=" +
           encodeURIComponent(email) +
           redirectParam
@@ -307,7 +321,7 @@ const Login = () => {
           redirectUrl !== "/"
             ? `&redirect=${encodeURIComponent(redirectUrl)}`
             : "";
-        router.push(
+        goToVerification(
           "/email_authentication?email=" +
             encodeURIComponent(detail.email || email) +
             redirectParam
@@ -423,23 +437,21 @@ const Login = () => {
   // SUBMIT HANDLER
   // ============================================
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // React 19 form action: the transition gives `isLoading` and keeps the dialog open on errors.
+  // Login stays client-side on purpose: the DPoP key lives in the browser, not on the server.
+  const [, submitAction, isLoading] = useActionState(async () => {
     setTouched({ email: true, password: true });
     setErrors((prev) => ({ ...prev, general: "" }));
-    if (!validateForm()) return;
+    if (!validateForm()) return null;
 
-    setIsLoading(true);
     try {
       await postAuthSession("/auth/login", { email, password });
-      router.push(redirectUrl);
-      router.refresh();
+      finishLogin();
     } catch (error) {
       handleLoginError(error);
-    } finally {
-      setIsLoading(false);
     }
-  };
+    return null;
+  }, null);
 
   const closeDialog = () => {
     setDialogState((prev) => ({ ...prev, isOpen: false }));
@@ -455,6 +467,7 @@ const Login = () => {
         screen="login"
         title="Đăng nhập"
         description="Đăng nhập để tiếp tục học cùng Mây Mây."
+        variant={variant}
       >
         <AuthProviders
           onCredential={handleGoogleCredentialResponse}
@@ -467,7 +480,7 @@ const Login = () => {
           <Alert variant="destructive" className="mt-3">{errors.general}</Alert>
         )}
 
-        <form className="mt-3 space-y-3" onSubmit={handleSubmit}>
+        <form className="mt-3 space-y-3" action={submitAction}>
           <AuthInput
             id="email"
             name="email"
@@ -533,7 +546,7 @@ const Login = () => {
 
         <div className="mt-3 flex flex-wrap items-center justify-center gap-x-1.5 border-t border-border pt-1 text-sm text-foreground/85">
           <span>Chưa có tài khoản?</span>
-          <Link href="/register" className={authLinkClass}>Đăng ký ngay</Link>
+          <Link href="/register" replace={inModal} className={authLinkClass}>Đăng ký ngay</Link>
         </div>
       </AuthShell>
 
