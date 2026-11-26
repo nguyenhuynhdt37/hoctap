@@ -58,10 +58,10 @@ function ParentTrustSection({
       tone="warm"
       label="Dành cho Phụ huynh & Học sinh"
     >
-      <div className="grid grid-cols-1 items-center gap-8 md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:gap-12">
+      <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-12 lg:gap-8">
         <GlassCard
           tilt={false}
-          className="relative isolate min-w-0 bg-linear-to-br from-surface via-surface to-accent-vanilla/40 p-6 lg:p-8 xl:p-10"
+          className="relative isolate flex min-w-0 flex-col justify-between bg-linear-to-br from-surface via-surface to-accent-vanilla/40 p-6 lg:col-span-5 lg:p-8"
         >
           <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-3xl">
             <div className="absolute -right-20 -bottom-24 size-72 rounded-full bg-accent-vanilla/40 blur-3xl" />
@@ -106,15 +106,15 @@ function ParentTrustSection({
           </Reveal>
         </GlassCard>
 
-        <ul className="flex min-w-0 flex-col gap-3.5 lg:gap-4">
+        <ul className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 lg:col-span-7">
           {TRUST_PILLARS.map((pillar, i) => (
             <Reveal
               as="li"
               key={pillar.title}
-              delay={i * 0.08}
-              className="group min-w-0 odd:mr-2 even:ml-2 md:odd:mr-5 md:even:ml-5 lg:odd:mr-9 lg:even:ml-9"
+              delay={i * 0.06}
+              className="group min-w-0"
             >
-              <GlassCard className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 gap-y-2 bg-linear-to-br from-surface via-surface to-surface-muted px-4 py-4 sm:px-5 lg:px-6 lg:py-5 motion-reduce:hover:translate-y-0">
+              <GlassCard className="grid h-full grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 gap-y-2 bg-linear-to-br from-surface via-surface to-surface-muted px-4 py-4 sm:px-5 lg:p-5 motion-reduce:hover:translate-y-0">
                 <IconBubble tone="success" shape="circle" className="h-9! w-9!">
                   <Check animated={false} className="size-4" aria-hidden="true" />
                 </IconBubble>
@@ -123,11 +123,11 @@ function ParentTrustSection({
                     {pillar.title}
                   </h3>
                 </div>
-                <p className="col-span-2 text-sm leading-relaxed text-foreground/85 lg:col-span-1 lg:col-start-2">
+                <p className="col-span-2 text-sm leading-relaxed text-foreground/85">
                   {pillar.description}
                 </p>
-                <div className="col-span-2 lg:col-span-1 lg:col-start-2">
-                  <Pill tone="vanilla" className="shadow-sm group-odd:-rotate-1 group-even:rotate-1">
+                <div className="col-span-2 self-end pt-1">
+                  <Pill tone="vanilla" className="shadow-sm">
                     {pillar.badge}
                   </Pill>
                 </div>

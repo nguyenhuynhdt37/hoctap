@@ -85,16 +85,9 @@ function AllCombos() {
 }
 
 function ComboShelf({ cards }: { cards: ReactNode[] }) {
-  const [featured, ...compact] = cards;
-
   return (
-    <div className={cn("grid min-w-0 items-start gap-5 md:gap-6", compact.length > 0 && "md:grid-cols-2 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]")}>
-      {featured}
-      {compact.length > 0 && (
-        <div className="contents lg:grid lg:min-w-0 lg:gap-5 lg:pt-7">
-          {compact}
-        </div>
-      )}
+    <div className="grid min-w-0 grid-cols-1 items-stretch gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      {cards}
     </div>
   );
 }
@@ -125,12 +118,12 @@ function ThumbnailStack({ combo, featured }: { combo: CatalogCombo; featured: bo
         </div>
       ))}
       {featured && (
-        <Pill className="absolute bottom-2.5 left-2.5 z-40 -rotate-2 bg-surface/95 text-info-foreground shadow-md sm:bottom-4 sm:left-4">
+        <Pill className="absolute bottom-2.5 left-2.5 z-40 bg-surface/95 text-info-foreground shadow-md sm:bottom-4 sm:left-4">
           <ThumbsUp className="size-3.5 shrink-0" aria-hidden="true" /> Đề xuất
         </Pill>
       )}
       {savings > 0 && (
-        <Pill tone="lavender" className="absolute right-2.5 top-2.5 z-40 rotate-2 shadow-md sm:right-4 sm:top-4">
+        <Pill tone="lavender" className="absolute right-2.5 top-2.5 z-40 shadow-md sm:right-4 sm:top-4">
           {combo.savings_percent > 0
             ? `Tiết kiệm ${number.format(combo.savings_percent)}%`
             : "Tiết kiệm < 1%"}

@@ -114,7 +114,7 @@ function LessonPreview() {
       <div className="absolute inset-x-[18%] inset-y-[2%] -z-10 rounded-full bg-primary-pastel/40 blur-2xl" />
       <div className="absolute right-[12%] top-[12%] size-4 rounded-full bg-primary-pastel/70" />
       <div className="absolute bottom-[14%] left-[10%] size-2.5 rounded-full bg-primary-pastel" />
-      <GlassCard tilt={false} className="relative mx-auto w-[90%] max-w-72 -rotate-2 p-4">
+      <GlassCard tilt={false} className="relative mx-auto w-[90%] max-w-72 p-4">
         <div className="flex items-center gap-3">
           <IconBubble className="h-9! w-9!">
             <BookOpen className="size-4" aria-hidden="true" />
@@ -131,7 +131,7 @@ function LessonPreview() {
           <span className="text-xs font-semibold tabular-nums text-primary">70%</span>
         </div>
       </GlassCard>
-      <Pill className="relative -mt-1 mr-[3%] rotate-2 self-end shadow-sm">
+      <Pill className="relative -mt-1 mr-[3%] self-end shadow-sm">
         Đang học
       </Pill>
     </div>
@@ -141,8 +141,8 @@ function LessonPreview() {
 function VideoPreview() {
   return (
     <div className="relative isolate mx-auto w-full max-w-64 px-2 py-2.5">
-      <div className="absolute inset-x-[10%] inset-y-1 -z-10 rotate-3 rounded-3xl border border-primary-pastel bg-primary-light" />
-      <GlassCard tilt={false} className="-rotate-2 p-2.5">
+      <div className="absolute inset-x-[10%] inset-y-1 -z-10 rounded-3xl border border-primary-pastel bg-primary-light" />
+      <GlassCard tilt={false} className="p-2.5">
         <div className="grid h-18 place-items-center rounded-2xl bg-linear-to-br from-primary-light to-primary-pastel/65">
           <IconBubble shape="circle" className="h-9! w-9! bg-surface! shadow-sm">
             <Play className="size-4 fill-current" aria-hidden="true" />
@@ -162,10 +162,10 @@ function VideoPreview() {
 function QuizPreview() {
   return (
     <div className="relative isolate mx-auto w-full max-w-64 px-2 py-2.5">
-      <Pill className="relative z-10 -mb-2 ml-2 -rotate-2 shadow-sm">
+      <Pill className="relative z-10 -mb-2 ml-2 shadow-sm">
         Câu hỏi nhanh
       </Pill>
-      <GlassCard tilt={false} className="rotate-1 px-3 pt-4 pb-3">
+      <GlassCard tilt={false} className="px-3 pt-4 pb-3">
         <p className="px-1 text-sm font-semibold text-foreground">7 × 8 bằng bao nhiêu?</p>
         <div className="mt-3 grid grid-cols-[1fr_1.25fr_1fr] gap-1.5 text-xs font-semibold tabular-nums">
           <span className="rounded-xl border border-border bg-background py-2 text-center text-foreground">54</span>
@@ -185,7 +185,7 @@ function AssistantPreview() {
       <span className="mb-1 self-end rounded-2xl rounded-br-md border border-accent-border/70 bg-surface px-3 py-1.5 text-xs font-medium text-foreground shadow-sm">
         Em nên bắt đầu từ đâu?
       </span>
-      <GlassCard tilt={false} className="flex -rotate-2 items-start gap-2.5 rounded-bl-lg! border-accent-border! bg-accent! p-3 text-accent-foreground">
+      <GlassCard tilt={false} className="flex items-start gap-2.5 rounded-bl-lg! border-accent-border! bg-accent! p-3 text-accent-foreground">
         <span className="grid size-8 shrink-0 place-items-center rounded-full bg-surface">
           <Bot className="size-4" aria-hidden="true" />
         </span>
@@ -201,7 +201,7 @@ function AssistantPreview() {
 function CodePreview() {
   return (
     <div className="relative isolate mx-auto w-full max-w-64 px-2 py-2">
-      <GlassCard tilt={false} className="-rotate-2 border-accent-border/75!">
+      <GlassCard tilt={false} className="border-accent-border/75!">
         <div className="flex items-center gap-1.5 border-b border-accent-border/55 px-3 py-2">
           <span className="size-1.5 rounded-full bg-accent-foreground/55" />
           <span className="size-1.5 rounded-full bg-accent-foreground/35" />
@@ -219,7 +219,7 @@ function CodePreview() {
 function ProgressPreview() {
   return (
     <div className="relative isolate mx-auto w-full max-w-56 px-2 py-2">
-      <GlassCard tilt={false} className="rotate-1 px-3 pt-3 pb-2.5">
+      <GlassCard tilt={false} className="px-3 pt-3 pb-2.5">
         <p className="text-xs font-semibold text-foreground">Bài đã hoàn thành</p>
         <div className="mt-2.5 grid h-11 grid-cols-5 items-end gap-1.5 border-b border-primary-pastel pb-1">
           <span className="h-[30%] rounded-t-md bg-primary-pastel/75" />
@@ -246,23 +246,21 @@ function BenefitsSection() {
         description="Không chạy theo các hiệu ứng gây xao nhãng, Mây Mây tập trung vào không gian học tập tĩnh lặng, trực quan và đầy đủ công cụ hỗ trợ học sinh tiến bộ thực chất."
         className="[&_h2]:text-balance [&_p]:text-foreground/85"
       />
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5 lg:grid-cols-12">
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
         {BENEFITS.map(({ icon: Icon, preview: Preview, ...item }, i) => (
-          <Reveal key={item.title} delay={i * 0.08} className={`min-w-0 ${item.placement}`}>
+          <Reveal key={item.title} delay={i * 0.06} className="min-w-0">
             <GlassCard
               as="article"
-              className={`grid h-full grid-rows-[auto_1fr] items-center gap-4 p-5 sm:p-6 motion-reduce:hover:translate-y-0 ${item.gradient} ${
-                item.wide ? "lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:grid-rows-1" : ""
-              } ${i === 0 ? "lg:gap-6 lg:p-8" : ""}`}
+              className={`grid h-full grid-rows-[auto_1fr] items-center gap-4 p-5 sm:p-6 motion-reduce:hover:translate-y-0 ${item.gradient}`}
             >
               <div className="min-w-0 self-start">
-                <IconBubble tone={item.tone} className={i === 0 ? "" : "h-10! w-10!"}>
-                  <Icon className={i === 0 ? "size-6" : "size-5"} aria-hidden="true" />
+                <IconBubble tone={item.tone} className="h-10! w-10!">
+                  <Icon className="size-5" aria-hidden="true" />
                 </IconBubble>
                 <p className={`mt-3 text-xs leading-relaxed font-semibold ${TONE[item.tone].fg}`}>
                   {item.subtitle}
                 </p>
-                <h3 className={`mt-1 text-lg leading-snug font-semibold text-foreground ${i === 0 ? "sm:text-xl lg:max-w-xs lg:text-3xl" : ""}`}>
+                <h3 className="mt-1 text-lg leading-snug font-semibold text-foreground">
                   {item.title}
                 </h3>
                 <p className="mt-2 max-w-prose text-sm leading-relaxed text-foreground/85">

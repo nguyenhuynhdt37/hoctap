@@ -60,7 +60,7 @@ const GRADE_LEVELS: GradeLevelItem[] = [
     imageAlt: "Bạn nhỏ Mây đồng hành cùng học sinh Tiểu học Lớp 1 đến Lớp 5",
     tone: "vanilla",
     sceneClassName: "from-surface-muted via-surface-muted to-primary-light/70",
-    offsetClassName: "md:mt-6 lg:mt-16",
+    offsetClassName: "",
     icon: Cloud,
   },
   {
@@ -100,7 +100,7 @@ const GRADE_LEVELS: GradeLevelItem[] = [
     imageAlt: "Học viện Mây Mây dành cho học sinh THPT Lớp 10 đến Lớp 12",
     tone: "blue",
     sceneClassName: "from-primary-pastel/55 via-primary-light to-background",
-    offsetClassName: "md:max-lg:col-span-2 lg:mt-8",
+    offsetClassName: "",
     icon: GraduationCap,
   },
 ];
@@ -128,7 +128,7 @@ const GradeLevelsSection: FC<GradeLevelsSectionProps> = ({
 
         <div className="relative">
           <CloudBlob className="left-1/4 top-1/3 h-40 w-1/2 bg-primary-pastel/45" />
-          <ul role="list" className="relative grid items-start gap-x-6 gap-y-8 md:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.12fr)_minmax(0,1fr)]">
+          <ul role="list" className="relative grid grid-cols-1 items-stretch gap-6 md:grid-cols-3">
             {GRADE_LEVELS.map((level, index) => {
               const Icon = level.icon;
               const isSelected = selectedLevel === level.id;
@@ -146,7 +146,7 @@ const GradeLevelsSection: FC<GradeLevelsSectionProps> = ({
                     )}
                   >
                     {isSelected && (
-                      <Pill className="absolute -top-3.5 right-5 z-10 rotate-2 shadow-sm">
+                      <Pill className="absolute -top-3.5 right-5 z-10 shadow-sm">
                         <Check animated={false} aria-hidden="true" className="size-3.5" />
                         Đang chọn
                       </Pill>
@@ -167,7 +167,7 @@ const GradeLevelsSection: FC<GradeLevelsSectionProps> = ({
                           tone.border,
                         )}
                       />
-                      <div className="absolute inset-y-3 right-3 w-[58%] rotate-2 overflow-hidden rounded-2xl border-2 border-surface/85 shadow-lg">
+                      <div className="absolute inset-y-3 right-3 w-[58%] overflow-hidden rounded-2xl border-2 border-surface/85 shadow-lg">
                         <img
                           src={level.image}
                           alt={level.imageAlt}
@@ -177,11 +177,11 @@ const GradeLevelsSection: FC<GradeLevelsSectionProps> = ({
                       </div>
                       <IconBubble
                         tone={level.tone}
-                        className="relative -rotate-6 shadow-md sm:h-16 sm:w-16"
+                        className="relative shadow-md sm:h-16 sm:w-16"
                       >
                         <Icon aria-hidden="true" className="size-7" strokeWidth={1.75} />
                       </IconBubble>
-                      <Pill tone={level.tone} className="relative -rotate-2 shadow-sm">
+                      <Pill tone={level.tone} className="relative shadow-sm">
                         {level.gradeRange}
                       </Pill>
                     </div>
