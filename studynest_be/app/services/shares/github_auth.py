@@ -51,9 +51,45 @@ def return_path(value):
     return value[:500] if not parsed.scheme and not parsed.netloc else '/'
 
 
+def _normalize_origin(raw: str | None) -> str | None:
+    if not isinstance(raw, str) or not raw.strip():
+        return None
+    try:
+        parsed = urlsplit(raw.strip())
+    except ValueError:
+        return None
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc or "@" in parsed.netloc:
+        return None
+    return f"{parsed.scheme}://{parsed.netloc}"
+
+
 def frontend_origin():
-    parsed = urlsplit(settings.FRONTEND_URL or 'http://localhost:3000')
-    return f'{parsed.scheme}://{parsed.netloc}'
+    return _normalize_origin(settings.FRONTEND_URL) or "http://localhost:3000"
+
+
+def _allowed_frontend_origins() -> set[str]:
+    allowed = {
+        frontend_origin(),
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3001",
+    }
+    for raw in (settings.CORS_ALLOWED_ORIGINS or "").split(","):
+        origin = _normalize_origin(raw)
+        if origin:
+            allowed.add(origin)
+    return allowed
+
+
+def _resolve_request_frontend_origin(request: Request | None) -> str:
+    if request is not None:
+        allowed = _allowed_frontend_origins()
+        for header_name in ("origin", "referer"):
+            candidate = _normalize_origin(request.headers.get(header_name))
+            if candidate and candidate in allowed:
+                return candidate
+    return frontend_origin()
 
 
 def _dpop_return_path(value: str) -> str:
@@ -90,6 +126,7 @@ async def begin_dpop_login_async(
         result = await github.authorize({
             "purpose": "login_dpop", "jkt": jkt, "code_challenge": challenge,
             "return_to": _dpop_return_path(redirect_to),
+            "frontend_origin": _resolve_request_frontend_origin(request),
         }, "read:user user:email", bind_state=True)
     except RedisError:
         raise HTTPException(503, "Chưa khởi tạo được đăng nhập GitHub.",
@@ -98,8 +135,10 @@ async def begin_dpop_login_async(
     return result
 
 
-def _dpop_callback_redirect(**params: str) -> RedirectResponse:
-    return RedirectResponse(frontend_origin() + "/auth/github/callback?" + urlencode(params),
+def _dpop_callback_redirect(origin: str | None = None, **params: str) -> RedirectResponse:
+    safe_origin = _normalize_origin(origin)
+    target_origin = safe_origin if safe_origin in _allowed_frontend_origins() else frontend_origin()
+    return RedirectResponse(target_origin + "/auth/github/callback?" + urlencode(params),
                             status_code=303, headers=GITHUB_CALLBACK_HEADERS)
 
 
@@ -107,10 +146,11 @@ async def _complete_dpop_callback_async(
     state: str, code: str | None, provider_error: str | None,
     raw: str, saved: dict, auth_service: AuthService,
 ) -> RedirectResponse:
+    target_origin = saved.get("frontend_origin")
     try:
         if (not _CODE_PATTERN.fullmatch(state) or not secret_matches(saved.get("state_hash"), _digest(state))
                 or await get_redis().getdel(f"github:oauth:{state}") != raw or provider_error or not code):
-            return _dpop_callback_redirect(error="github_login_failed")
+            return _dpop_callback_redirect(origin=target_origin, error="github_login_failed")
         exchanged = await github.exchange_code(code, saved["verifier"])
         profile = await github.identity_profile(exchanged["access_token"])
         user = await resolve_user(auth_service.db, profile, exchanged["access_token"])
@@ -122,11 +162,11 @@ async def _complete_dpop_callback_async(
             "return_to": saved["return_to"],
         }), ex=60, nx=True)
         if created:
-            return _dpop_callback_redirect(code=exchange_code)
+            return _dpop_callback_redirect(origin=target_origin, code=exchange_code)
     except (HTTPException, RedisError, ValueError, TypeError, AttributeError):
         # Provider errors and account state share one browser-facing response.
         await auth_service.db.rollback()
-    return _dpop_callback_redirect(error="github_login_failed")
+    return _dpop_callback_redirect(origin=target_origin, error="github_login_failed")
 
 
 async def exchange_dpop_login_async(
