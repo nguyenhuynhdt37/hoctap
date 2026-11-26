@@ -20,7 +20,7 @@ import {
 } from "@/types/shared/auth";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useActionState, useCallback, useEffect, useState } from "react";
 import { ArrowRight, LockKeyhole, Mail } from "pulsoicon-react";
 import { sanitizeRedirect } from "@/lib/auth/safe-redirect";
 
@@ -137,11 +137,15 @@ const Login = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectUrl = sanitizeRedirect(searchParams.get("redirect"));
+  const finishLogin = () => {
+    router.push(redirectUrl);
+    router.refresh();
+  };
+  const goToVerification = (target: string) => router.push(target);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{
     email?: string;
     password?: string;
@@ -179,14 +183,14 @@ const Login = () => {
       setErrors((prev) => ({ ...prev, general: "" }));
       try {
         await postAuthSession("/auth/google", { credential: response.credential });
-        router.push(redirectUrl);
-        router.refresh();
+        finishLogin();
       } catch (error) {
         handleLoginError(error, "google");
       } finally {
         setIsGoogleLoading(false);
       }
     },
+    // finishLogin/handleLoginError only close over router and redirectUrl.
     [router, redirectUrl]
   );
 
@@ -267,6 +271,19 @@ const Login = () => {
       return;
     }
 
+    if (!isDpopMode && (error?.status === 401 || error?.response?.status === 401)) {
+      const redirectParam =
+        redirectUrl !== "/"
+          ? `&redirect=${encodeURIComponent(redirectUrl)}`
+          : "";
+      goToVerification(
+        "/email_authentication?email=" +
+          encodeURIComponent(email) +
+          redirectParam
+      );
+      return;
+    }
+
     if (
       error?.status === 401 ||
       error?.response?.status === 401 ||
@@ -324,7 +341,7 @@ const Login = () => {
             ? `&redirect=${encodeURIComponent(redirectUrl)}`
             : "";
         const sentParam = detail.otp_sent ? "&sent=1" : "";
-        router.push(
+        goToVerification(
           "/email_authentication?email=" +
             encodeURIComponent(targetVerifyEmail) +
             sentParam +
@@ -442,23 +459,21 @@ const Login = () => {
   // SUBMIT HANDLER
   // ============================================
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // React 19 form action: the transition gives `isLoading` and keeps the dialog open on errors.
+  // Login stays client-side on purpose: the DPoP key lives in the browser, not on the server.
+  const [, submitAction, isLoading] = useActionState(async () => {
     setTouched({ email: true, password: true });
     setErrors((prev) => ({ ...prev, general: "" }));
-    if (!validateForm()) return;
+    if (!validateForm()) return null;
 
-    setIsLoading(true);
     try {
       await postAuthSession("/auth/login", { email, password });
-      router.push(redirectUrl);
-      router.refresh();
+      finishLogin();
     } catch (error) {
       handleLoginError(error);
-    } finally {
-      setIsLoading(false);
     }
-  };
+    return null;
+  }, null);
 
   const closeDialog = () => {
     setDialogState((prev) => ({ ...prev, isOpen: false }));
@@ -486,7 +501,7 @@ const Login = () => {
           <Alert variant="destructive" className="mt-3">{errors.general}</Alert>
         )}
 
-        <form className="mt-3 space-y-3" onSubmit={handleSubmit}>
+        <form className="mt-3 space-y-3" action={submitAction}>
           <AuthInput
             id="email"
             name="email"

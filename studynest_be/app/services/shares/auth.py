@@ -13,7 +13,7 @@ from google.auth.transport import requests
 from google.oauth2 import id_token
 from loguru import logger
 from redis.exceptions import RedisError
-from sqlalchemy import delete, select, text, update
+from sqlalchemy import delete, func, select, text, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -791,9 +791,15 @@ class AuthService:
         self._require_active_google_account(user)
         # Google controls consumer Gmail addresses. Neither a current Workspace
         # address nor a verified third-party email proves historical ownership.
+        # A personal Gmail address that Google reports as verified AND that the
+        # account already verified by email proves the same person owns both, so it may
+        # link even when the account signs in with a password. Legacy Google accounts
+        # keep linking without the token's verification flag, as before.
+        is_personal_gmail = email.rsplit("@", 1)[1].lower() == "gmail.com" and "hd" not in info
+        google_confirms_email = info.get("email_verified") is True
         can_link_legacy = (
-            user.password == LEGACY_GOOGLE_PASSWORD and user.is_verified_email is True
-            and email.rsplit("@", 1)[1].lower() == "gmail.com" and "hd" not in info
+            user.is_verified_email is True and is_personal_gmail
+            and (user.password == LEGACY_GOOGLE_PASSWORD or google_confirms_email)
         )
         if not can_link_legacy or await self.db.scalar(
             select(UserIdentity.user_id).where(
@@ -1196,8 +1202,13 @@ class AuthService:
         email = schema.email.strip().lower()
 
         try:
+            # Throttle before any lookup so unknown addresses cost the same as real ones.
+            await limit_issue_async(email, RESET_PASSWORD, ip)
+
+            # Exact, case-insensitive match. ilike() would treat "%" and "_" in the address
+            # as wildcards and could pick (and mail) an unrelated account.
             user = await self.db.scalar(
-                select(User).where(User.email.ilike(email)).with_for_update()
+                select(User).where(func.lower(User.email) == email).with_for_update()
             )
             if user is None or user.deleted_at is not None:
                 raise HTTPException(
@@ -1215,8 +1226,6 @@ class AuthService:
                         "message": "Tài khoản đang bị khóa, không thể đặt lại mật khẩu.",
                     },
                 )
-
-            await limit_issue_async(user.email, RESET_PASSWORD, ip)
 
             await self.db.execute(
                 delete(EmailVerifications).where(
@@ -1252,8 +1261,8 @@ class AuthService:
                 )
             )
             return {
-                "message": f"Đã gửi mã xác thực 6 chữ số và liên kết đặt lại mật khẩu tới {user.email}.",
-                "email": user.email,
+                "message": f"Đã gửi mã xác thực 6 chữ số và liên kết đặt lại mật khẩu tới {email}.",
+                "email": email,
                 "expires_in_seconds": RESET_PASSWORD_TTL,
                 "resend_cooldown_seconds": 60,
             }
@@ -1279,7 +1288,7 @@ class AuthService:
 
         try:
             user = await self.db.scalar(
-                select(User).where(User.email == email).with_for_update()
+                select(User).where(func.lower(User.email) == email).with_for_update()
             )
             if user is None or user.deleted_at is not None or user.is_banned:
                 await limit_attempt_async(email, None, ip)

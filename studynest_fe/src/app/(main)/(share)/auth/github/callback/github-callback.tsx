@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { Alert, Button, Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
 import { finishGitHubLogin } from "@/lib/auth/github";
+import { bootstrapSessionOutcome } from "@/lib/auth/session";
 
 export default function GitHubCallback() {
   const router = useRouter();
@@ -16,7 +17,14 @@ export default function GitHubCallback() {
     attempt.current ??= finishGitHubLogin();
     void attempt.current.then(
       (target) => { if (active) router.replace(target); },
-      () => { if (active) setFailed(true); },
+      async () => {
+        // A second sign-in while a session already exists (other tab, repeated click) can fail
+        // on the client even though the user is signed in. Only show the error if they are not.
+        const outcome = await bootstrapSessionOutcome().catch(() => "unavailable");
+        if (!active) return;
+        if (outcome === "authenticated") router.replace("/");
+        else setFailed(true);
+      },
     );
     return () => { active = false; };
   }, [router]);

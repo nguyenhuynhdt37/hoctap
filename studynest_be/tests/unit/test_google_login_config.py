@@ -146,11 +146,30 @@ class GoogleLoginConfigurationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual((identity.user_id, identity.email_at_link), (user.id, user.email))
         self.service.db.commit.assert_awaited_once()
 
+    async def test_verified_password_account_links_verified_personal_gmail(self):
+        user = User(id=uuid4(), email="test@gmail.com", fullname="Test",
+                    password="local-hash", is_verified_email=True)
+        self.service.db.scalar.side_effect = [None, None, user, None]
+        with (
+            patch.object(settings, "GOOGLE_API_CLIENT_ID_LOGIN_GOOGLE", "test-client"),
+            patch("app.services.shares.auth.id_token.verify_oauth2_token",
+                  return_value={"sub": "password-subject", "email_verified": True, "email": user.email}),
+        ):
+            await self.service.login_google_async(
+                GoogleLogin(credential="test"), Response(), request=self.dpop_login.request("google"),
+            )
+        identity = self.service.db.add.call_args.args[0]
+        self.assertIsInstance(identity, UserIdentity)
+        self.assertEqual((identity.provider_subject, identity.user_id), ("password-subject", user.id))
+        self.assertEqual(self.service._create_session.call_args.args[0], user.id)
+
     async def test_unsafe_email_matches_do_not_create_a_session_or_identity(self):
         cases = (
             ("external", "test@example.test", "google-oauth", {}, []),
             ("workspace", "test@gmail.com", "google-oauth", {"hd": "workspace.example.test"}, []),
-            ("local-password", "test@gmail.com", "local-hash", {}, []),
+            ("local-password-external", "test@example.test", "local-hash", {}, []),
+            ("local-password-workspace", "test@gmail.com", "local-hash", {"hd": "workspace.example.test"}, []),
+            ("local-password-another-subject", "test@gmail.com", "local-hash", {}, [uuid4()]),
             ("another-subject", "test@gmail.com", "google-oauth", {}, [uuid4()]),
         )
         for case, email, password, claims, prior_link in cases:

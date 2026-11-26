@@ -104,7 +104,7 @@ class MailerService:
         return {"message": f"Đã gửi mã OTP xác thực ký hợp đồng tới {email}"}
 
     async def send_reset_password_email(
-        self, email: str, fullname: str, reset_link: str, code: str = ""
+        self, email: str, fullname: str, reset_link: str, code: str | None = None
     ):
         """Gửi email đặt lại mật khẩu (kèm liên kết 1 chạm và mã OTP 6 chữ số)."""
         message = MessageSchema(
@@ -113,7 +113,7 @@ class MailerService:
             template_body={
                 "fullname": fullname,
                 "reset_link": reset_link,
-                "code": code,
+                "code": code or "",
             },
             subtype=MessageType.html,
         )
