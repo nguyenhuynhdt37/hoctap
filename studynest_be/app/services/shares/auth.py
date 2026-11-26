@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 from datetime import timedelta
 from typing import Any
+from urllib.parse import quote
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, Request, Response, status
@@ -29,9 +31,11 @@ from app.db.sesson import get_session
 from app.libs.formats.datetime import now as get_now
 from app.libs.formats.datetime import has_expired, now_tzinfo
 from app.schemas.auth.user import (
+    ForgotPasswordRequest,
     GoogleLogin,
     LoginUser,
     RefreshEmail,
+    ResetPasswordRequest,
     SendOtp,
     UserCreate,
     VerifyEmail,
@@ -40,7 +44,15 @@ from app.schemas.auth.user import (
 from app.schemas.shares.notification import NotificationCreateSchema
 from app.services.gamification.shop_service import ShopService
 from app.services.shares.mailer import MailerService
-from app.services.shares.otp import LOGIN, OTP_TTL, VERIFY_EMAIL, limit_attempt_async, limit_issue_async
+from app.services.shares.otp import (
+    LOGIN,
+    OTP_TTL,
+    RESET_PASSWORD,
+    RESET_PASSWORD_TTL,
+    VERIFY_EMAIL,
+    limit_attempt_async,
+    limit_issue_async,
+)
 from app.services.shares.notification import NotificationService
 from app.services.shares.wallets import WalletsService
 
@@ -1057,6 +1069,157 @@ class AuthService:
                 explicit_device_type=schema.device_type,
             )
             return login_result
+        except Exception:
+            await self.db.rollback()
+            raise
+
+    @staticmethod
+    def _hash_reset_code(user_id: UUID, code: str) -> str:
+        return hashlib.sha256(f"reset:{user_id}:{code.strip()}".encode("utf-8")).hexdigest()
+
+    async def forgot_password_async(
+        self, schema: ForgotPasswordRequest, *, ip: str | None = None
+    ) -> dict[str, Any]:
+        email = schema.email.strip().lower()
+
+        try:
+            user = await self.db.scalar(
+                select(User).where(User.email.ilike(email)).with_for_update()
+            )
+            if user is None or user.deleted_at is not None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail={
+                        "error_code": "ACCOUNT_NOT_FOUND",
+                        "message": "Thông tin tài khoản không chính xác (Email chưa được đăng ký trên hệ thống).",
+                    },
+                )
+            if user.is_banned:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail={
+                        "error_code": "ACCOUNT_BANNED",
+                        "message": "Tài khoản đang bị khóa, không thể đặt lại mật khẩu.",
+                    },
+                )
+
+            await limit_issue_async(user.email, RESET_PASSWORD, ip)
+
+            await self.db.execute(
+                delete(EmailVerifications).where(
+                    EmailVerifications.user_id == user.id,
+                    EmailVerifications.purpose == RESET_PASSWORD,
+                )
+            )
+            code = await self.security.generate_otp()
+            code_hash = self._hash_reset_code(user.id, code)
+            self.db.add(
+                EmailVerifications(
+                    user_id=user.id,
+                    purpose=RESET_PASSWORD,
+                    code=code_hash,
+                    expired_at=get_now() + timedelta(seconds=RESET_PASSWORD_TTL),
+                )
+            )
+            await self.db.commit()
+
+            frontend_base = str(
+                getattr(settings, "FRONTEND_URL", "http://localhost:3000")
+            ).rstrip("/")
+            reset_link = (
+                f"{frontend_base}/reset-password"
+                f"?email={quote(user.email)}&code={quote(code)}"
+            )
+            await self._send_mail_or_503(
+                self.mail_service.send_reset_password_email(
+                    email=user.email,
+                    fullname=user.fullname or "",
+                    reset_link=reset_link,
+                    code=code,
+                )
+            )
+            return {
+                "message": f"Đã gửi mã xác thực 6 chữ số và liên kết đặt lại mật khẩu tới {user.email}.",
+                "email": user.email,
+                "expires_in_seconds": RESET_PASSWORD_TTL,
+                "resend_cooldown_seconds": 60,
+            }
+        except HTTPException:
+            raise
+        except Exception:
+            await self.db.rollback()
+            raise
+
+    async def reset_password_async(
+        self, schema: ResetPasswordRequest, *, ip: str | None = None
+    ) -> dict[str, Any]:
+        email = schema.email.strip().lower()
+        provided_code = schema.code.strip()
+
+        invalid_err = HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error_code": "INVALID_RESET_CODE",
+                "message": "Mã xác thực không chính xác hoặc đã hết hạn. Vui lòng yêu cầu mã mới.",
+            },
+        )
+
+        try:
+            user = await self.db.scalar(
+                select(User).where(User.email == email).with_for_update()
+            )
+            if user is None or user.deleted_at is not None or user.is_banned:
+                await limit_attempt_async(email, None, ip)
+                raise invalid_err
+
+            verification = await self.db.scalar(
+                select(EmailVerifications)
+                .where(
+                    EmailVerifications.user_id == user.id,
+                    EmailVerifications.purpose == RESET_PASSWORD,
+                )
+                .order_by(desc(EmailVerifications.created_at))
+                .with_for_update()
+            )
+            await limit_attempt_async(
+                str(user.id),
+                str(verification.id) if verification else None,
+                ip,
+            )
+
+            if (
+                verification is None
+                or not verification.code
+                or verification.expired_at is None
+                or has_expired(verification.expired_at)
+            ):
+                if verification is not None:
+                    await self.db.delete(verification)
+                    await self.db.commit()
+                raise invalid_err
+
+            expected_hash = self._hash_reset_code(user.id, provided_code)
+            if not secret_matches(expected_hash, verification.code):
+                raise invalid_err
+
+            user.password = await self.security.hash_password(schema.new_password)
+            user.is_verified_email = True
+
+            # Xóa toàn bộ mã reset cũ (dùng 1 lần) & thu hồi toàn bộ phiên đăng nhập cũ
+            await self.db.execute(
+                delete(EmailVerifications).where(
+                    EmailVerifications.user_id == user.id,
+                    EmailVerifications.purpose == RESET_PASSWORD,
+                )
+            )
+            await revoke_user_sessions_async(self.db, user.id)
+            await self.db.commit()
+
+            return {
+                "message": "Đặt lại mật khẩu thành công! Tất cả phiên đăng nhập cũ đã được đăng xuất. Vui lòng đăng nhập bằng mật khẩu mới.",
+            }
+        except HTTPException:
+            raise
         except Exception:
             await self.db.rollback()
             raise

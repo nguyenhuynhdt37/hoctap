@@ -57,13 +57,13 @@ class MailerService:
         return {"message": f"Đã gửi mã OTP đăng nhập đến {email}"}
 
     async def send_reset_password_email(
-        self, email: str, fullname: str, reset_link: str
+        self, email: str, fullname: str, reset_link: str, code: str | None = None
     ):
         """Gửi email đặt lại mật khẩu."""
         message = MessageSchema(
             subject="Đặt lại mật khẩu - Mây Mây",
             recipients=[email],
-            template_body={"fullname": fullname, "reset_link": reset_link},
+            template_body={"fullname": fullname, "reset_link": reset_link, "code": code or ""},
             subtype=MessageType.html,
         )
         await self.fastmail.send_message(message, template_name="reset_password.html")
