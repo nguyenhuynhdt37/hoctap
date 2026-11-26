@@ -152,6 +152,10 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
+        source: "/api/v1/:path*",
+        destination: `${rewriteBackendUrl}/api/v1/:path*`, // Tránh nhân đôi /api/v1/v1/* cho các callback URL
+      },
+      {
         source: "/api/:path*",
         destination: `${rewriteBackendUrl}/api/v1/:path*`, // Proxy /api/* -> backend/api/v1/*
       },
