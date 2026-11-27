@@ -1,20 +1,14 @@
-"use client";
-
-import { hasUpdatedUserLayout } from "@/lib/navigation/user-layout";
-import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
-import Footer from "./footer";
 import CompactFooter from "./footer/compact-footer";
 
+/** Khung nội dung chuẩn của khu vực người dùng: cùng bề rộng với header và footer. */
 export function UserPageFrame({ children }: { children: ReactNode }) {
-  const updated = hasUpdatedUserLayout(usePathname());
-
   return (
     <>
-      <div data-layout={updated ? "updated" : undefined} className={updated ? "group/user-layout min-h-[55vh] min-w-0" : "user-full-canvas w-full"}>
+      <div data-layout="updated" className="group/user-layout min-h-[55vh] min-w-0">
         {children}
       </div>
-      {updated ? <CompactFooter /> : <Footer />}
+      <CompactFooter />
     </>
   );
 }

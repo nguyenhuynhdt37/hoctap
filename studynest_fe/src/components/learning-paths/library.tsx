@@ -96,7 +96,7 @@ function FannedComboDeck({ items }: { items: Bundle[] }) {
       : top3.map((item, idx) => ({ item, layout: layouts[idx] ?? layouts[1], rank: idx + 1 }));
 
   return (
-    <div className="relative mx-auto flex h-[19rem] w-full max-w-md items-center justify-center sm:h-[21rem] lg:max-w-none">
+    <div className="relative mx-auto flex h-[15rem] w-full max-w-md items-center justify-center sm:h-[17rem] lg:max-w-none">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-x-10 top-10 bottom-6 rounded-full bg-gradient-to-tr from-primary-pastel/60 via-secondary/60 to-accent/60 blur-3xl"
@@ -924,12 +924,12 @@ export default function LearningLibrary() {
   const variantCycle: CardVariant[] = ["wide-blue", "deep-sky", "vanilla-atelier", "wide-lavender"];
 
   return (
-    <main className="mx-auto max-w-7xl px-4 pb-28 pt-5 text-foreground sm:px-6 lg:px-8">
+    <main className="user-container pb-28 pt-5 text-foreground">
       {/* ── TOP UTILITY STRIP ── */}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <nav aria-label="Điều hướng danh mục" className="flex items-center gap-2 text-xs font-semibold">
-          <Link href="/courses" className="text-muted-foreground hover:text-primary hover:underline">
-            Khóa học
+          <Link href="/" className="text-muted-foreground hover:text-primary hover:underline">
+            Trang chủ
           </Link>
           <ChevronRight className="size-3.5 text-muted-foreground" aria-hidden="true" />
           <span aria-current="page" className="text-foreground">
@@ -956,7 +956,7 @@ export default function LearningLibrary() {
       </div>
 
       {/* ── SPLIT MAGAZINE POSTER HERO + 3D FANNED CARD STACK (CLOUDY BLUE) ── */}
-      <header className="relative isolate overflow-hidden rounded-[2.25rem] border border-primary-pastel/80 bg-gradient-to-br from-surface via-primary-light/55 to-secondary/35 px-6 py-8 shadow-sm sm:px-10 sm:py-12">
+      <header className="relative isolate overflow-hidden rounded-3xl border border-primary-pastel/80 bg-gradient-to-br from-surface via-primary-light/55 to-secondary/35 px-5 py-6 shadow-sm sm:px-8 sm:py-8">
         <div
           aria-hidden="true"
           className="pointer-events-none absolute -top-24 -right-24 -z-10 size-96 rounded-full bg-primary-pastel/55 blur-3xl"
@@ -984,7 +984,7 @@ export default function LearningLibrary() {
               </span>
             </div>
 
-            <h1 className="font-display text-4xl font-bold leading-[1.03] tracking-tight text-foreground sm:text-5xl lg:text-[4rem]">
+            <h1 className="font-display text-3xl font-bold leading-[1.1] tracking-tight text-foreground sm:text-4xl lg:text-5xl">
               Học trọn lộ trình,{" "}
               <span className="relative inline-block italic text-primary">
                 nhẹ ví hơn hẳn
@@ -1280,25 +1280,25 @@ export default function LearningLibrary() {
         )}
       </section>
 
-      {/* ── FLOATING COMPARE DOCK (Cloudy Deep Blue) ── */}
+      {/* ── FLOATING COMPARE DOCK (Cloudy Blue) ── */}
       {compareItems.length > 0 && (
-        <div className="fixed inset-x-4 bottom-4 z-40 mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary-pastel/50 bg-[#1F4B77]/95 px-4 py-3 text-white shadow-2xl backdrop-blur-md">
+        <div className="fixed inset-x-4 bottom-4 z-40 mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary-pastel bg-surface/95 px-4 py-3 text-foreground shadow-lg backdrop-blur-md">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 text-xs font-extrabold text-accent-vanilla">
+            <span className="inline-flex items-center gap-1.5 text-xs font-extrabold text-primary">
               <SlidersHorizontal aria-hidden="true" animated={false} className="size-4" />
               So sánh ({compareItems.length}/3):
             </span>
             {compareItems.map((item) => (
               <span
                 key={item.bundle_id}
-                className="inline-flex max-w-44 items-center gap-1 rounded-full border border-white/20 bg-white/12 px-2.5 py-1 text-xs font-medium"
+                className="inline-flex max-w-44 items-center gap-1 rounded-full border border-primary-pastel bg-primary-light px-2.5 py-1 text-xs font-medium text-foreground"
               >
                 <span className="truncate">{cleanTitle(item.title)}</span>
                 <button
                   type="button"
                   onClick={() => handleToggleCompare(item)}
                   aria-label={`Gỡ ${cleanTitle(item.title)}`}
-                  className="text-primary-light hover:text-white cursor-pointer"
+                  className="text-muted-foreground hover:text-foreground cursor-pointer"
                 >
                   <X className="size-3" aria-hidden="true" />
                 </button>
@@ -1310,7 +1310,7 @@ export default function LearningLibrary() {
             <button
               type="button"
               onClick={() => setCompareItems([])}
-              className="rounded-full px-3 py-1.5 text-xs font-semibold text-primary-light hover:text-white cursor-pointer"
+              className="rounded-full px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground cursor-pointer"
             >
               Xóa hết
             </button>
@@ -1318,7 +1318,7 @@ export default function LearningLibrary() {
               size="sm"
               disabled={compareItems.length < 2}
               onClick={() => setCompareOpen(true)}
-              className="rounded-full bg-accent-vanilla px-4 font-extrabold text-accent-vanilla-foreground hover:bg-surface disabled:opacity-50"
+              className="rounded-full px-4 font-extrabold disabled:opacity-50"
             >
               So sánh ngay
             </Button>
