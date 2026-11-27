@@ -238,7 +238,7 @@ Compose tự build web và API, bật PostgreSQL, Redis, Mailpit và Piston, r�
 
 Dừng stack bằng `docker compose down`. Dữ liệu trong volume vẫn được giữ. Sau khi sửa code, dùng `docker compose up -d --build` để build lại image.
 
-Nếu cổng mặc định đang được dùng, xem [cách đổi cổng web và API dev](docs/infra/local-docker.md#đổi-cổng-khi-chạy-song-song).
+Trên Windows, dùng `.\scripts\dev\up.ps1` để tự dừng server dev đang giữ cổng rồi bật Compose. Xem [cách chạy và đổi cổng dev](docs/infra/local-docker.md#tự-giải-phóng-cổng-trên-windows).
 
 Xem [hướng dẫn xuất và nạp database trên máy khác](docs/infra/local-docker.md).
 

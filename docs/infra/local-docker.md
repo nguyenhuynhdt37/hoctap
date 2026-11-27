@@ -16,6 +16,16 @@ Lần đầu Compose build ứng dụng, tạo database, chạy migration và t�
 
 Sau khi sửa code, chạy `docker compose up -d --build`. Dừng stack bằng `docker compose down`. Lệnh này giữ các volume dữ liệu.
 
+## Tự giải phóng cổng trên Windows
+
+Từ thư mục gốc, chạy bằng PowerShell:
+
+```powershell
+.\scripts\dev\up.ps1
+```
+
+Script tự dừng tiến trình Next.js và Uvicorn của repo đang giữ cổng web hoặc API, sau đó chạy `docker compose up -d`. Nếu cổng thuộc một ứng dụng khác hoặc container ngoài stack dev, thông báo sẽ chỉ rõ tiến trình hay container đang dùng cổng. Thêm `-Build` sau tên script khi cần build lại.
+
 ## Đổi cổng khi chạy song song
 
 Mặc định web dùng cổng `3000` và API dùng `8000`. Nếu máy đang dùng các cổng này cho stack khác, thêm vào file `.env` ở thư mục gốc:
