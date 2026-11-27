@@ -25,13 +25,13 @@ services:
       MAIL_PORT: "1025"
       MAIL_TLS: "False"
       MAIL_SSL: "False"
-      FRONTEND_URL: http://localhost:3001
-      BACKEND_URL: http://localhost:8001
-      PUBLIC_API_URL: http://localhost:8001
-      PAYPAL_REDIRECT_URI: http://localhost:8001/api/v1/lecturer/payout/callback
-      GITHUB_OAUTH_REDIRECT_URI: http://localhost:3001/api/agent/github/callback
-      CORS_ALLOWED_ORIGINS: http://localhost:3001
-      TUTOR_VOICE_ORIGINS: http://localhost:3001
+      FRONTEND_URL: http://localhost:${MAYMAY_DEV_WEB_PORT:-3000}
+      BACKEND_URL: http://localhost:${MAYMAY_DEV_API_PORT:-8000}
+      PUBLIC_API_URL: http://localhost:${MAYMAY_DEV_API_PORT:-8000}
+      PAYPAL_REDIRECT_URI: http://localhost:${MAYMAY_DEV_API_PORT:-8000}/api/v1/lecturer/payout/callback
+      GITHUB_OAUTH_REDIRECT_URI: http://localhost:${MAYMAY_DEV_WEB_PORT:-3000}/api/agent/github/callback
+      CORS_ALLOWED_ORIGINS: http://localhost:${MAYMAY_DEV_WEB_PORT:-3000}
+      TUTOR_VOICE_ORIGINS: http://localhost:${MAYMAY_DEV_WEB_PORT:-3000}
     entrypoint: ["/bin/sh", "-ec"]
     command:
       - |
@@ -39,7 +39,7 @@ services:
         python scripts/seed_catalog_v2.py
         exec uvicorn app.main:app --host 0.0.0.0 --port 8000
     ports:
-      - "127.0.0.1:8001:8000"
+      - "127.0.0.1:${MAYMAY_DEV_API_PORT:-8000}:8000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -55,23 +55,23 @@ services:
     build:
       context: ./studynest_fe
       args:
-        NEXT_PUBLIC_URL_BACKEND: http://localhost:8001
-        NEXT_PUBLIC_URL_BACKEND_WS: ws://localhost:8001
-        NEXT_PUBLIC_URL_FRONTEND: http://localhost:3001
+        NEXT_PUBLIC_URL_BACKEND: http://localhost:${MAYMAY_DEV_API_PORT:-8000}
+        NEXT_PUBLIC_URL_BACKEND_WS: ws://localhost:${MAYMAY_DEV_API_PORT:-8000}
+        NEXT_PUBLIC_URL_FRONTEND: http://localhost:${MAYMAY_DEV_WEB_PORT:-3000}
         NEXT_PUBLIC_AUTH_MODE: cookie
-        NEXT_PUBLIC_DPOP_API_ORIGIN: http://localhost:8001
+        NEXT_PUBLIC_DPOP_API_ORIGIN: http://localhost:${MAYMAY_DEV_API_PORT:-8000}
         NEXT_PUBLIC_URL_GOOGLE_LOGIN: ${NEXT_PUBLIC_URL_GOOGLE_LOGIN:-}
         NEXT_PUBLIC_PAYPAL_CLIENT_ID: ${NEXT_PUBLIC_PAYPAL_CLIENT_ID:-}
         INTERNAL_BACKEND_URL: http://backend:8000
     restart: unless-stopped
     environment:
       INTERNAL_BACKEND_URL: http://backend:8000
-      NEXT_PUBLIC_URL_BACKEND: http://localhost:8001
-      NEXT_PUBLIC_URL_BACKEND_WS: ws://localhost:8001
-      NEXT_PUBLIC_URL_FRONTEND: http://localhost:3001
+      NEXT_PUBLIC_URL_BACKEND: http://localhost:${MAYMAY_DEV_API_PORT:-8000}
+      NEXT_PUBLIC_URL_BACKEND_WS: ws://localhost:${MAYMAY_DEV_API_PORT:-8000}
+      NEXT_PUBLIC_URL_FRONTEND: http://localhost:${MAYMAY_DEV_WEB_PORT:-3000}
       NEXT_PUBLIC_AUTH_MODE: cookie
     ports:
-      - "127.0.0.1:3001:3000"
+      - "127.0.0.1:${MAYMAY_DEV_WEB_PORT:-3000}:3000"
     depends_on:
       backend:
         condition: service_healthy

@@ -8,13 +8,24 @@ Cài Docker Desktop hoặc OrbStack với Docker Compose v2.24 trở lên. Mở 
 docker compose up -d
 ```
 
-- Web Mây Mây ở [localhost:3001](http://localhost:3001).
-- Swagger ở [localhost:8001/docs](http://localhost:8001/docs).
+- Web Mây Mây ở [localhost:3000](http://localhost:3000).
+- Swagger ở [localhost:8000/docs](http://localhost:8000/docs).
 - Mailpit nhận email và OTP ở [localhost:18025](http://localhost:18025).
 
 Lần đầu Compose build ứng dụng, tạo database, chạy migration và tải runtime chấm code. Xem trạng thái bằng `docker compose ps -a`. Khi cài xong runtime, `piston-runtimes` hiển thị `Exited (0)`. Nếu cần xem tiến độ, chạy `docker compose logs -f backend frontend piston-runtimes`.
 
 Sau khi sửa code, chạy `docker compose up -d --build`. Dừng stack bằng `docker compose down`. Lệnh này giữ các volume dữ liệu.
+
+## Đổi cổng khi chạy song song
+
+Mặc định web dùng cổng `3000` và API dùng `8000`. Nếu máy đang dùng các cổng này cho stack khác, thêm vào file `.env` ở thư mục gốc:
+
+```dotenv
+MAYMAY_DEV_WEB_PORT=3001
+MAYMAY_DEV_API_PORT=8001
+```
+
+Sau khi đổi cổng, chạy `docker compose up -d --build` để Next.js nhận URL mới. CORS, callback và URL WebSocket được cập nhật theo hai biến trên.
 
 ## Xuất SQL ở máy nguồn
 
@@ -54,7 +65,7 @@ docker compose exec -T postgres psql -X --single-transaction -v ON_ERROR_STOP=1 
 docker compose up -d
 ```
 
-Mở web ở [localhost:3001](http://localhost:3001). Backend sẽ chạy các migration còn thiếu khi khởi động.
+Mở web ở [localhost:3000](http://localhost:3000). Backend sẽ chạy các migration còn thiếu khi khởi động.
 
 ## Tích hợp tùy chọn
 

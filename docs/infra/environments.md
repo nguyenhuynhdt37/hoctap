@@ -28,7 +28,7 @@ Mỗi môi trường chỉ đọc đúng file `.env.<APP_ENV>`; `.env` cũ chỉ
 docker compose up -d
 ```
 
-Web dùng cổng `3001`, API dùng `8001` và Mailpit dùng `18025`. Backend tự chạy Alembic cho `studynest_dev` và nạp danh mục mẫu. Compose lấy cấu hình mặc định từ `studynest_be/.env.development.example` và đọc thêm `studynest_be/.env.docker.local` nếu có.
+Web mặc định dùng cổng `3000`, API dùng `8000` và Mailpit dùng `18025`. Backend tự chạy Alembic cho `studynest_dev` và nạp danh mục mẫu. Compose lấy cấu hình mặc định từ `studynest_be/.env.development.example` và đọc thêm `studynest_be/.env.docker.local` nếu có.
 
 ## Hot reload trên máy và chạy test
 

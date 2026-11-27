@@ -229,14 +229,16 @@ Compose tự build web và API, bật PostgreSQL, Redis, Mailpit và Piston, r�
 
 | Dịch vụ | Địa chỉ local |
 | :--- | :--- |
-| Web Mây Mây | [http://localhost:3001](http://localhost:3001) |
-| FastAPI / Swagger | [http://localhost:8001/docs](http://localhost:8001/docs) |
+| Web Mây Mây | [http://localhost:3000](http://localhost:3000) |
+| FastAPI / Swagger | [http://localhost:8000/docs](http://localhost:8000/docs) |
 | Mailpit (email và OTP) | [http://localhost:18025](http://localhost:18025) |
 | Piston | http://localhost:14000 |
 | PostgreSQL + pgvector | `127.0.0.1:15433` |
 | Redis | `127.0.0.1:16379` |
 
 Dừng stack bằng `docker compose down`. Dữ liệu trong volume vẫn được giữ. Sau khi sửa code, dùng `docker compose up -d --build` để build lại image.
+
+Nếu cổng mặc định đang được dùng, xem [cách đổi cổng web và API dev](docs/infra/local-docker.md#đổi-cổng-khi-chạy-song-song).
 
 Xem [hướng dẫn xuất và nạp database trên máy khác](docs/infra/local-docker.md).
 
@@ -246,7 +248,7 @@ Các tích hợp AI, R2, Google OAuth và PayPal cần credential dev hoặc san
 
 Để chạy backend và web trực tiếp trên máy với hot reload, dùng `make dev-up` để bật riêng hạ tầng rồi xem [hướng dẫn cấu hình môi trường](docs/infra/environments.md).
 
-Expo chạy riêng trên máy. Sao chép `mobile/.env.example` thành `mobile/.env` và trỏ `EXPO_PUBLIC_API_URL` đến `http://127.0.0.1:8001/api/v1`, `EXPO_PUBLIC_WS_URL` đến `ws://127.0.0.1:8001` khi dùng iOS Simulator. Sau đó chạy:
+Expo chạy riêng trên máy. Sao chép `mobile/.env.example` thành `mobile/.env` và trỏ `EXPO_PUBLIC_API_URL` đến `http://127.0.0.1:8000/api/v1`, `EXPO_PUBLIC_WS_URL` đến `ws://127.0.0.1:8000` khi dùng iOS Simulator. Sau đó chạy:
 
 ```bash
 cd mobile
