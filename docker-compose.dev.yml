@@ -1,0 +1,88 @@
+# =============================================================================
+# Mây Mây — hạ tầng DEVELOPMENT (tách hoàn toàn khỏi production)
+#   - Project riêng `maymay-dev`: container, network, volume đều mang tiền tố maymay-dev,
+#     không đụng `studynest_*` của docker-compose.prod.yml.
+#   - Cổng riêng (15433/16379/14000/11025/18025) nên chạy song song với prod không xung đột.
+#   - Dùng riêng cho hot reload trên máy hoặc được nhúng vào compose.yaml.
+# Khởi chạy:  make dev-up      (hoặc docker compose -f docker-compose.dev.yml up -d --wait)
+# Database `studynest_dev` (app) và `studynest_test` (pytest) cùng nằm trong container này.
+# =============================================================================
+name: maymay-dev
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: maymay-dev-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: maymay_dev
+      POSTGRES_PASSWORD: dev_only_password
+      POSTGRES_DB: studynest_dev
+    ports:
+      - "127.0.0.1:15433:5432"
+    volumes:
+      - dev_postgres_data:/var/lib/postgresql/data
+      - ./db.sql:/docker-entrypoint-initdb.d/01-db.sql:ro
+      - ./scripts/dev/02-create-test-db.sh:/docker-entrypoint-initdb.d/02-create-test-db.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U maymay_dev -d studynest_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+    networks: [maymay_dev_net]
+
+  redis:
+    image: redis:7-alpine
+    container_name: maymay-dev-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "127.0.0.1:16379:6379"
+    volumes:
+      - dev_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [maymay_dev_net]
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: maymay-dev-mailpit
+    restart: unless-stopped
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: "1"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "1"
+    ports:
+      - "127.0.0.1:11025:1025"
+      - "127.0.0.1:18025:8025"
+    networks: [maymay_dev_net]
+
+  piston:
+    image: ghcr.io/engineer-man/piston:latest
+    platform: linux/amd64
+    container_name: maymay-dev-piston
+    restart: unless-stopped
+    privileged: true
+    ports:
+      - "127.0.0.1:14000:2000"
+    volumes:
+      - dev_piston_packages:/piston/packages
+    tmpfs:
+      - /tmp:exec
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:2000/api/v2/runtimes', res => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    networks: [maymay_dev_net]
+
+networks:
+  maymay_dev_net:
+    driver: bridge
+
+volumes:
+  dev_postgres_data:
+  dev_redis_data:
+  dev_piston_packages:

@@ -217,100 +217,25 @@ hoctap/
 
 ## 🚀 Khởi Chạy Nhanh (Quickstart)
 
-### 📌 Yêu Cầu Tiên Quyết
-- **Node.js**: Phiên bản `20.9.x` trở lên (Khuyến nghị `v24.x` hoặc `v26.x`).
-- **Package Manager**: `pnpm` (`corepack enable pnpm`).
-- **Python**: Phiên bản `3.11.x`.
-- **Container Runtime**: Docker Desktop hoặc OrbStack (đang chạy).
-
----
-
-### Bước 1: Thiết Lập File Cấu Hình Local
-
-Chạy lệnh sau tại thư mục gốc của repo:
+Mở Docker Desktop hoặc OrbStack với Docker Compose v2.24 trở lên. Từ thư mục gốc của repo, chạy:
 
 ```bash
-cp -n studynest_be/.env.example studynest_be/.env
-cp -n studynest_fe/.env.example studynest_fe/.env.local
-cp -n mobile/.env.example mobile/.env
+docker compose up -d
 ```
 
-> [!TIP]
-> Thay giá trị `JWT_SECRET` trong file `studynest_be/.env` bằng một chuỗi ngẫu nhiên bảo mật:
-> ```bash
-> openssl rand -hex 32
-> ```
+- Web Mây Mây ở [localhost:3001](http://localhost:3001).
+- API Swagger ở [localhost:8001/docs](http://localhost:8001/docs).
+- Mailpit nhận OTP ở [localhost:18025](http://localhost:18025).
 
----
+Compose tự build web và API, bật PostgreSQL, Redis, Mailpit và Piston, chạy migration rồi cài runtime chấm code. Xem [hướng dẫn chạy local và chuyển database sang máy khác](docs/infra/local-docker.md).
 
-### Bước 2: Khởi Chạy Cơ Sở Hạ Tầng Docker
-
-```bash
-cd studynest_be
-docker compose up -d --wait
-```
-
-Docker Compose sẽ tự động khởi tạo cơ sở dữ liệu từ file `db.sql` sẵn có khi volume lần đầu được tạo.
-
-| Dịch vụ | Địa chỉ Local | Mô tả |
-| :--- | :--- | :--- |
-| **PostgreSQL + pgvector** | `127.0.0.1:5433` | Cơ sở dữ liệu quan hệ và vector embeddings |
-| **Redis** | `127.0.0.1:6379` | Quản lý bộ nhớ đệm, session và rate-limiting |
-| **Mailpit SMTP** | `127.0.0.1:1025` | Máy chủ gửi thư thử nghiệm local |
-| **Mailpit Web UI** | http://localhost:8025 | Giao diện đọc email và lấy mã OTP tức thì |
-| **Piston API** | http://localhost:4000 | Engine biên dịch và chạy code biệt lập |
-
----
-
-### Bước 3: Khởi Chạy Backend API (FastAPI)
-
-```bash
-cd studynest_be
-python3.11 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-python -m alembic upgrade head
-python scripts/seed_catalog_v2.py
-python scripts/install_piston_runtimes.py
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-```
-
-- **Swagger Documentation**: http://localhost:8000/docs
-- **Health Check**: http://localhost:8000/health
-
----
-
-### Bước 4: Khởi Chạy Web Client (Next.js)
-
-Mở một cửa sổ Terminal mới:
-
-```bash
-cd studynest_fe
-pnpm install --frozen-lockfile
-pnpm dev
-```
-
-- **Địa chỉ ứng dụng Web**: http://localhost:3000
-
----
-
-### Bước 5: Khởi Chạy Mobile App (Expo)
-
-Mở một cửa sổ Terminal mới:
-
-```bash
-cd mobile
-pnpm install --frozen-lockfile
-pnpm dev
-```
-
-Quét mã QR bằng ứng dụng **Expo Go** (iOS / Android) trên thiết bị cùng mạng Wi-Fi, hoặc nhấn phím `i` để mở iOS Simulator, `a` để mở Android Emulator.
+Ứng dụng mobile chạy riêng qua Expo. Xem [hướng dẫn mobile](mobile/README.md).
 
 ---
 
 ## 🔑 Cấu Hình Biến Môi Trường (Third-Party Services)
 
-Các dịch vụ nâng cao có thể được kích hoạt linh hoạt trong file `studynest_be/.env`:
+Các dịch vụ nâng cao có thể được kích hoạt trong file `studynest_be/.env.docker.local` khi dùng Compose, hoặc `studynest_be/.env` khi chạy trực tiếp:
 
 - **AI Model Router (9Router)**:
   ```env

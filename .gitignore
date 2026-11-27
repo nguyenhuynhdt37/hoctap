@@ -2,6 +2,7 @@
 **/.env
 **/.env.*
 !**/.env.example
+!studynest_be/.env.development.example
 **/app/core/secret/*.json
 **/credentials.json
 **/token.json
