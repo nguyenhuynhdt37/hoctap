@@ -216,15 +216,15 @@ export default function AuthShell({
   const copy = skyCopy[screen];
 
   return (
-    <main>
+    <main className="bg-background">
       <SectionShell
         tone="blue"
         label={title}
         clouds={false}
-        innerClassName="max-w-none! px-0! py-0!"
+        innerClassName="py-5! sm:py-8!"
       >
-        <div className="grid lg:min-h-[calc(100dvh-76px)] lg:grid-cols-[46%_minmax(0,1fr)]">
-          <div className="relative z-10 row-start-2 -mt-8 min-w-0 px-4 pb-6 sm:px-8 lg:col-start-2 lg:row-start-1 lg:mt-0 lg:flex lg:items-center lg:justify-center lg:py-8">
+        <div className="grid items-start overflow-hidden rounded-3xl border border-border bg-surface/70 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1fr)] lg:items-stretch">
+          <div className="relative z-10 row-start-2 min-w-0 px-4 py-5 sm:px-8 lg:col-start-2 lg:row-start-1 lg:flex lg:items-center lg:justify-center lg:py-8">
             <Reveal className="mx-auto w-full max-w-md min-w-0">
               <GlassCard tilt={false} className="rounded-[2rem]! bg-surface/98! p-6 sm:p-10">
                 <div className="mb-5">
@@ -251,7 +251,7 @@ export default function AuthShell({
             </Reveal>
           </div>
 
-          <div className="relative isolate row-start-1 min-h-[10.5rem] min-w-0 overflow-hidden rounded-b-[2.5rem] border-r border-b border-surface bg-linear-to-br from-primary-pastel via-primary-light to-background px-6 pt-8 pb-12 sm:px-10 lg:col-start-1 lg:flex lg:items-center lg:justify-center lg:rounded-bl-none lg:rounded-tr-[3.5rem] lg:px-10 lg:py-10 xl:px-16">
+          <div className="relative isolate row-start-1 min-w-0 overflow-hidden border-b border-border bg-linear-to-br from-primary-pastel via-primary-light to-background px-5 py-5 sm:px-8 lg:col-start-1 lg:flex lg:items-center lg:justify-center lg:border-r lg:border-b-0 lg:px-10 lg:py-10">
             <CloudBlob className="-top-24 -left-24 h-60 w-[26rem] bg-surface/80!" />
             <CloudBlob className="top-[46%] -right-36 h-72 w-[28rem] bg-surface/90! lg:top-[30%]" />
             <CloudBlob className="bottom-0 left-[10%] hidden h-36 w-72 bg-surface/75! lg:block" />

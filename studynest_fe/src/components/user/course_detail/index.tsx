@@ -364,7 +364,7 @@ const CourseDetail = () => {
     return (
       <div className="min-h-screen bg-background">
         <div className="bg-gradient-to-b from-primary-light/70 via-background to-background border-b border-border py-12">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 animate-pulse">
+          <div className="user-container animate-pulse">
             <div className="h-4 bg-primary-pastel/60 rounded-full w-48 mb-6" />
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
               <div className="lg:col-span-8 space-y-4">
@@ -382,7 +382,7 @@ const CourseDetail = () => {
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 animate-pulse">
+        <div className="user-container py-10 animate-pulse">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <div className="lg:col-span-8 space-y-6">
               <div className="h-52 bg-surface rounded-[24px] border border-border" />
@@ -482,7 +482,7 @@ const CourseDetail = () => {
         isFireActive={isFireActive}
       />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div className="user-container py-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           <div className="lg:col-span-8 space-y-8">
             <CourseEducationInfo courseId={data.course.id} />

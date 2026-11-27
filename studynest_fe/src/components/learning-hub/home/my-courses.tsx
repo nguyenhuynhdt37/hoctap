@@ -27,11 +27,11 @@ export function MyCourses({ current, purchases }: {
       {purchases.error ? (
         <HubLoadError title="Chưa tải được danh sách khóa học" message="Tải lại để xem các khóa bạn đã đăng ký." onRetry={() => void purchases.mutate().catch(() => undefined)} isRetrying={purchases.isValidating} />
       ) : !purchases.data ? (
-        <div role="status" aria-label="Đang tải khóa học của bạn" className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 [&_.animate-pulse]:motion-reduce:animate-none">
+        <div role="status" aria-label="Đang tải khóa học của bạn" className="user-card-grid [&_.animate-pulse]:motion-reduce:animate-none">
           {[0, 1, 2, 3, 4].map((i) => <Skeleton key={i} className="aspect-[16/12] w-full rounded-3xl" />)}
         </div>
       ) : (
-        <ul aria-label="Khóa học của bạn" className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        <ul aria-label="Khóa học của bạn" className="user-card-grid">
           {others.slice(0, 10).map((course) => <TicketCourse key={course.id} course={course} />)}
         </ul>
       )}

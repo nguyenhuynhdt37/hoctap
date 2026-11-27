@@ -63,7 +63,7 @@ const CoursesCarousel = memo(
       <section
         className={`py-16 ${containerBg} relative overflow-hidden border-b border-border/60`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="user-container relative z-10">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
             <div>
               <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground tracking-tight mb-2">
@@ -127,7 +127,7 @@ const CoursesCarousel = memo(
 
           <div className="relative overflow-hidden">
             {isLoadingFeeds ? (
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              <div className="user-card-grid">
                 {skeletonCards}
               </div>
             ) : (
@@ -137,7 +137,7 @@ const CoursesCarousel = memo(
               >
                 {Array.from({ length: totalPages }).map((_, pageIndex) => (
                   <div key={pageIndex} className="w-full flex-shrink-0">
-                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                    <div className="user-card-grid">
                       {(items?.length ? items : [])
                         .slice(
                           pageIndex * itemsPerPage,
@@ -155,7 +155,7 @@ const CoursesCarousel = memo(
                 ))}
                 {isFetchingMore && (
                   <div className="w-full flex-shrink-0">
-                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                    <div className="user-card-grid">
                       {fetchingSkeletonCards}
                     </div>
                   </div>

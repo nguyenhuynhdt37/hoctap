@@ -111,7 +111,7 @@ function CourseShelf({ cards }: { cards: ReactNode[] }) {
     <div className="grid min-w-0 gap-5 lg:gap-7">
       {featured}
       {more.length > 0 && (
-        <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        <div className="user-card-grid min-w-0 ">
           {more}
         </div>
       )}

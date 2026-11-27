@@ -408,11 +408,9 @@ function BentoComboCard({
   const savings = item.savings_percent ?? 0;
   const durationLabel = formatDuration(item.duration_seconds);
 
-  const isDeepSky = variant === "deep-sky";
-
   const shellStyle =
     variant === "deep-sky"
-      ? "lg:col-span-6 border-primary-pastel/70 bg-gradient-to-br from-[#285C90] via-[#356FA7] to-[#4A85BF] text-white shadow-md"
+      ? "lg:col-span-6 border-primary-pastel bg-primary-light text-foreground"
       : variant === "wide-blue"
         ? "lg:col-span-6 border-primary-pastel/80 bg-gradient-to-br from-primary-light/70 via-surface to-surface text-foreground"
         : variant === "vanilla-atelier"
@@ -431,7 +429,7 @@ function BentoComboCard({
         aria-hidden="true"
         className={cn(
           "pointer-events-none absolute -right-2 -bottom-6 -z-10 select-none font-display text-[7rem] font-bold leading-none",
-          isDeepSky ? "text-white/[0.08]" : "text-primary/[0.06]",
+          "text-primary/[0.06]",
         )}
       >
         {padIndex(index)}
@@ -455,7 +453,7 @@ function BentoComboCard({
           )}
 
           <div className="absolute top-3 left-3 flex flex-wrap items-center gap-1.5">
-            <span className="rounded-full bg-[#1F4B77]/80 px-2.5 py-0.5 font-display text-xs font-bold text-white backdrop-blur-sm">
+            <span className="rounded-full bg-surface/95 px-2.5 py-0.5 text-xs font-semibold text-primary backdrop-blur-sm">
               {padIndex(index)}
             </span>
             {savings > 0 && (
@@ -480,7 +478,7 @@ function BentoComboCard({
                 "grid size-9 place-items-center rounded-full border backdrop-blur-md transition-colors cursor-pointer",
                 bookmarked
                   ? "border-secondary-pastel bg-secondary text-secondary-foreground"
-                  : "border-white/50 bg-[#1F4B77]/65 text-white hover:bg-[#1F4B77]",
+                  : "border-border bg-surface/95 text-primary hover:bg-primary-light",
               )}
             >
               <Heart className="size-4" solid={bookmarked} aria-hidden="true" />
@@ -494,7 +492,7 @@ function BentoComboCard({
                 "grid size-9 place-items-center rounded-full border backdrop-blur-md transition-colors cursor-pointer",
                 compared
                   ? "border-accent-vanilla-border bg-accent-vanilla text-accent-vanilla-foreground"
-                  : "border-white/50 bg-[#1F4B77]/65 text-white hover:bg-[#1F4B77]",
+                  : "border-border bg-surface/95 text-primary hover:bg-primary-light",
               )}
             >
               <SlidersHorizontal className="size-4" animated={false} aria-hidden="true" />
@@ -508,13 +506,13 @@ function BentoComboCard({
             <div
               className={cn(
                 "flex flex-wrap items-center gap-2 text-xs font-semibold",
-                isDeepSky ? "text-primary-light" : "text-muted-foreground",
+                "text-muted-foreground",
               )}
             >
               <span
                 className={cn(
                   "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 font-bold",
-                  isDeepSky ? "bg-white/15 text-white" : "border border-border/70 bg-surface text-primary",
+                  "border border-border/70 bg-surface text-primary",
                 )}
               >
                 <BookOpen className="size-3.5" animated={false} aria-hidden="true" />
@@ -530,13 +528,13 @@ function BentoComboCard({
             </div>
 
             <div>
-              <h3 className={cn("font-display text-xl font-bold leading-snug sm:text-2xl", isDeepSky ? "text-white" : "text-foreground")}>
-                <Link href={href} className={cn("transition-colors", isDeepSky ? "hover:text-accent-vanilla" : "hover:text-primary")}>
+              <h3 className={cn("font-display text-xl font-bold leading-snug sm:text-2xl", "text-foreground")}>
+                <Link href={href} className={cn("transition-colors", "hover:text-primary")}>
                   {cleanTitle(item.title)}
                 </Link>
               </h3>
               {item.instructor && (
-                <p className={cn("mt-1 inline-flex items-center gap-1.5 text-xs font-medium", isDeepSky ? "text-primary-light/90" : "text-muted-foreground")}>
+                <p className={cn("mt-1 inline-flex items-center gap-1.5 text-xs font-medium", "text-muted-foreground")}>
                   <UserRound className="size-3.5" animated={false} aria-hidden="true" />
                   <span>{item.instructor.name}</span>
                 </p>
@@ -544,7 +542,7 @@ function BentoComboCard({
             </div>
 
             {summary && (
-              <p className={cn("line-clamp-2 text-xs leading-relaxed", isDeepSky ? "text-white/85" : "text-muted-foreground")}>
+              <p className={cn("line-clamp-2 text-xs leading-relaxed", "text-muted-foreground")}>
                 {summary}
               </p>
             )}
@@ -556,11 +554,11 @@ function BentoComboCard({
                     key={c.id}
                     className={cn(
                       "flex items-center gap-1.5 text-xs font-medium",
-                      isDeepSky ? "text-white/95" : "text-foreground/90",
+                      "text-foreground/90",
                     )}
                   >
                     <Check
-                      className={cn("size-3.5 shrink-0", isDeepSky ? "text-accent-vanilla" : "text-primary")}
+                      className={cn("size-3.5 shrink-0", "text-primary")}
                       animated={false}
                       aria-hidden="true"
                     />
@@ -574,9 +572,7 @@ function BentoComboCard({
               <div
                 className={cn(
                   "flex items-center justify-between gap-2 rounded-xl border border-dashed px-3 py-1.5",
-                  isDeepSky
-                    ? "border-accent-vanilla/50 bg-white/12 text-white"
-                    : "border-accent-vanilla-border bg-surface/90 text-accent-vanilla-foreground",
+                  "border-accent-vanilla-border bg-surface/90 text-accent-vanilla-foreground",
                 )}
               >
                 <span className="inline-flex min-w-0 items-center gap-1.5 text-[11px] font-bold">
@@ -585,7 +581,7 @@ function BentoComboCard({
                   <code
                     className={cn(
                       "rounded px-1.5 py-0.5 font-mono text-[10px] font-bold",
-                      isDeepSky ? "bg-[#1B3D5E]/60 text-accent-vanilla" : "bg-accent-vanilla text-accent-vanilla-foreground",
+                      "bg-accent-vanilla text-accent-vanilla-foreground",
                     )}
                   >
                     {item.active_coupon.code}
@@ -596,7 +592,7 @@ function BentoComboCard({
                   onClick={() => onCopyCoupon(item.active_coupon!.code)}
                   className={cn(
                     "shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold cursor-pointer",
-                    isDeepSky ? "bg-accent-vanilla text-accent-vanilla-foreground" : "bg-primary text-primary-foreground",
+                    "bg-primary text-primary-foreground",
                   )}
                 >
                   {copiedCode === item.active_coupon.code ? "Đã chép" : "Chép"}
@@ -608,7 +604,7 @@ function BentoComboCard({
           <div
             className={cn(
               "mt-5 flex flex-wrap items-center justify-between gap-3 border-t pt-3.5",
-              isDeepSky ? "border-white/20" : "border-border/70",
+              "border-border/70",
             )}
           >
             <CoinPrice
@@ -618,7 +614,6 @@ function BentoComboCard({
                   ? item.standalone_total
                   : undefined
               }
-              surface={isDeepSky ? "dark" : "light"}
               size="md"
             />
             <Link
@@ -626,9 +621,7 @@ function BentoComboCard({
               aria-label={`Xem chi tiết ${cleanTitle(item.title)}`}
               className={cn(
                 "inline-flex min-h-10 items-center gap-1.5 rounded-full px-4 text-xs font-extrabold transition-colors",
-                isDeepSky
-                  ? "bg-surface text-primary hover:bg-accent-vanilla hover:text-accent-vanilla-foreground"
-                  : "bg-primary text-primary-foreground hover:bg-primary-hover",
+                "bg-primary text-primary-foreground hover:bg-primary-hover",
               )}
             >
               <span>Xem lộ trình</span>
@@ -924,7 +917,7 @@ export default function LearningLibrary() {
   const variantCycle: CardVariant[] = ["wide-blue", "deep-sky", "vanilla-atelier", "wide-lavender"];
 
   return (
-    <main className="mx-auto max-w-7xl px-4 pb-28 pt-5 text-foreground sm:px-6 lg:px-8">
+    <main className="user-container pb-28 pt-5 text-foreground">
       {/* ── TOP UTILITY STRIP ── */}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <nav aria-label="Điều hướng danh mục" className="flex items-center gap-2 text-xs font-semibold">
@@ -1282,23 +1275,23 @@ export default function LearningLibrary() {
 
       {/* ── FLOATING COMPARE DOCK (Cloudy Deep Blue) ── */}
       {compareItems.length > 0 && (
-        <div className="fixed inset-x-4 bottom-4 z-40 mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary-pastel/50 bg-[#1F4B77]/95 px-4 py-3 text-white shadow-2xl backdrop-blur-md">
+        <div className="fixed inset-x-4 bottom-4 z-40 mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary-pastel bg-surface px-4 py-3 text-foreground shadow-lg backdrop-blur-md">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 text-xs font-extrabold text-accent-vanilla">
+            <span className="inline-flex items-center gap-1.5 text-xs font-extrabold text-primary">
               <SlidersHorizontal aria-hidden="true" animated={false} className="size-4" />
               So sánh ({compareItems.length}/3):
             </span>
             {compareItems.map((item) => (
               <span
                 key={item.bundle_id}
-                className="inline-flex max-w-44 items-center gap-1 rounded-full border border-white/20 bg-white/12 px-2.5 py-1 text-xs font-medium"
+                className="inline-flex max-w-44 items-center gap-1 rounded-full border border-border bg-primary-light px-2.5 py-1 text-xs font-medium"
               >
                 <span className="truncate">{cleanTitle(item.title)}</span>
                 <button
                   type="button"
                   onClick={() => handleToggleCompare(item)}
                   aria-label={`Gỡ ${cleanTitle(item.title)}`}
-                  className="text-primary-light hover:text-white cursor-pointer"
+                  className="text-primary hover:text-primary-hover cursor-pointer"
                 >
                   <X className="size-3" aria-hidden="true" />
                 </button>
@@ -1310,7 +1303,7 @@ export default function LearningLibrary() {
             <button
               type="button"
               onClick={() => setCompareItems([])}
-              className="rounded-full px-3 py-1.5 text-xs font-semibold text-primary-light hover:text-white cursor-pointer"
+              className="rounded-full px-3 py-1.5 text-xs font-semibold text-primary hover:text-primary-hover cursor-pointer"
             >
               Xóa hết
             </button>
@@ -1318,7 +1311,7 @@ export default function LearningLibrary() {
               size="sm"
               disabled={compareItems.length < 2}
               onClick={() => setCompareOpen(true)}
-              className="rounded-full bg-accent-vanilla px-4 font-extrabold text-accent-vanilla-foreground hover:bg-surface disabled:opacity-50"
+              className="rounded-full px-4"
             >
               So sánh ngay
             </Button>

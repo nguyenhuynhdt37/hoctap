@@ -27,7 +27,7 @@ export function RootGate({ landing }: { landing: ReactNode }) {
   if (authStatus === "ready") return user ? <LearnerHome key={user.id} /> : landing;
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+    <main className="user-container py-12">
       <HubLoadError
         title="Chưa xác minh được phiên đăng nhập"
         message={knownBrowser ? "Tải lại để mở hành trình của bạn." : "Tải lại để mở trang chủ."}

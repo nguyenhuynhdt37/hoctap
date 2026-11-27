@@ -33,7 +33,7 @@ export async function generateMetadata({ searchParams }: InstructorsPageProps): 
 
 export default function InstructorsPage() {
   return (
-    <main className="mx-auto max-w-7xl space-y-6 bg-background px-4 py-8 sm:px-6 sm:py-10">
+    <main className="user-container space-y-6 bg-background py-8 sm:py-10">
       {/* Breadcrumb điều hướng */}
       <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm text-muted-foreground">
         <Link href="/" className="hover:text-primary transition-colors">
@@ -52,7 +52,7 @@ export default function InstructorsPage() {
             <div className="h-10 w-full max-w-md rounded-xl bg-surface border border-border" />
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div className="hidden md:block h-96 rounded-[24px] bg-surface border border-border" />
-              <div className="md:col-span-3 grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              <div className="md:col-span-3 user-card-grid">
                 {[1, 2, 3, 4, 5, 6].map((i) => (
                   <div key={i} className="h-64 rounded-[24px] bg-surface border border-border" />
                 ))}

@@ -644,7 +644,7 @@ export const CourseListPanel = ({
             className={
               layout === "list"
                 ? "mb-8 flex flex-col gap-4"
-                : "mb-8 grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+                : "mb-8 user-card-grid"
             }
           >
             {displayedCourses.map((course: CoursesMeItem) => (

@@ -174,7 +174,7 @@ export default function BundleDetail({ slug }: { slug: string }) {
   ].filter(({ items }) => items && items.length > 0);
 
   return (
-    <main className="mx-auto max-w-7xl space-y-7 px-4 pb-20 pt-6 text-foreground sm:px-6 lg:px-8">
+    <main className="user-container space-y-7 pb-20 pt-6 text-foreground">
       {/* ── BREADCRUMB & QUICK ACTIONS ── */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <nav aria-label="Điều hướng" className="flex items-center gap-2 text-xs font-semibold">

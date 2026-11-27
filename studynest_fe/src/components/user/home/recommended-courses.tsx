@@ -162,7 +162,7 @@ const RecommendedCourses = ({ embedded = false }: { embedded?: boolean }) => {
 
   return (
     <section aria-label="Khóa học gợi ý" className="relative overflow-hidden border-b border-border bg-background py-16">
-      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="user-container relative z-10">
         <div className="mb-8">
           <h3 className="mb-2 font-display text-2xl font-bold tracking-tight sm:text-3xl">
             Khóa học gợi ý cho bạn

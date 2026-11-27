@@ -123,7 +123,7 @@ export default function InstructorsSection() {
 
   return (
     <section className="py-16 bg-background relative overflow-hidden border-b border-border/60">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div className="user-container relative z-10">
         {/* Header với link Xem tất cả /instructors */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
           <div>
@@ -145,7 +145,7 @@ export default function InstructorsSection() {
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          <div className="user-card-grid">
             {Array.from({ length: 4 }).map((_, i) => (
               <Card key={i} className="text-center rounded-[24px] p-6 space-y-4">
                 <Skeleton variant="circle" className="w-20 h-20 mx-auto" />
@@ -159,7 +159,7 @@ export default function InstructorsSection() {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          <div className="user-card-grid">
             {instructors.map((instructor) => (
               <TopInstructorCard key={instructor.id} instructor={instructor} />
             ))}

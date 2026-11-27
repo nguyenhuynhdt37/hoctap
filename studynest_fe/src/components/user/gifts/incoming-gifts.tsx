@@ -44,7 +44,7 @@ export default function IncomingGifts() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10">
+    <div className="user-container max-w-3xl py-8">
       <Card>
         <CardHeader>
           <CardTitle>Quà tặng</CardTitle>

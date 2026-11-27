@@ -6,7 +6,7 @@ export default function UserLoading() {
       role="status"
       aria-live="polite"
       aria-label="Đang tải nội dung"
-      className="mx-auto min-h-[65vh] max-w-7xl space-y-6 px-4 py-8 sm:px-6 lg:px-8"
+      className="user-container min-h-[65vh] space-y-6 py-8"
     >
       <Skeleton variant="text" className="h-9 w-64 max-w-full rounded-xl" />
       <Skeleton variant="text" className="h-4 w-96 max-w-full" />

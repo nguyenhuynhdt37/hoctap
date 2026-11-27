@@ -25,7 +25,7 @@ function GridSkeleton({ label, cols = 5 }: { label: string; cols?: 5 }) {
     <div
       role="status"
       aria-label={label}
-      className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 [&_.animate-pulse]:motion-reduce:animate-none"
+      className="user-card-grid [&_.animate-pulse]:motion-reduce:animate-none"
     >
       {Array.from({ length: cols }, (_, i) => (
         <Skeleton key={i} className="aspect-[16/12] w-full rounded-3xl" />
@@ -122,7 +122,7 @@ function Recommended() {
       {error ? (
         <HubLoadError title="Chưa tải được khóa gợi ý" message="Tải lại để xem khóa hợp sở thích." onRetry={() => void mutate().catch(() => undefined)} isRetrying={isValidating} />
       ) : !data ? <GridSkeleton label="Đang tải khóa học gợi ý" cols={5} /> : data.items.length ? (
-        <ul aria-label="Khóa học gợi ý" className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        <ul aria-label="Khóa học gợi ý" className="user-card-grid">
           {data.items.slice(0, 10).map((course) => <RecommendedTile key={course.id} course={course} />)}
         </ul>
       ) : (
@@ -151,7 +151,7 @@ function Combos() {
       {error ? (
         <HubLoadError title="Chưa tải được combo" message="Tải lại để xem giá và ưu đãi đang mở." onRetry={() => void mutate().catch(() => undefined)} isRetrying={isValidating} />
       ) : isLoading || !data ? <GridSkeleton label="Đang tải combo" cols={5} /> : items.length ? (
-        <ul aria-label="Combo lộ trình" className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        <ul aria-label="Combo lộ trình" className="user-card-grid">
           {items.map((combo) => <ComboTile key={combo.id} combo={combo} />)}
         </ul>
       ) : (

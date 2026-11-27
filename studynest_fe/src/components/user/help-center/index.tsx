@@ -93,10 +93,10 @@ export default function HelpCenter({ activeSection }: HelpCenterProps) {
   const activeItem = helpMenuItems.find((item) => item.id === currentSection);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background">
       {/* Header with Logo and Navigation */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-        <div className="w-full mx-auto px-4 lg:px-8">
+      <header className="sticky top-0 z-50 border-b border-border bg-surface shadow-sm">
+        <div className="user-container">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link
@@ -104,7 +104,7 @@ export default function HelpCenter({ activeSection }: HelpCenterProps) {
               className="flex items-center space-x-3 group flex-shrink-0"
             >
               <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-teal-400 to-emerald-500 rounded-xl opacity-20 group-hover:opacity-30 transition-opacity blur-lg" />
+                <div className="absolute inset-0 bg-gradient-to-br from-primary-pastel to-secondary-pastel rounded-xl opacity-20 group-hover:opacity-30 transition-opacity blur-lg" />
                 <img
                   src="/logo/studynest-logo.svg"
                   alt="Mây Mây Logo"
@@ -225,7 +225,7 @@ export default function HelpCenter({ activeSection }: HelpCenterProps) {
         {/* Hero Section */}
         {activeItem && (
           <div className="w-full bg-gradient-to-br from-teal-50 to-emerald-50 border-b border-gray-200 py-12 lg:py-16">
-            <div className="max-w-4xl mx-auto px-4 lg:px-8">
+            <div className="user-container max-w-4xl">
               <div className="flex items-center gap-4 mb-4">
                 <div className="h-12 w-12 rounded-xl bg-teal-100 flex items-center justify-center">
                   <activeItem.icon className="h-6 w-6 text-teal-600" />
@@ -245,7 +245,7 @@ export default function HelpCenter({ activeSection }: HelpCenterProps) {
 
         {/* Content Section */}
         <article className="w-full">
-          <div className="max-w-4xl mx-auto px-4 lg:px-8 py-12 lg:py-16">
+          <div className="user-container max-w-4xl py-12 lg:py-16">
             <div className="prose prose-lg prose-teal max-w-none">
               {renderContent()}
             </div>

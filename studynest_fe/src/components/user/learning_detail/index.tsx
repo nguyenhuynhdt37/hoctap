@@ -90,7 +90,7 @@ function LearningDetail(props: LearningDetailProps) {
   }
 
   // UI states
-  const [sidebarOpen, setSidebarOpen] = useState(!openTutor);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
   const [activeLesson, setActiveLesson] = useState("");
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
@@ -369,6 +369,12 @@ function LearningDetail(props: LearningDetailProps) {
   useEffect(() => {
     if (openTutor) window.dispatchEvent(new Event("maymay:open-assistant"));
   }, [openTutor]);
+  useEffect(() => {
+    if (!openTutor && window.matchMedia("(min-width: 1024px)").matches) {
+      setSidebarOpen(true);
+    }
+  }, [openTutor]);
+
   const screenState = useRef({ lessonId: initialActiveLesson?.id, activeTab, sidebarOpen });
   screenState.current = { lessonId: initialActiveLesson?.id, activeTab, sidebarOpen };
   useAgentSnapshot("learning", () => ({
@@ -514,7 +520,7 @@ function LearningDetail(props: LearningDetailProps) {
       const next = !prev;
       if (next) {
         setSidebarOpen(false);
-      } else if (window.matchMedia("(min-width: 768px)").matches) {
+      } else if (window.matchMedia("(min-width: 1024px)").matches) {
         setSidebarOpen(true);
       }
       return next;
@@ -527,7 +533,7 @@ function LearningDetail(props: LearningDetailProps) {
     )?.title || "";
 
   return (
-    <div className="flex h-dvh max-w-full flex-col overflow-hidden bg-gradient-to-br from-background via-primary-light/25 to-secondary/15">
+    <div className="mx-auto flex h-dvh w-full max-w-[90rem] min-w-0 flex-col overflow-hidden bg-background px-3 sm:px-5 xl:px-7">
       <LearningHeader
         courseTitle={curriculumData.title}
         courseId={courseData.id}
@@ -540,11 +546,11 @@ function LearningDetail(props: LearningDetailProps) {
       />
 
       {/* Main Layout */}
-      <div className="flex min-h-0 min-w-0 w-full flex-1">
-        {/* Main Content Area — Video Full-Width + Cloudy Studio Content */}
+      <div className="flex min-h-0 w-full min-w-0 flex-1 gap-3 py-2">
+        {/* Khu vực bài học */}
         <div
           data-learning-lesson
-          className={`min-w-0 flex-1 overflow-x-hidden ${
+          className={`min-w-0 flex-1 overflow-x-hidden rounded-2xl border border-border bg-surface/80 ${
             initialActiveLesson?.lesson_type === "code" ||
             initialActiveLesson?.lesson_type === "quiz"
               ? "overflow-y-auto lg:flex lg:flex-col lg:overflow-hidden"
@@ -559,7 +565,7 @@ function LearningDetail(props: LearningDetailProps) {
             </div>
           )}
 
-          {/* Khung Video / Bài học trải full-width 100% */}
+          {/* Khung video hoặc bài học tương tác */}
           {(() => {
             const lt = initialActiveLesson?.lesson_type || "";
             const isCodeOrQuiz = lt === "code" || lt === "quiz";
@@ -575,7 +581,7 @@ function LearningDetail(props: LearningDetailProps) {
                     isCodeOrQuiz
                       ? "w-full bg-surface lg:min-h-0 lg:flex-1 lg:overflow-hidden"
                       : isStudioLesson
-                        ? "mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8"
+                        ? "user-container max-w-6xl py-5 sm:py-7"
                         : "w-full border-b border-primary-pastel/60 bg-surface"
                   }
                 >
@@ -598,7 +604,7 @@ function LearningDetail(props: LearningDetailProps) {
 
                 {!isCodeOrQuiz && !isStudioLesson && (
                   <div
-                    className={`mx-auto w-full space-y-5 px-3 py-4 sm:px-6 sm:py-5 ${
+                    className={`user-container space-y-5 py-4 sm:py-5 ${
                       focusMode ? "max-w-[1440px]" : "max-w-6xl"
                     }`}
                   >

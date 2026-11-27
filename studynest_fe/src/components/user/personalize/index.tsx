@@ -189,7 +189,7 @@ const Personalize = ({ learningFields }: PersonalizeProps) => {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border bg-surface/90 backdrop-blur-sm">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-5">
+        <div className="user-container max-w-4xl py-5">
           <div className="flex items-center justify-between">
             <Link href="/" className="inline-flex items-center gap-2.5">
               <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary-light text-primary border border-border">
@@ -224,7 +224,7 @@ const Personalize = ({ learningFields }: PersonalizeProps) => {
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-6">
+      <main className="user-container max-w-3xl py-8 sm:py-12 space-y-6">
         <Alert variant="info">
           Trả lời nhanh vài câu hỏi để Mây Mây cải thiện đề xuất khóa học và lộ trình phù hợp nhất với bạn.
         </Alert>

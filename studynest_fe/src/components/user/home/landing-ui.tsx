@@ -95,7 +95,7 @@ export function SectionShell({
           <CloudBlob className="-right-32 bottom-8 h-72 w-[28rem] bg-primary-pastel/40" />
         </>
       )}
-      <div className={cx("relative mx-auto w-full max-w-none px-3 py-12 sm:px-5 md:py-16 lg:px-8", innerClassName)}>{children}</div>
+      <div className={cx("user-container relative py-10 sm:py-14", innerClassName)}>{children}</div>
     </section>
   );
 }
@@ -118,7 +118,7 @@ export function SectionHeader({
 }) {
   const t = TONE[tone];
   return (
-    <Reveal className={cx("mb-12 flex flex-col gap-4 md:mb-16", align === "center" ? "items-center text-center" : "items-start text-left", className)}>
+    <Reveal className={cx("mb-7 flex flex-col gap-3 sm:mb-10", align === "center" ? "items-center text-center" : "items-start text-left", className)}>
       {eyebrow && (
         <span className={cx("inline-flex rounded-full border px-3.5 py-1 text-xs font-semibold", t.bg, t.fg, t.border)}>
           {eyebrow}

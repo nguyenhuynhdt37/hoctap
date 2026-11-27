@@ -16,7 +16,7 @@ export default function RootLayout({
       <UserNotificationsBootstrap />
       <NotificationWS role_name="USER" />
       <Header />
-      <div className="user-full-canvas w-full">
+      <div className="min-h-[55vh] min-w-0">
         <UserRouteGuard>
           <Suspense fallback={null}>{children}</Suspense>
         </UserRouteGuard>

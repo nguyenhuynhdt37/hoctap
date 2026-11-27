@@ -2,7 +2,6 @@
 
 import { useCallback, useRef, useState } from "react";
 import BenefitsSection from "./benefits-section";
-import CloudArcNav from "./cloud-nav/CloudArcNav";
 import CombosSection from "./combos-section";
 import ScrollThreeHero from "./three-hero/ScrollThreeHero";
 import PageSky from "./may-world/PageSky";
@@ -13,17 +12,12 @@ import ParentTrustSection from "./parent-trust-section";
 import SubjectsSection from "./subjects-section";
 
 const Home = () => {
-  const contentSectionRef = useRef<HTMLDivElement | null>(null);
   const coursesSectionRef = useRef<HTMLDivElement | null>(null);
   const subjectsSectionRef = useRef<HTMLDivElement | null>(null);
   const [selectedLevel, setSelectedLevel] = useState<SchoolLevelId>("all");
 
   const scrollToCourses = useCallback(() => {
     coursesSectionRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, []);
-
-  const scrollToContent = useCallback(() => {
-    contentSectionRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
 
   const handleSelectGradeLevel = useCallback(
@@ -37,9 +31,7 @@ const Home = () => {
   return (
     <main className="relative isolate min-h-screen">
       <PageSky />
-      <CloudArcNav onSkipHero={scrollToContent} />
 
-      {/* Section B: Scroll-Driven 3D Cinematic Hero */}
       <ScrollThreeHero
         onExploreCourses={scrollToCourses}
         onSelectGradeLevel={(level) =>
@@ -53,10 +45,8 @@ const Home = () => {
         }
       />
 
-      {/* Điểm neo nội dung chính sau khi bỏ qua phần lướt video */}
       <div
         id="home-main-content"
-        ref={contentSectionRef}
         className="scroll-mt-6"
         aria-hidden="true"
       />

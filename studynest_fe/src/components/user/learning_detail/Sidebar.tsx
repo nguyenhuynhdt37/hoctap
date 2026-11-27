@@ -94,7 +94,7 @@ export default function Sidebar(props: SidebarProps) {
         <aside
           data-learning-sidebar
           aria-label="Mục lục khóa học"
-          className="fixed bottom-16 right-0 top-16 z-40 flex w-full max-w-full flex-col overflow-hidden border-l border-primary-pastel/70 bg-surface/95 shadow-xl backdrop-blur-md md:static md:inset-auto md:z-auto md:h-full md:w-[400px] md:max-w-[400px] md:shrink-0 md:shadow-none"
+          className="fixed inset-x-3 bottom-[4.5rem] top-[4.5rem] z-40 flex max-w-full flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-lg sm:inset-x-auto sm:right-5 sm:w-[22rem] lg:static lg:h-full lg:w-[21rem] lg:shrink-0 lg:shadow-none xl:w-[23rem]"
           style={{
             maxHeight: `calc(100dvh - ${headerHeightPx}px - ${footerHeightPx}px)`,
           }}

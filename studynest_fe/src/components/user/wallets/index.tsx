@@ -151,7 +151,7 @@ export default function WalletPage({ wallet, transactions, error }: Props) {
   };
 
   return (
-    <div className="mx-auto max-w-6xl space-y-7 px-4 py-8 sm:px-6">
+    <div className="user-container max-w-6xl space-y-7 py-8">
       <WalletHeader rateVnd={coinRateVnd} />
 
       {error && (

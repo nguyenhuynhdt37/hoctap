@@ -72,7 +72,7 @@ export function MemberProfileView({ memberId }: { memberId: string }) {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-5xl space-y-6 px-4 py-10 sm:px-6">
+      <div className="user-container max-w-5xl space-y-6 py-10">
         <Skeleton className="h-64 rounded-[30px]" />
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {[1, 2, 3, 4].map((k) => (
@@ -132,7 +132,7 @@ export function MemberProfileView({ memberId }: { memberId: string }) {
         className="pointer-events-none absolute top-48 -right-24 -z-10 h-80 w-80 rounded-full bg-accent/30 blur-3xl"
       />
 
-      <div className="mx-auto max-w-5xl space-y-7 px-4 pt-7 sm:px-6 lg:px-8">
+      <div className="user-container max-w-5xl space-y-7 pt-7">
         {/* Thanh quay lại */}
         <div className="flex items-center justify-between gap-3">
           <button

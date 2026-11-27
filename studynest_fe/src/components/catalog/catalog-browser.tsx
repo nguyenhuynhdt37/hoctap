@@ -448,9 +448,9 @@ export default function CatalogBrowser() {
   }, [filterValues, currentSubject, options, activeKeyword]);
 
   return (
-    <div className="space-y-8 text-foreground">
+    <div className="space-y-5 text-foreground">
       {/* 1. Hero Chuyên đề Môn học (Dynamic Subject Hero) */}
-      <SubjectHero currentSubject={currentSubject} totalCourses={totalDisplay} />
+      <SubjectHero currentSubject={currentSubject} />
 
       {/* Thông báo lỗi khi không nạp được browse-filters kèm nút retry */}
       {optionError && (
@@ -476,13 +476,13 @@ export default function CatalogBrowser() {
       )}
 
       {/* 3. Floating Glass Command Bar: Tìm Kiếm, Sắp Xếp, View Mode & Lọc Mobile */}
-      <div className="flex flex-col items-stretch justify-between gap-3 rounded-[24px] border border-primary-pastel/80 bg-surface/90 p-3 shadow-ambient-sm backdrop-blur-md sm:flex-row sm:items-center">
+      <div className="flex flex-col items-stretch justify-between gap-3 rounded-2xl border border-border bg-surface p-3 sm:flex-row sm:flex-wrap sm:items-center">
         {/* Form tìm kiếm với label accessible */}
-        <form onSubmit={handleSearchSubmit} className="flex-1 max-w-lg flex items-center gap-2">
+        <form onSubmit={handleSearchSubmit} className="flex min-w-0 flex-1 items-center gap-2 sm:min-w-64">
           <label htmlFor={searchInputId} className="sr-only">
             Tìm kiếm khóa học
           </label>
-          <div className="relative flex-1">
+          <div className="relative min-w-0 flex-1">
             <Input
               id={searchInputId}
               name="keyword"
@@ -518,7 +518,7 @@ export default function CatalogBrowser() {
         </form>
 
         {/* Cụm điều khiển sắp xếp & View mode */}
-        <div className="flex items-center justify-between sm:justify-end gap-2.5">
+        <div className="flex flex-wrap items-center justify-between gap-2 sm:justify-end">
           {/* Nút bật Drawer bộ lọc trên mobile */}
           <Button
             variant="outline"
@@ -605,10 +605,10 @@ export default function CatalogBrowser() {
                   setParam(chip.key, "");
                 }
               }}
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-primary-pastel/80 bg-primary-light/70 text-xs font-medium text-foreground hover:bg-primary-light hover:border-primary transition-colors cursor-pointer group"
+              className="inline-flex max-w-full items-center gap-1.5 px-3 py-1 rounded-full border border-primary-pastel/80 bg-primary-light/70 text-xs font-medium text-foreground hover:bg-primary-light hover:border-primary transition-colors cursor-pointer group"
             >
-              <span>{chip.label}</span>
-              <X className="w-3 h-3 text-muted-foreground group-hover:text-destructive-foreground transition-colors" />
+              <span className="min-w-0 wrap-anywhere text-left">{chip.label}</span>
+              <X className="w-3 h-3 shrink-0 text-muted-foreground group-hover:text-destructive-foreground transition-colors" />
             </button>
           ))}
 
@@ -625,7 +625,7 @@ export default function CatalogBrowser() {
       )}
 
       {/* 5. Khu Vực Bố Cục Chính: Sidebar Bên Trái + Lưới Khóa Học Bên Phải */}
-      <div className="grid items-start gap-8 lg:grid-cols-[270px_1fr]">
+      <div className="grid min-w-0 items-start gap-5 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-6">
         {/* Sidebar Trên Desktop */}
         <div className="hidden lg:block">
           <FilterSidebar
@@ -653,12 +653,12 @@ export default function CatalogBrowser() {
         )}
 
         {/* Danh Sách Khóa Học */}
-        <section aria-label="Kết quả tìm kiếm khóa học" aria-busy={isLoading}>
+        <section aria-label="Kết quả tìm kiếm khóa học" aria-busy={isLoading} className="min-w-0">
           {/* Thông tin số lượng hiển thị */}
           <div className="mb-4 flex items-center justify-between text-xs text-muted-foreground">
             <span>
               {totalDisplay !== null
-                ? `Hiển thị ${items.length} trên tổng số ${totalDisplay} khóa học`
+                ? `${items.length} trên ${totalDisplay} khóa học`
                 : `Hiển thị ${items.length} khóa học`}
             </span>
           </div>
@@ -669,7 +669,7 @@ export default function CatalogBrowser() {
               role="status"
               className={
                 viewMode === "grid"
-                  ? "grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+                  ? "user-card-grid"
                   : "flex flex-col gap-4"
               }
             >
@@ -728,16 +728,15 @@ export default function CatalogBrowser() {
               <div
                 className={
                   viewMode === "grid"
-                    ? "grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+                    ? "user-card-grid"
                     : "flex flex-col gap-4"
                 }
               >
-                {items.map((course, index) => (
+                {items.map((course) => (
                   <CatalogCard
                     key={course.id}
                     course={course}
                     viewMode={viewMode}
-                    featured={viewMode === "grid" && index === 0 && items.length >= 2}
                   />
                 ))}
               </div>

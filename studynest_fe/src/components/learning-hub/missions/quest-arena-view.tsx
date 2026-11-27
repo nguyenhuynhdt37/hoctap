@@ -333,7 +333,7 @@ export function QuestArenaView() {
 
   if (board.overview.error) {
     return (
-      <main className="mx-auto max-w-7xl px-4 py-10">
+      <main className="user-container py-10">
         <HubLoadError
           error={board.overview.error}
           title="Chưa tải được bảng nhiệm vụ"
@@ -350,7 +350,7 @@ export function QuestArenaView() {
       <main
         role="status"
         aria-label="Đang tải trạm nhiệm vụ"
-        className="mx-auto max-w-7xl space-y-6 px-4 py-8 animate-pulse"
+        className="user-container space-y-6 py-8 animate-pulse"
       >
         <div className="grid gap-5 lg:grid-cols-[1.35fr_1fr]">
           <Skeleton className="h-72 rounded-[32px]" />
@@ -368,7 +368,7 @@ export function QuestArenaView() {
 
   return (
     <main className="min-h-screen bg-background pb-16">
-      <div className="mx-auto max-w-7xl space-y-8 px-4 py-7 sm:px-6 sm:py-9">
+      <div className="user-container space-y-8 py-7 sm:py-9">
         {/* TẦNG 1: HERO NHỊP HỌC & ĐIỂM DANH 7 NGÀY */}
         <QuestArenaHero
           daily={daily}

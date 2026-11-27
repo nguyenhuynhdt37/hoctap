@@ -186,7 +186,7 @@ const CourseRecommends = ({ slug }: CourseRecommendsProps) => {
 
   return (
     <section className="bg-background py-12 sm:py-16">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="user-container">
         <div className="mb-8">
           <h2 className="font-display text-3xl text-foreground">
             Khóa học gợi ý

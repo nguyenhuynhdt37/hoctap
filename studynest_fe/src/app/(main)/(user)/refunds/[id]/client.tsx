@@ -14,7 +14,7 @@ export default function RefundDataLoader({ id }: { id: string }) {
 
   if (!data && error) {
     return (
-      <div className="mx-auto max-w-5xl px-4 py-8">
+      <div className="user-container max-w-5xl py-8">
         <PageLoadError
           message={pageErrorMessage(
             error,
@@ -30,7 +30,7 @@ export default function RefundDataLoader({ id }: { id: string }) {
 
   if (!data) {
     return (
-      <div role="status" aria-label="Đang tải chi tiết yêu cầu hoàn tiền" className="mx-auto max-w-5xl space-y-6 px-4 py-8">
+      <div role="status" aria-label="Đang tải chi tiết yêu cầu hoàn tiền" className="user-container max-w-5xl space-y-6 py-8">
         <Skeleton className="h-9 w-28" />
         <Skeleton className="h-28 w-full" />
         <div className="grid gap-6 lg:grid-cols-2">

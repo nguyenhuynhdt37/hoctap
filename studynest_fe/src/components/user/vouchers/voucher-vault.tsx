@@ -394,7 +394,7 @@ export function VoucherVault() {
 
   return (
     <main className="relative isolate min-h-screen overflow-clip bg-background pb-16">
-      <div className="mx-auto w-full max-w-6xl space-y-7 px-4 pt-6 sm:px-6 sm:pt-8">
+      <div className="user-container max-w-6xl space-y-7 pt-6 sm:pt-8">
         {/* CLOUDY BLUE VOUCHER HERO BANNER */}
         <header className="relative isolate overflow-hidden rounded-[32px] border border-primary-pastel bg-gradient-to-br from-primary-light/85 via-surface to-accent/45 p-6 text-foreground shadow-[0_24px_48px_-14px_rgba(53,111,167,0.16)] sm:p-8 lg:p-10">
           <div

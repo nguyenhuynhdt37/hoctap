@@ -713,17 +713,17 @@ textarea {
   }
 }
 
-/* ==========================================================================
-   9. USER FULL CANVAS — FULL-WIDTH WORKSPACE LAYOUT (ĐỒNG BỘ BẢNG TIỆN ÍCH)
-   Mở rộng toàn bộ page-level container trong khu vực Người dùng tràn full
-   màn hình, giữ nguyên độ rộng gọn cho Modal, Dialog, Drawer và thẻ hẹp.
-   ========================================================================== */
-.user-full-canvas :is(.max-w-7xl, .max-w-6xl, .max-w-5xl, .container):not([role="dialog"]):not([aria-modal="true"]):not([data-narrow-container]) {
-  max-width: none;
+/* Shared content edges for learner pages, navigation and footer. */
+@utility user-container {
   width: 100%;
+  min-width: 0;
+  max-width: 80rem;
+  margin-inline: auto;
+  padding-inline: clamp(1rem, 3vw, 2rem);
 }
 
-.user-full-canvas :is([role="dialog"], [aria-modal="true"], [data-narrow-container]) :is(.max-w-7xl, .max-w-6xl, .max-w-5xl, .container) {
-  max-width: revert-layer;
-  width: revert-layer;
+@utility user-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+  gap: clamp(1rem, 2vw, 1.5rem);
 }

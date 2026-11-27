@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils";
+import { X } from "pulsoicon-react";
 
 export type ModalSize = "sm" | "md" | "lg" | "xl";
 
@@ -16,6 +17,7 @@ export interface ModalProps {
   closeOnOverlayClick?: boolean;
   hideCloseButton?: boolean;
   className?: string;
+  bodyClassName?: string;
 }
 
 const sizeClasses: Record<ModalSize, string> = {
@@ -36,6 +38,7 @@ export function Modal({
   closeOnOverlayClick = true,
   hideCloseButton = false,
   className,
+  bodyClassName,
 }: ModalProps) {
   const titleId = React.useId();
   const descId = React.useId();
@@ -143,20 +146,13 @@ export function Modal({
                 aria-label="Đóng hộp thoại"
                 className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-muted-foreground hover:bg-primary-light hover:text-foreground transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                <svg
-                  className="h-4 w-4"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  aria-hidden="true"
-                >
-                  <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
-                </svg>
+                <X aria-hidden="true" className="size-4" />
               </button>
             )}
           </div>
         )}
 
-        <div className="relative flex-1 overflow-y-auto p-6">{children}</div>
+        <div className={cn("relative min-h-0 flex-1 overflow-y-auto p-6", bodyClassName)}>{children}</div>
 
         {footer && (
           <div className="flex flex-wrap items-center justify-end gap-2.5 border-t border-border bg-background/60 px-6 py-4">

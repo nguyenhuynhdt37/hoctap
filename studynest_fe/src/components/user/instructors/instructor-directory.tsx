@@ -668,10 +668,7 @@ function MentorDossierStrip({
             </button>
             <button
               type="button"
-              onClick={() => {
-                onSelectSpotlight(instructor.id);
-                window.scrollTo({ top: 0, behavior: "smooth" });
-              }}
+              onClick={() => onSelectSpotlight(instructor.id)}
               className="inline-flex h-9 items-center gap-1 rounded-full border border-border bg-surface px-3 text-xs font-bold text-foreground hover:border-primary-pastel hover:bg-primary-light hover:text-primary cursor-pointer"
             >
               <Crown className="size-3.5" animated={false} aria-hidden="true" />
@@ -710,6 +707,7 @@ export function InstructorDirectory() {
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [quickViewMentor, setQuickViewMentor] = useState<InstructorItem | null>(null);
   const [spotlightId, setSpotlightId] = useState<string | null>(null);
+  const spotlightRef = useRef<HTMLDetailsElement>(null);
 
   // Phân trang tải thêm (load more)
   const [extraState, setExtraState] = useState<{
@@ -1113,23 +1111,10 @@ export function InstructorDirectory() {
       )}
 
       {/* 1. HEADER TỐI GIẢN TẠP CHÍ + THANH TÌM KIẾM */}
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div className="flex flex-col gap-4 rounded-3xl border border-border bg-primary-light/75 p-5 sm:p-7 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-primary-pastel bg-primary-light px-3 py-1 text-[11px] font-extrabold tracking-[0.14em] text-primary uppercase">
-              Mây Mây · Mentor Studio
-            </span>
-            {totalDisplay !== null && (
-              <span className="text-xs font-bold text-muted-foreground">{totalDisplay} thầy cô đang giảng dạy</span>
-            )}
-          </div>
-          <h1 className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-5xl">
-            Những người{" "}
-            <span className="relative inline-block italic text-primary">
-              dẫn đường tận tâm
-              <span aria-hidden="true" className="absolute right-0 -bottom-1 left-0 -z-10 h-3 rounded-full bg-accent-vanilla" />
-            </span>
-          </h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">Đội ngũ giáo viên</h1>
+          <p className="text-sm leading-relaxed text-foreground/85">Tìm giáo viên theo môn học và cấp lớp.</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -1146,7 +1131,7 @@ export function InstructorDirectory() {
             className="min-h-10 rounded-full border-primary-pastel bg-surface px-4 text-xs font-bold"
             leftIcon={<SlidersHorizontal className="size-4 text-primary" />}
           >
-            <span>Bộ lọc chuyên sâu</span>
+            <span>Bộ lọc</span>
             {activeCount > 0 && (
               <Badge variant="primary" className="ml-1 px-1.5 text-[11px]">
                 {activeCount}
@@ -1156,24 +1141,9 @@ export function InstructorDirectory() {
         </div>
       </div>
 
-      {/* 2. INTERACTIVE MENTOR SPOTLIGHT STAGE (ĐỔI NGƯỜI TRỰC TIẾP + KHÓA HỌC SỐNG) */}
-      {activeSpotlight && (
-        <SpotlightStage
-          mentor={activeSpotlight}
-          allMentors={items}
-          rankIndex={activeSpotlightIndex}
-          isSaved={isSaved(activeSpotlight.id)}
-          isSaving={isPending(activeSpotlight.id)}
-          isReady={isReady}
-          onSelectMentor={setSpotlightId}
-          onToggleSave={toggleSave}
-          onQuickView={setQuickViewMentor}
-        />
-      )}
-
       {/* 3. STICKY FLOATING COMMAND BAR (TÌM KIẾM + LỌC NHANH + SẮP XẾP — BỎ SIDEBAR CỨNG) */}
-      <div className="sticky top-20 z-20 flex flex-wrap items-center justify-between gap-2.5 rounded-full border border-primary-pastel/75 bg-surface/92 px-3.5 py-2.5 shadow-sm backdrop-blur-md max-lg:rounded-3xl">
-        <form onSubmit={handleSearchSubmit} className="flex min-w-56 flex-1 items-center gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-surface p-3">
+        <form onSubmit={handleSearchSubmit} className="flex min-w-0 flex-1 items-center gap-2 sm:min-w-56">
           <label htmlFor={searchInputId} className="relative block min-w-0 flex-1">
             <span className="sr-only">Tìm kiếm giáo viên</span>
             <Search
@@ -1325,6 +1295,26 @@ export function InstructorDirectory() {
         />
       )}
 
+      {/* 2. INTERACTIVE MENTOR SPOTLIGHT STAGE (ĐỔI NGƯỜI TRỰC TIẾP + KHÓA HỌC SỐNG) */}
+      {activeSpotlight && (
+        <details ref={spotlightRef} className="scroll-mt-24 rounded-2xl border border-border bg-surface">
+          <summary className="cursor-pointer rounded-xl px-4 py-3 text-sm font-semibold text-foreground focus-visible:ring-2 focus-visible:ring-ring">Giáo viên tiêu điểm</summary>
+          <div className="p-3 pt-0 sm:p-4 sm:pt-0">
+            <SpotlightStage
+              mentor={activeSpotlight}
+              allMentors={items}
+              rankIndex={activeSpotlightIndex}
+              isSaved={isSaved(activeSpotlight.id)}
+              isSaving={isPending(activeSpotlight.id)}
+              isReady={isReady}
+              onSelectMentor={setSpotlightId}
+              onToggleSave={toggleSave}
+              onQuickView={setQuickViewMentor}
+            />
+          </div>
+        </details>
+      )}
+
       {/* 4. FULL-WIDTH EDITORIAL DOSSIER STRIPS */}
       <section aria-label="Danh sách hồ sơ giáo viên" aria-busy={isLoading} className="space-y-4">
         {isLoading && items.length === 0 ? (
@@ -1369,12 +1359,19 @@ export function InstructorDirectory() {
                   key={instructor.id}
                   instructor={instructor}
                   index={idx}
-                  isSpotlight={activeSpotlight?.id === instructor.id}
+                  isSpotlight={spotlightId === instructor.id}
                   isSaved={isSaved(instructor.id)}
                   isSaving={isPending(instructor.id)}
                   isReady={isReady}
                   onToggleSave={toggleSave}
-                  onSelectSpotlight={setSpotlightId}
+                  onSelectSpotlight={(id) => {
+                    setSpotlightId(id);
+                    const spotlight = spotlightRef.current;
+                    if (spotlight) {
+                      spotlight.open = true;
+                      spotlight.scrollIntoView({ block: "start" });
+                    }
+                  }}
                   onQuickView={setQuickViewMentor}
                 />
               ))}

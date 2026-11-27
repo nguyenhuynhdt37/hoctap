@@ -113,7 +113,7 @@ export default async function InstructorPage({ params }: PageProps) {
   const isFound = result.status === "found";
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 bg-background min-h-[75vh]">
+    <main className="user-container py-8 bg-background min-h-[75vh]">
       <InstructorTabs
         instructorId={id}
         initialProfile={isFound ? result.profile : null}

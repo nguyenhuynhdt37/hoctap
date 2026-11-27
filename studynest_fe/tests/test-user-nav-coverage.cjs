@@ -19,6 +19,10 @@ const EXCEPTIONS = {
   "/auth/github/callback": "Callback OAuth GitHub, không phải điểm đến của người dùng",
   "/email_authentication": "Màn xác thực email, đến từ liên kết trong email",
   "/banned": "Trang thông báo tài khoản bị khóa, hệ thống tự chuyển tới",
+  "/forgot-password": "Bắt đầu khôi phục mật khẩu từ màn đăng nhập",
+  "/reset-password": "Bước nhập mã trong luồng khôi phục mật khẩu",
+  "/lo-trinh": "Đường dẫn cũ tự chuyển sang /combo",
+  "/lo-trinh/cua-toi": "Đường dẫn cũ tự chuyển sang /learning-paths/my",
   "/refunds/my_refund": "Trùng chức năng /refunds/my-requests (cùng component MyRefundRequests); header chỉ dẫn tới /refunds/my-requests",
 };
 

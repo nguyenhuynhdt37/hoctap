@@ -121,7 +121,7 @@ export function LevelsView() {
         className="pointer-events-none fixed inset-x-0 top-0 -z-10 h-[34rem] bg-gradient-to-b from-primary-light/55 via-surface-muted/40 to-transparent"
       />
 
-      <div className="mx-auto w-full max-w-7xl space-y-6 px-4 pt-6 sm:px-6 lg:px-8">
+      <div className="user-container space-y-6 pt-6">
         {/* ── 1. HERO HỘ CHIẾU BẦU TRỜI ── */}
         {current && milestone !== undefined ? (
           <SkyPassportHero

@@ -3,7 +3,7 @@ export default function WalletLoading() {
     <div
       role="status"
       aria-label="Đang tải thông tin ví"
-      className="mx-auto max-w-5xl space-y-8 px-4 py-8 animate-pulse"
+      className="user-container max-w-5xl space-y-8 py-8 animate-pulse"
     >
       {/* Header Skeleton */}
       <div className="space-y-2">

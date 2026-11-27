@@ -1,7 +1,7 @@
 "use client";
 
 import Pagination from "@/components/shared/pagination";
-import { Alert } from "@/components/ui";
+import { Alert, Button } from "@/components/ui";
 import { useDebouncedUrlSearch, useUrlQueryState } from "@/hooks/useUrlQueryState";
 import { cn } from "@/lib/utils";
 import api from "@/lib/utils/fetcher/client/axios";
@@ -15,10 +15,8 @@ import type {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import {
-  BellRing,
   CheckCheck,
   Inbox,
-  Radio,
   RefreshCw,
   Trash2,
 } from "pulsoicon-react";
@@ -199,8 +197,6 @@ export default function Notifications() {
   const allTotal = categoryCounts.all?.total ?? data?.total ?? 0;
   const unreadTotal = data?.unread ?? categoryCounts.all?.unread ?? 0;
   const readTotal = Math.max(0, allTotal - unreadTotal);
-  const processedPercent =
-    allTotal > 0 ? Math.round((readTotal / allTotal) * 100) : 100;
 
   const groupedByDay = useMemo(() => {
     const items = data?.items ?? [];
@@ -243,154 +239,45 @@ export default function Notifications() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6">
-        {/* TẦNG 1: Hero Radar Tín Hiệu (2 cột bất đối xứng) */}
-        <div className="grid gap-5 lg:grid-cols-[1.35fr_1fr]">
-          {/* Trái: Thẻ Tổng Quan Cloudy Blue Pastel */}
-          <section
-            aria-label="Tổng quan trung tâm thông báo"
-            className="relative isolate flex flex-col justify-between overflow-hidden rounded-[30px] border border-primary-pastel bg-gradient-to-br from-primary-light/85 via-surface to-accent/40 p-6 text-foreground shadow-[0_20px_44px_-16px_rgba(53,111,167,0.16)] sm:p-7"
-          >
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute -right-14 -top-14 -z-10 h-56 w-56 rounded-full bg-white/75 blur-3xl"
-            />
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute -bottom-16 -left-10 -z-10 h-48 w-48 rounded-full bg-secondary-light/60 blur-3xl"
-            />
-
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <div className="inline-flex items-center gap-1.5 rounded-full border border-primary-pastel bg-surface/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
-                  <Radio
-                    aria-hidden="true"
-                    animated={false}
-                    className="size-3.5 text-success-foreground"
-                  />
-                  <span>Trực tuyến · Cloudy Signal Hub</span>
-                </div>
-                <h1 className="mt-2.5 font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-                  Trung tâm thông báo
-                </h1>
-                <p className="mt-1.5 max-w-xl text-xs leading-relaxed text-muted-foreground sm:text-sm">
-                  Theo dõi tức thì mọi phản hồi hỏi đáp, quà tặng khóa học, biến động ví Coin và cảnh báo bảo mật tài khoản.
-                </p>
-              </div>
-
-              <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-primary-pastel bg-surface text-primary shadow-2xs">
-                <BellRing
-                  aria-hidden="true"
-                  animated={false}
-                  className="size-6"
-                />
-              </span>
+      <div className="user-container space-y-6 py-8">
+        <section aria-labelledby="notifications-heading" className="rounded-3xl border border-border bg-primary-light/75 p-5 sm:p-7">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h1 id="notifications-heading" className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+                Trung tâm thông báo
+              </h1>
+              <p className="mt-2 text-sm text-foreground/85">{unreadTotal} chưa đọc · {allTotal} thông báo</p>
             </div>
-
-            {/* Chỉ số & Tiến độ xử lý */}
-            <div className="mt-6 space-y-4">
-              <div className="grid grid-cols-3 gap-3 rounded-2xl border border-border bg-surface/90 p-3.5 shadow-2xs backdrop-blur-sm">
-                <div>
-                  <p className="text-[11px] font-medium text-muted-foreground">
-                    Tổng tín hiệu
-                  </p>
-                  <p className="mt-0.5 text-xl font-bold text-foreground tabular-nums">
-                    {allTotal}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[11px] font-medium text-muted-foreground">
-                    Chưa đọc
-                  </p>
-                  <p className="mt-0.5 text-xl font-bold text-primary tabular-nums">
-                    {unreadTotal}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[11px] font-medium text-muted-foreground">
-                    Đã xử lý
-                  </p>
-                  <p className="mt-0.5 text-xl font-bold text-success-foreground tabular-nums">
-                    {processedPercent}%
-                  </p>
-                </div>
-              </div>
-
-              {/* Cụm nút hành động */}
-              <div className="flex flex-wrap items-center gap-2.5">
-                {unreadTotal > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => markAll.mutate()}
-                    disabled={markAll.isPending}
-                    className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground shadow-2xs transition hover:bg-primary-hover disabled:opacity-60 cursor-pointer"
-                  >
-                    <span className="inline-flex items-center">
-                      <CheckCheck
-                        aria-hidden="true"
-                        animated={false}
-                        className="size-4"
-                      />
-                    </span>
-                    <span>
-                      {markAll.isPending
-                        ? "Đang xử lý..."
-                        : `Đánh dấu đã đọc tất cả (${unreadTotal})`}
-                    </span>
-                  </button>
-                )}
-
-                {readTotal > 0 && !confirmClearRead && (
-                  <button
-                    type="button"
-                    onClick={() => setConfirmClearRead(true)}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-4 py-2 text-xs font-semibold text-foreground shadow-2xs transition hover:border-primary-pastel hover:bg-primary-light hover:text-primary cursor-pointer"
-                  >
-                    <span className="inline-flex items-center">
-                      <Trash2
-                        aria-hidden="true"
-                        animated={false}
-                        className="size-3.5"
-                      />
-                    </span>
-                    <span>Dọn {readTotal} tin đã đọc</span>
-                  </button>
-                )}
-
-                {confirmClearRead && (
-                  <div className="inline-flex items-center gap-2 rounded-full border border-destructive-border bg-destructive-bg px-3 py-1.5 text-xs">
-                    <span className="font-semibold text-destructive-foreground">
-                      Xóa {readTotal} tin đã đọc?
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => clearRead.mutate()}
-                      disabled={clearRead.isPending}
-                      className="rounded-full bg-destructive px-2.5 py-0.5 text-[11px] font-bold text-white transition hover:opacity-90 cursor-pointer"
-                    >
-                      <span>{clearRead.isPending ? "Đang xóa..." : "Xác nhận"}</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setConfirmClearRead(false)}
-                      className="rounded-full border border-border bg-surface px-2.5 py-0.5 text-[11px] font-semibold text-foreground hover:bg-background cursor-pointer"
-                    >
-                      <span>Hủy</span>
-                    </button>
-                  </div>
-                )}
-              </div>
+            <div className="flex flex-wrap gap-2">
+              {unreadTotal > 0 && (
+                <Button onClick={() => markAll.mutate()} isLoading={markAll.isPending}
+                  leftIcon={<CheckCheck aria-hidden="true" className="size-4" />}>
+                  Đánh dấu tất cả đã đọc
+                </Button>
+              )}
+              {readTotal > 0 && !confirmClearRead && (
+                <Button variant="outline" onClick={() => setConfirmClearRead(true)}
+                  leftIcon={<Trash2 aria-hidden="true" className="size-4" />}>
+                  Xóa tin đã đọc
+                </Button>
+              )}
             </div>
-          </section>
+          </div>
 
-          {/* Phải: Thẻ Thông Báo Thiết Bị OS */}
-          <DeviceNotificationBanner variant="card" />
-        </div>
+          {confirmClearRead && (
+            <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-destructive-border bg-destructive-bg p-3 text-sm text-destructive-foreground">
+              <p className="mr-auto">Xóa {readTotal} thông báo đã đọc?</p>
+              <Button variant="destructive" size="sm" onClick={() => clearRead.mutate()} isLoading={clearRead.isPending}>Xác nhận</Button>
+              <Button variant="outline" size="sm" onClick={() => setConfirmClearRead(false)}>Hủy</Button>
+            </div>
+          )}
+        </section>
 
-        {/* TẦNG 2: Channel Rail (Trái) + Dòng Tín Hiệu Theo Ngày (Phải) */}
-        <div className="grid gap-6 lg:grid-cols-[270px_1fr] lg:items-start">
+        <DeviceNotificationBanner />
+
+        <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-6">
           {/* Cột Trái: Thanh Kênh Thông Báo */}
-          <aside className="lg:sticky lg:top-24">
+          <aside className="min-w-0 lg:sticky lg:top-24">
             <div className="rounded-[26px] border border-border bg-surface p-3 shadow-xs">
               <p className="px-3 pb-2 pt-1 text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
                 Kênh thông báo
@@ -399,7 +286,7 @@ export default function Notifications() {
               {/* Mobile: cuộn ngang | Desktop: dọc */}
               <nav
                 aria-label="Kênh thông báo"
-                className="flex gap-1.5 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0"
+                className="flex min-w-0 gap-1.5 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0"
               >
                 {NOTIFICATION_CHANNELS.map((ch) => {
                   const active = type === ch.key;
@@ -416,6 +303,7 @@ export default function Notifications() {
                       key={ch.key || "all"}
                       type="button"
                       onClick={() => setParam("type", ch.key)}
+                      aria-pressed={active}
                       className={cn(
                         "flex shrink-0 items-center justify-between gap-2.5 rounded-2xl px-3 py-2.5 text-left transition-all cursor-pointer lg:w-full",
                         active

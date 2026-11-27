@@ -316,7 +316,7 @@ export default function WalletTransactions({
   };
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-8">
+    <div className="user-container space-y-6 py-8">
       <CashflowHero
         summary={summaryData}
         coins={coins.data}

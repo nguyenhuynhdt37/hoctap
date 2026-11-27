@@ -3,8 +3,7 @@
 import { useAuthedSWR } from "@/hooks/auth/useAuthedSWR";
 import { MockDataChip } from "@/components/learning-hub/mock-data-chip";
 import { HubLoadError } from "@/components/learning-hub/hub-page-state";
-import { useGamificationStats, useGamificationStreak } from "@/lib/learning-hub/mission-hooks";
-import { coinBalanceLabel } from "@/lib/learning-hub/coin-logic";
+import { useGamificationStats } from "@/lib/learning-hub/mission-hooks";
 import { useCoinBalances, useShopInventory } from "@/lib/learning-hub/shop-hooks";
 import { formatCoin } from "@/lib/learning-hub/shop-logic";
 import { cn } from "@/lib/utils";
@@ -42,64 +41,6 @@ function Skeleton({ className }: { className?: string }) {
 
 const chipBase =
   "inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm font-semibold tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface motion-reduce:transition-none";
-
-export function StreakChip({ onNavigate }: { onNavigate?: () => void }) {
-  const { data, error } = useGamificationStreak();
-  if (error && !data) return null;
-  const days = data?.current_streak;
-  return (
-    <Link
-      href="/missions"
-      onClick={onNavigate}
-      aria-label={data ? `Chuỗi học ${days} ngày liên tiếp` : "Chuỗi học liên tiếp"}
-      title="Chuỗi ngày học liên tiếp"
-      className={cn(chipBase, "min-h-11 max-w-16 px-2 md:max-w-none md:px-3 [&>span]:truncate", "border-accent-vanilla-border bg-accent-vanilla text-accent-vanilla-foreground hover:bg-accent-vanilla-border/60")}
-    >
-      <Flame aria-hidden="true" className="size-4 shrink-0" />
-      {data ? <span>{days}</span> : <Skeleton className="w-5" />}
-    </Link>
-  );
-}
-
-export function CoinChip() {
-  const { xp } = useGamificationStats();
-  const inventory = useShopInventory();
-  const coins = useCoinBalances();
-  const goldBalance = coins.data?.paid;
-  const whiteBalance = coins.data?.bonus ?? inventory.data?.balance ?? xp?.peak_balance;
-  const goldLabel = goldBalance !== undefined ? new Intl.NumberFormat("vi-VN").format(goldBalance) : "0";
-  const whiteLabel = whiteBalance !== undefined ? new Intl.NumberFormat("vi-VN").format(whiteBalance) : "0";
-  const detail = coins.data ? coinBalanceLabel(coins.data) : `${goldLabel} Coin vàng, ${whiteLabel} Coin trắng`;
-
-  return (
-    <div className="inline-flex items-center gap-1.5" aria-label={detail}>
-      <Link
-        href="/wallets"
-        aria-label={`Coin vàng: ${goldLabel} Coin vàng (dùng mua khóa học)`}
-        title={`Coin vàng (thật): ${goldLabel} Coin vàng`}
-        className={cn(
-          chipBase,
-          "min-h-11 min-w-11 justify-center border-[#E2B545] bg-gradient-to-b from-[#FFF7DB] to-[#F7DE8C] px-2 text-[#784705] shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] hover:from-[#FFF1C2] hover:to-[#F3D272] md:px-3",
-        )}
-      >
-        <Coins aria-hidden="true" solid className="size-4 shrink-0 text-[#C47E0A]" />
-        <span className="max-w-20 truncate">{goldLabel}</span>
-      </Link>
-      <Link
-        href="/shop"
-        aria-label={`Đồng trắng: ${whiteLabel} (10 đồng trắng = 1 đồng vàng khi chiết khấu)`}
-        title={`Đồng trắng (ảo): ${whiteLabel} · 10:1 khi chiết khấu`}
-        className={cn(
-          chipBase,
-          "min-h-11 min-w-11 justify-center border-[#CBD5E1] bg-gradient-to-b from-[#FFFFFF] to-[#EDF2F7] px-2 text-[#334155] shadow-[inset_0_1px_0_rgba(255,255,255,0.95)] hover:from-[#F8FAFC] hover:to-[#E2E8F0] md:px-3",
-        )}
-      >
-        <Coins aria-hidden="true" className="size-4 shrink-0 text-[#64748B]" />
-        <span className="max-w-20 truncate">{whiteLabel}</span>
-      </Link>
-    </div>
-  );
-}
 
 export function WalletChip({ onNavigate }: { onNavigate?: () => void }) {
   const { data, error, isLoading } = useWalletBalance();
