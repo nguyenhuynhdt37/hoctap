@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
-import { Bot, Maximize2, Minimize2, Minus, Shield, Zap } from "pulsoicon-react";
-import { Badge } from "@/components/ui/badge";
+import { Bot, Maximize2, Minimize2, Minus, Zap } from "pulsoicon-react";
 import { Button } from "@/components/ui/button";
 import { useUserStore } from "@/stores/user";
 import { LearningAgentProvider, useLearningAgent } from "../learning_detail/agent/agent-context";
@@ -92,19 +91,6 @@ function AssistantSurface() {
     return null;
   }
 
-  const modeLabel =
-    agent?.permissionMode === "autoPilot"
-      ? "Auto-Pilot"
-      : agent?.permissionMode === "default"
-        ? "Hỏi trước"
-        : "Plan";
-  const modeVariant =
-    agent?.permissionMode === "autoPilot"
-      ? "primary"
-      : agent?.permissionMode === "default"
-        ? "vanilla"
-        : "lavender";
-
   return (
     <div>
       {/* Edge-Docked Cloud Rail Tab — siêu gọn bám mép phải, không chiếm diện tích góc dưới */}
@@ -176,53 +162,23 @@ function AssistantSurface() {
               : "h-[min(720px,calc(100dvh-96px))] sm:w-[440px]"
           }`}
         >
-          {/* Ambient Pastel Top Header */}
-          <header className="relative flex items-center justify-between gap-2 border-b border-primary-pastel/70 bg-gradient-to-r from-primary-light/85 via-surface to-secondary-light/45 px-4 py-3">
-            <div className="flex min-w-0 items-center gap-2.5">
-              <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-primary-pastel bg-surface shadow-2xs">
-                <img src="/logo/maymay-mark.svg" alt="Mây Mây" className="h-5 w-5 object-contain" />
-                <span
-                  aria-hidden="true"
-                  className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border border-surface bg-primary"
-                />
-              </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <p className="truncate font-display text-sm font-bold text-foreground">Mây Mây Co-Pilot</p>
-                  <Badge variant="info" size="sm" className="px-1.5 py-0 text-[10px]">
-                    Hannes-Lite
-                  </Badge>
-                </div>
-                <p className="truncate text-[11px] text-muted-foreground">
-                  {pathname === "/"
-                    ? "Đang quan sát: Trang chủ"
-                    : pathname.startsWith("/courses")
-                      ? "Đang quan sát: Khám phá khóa học"
-                      : `Đang quan sát: ${pathname}`}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-1">
-              {agent && (
-                <button
-                  type="button"
-                  onClick={() => agent.cyclePermissionMode()}
-                  title="Đổi chế độ quyền Co-Pilot (Shift+Tab)"
-                  className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <Badge variant={modeVariant} size="sm" className="cursor-pointer gap-1">
-                    <Shield animated={false} className="h-3 w-3" />
-                    <span>{modeLabel}</span>
-                  </Badge>
-                </button>
+          <header className="flex items-center justify-between gap-2 border-b border-border/80 bg-surface px-3 py-2">
+            <div className="flex min-w-0 items-center gap-2">
+              <img src="/logo/maymay-mark.svg" alt="" aria-hidden="true" className="h-6 w-6 object-contain" />
+              <p className="truncate font-display text-sm font-bold text-foreground">Mây Mây</p>
+              {agent?.busy && (
+                <span role="status" className="truncate text-xs text-primary">
+                  {agent.status || "Đang xử lý…"}
+                </span>
               )}
+            </div>
+            <div className="flex items-center gap-0.5">
               <Button
                 size="icon"
                 variant="ghost"
                 onClick={() => updateExpanded(v => !v)}
-                aria-label={expanded ? "Thu gọn kích thước khung" : "Mở rộng khung Co-Pilot"}
-                title={expanded ? "Thu gọn khung" : "Mở rộng khung Studio"}
+                aria-label={expanded ? "Thu gọn kích thước khung" : "Mở rộng khung"}
+                title={expanded ? "Thu gọn khung" : "Mở rộng khung"}
                 className="h-8 w-8 rounded-xl"
               >
                 {expanded ? <Minimize2 animated={false} size="1em" /> : <Maximize2 animated={false} size="1em" />}

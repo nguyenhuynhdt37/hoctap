@@ -12,11 +12,10 @@ import {
   MousePointerClick,
   Send,
   Shield,
-  Star,
+  SquarePen,
   X,
 } from "pulsoicon-react";
 import api from "@/lib/utils/fetcher/client/axios";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/states";
 import MessageBubble from "../learning_detail/chat/message-bubble";
@@ -28,42 +27,22 @@ import { useChatImages, ChatImageAttachments, ChatImagePreviews } from "./chat-i
 import { DictationButton } from "./dictation-button";
 import type { MessageSource, TutorMessage } from "@/types/user/tutor-chat";
 
-const QUICK_MISSIONS = [
+const SUGGESTIONS = [
   {
     icon: MousePointerClick,
     title: "Mở khóa đang học",
-    subtitle: "Quét màn hình & bấm vào nút Học tiếp giúp mình",
     prompt: "Hãy quét màn hình hiện tại (browser_snapshot) và nhấn vào nút Học tiếp hoặc khóa học đang học giúp mình.",
-    badge: "Auto-Pilot",
   },
   {
     icon: Compass,
-    title: "Khám phá & Mở khóa nổi bật",
-    subtitle: "Tìm khóa học phù hợp rồi tự điều hướng mở trang khóa học",
+    title: "Gợi ý khóa học nổi bật",
     prompt: "Hãy tìm khóa học nổi bật trong hệ thống rồi điều hướng mở trực tiếp trang khóa học đó trên màn hình cho mình xem.",
-    badge: "Telekinesis",
-  },
-  {
-    icon: Eye,
-    title: "Chỉ điểm trên trang này",
-    subtitle: "Quét DOM và khoanh vùng Spotlight các mục quan trọng",
-    prompt: "Hãy đọc màn hình hiện tại (browser_snapshot) và khoanh vùng chỉ điểm (browser_highlight) vào mục quan trọng nhất trên trang này.",
-    badge: "Spotlight",
   },
   {
     icon: BookOpen,
-    title: "Báo cáo tiến độ tài khoản",
-    subtitle: "Truy vấn SQL sandbox để thống kê tiến độ học tập",
+    title: "Xem tiến độ học tập",
     prompt: "Cho mình xem tiến độ các khóa học đang học từ dữ liệu tài khoản.",
-    badge: "SQL Sandbox",
   },
-];
-
-const SLASH_CHIPS = [
-  { label: "/screen", text: "Hãy đọc màn hình hiện tại (browser_snapshot) và tóm tắt những gì đang hiển thị.", icon: Eye },
-  { label: "/highlight", text: "/highlight ", icon: Compass },
-  { label: "/open", text: "/open ", icon: MousePointerClick },
-  { label: "/courses", text: "Hãy tìm các khóa học công khai hiện có và gợi ý cho mình.", icon: Star },
 ];
 
 export default function AccountAssistantPanel() {
@@ -121,6 +100,23 @@ export default function AccountAssistantPanel() {
       mounted.current = false;
     };
   }, [load]);
+
+  const newChat = useCallback(async () => {
+    if (sending || agent?.busy) return;
+    setError("");
+    try {
+      const { data } = await api.post("/agent/conversation/new");
+      setThreadId(data.thread.id);
+      setMessages([]);
+      setBefore(null);
+      setQueuedPrompt(null);
+      historyIdx.current = -1;
+      setComposerValue("");
+      inputElement.current?.focus();
+    } catch {
+      setError("Chưa tạo được đoạn chat mới. Vui lòng thử lại.");
+    }
+  }, [agent?.busy, sending, setComposerValue]);
 
   useEffect(() => {
     if (sending) end.current?.scrollIntoView({ block: "nearest" });
@@ -335,64 +331,55 @@ export default function AccountAssistantPanel() {
       }}
       className="relative flex h-full min-h-0 flex-col bg-gradient-to-b from-background/60 via-surface to-surface"
     >
-      {/* Top Action, X-Ray Inspector & Radar Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/80 bg-surface/80 px-3.5 py-2 backdrop-blur-xs">
-        <div className="flex items-center gap-1.5">
-          <AssistantSettings />
-          <button
-            type="button"
-            onClick={() => agent?.setXrayActive(v => !v)}
-            className={`inline-flex items-center gap-1 rounded-xl border px-2.5 py-1 text-xs font-medium transition-colors ${
-              agent?.xrayActive
-                ? "border-primary bg-primary text-primary-foreground shadow-2xs"
-                : "border-primary-pastel bg-primary-light/60 text-primary hover:bg-primary-light"
-            }`}
-            title="Tia X-Ray: Rê chuột lên trang web và click vào bất kỳ phần tử nào để hỏi hoặc ra lệnh cho Mây Mây"
-          >
-            <Compass animated={false} className="h-3.5 w-3.5" />
-            <span>{agent?.xrayActive ? "Đang bật X-Ray…" : "Tia X-Ray"}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => agent?.setDetailedTranscript(v => !v)}
-            className={`inline-flex items-center gap-1 rounded-xl border px-2.5 py-1 text-xs font-medium transition-colors ${
-              agent?.detailedTranscript
-                ? "border-primary-pastel bg-primary-light text-primary"
-                : "border-border bg-background text-muted-foreground hover:text-foreground"
-            }`}
-            title="Bật/tắt chế độ xem chi tiết từng lệnh công cụ (Ctrl+O)"
-          >
-            <Eye animated={false} className="h-3.5 w-3.5" />
-            <span>Log</span>
-          </button>
-        </div>
-
+      {/* Thanh công cụ gọn: đoạn chat mới + các công cụ dạng icon */}
+      <div className="flex items-center justify-between gap-2 border-b border-border/70 px-3 py-1.5">
         <Button
           size="sm"
           variant="pastel"
-          onClick={() => void startVoice()}
-          disabled={agent?.busy || dictating || !attachments.ready}
-          leftIcon={<Mic animated={false} size="1em" />}
+          onClick={() => void newChat()}
+          disabled={sending || agent?.busy || loading}
+          leftIcon={<SquarePen animated={false} size="1em" />}
           className="rounded-xl"
         >
-          {voice?.active ? "Mở lại cuộc gọi" : "Voice Live"}
+          Đoạn chat mới
         </Button>
-      </div>
-
-      {/* Live Screen Radar Strip */}
-      {agent?.lastScreenAction && (
-        <div className="mx-3.5 mt-2.5 flex items-center justify-between gap-2 rounded-2xl border border-primary-pastel bg-primary-light/45 px-3 py-1.5 text-xs">
-          <div className="flex min-w-0 items-center gap-2">
-            <MousePointerClick animated={false} className="h-3.5 w-3.5 shrink-0 text-primary" />
-            <span className="truncate font-medium text-foreground">
-              Thao tác vừa thực thi: <code className="text-primary">{agent.lastScreenAction.name}</code>
-            </span>
-          </div>
-          <Badge variant={agent.lastScreenAction.verified ? "success" : "warning"} size="sm">
-            {agent.lastScreenAction.verified ? "Đã xác minh" : "Chưa xong"}
-          </Badge>
+        <div className="flex items-center gap-0.5">
+          <Button
+            size="icon"
+            variant={agent?.xrayActive ? "primary" : "ghost"}
+            onClick={() => agent?.setXrayActive(v => !v)}
+            aria-pressed={Boolean(agent?.xrayActive)}
+            aria-label="Tia X-Ray: chỉ vào phần tử trên trang để hỏi Mây Mây"
+            title="Tia X-Ray: chỉ vào phần tử trên trang để hỏi Mây Mây"
+            className="h-8 w-8 rounded-xl"
+          >
+            <Compass animated={false} size="1em" />
+          </Button>
+          <Button
+            size="icon"
+            variant={agent?.detailedTranscript ? "pastel" : "ghost"}
+            onClick={() => agent?.setDetailedTranscript(v => !v)}
+            aria-pressed={Boolean(agent?.detailedTranscript)}
+            aria-label="Xem chi tiết từng thao tác"
+            title="Xem chi tiết từng thao tác (Ctrl+O)"
+            className="h-8 w-8 rounded-xl"
+          >
+            <Eye animated={false} size="1em" />
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => void startVoice()}
+            disabled={agent?.busy || dictating || !attachments.ready}
+            aria-label={voice?.active ? "Mở lại cuộc gọi" : "Trò chuyện bằng giọng nói"}
+            title={voice?.active ? "Mở lại cuộc gọi" : "Trò chuyện bằng giọng nói"}
+            className="h-8 w-8 rounded-xl"
+          >
+            <Mic animated={false} size="1em" />
+          </Button>
+          <AssistantSettings />
         </div>
-      )}
+      </div>
 
       <AgentStatus />
 
@@ -435,53 +422,27 @@ export default function AccountAssistantPanel() {
           </div>
         ) : (
           messages.length === 0 && (
-            <div className="space-y-4 py-3">
-              {/* Hero Welcome Card */}
-              <div className="rounded-2xl border border-primary-pastel bg-gradient-to-br from-primary-light/70 via-surface to-secondary-light/40 p-4 shadow-2xs">
-                <div className="mb-2 flex items-center gap-2">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-                    <Bot animated={false} className="h-4 w-4" />
-                  </span>
-                  <div>
-                    <h2 className="font-display text-base font-bold text-foreground">Mây Mây Co-Pilot ☁️</h2>
-                    <p className="text-[11px] text-muted-foreground">
-                      Kiến trúc Hannes-Lite · Tia X-Ray · Bôi đen Hỏi nhanh
-                    </p>
-                  </div>
-                </div>
-                <p className="text-xs leading-relaxed text-foreground/90">
-                  Bấm <strong>Tia X-Ray</strong> ở trên để chỉ thẳng vào bất kỳ nút/khóa học nào trên màn hình, hoặc{" "}
-                  <strong>bôi đen một đoạn chữ bất kỳ</strong> trên trang để triệu hồi thanh giải thích tức thì tại{" "}
-                  <code className="rounded bg-primary-light px-1 py-0.5 text-[11px] text-primary">{pathname}</code>.
-                </p>
+            <div className="flex flex-col items-center gap-4 py-8 text-center">
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary-light text-primary">
+                <Bot animated={false} className="h-5 w-5" />
+              </span>
+              <div>
+                <h2 className="font-display text-base font-bold text-foreground">Mình giúp gì được cho bạn?</h2>
+                <p className="mt-1 text-xs text-muted-foreground">Hỏi về bài học, khóa học hoặc nhờ mình thao tác trên trang.</p>
               </div>
-
-              {/* Quick Interactive Mission Bento Cards */}
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                {QUICK_MISSIONS.map(mission => {
-                  const Icon = mission.icon;
+              <div className="flex w-full flex-col gap-1.5">
+                {SUGGESTIONS.map(item => {
+                  const Icon = item.icon;
                   return (
                     <button
-                      key={mission.title}
+                      key={item.title}
                       type="button"
                       disabled={sending || agent?.busy}
-                      onClick={() => void submitMessage(mission.prompt)}
-                      className="group flex flex-col justify-between rounded-2xl border border-border bg-surface p-3 text-left shadow-2xs transition-all hover:-translate-y-0.5 hover:border-primary-pastel hover:bg-primary-light/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      onClick={() => void submitMessage(item.prompt)}
+                      className="flex items-center gap-2.5 rounded-xl border border-border bg-surface px-3 py-2 text-left text-sm text-foreground transition-colors hover:border-primary-pastel hover:bg-primary-light/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
                     >
-                      <div className="mb-2 flex items-center justify-between gap-2">
-                        <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-primary-light text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-                          <Icon animated={false} className="h-3.5 w-3.5" />
-                        </span>
-                        <Badge variant="info" size="sm" className="text-[10px]">
-                          {mission.badge}
-                        </Badge>
-                      </div>
-                      <div>
-                        <p className="text-xs font-semibold text-foreground">{mission.title}</p>
-                        <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-muted-foreground">
-                          {mission.subtitle}
-                        </p>
-                      </div>
+                      <Icon animated={false} className="h-4 w-4 shrink-0 text-primary" />
+                      <span>{item.title}</span>
                     </button>
                   );
                 })}
@@ -534,7 +495,7 @@ export default function AccountAssistantPanel() {
         {/* Queued Steer Prompt Notice */}
         {queuedPrompt && (
           <div className="mb-2 flex items-center justify-between gap-2 rounded-xl border border-accent-vanilla-border bg-accent-vanilla/60 px-2.5 py-1 text-xs text-accent-vanilla-foreground">
-            <span className="truncate">⏳ Đã xếp hàng gửi tiếp: &ldquo;{queuedPrompt}&rdquo;</span>
+            <span className="truncate">Đã xếp hàng gửi tiếp: &ldquo;{queuedPrompt}&rdquo;</span>
             <button
               type="button"
               onClick={() => setQueuedPrompt(null)}
@@ -545,45 +506,21 @@ export default function AccountAssistantPanel() {
           </div>
         )}
 
-        {/* Quick Slash Command Chips */}
-        <div className="mb-2 flex flex-wrap items-center justify-between gap-1.5">
-          <div className="flex flex-wrap items-center gap-1">
-            {SLASH_CHIPS.map(chip => {
-              const ChipIcon = chip.icon;
-              return (
-                <button
-                  key={chip.label}
-                  type="button"
-                  disabled={dictating}
-                  onClick={() => {
-                    if (chip.text.endsWith(" ")) {
-                      setComposerValue(chip.text);
-                      inputElement.current?.focus();
-                    } else {
-                      void submitMessage(chip.text);
-                    }
-                  }}
-                  className="inline-flex items-center gap-1 rounded-full border border-primary-pastel bg-primary-light/45 px-2.5 py-0.5 text-[11px] font-medium text-primary transition-colors hover:bg-primary-light disabled:opacity-40"
-                >
-                  <ChipIcon animated={false} className="h-3 w-3" />
-                  <span>{chip.label}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          {agent && (
+        {agent && (
+          <div className="mb-1.5 flex justify-end">
             <button
               type="button"
               onClick={() => agent.cyclePermissionMode()}
-              title="Đổi chế độ quyền Co-Pilot (Shift+Tab)"
-              className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-2 py-0.5 text-[10px] font-medium text-muted-foreground hover:border-primary-pastel hover:text-primary"
+              title="Đổi chế độ quyền (Shift+Tab)"
+              className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground transition-colors hover:border-primary-pastel hover:text-primary"
             >
-              <Shield animated={false} className="h-2.5 w-2.5" />
-              <span>Shift+Tab</span>
+              <Shield animated={false} className="h-3 w-3" />
+              <span>
+                {agent.permissionMode === "autoPilot" ? "Tự động" : agent.permissionMode === "default" ? "Hỏi trước" : "Chỉ lập kế hoạch"}
+              </span>
             </button>
-          )}
-        </div>
+          </div>
+        )}
 
         <form
           onPaste={event => {
@@ -610,10 +547,10 @@ export default function AccountAssistantPanel() {
             aria-label="Nhắn Mây Mây Co-Pilot"
             placeholder={
               sending || agent?.busy
-                ? "Gõ tiếp để xếp hàng lệnh kế tiếp (Enter để xếp hàng)…"
-                : "Ra lệnh điều khiển màn hình, gõ /screen, /xray, hoặc nhấn ↑ lấy lại lệnh cũ…"
+                ? "Gõ tiếp để xếp hàng tin nhắn kế tiếp…"
+                : "Nhắn cho Mây Mây…"
             }
-            rows={2}
+            rows={1}
             maxLength={12000}
             readOnly={dictating}
             defaultValue=""

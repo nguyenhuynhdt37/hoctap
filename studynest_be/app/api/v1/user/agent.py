@@ -162,6 +162,24 @@ async def account_conversation(before: UUID | None = None, service: AgentService
             'before': str(selected[-1].id) if len(rows)>50 else None}
 
 
+@router.post('/conversation/new', status_code=201)
+async def new_account_conversation(service: AgentService = Depends(agent_service)):
+    """Đóng đoạn chat hiện tại và mở đoạn chat mới (đoạn cũ vẫn được giữ nguyên trong DB)."""
+    from sqlalchemy import func, update
+    from app.db.models.database import TutorChatMessages, TutorChatThreads
+    await service.principal_async()
+    current = (await service.tutor.get_or_create_account_thread(service.user.id))['thread']
+    current_id = UUID(current['id'])
+    count = await service.db.scalar(select(func.count(TutorChatMessages.id)).where(
+        TutorChatMessages.thread_id == current_id, TutorChatMessages.user_id == service.user.id))
+    if not count:
+        return {'thread': current, 'messages': [], 'before': None}
+    await service.db.execute(update(TutorChatThreads).where(TutorChatThreads.id == current_id).values(is_active=False))
+    await service.db.flush()
+    thread = (await service.tutor.get_or_create_account_thread(service.user.id))['thread']
+    return {'thread': thread, 'messages': [], 'before': None}
+
+
 @router.get('/github')
 async def github_status(service: AgentService = Depends(agent_service)):
     from app.agent.github_connection import connection_status
