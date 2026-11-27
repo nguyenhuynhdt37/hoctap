@@ -1,7 +1,7 @@
 import { LevelUpCelebration } from "@/components/learning-hub/levels/level-up-celebration";
 import { UserRouteGuard } from "@/components/auth/UserRouteGuard";
-import Footer from "@/components/user/footer";
 import Header from "@/components/user/header";
+import { UserPageFrame } from "@/components/user/user-page-frame";
 import { NotificationWS } from "@/provider/notification-ws";
 import { UserNotificationsBootstrap } from "@/provider/NotificationHydrator";
 import { Suspense } from "react";
@@ -16,12 +16,11 @@ export default function RootLayout({
       <UserNotificationsBootstrap />
       <NotificationWS role_name="USER" />
       <Header />
-      <div className="min-h-[55vh] min-w-0">
+      <UserPageFrame>
         <UserRouteGuard>
           <Suspense fallback={null}>{children}</Suspense>
         </UserRouteGuard>
-      </div>
-      <Footer />
+      </UserPageFrame>
       <LevelUpCelebration />
     </>
   );

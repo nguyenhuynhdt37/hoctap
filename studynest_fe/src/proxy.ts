@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const backendUrl = process.env.NEXT_PUBLIC_URL_BACKEND || "http://127.0.0.1:8000";
+const backendUrl =
+  process.env.INTERNAL_BACKEND_URL ||
+  process.env.NEXT_PUBLIC_URL_BACKEND ||
+  "http://127.0.0.1:8000";
 const userPrefixes = ["/learning-paths/my", "/combo/orders", "/lo-trinh/cua-toi", "/combo/don-hang", "/profile", "/my-learning", "/favorites", "/notifications", "/wallets", "/refunds", "/learning", "/chat-sql"];
 
 async function backend(path: string, cookie: string, method = "GET") {

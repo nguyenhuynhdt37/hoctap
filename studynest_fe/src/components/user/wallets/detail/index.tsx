@@ -193,7 +193,7 @@ export default function UserTransactionDetail({ transactionId }: Props) {
         className="pointer-events-none fixed inset-x-0 top-0 -z-10 h-[28rem] bg-gradient-to-b from-primary-light/50 via-surface-muted/40 to-transparent print:hidden"
       />
 
-      <div className="user-container max-w-6xl space-y-6">
+      <div className="mx-auto max-w-6xl space-y-6 px-4 sm:px-6 lg:px-8">
         {/* Thanh điều hướng & hành động nhanh */}
         <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
           <Link

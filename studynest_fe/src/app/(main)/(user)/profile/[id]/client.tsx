@@ -20,7 +20,7 @@ export default function ProfileLoader({ id }: { id: string }) {
 
   if (!data) {
     return (
-      <div role="status" aria-label="Đang tải hồ sơ" className="user-container space-y-6 py-8">
+      <div role="status" aria-label="Đang tải hồ sơ" className="mx-auto max-w-7xl space-y-6 px-4 py-8">
         <Skeleton className="h-48 w-full" />
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
           <Skeleton className="h-48 w-full" />

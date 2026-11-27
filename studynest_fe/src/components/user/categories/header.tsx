@@ -24,7 +24,7 @@ const CategoriesHeader = ({ slug }: CategoriesHeaderProps) => {
   if (isLoading) {
     return (
       <section className="border-b border-primary-pastel/70 bg-primary-light/40">
-        <div className="user-container py-10">
+        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
           <Skeleton className="mb-3 h-3 w-24" />
           <Skeleton className="mb-4 h-10 w-48" />
           <div className="flex gap-2">
@@ -51,7 +51,7 @@ const CategoriesHeader = ({ slug }: CategoriesHeaderProps) => {
 
   return (
     <section className="border-b border-primary-pastel/70 bg-primary-light/40">
-      <div className="user-container py-8 sm:py-10">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
         <nav aria-label="Đường dẫn danh mục" className="mb-3 flex items-center gap-2 text-sm">
           <Link href="/" className="text-muted-foreground hover:text-primary">
             Trang chủ

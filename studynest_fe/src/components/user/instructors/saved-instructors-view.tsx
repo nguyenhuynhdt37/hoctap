@@ -195,7 +195,7 @@ function SavedInstructorList() {
       {/* Body List */}
       <div className="space-y-6">
         {isLoading && items.length === 0 ? (
-          <div role="status" className="user-card-grid">
+          <div role="status" className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {[1, 2, 3].map((idx) => (
               <div
                 key={idx}
@@ -248,7 +248,7 @@ function SavedInstructorList() {
               <span>Đang lưu {items.length} giáo viên</span>
             </div>
 
-            <div className="user-card-grid">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
               {items.map((instructor) => (
                 <InstructorCard
                   key={instructor.id}

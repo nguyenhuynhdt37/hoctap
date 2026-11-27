@@ -11,7 +11,7 @@ import { useEffect, useState, type ReactNode } from "react";
 
 export function GuestFormSkeleton() {
   return (
-    <div role="status" aria-label="Đang tải" className="grid w-full flex-1 items-center gap-8 px-5 py-10 lg:grid-cols-2 lg:px-12">
+    <div role="status" aria-label="Đang tải" className="mx-auto grid min-h-[75vh] w-full max-w-6xl items-center gap-8 px-4 py-10 lg:grid-cols-2">
       <Skeleton className="hidden h-[32rem] lg:block" />
       <div className="mx-auto w-full max-w-md space-y-4 rounded-3xl border border-border bg-surface p-6">
         <Skeleton className="h-9 w-3/4" />

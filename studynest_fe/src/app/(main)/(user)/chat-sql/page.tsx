@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 export default function ChatSqlPage() {
   return (
     <div className="min-h-screen bg-background py-8">
-      <div className="user-container max-w-3xl">
+      <div className="max-w-3xl mx-auto px-4">
         <div className="text-center mb-6">
           <span className="text-xs font-bold uppercase tracking-wider text-primary block mb-1">
             Trợ lý học tập thông minh

@@ -214,7 +214,7 @@ export default function YouTubePlayer({
 
   if (directVideoUrl) {
     return (
-      <div className="flex aspect-video max-h-[70dvh] w-full items-center justify-center bg-black">
+      <div className="flex h-[70vh] w-full items-center justify-center bg-black">
         <video
           ref={videoElRef}
           src={directVideoUrl}
@@ -235,15 +235,15 @@ export default function YouTubePlayer({
         src={youtubeEmbedSrc}
         title={lesson.title || "Video bài giảng"}
         referrerPolicy="strict-origin-when-cross-origin"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
         allowFullScreen
-        className="aspect-video max-h-[70dvh] w-full border-0 bg-black"
+        className="h-[70vh] w-full border-0 bg-black"
       />
     );
   }
 
   return (
-    <div className="flex aspect-video max-h-[70dvh] w-full items-center justify-center bg-background text-sm text-muted-foreground">
+    <div className="flex h-[70vh] w-full items-center justify-center bg-background text-sm text-muted-foreground">
       Không có video để phát...
     </div>
   );

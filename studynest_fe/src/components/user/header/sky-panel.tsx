@@ -1,16 +1,178 @@
 "use client";
 
-import { Button, Input } from "@/components/ui";
-import { getNavFor, isCurrentPage, isInSection, type NavGroup, type Viewer } from "@/lib/navigation/user-nav";
+import { EquippedMarks, FramedAvatar } from "@/components/learning-hub/shop/item-art";
+import { mayPortrait } from "@/components/user/home/study-image";
+import { useLearnerEquipment } from "@/lib/learning-hub/shop-hooks";
 import { cn } from "@/lib/utils";
-import Link from "next/link";
+import {
+  getNavFor,
+  isCurrentPage,
+  isInSection,
+  type NavGroup,
+  type NavItem,
+  type NavTone,
+  type Viewer,
+} from "@/lib/navigation/user-nav";
+import type { User } from "@/types/user/user";
 import { LogOut, Search } from "pulsoicon-react";
-import { useEffect, useRef, useState, type FormEvent } from "react";
-import { LiveTicket, WalletChip } from "./live-stats";
+import Link from "next/link";
+import { useEffect, useRef, type FormEvent, type RefObject } from "react";
+import { LiveTicket } from "./live-stats";
 
-interface SkyPanelProps {
+const TONES: Record<NavTone, { bubble: string; tag: string; card: string; panel: string }> = {
+  blue: {
+    bubble: "border-primary-pastel bg-primary-light text-primary",
+    tag: "border-primary-pastel bg-primary-light text-primary",
+    card: "hover:border-primary-pastel hover:bg-primary-light/60",
+    panel: "border-primary-pastel/50 bg-primary-light/20",
+  },
+  pink: {
+    bubble: "border-secondary-pastel bg-secondary text-secondary-foreground",
+    tag: "border-secondary-pastel bg-secondary text-secondary-foreground",
+    card: "hover:border-secondary-pastel hover:bg-secondary/50",
+    panel: "border-secondary-pastel/50 bg-secondary/20",
+  },
+  lavender: {
+    bubble: "border-accent-border bg-accent text-accent-foreground",
+    tag: "border-accent-border bg-accent text-accent-foreground",
+    card: "hover:border-accent-border hover:bg-accent/50",
+    panel: "border-accent-border/50 bg-accent/20",
+  },
+  vanilla: {
+    bubble: "border-accent-vanilla-border bg-accent-vanilla text-accent-vanilla-foreground",
+    tag: "border-accent-vanilla-border bg-accent-vanilla text-accent-vanilla-foreground",
+    card: "hover:border-accent-vanilla-border hover:bg-accent-vanilla/50",
+    panel: "border-accent-vanilla-border/60 bg-accent-vanilla/20",
+  },
+};
+
+const chipLink =
+  "inline-flex min-h-9 items-center rounded-full border border-border bg-surface px-3 text-xs font-medium text-foreground transition-colors hover:border-primary-pastel hover:bg-primary-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-[current=page]:border-primary aria-[current=page]:bg-primary-light aria-[current=page]:font-semibold motion-reduce:transition-none";
+
+function Tile({
+  item, tone, pathname, unread, onNavigate, singleColumnOnXl,
+}: {
+  item: NavItem;
+  tone: NavTone;
+  pathname: string;
+  unread: number;
+  onNavigate: () => void;
+  singleColumnOnXl: boolean;
+}) {
+  const t = TONES[tone];
+  const current = isCurrentPage(pathname, item.href);
+  const inSection = !current && isInSection(pathname, item.href);
+  const Icon = item.icon;
+  const badge = item.badge === "unread" && unread > 0 ? `${unread > 99 ? "99+" : unread} mới` : null;
+
+  return (
+    <li
+      className={cn(
+        "group relative flex flex-col justify-between gap-2 border bg-surface p-2.5 sm:p-3 transition-colors motion-reduce:transition-none",
+        item.size === "wide"
+          ? cn(
+              "col-span-2 rounded-[1.25rem_0.75rem_1.25rem_0.75rem] bg-linear-to-br from-surface to-background",
+              singleColumnOnXl && "xl:col-span-1",
+            )
+          : "rounded-2xl",
+        current ? "border-primary bg-primary-light/70" : "border-border/80",
+        !current && t.card,
+        inSection && "border-primary-pastel",
+      )}
+    >
+      <Link
+        href={item.href}
+        onClick={onNavigate}
+        aria-current={current ? "page" : undefined}
+        className="flex min-h-10 items-start gap-2.5 sm:gap-3 rounded-[inherit] focus-visible:outline-none after:absolute after:inset-0 after:rounded-[inherit] focus-visible:after:ring-2 focus-visible:after:ring-ring"
+      >
+        <span
+          aria-hidden="true"
+          className={cn(
+            "mt-0.5 grid size-10 shrink-0 place-items-center border transition-[border-radius,transform] duration-300 ease-out",
+            "rounded-[58%_42%_52%_48%/48%_56%_44%_52%] group-hover:-rotate-6 group-hover:rounded-full motion-reduce:transition-none motion-reduce:group-hover:rotate-0",
+            t.bubble,
+          )}
+        >
+          <Icon className="size-4.5" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm font-semibold text-foreground">
+            {item.label}
+            {badge && <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-semibold leading-none text-primary-foreground">{badge}</span>}
+            {current && <span className="rounded-full border border-primary px-2 py-0.5 text-xs font-medium leading-none text-primary">Đang xem</span>}
+          </span>
+          <span className="mt-0.5 block text-xs leading-snug text-[color:var(--sn-neutral-600)]">{item.description}</span>
+        </span>
+      </Link>
+      {item.children && (
+        <ul className="relative z-10 flex flex-wrap gap-1.5 pl-12.5 sm:pl-13" aria-label={`Lối nhanh trong ${item.label}`}>
+          {item.children.map((child) => (
+            <li key={child.href}>
+              <Link href={child.href} onClick={onNavigate} aria-current={isCurrentPage(pathname, child.href) ? "page" : undefined} className={chipLink}>
+                {child.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </li>
+  );
+}
+
+function Group({
+  group, pathname, unread, onNavigate, onLogout, signedIn, singleColumnOnXl,
+}: {
+  group: NavGroup; pathname: string; unread: number;
+  onNavigate: () => void; onLogout: () => void; signedIn: boolean;
+  singleColumnOnXl: boolean;
+}) {
+  const t = TONES[group.tone];
+  const GroupIcon = group.icon;
+  const headingId = `sky-group-${group.id}`;
+  return (
+    <section aria-labelledby={headingId} className={cn("flex flex-col rounded-3xl border p-3.5 sm:p-4", t.panel)}>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+        <h3 id={headingId} className={cn("inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-semibold", t.tag)}>
+          <GroupIcon aria-hidden="true" className="size-4" />
+          {group.label}
+        </h3>
+        <p className="text-xs text-[color:var(--sn-neutral-600)]">{group.tagline}</p>
+      </div>
+      <ul className={cn("grid grid-cols-2 gap-2", singleColumnOnXl && "xl:grid-cols-1")}>
+        {group.items.map((item) => (
+          <Tile
+            key={item.id}
+            item={item}
+            tone={group.tone}
+            pathname={pathname}
+            unread={unread}
+            onNavigate={onNavigate}
+            singleColumnOnXl={singleColumnOnXl}
+          />
+        ))}
+        {group.id === "account" && signedIn && (
+          <li className={cn("col-span-2", singleColumnOnXl && "xl:col-span-1")}>
+            <button
+              type="button"
+              onClick={onLogout}
+              className="flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl border border-destructive-border bg-destructive-bg px-4 text-sm font-semibold text-destructive-foreground transition-colors hover:bg-destructive-border/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none"
+            >
+              <LogOut aria-hidden="true" className="size-4" />
+              Đăng xuất
+            </button>
+          </li>
+        )}
+      </ul>
+    </section>
+  );
+}
+
+export interface SkyPanelProps {
   id: string;
+  panelRef: RefObject<HTMLDivElement | null>;
   viewer: Viewer;
+  user: User | null;
   pathname: string;
   unread: number;
   focusSearch: boolean;
@@ -21,120 +183,91 @@ interface SkyPanelProps {
   onLogout: () => void;
 }
 
-function defaultGroup(groups: NavGroup[], pathname: string) {
-  const matchesPage = groups.find(({ items }) => items.some((item) => isCurrentPage(pathname, item.href)
-    || item.children?.some((child) => isCurrentPage(pathname, child.href))));
-  return matchesPage
-    ?? groups.find(({ items }) => items.some((item) => isInSection(pathname, item.href)))
-    ?? groups[0];
-}
-
+/** "Bản đồ bầu trời": tìm kiếm, vé dữ liệu sống và bốn nhóm lối đi. */
 export function SkyPanel({
-  id, viewer, pathname, unread, focusSearch, keyword, onKeyword, onSearch, onNavigate, onLogout,
+  id, panelRef, viewer, user, pathname, unread, focusSearch, keyword, onKeyword, onSearch, onNavigate, onLogout,
 }: SkyPanelProps) {
   const searchRef = useRef<HTMLInputElement>(null);
   const groups = getNavFor(viewer);
-  const [groupId, setGroupId] = useState<NavGroup["id"] | null>(null);
-  const group = groups.find((item) => item.id === groupId) ?? defaultGroup(groups, pathname);
+  const equipment = useLearnerEquipment();
+  const firstName = (user?.fullname ?? "").trim().split(/\s+/).pop();
 
   useEffect(() => {
-    if (!focusSearch) return;
-    const frame = requestAnimationFrame(() => searchRef.current?.focus());
-    return () => cancelAnimationFrame(frame);
-  }, [focusSearch]);
+    // Mở bằng nút tìm kiếm: vào thẳng ô tìm. Mở bằng nút bản đồ: tiêu điểm lên chính bảng.
+    if (focusSearch) searchRef.current?.focus();
+    else panelRef.current?.focus();
+  }, [focusSearch, panelRef]);
+
+  const singleColumnOnXl = groups.length >= 3;
+  const gridColsClass =
+    groups.length >= 4
+      ? "md:grid-cols-2 xl:grid-cols-4"
+      : groups.length === 3
+        ? "md:grid-cols-2 xl:grid-cols-3"
+        : "md:grid-cols-2";
 
   return (
-    <div id={id} className="space-y-4">
-      <form role="search" aria-label="Tìm kiếm khóa học" onSubmit={onSearch} className="flex min-w-0 gap-2">
-        <Input
-          ref={searchRef}
-          aria-label="Tìm kiếm khóa học"
-          type="search"
-          autoComplete="off"
-          enterKeyHint="search"
-          placeholder="Tìm khóa học, môn học…"
-          value={keyword}
-          onChange={(event) => onKeyword(event.target.value)}
-          leftIcon={<Search aria-hidden="true" className="size-4" />}
-          containerClassName="min-w-0"
-        />
-        <Button type="submit" className="shrink-0">Tìm</Button>
-      </form>
-
-      <div role="group" aria-label="Nhóm tiện ích" className="grid grid-cols-2 gap-1.5 rounded-2xl bg-background p-1.5 sm:flex sm:flex-wrap">
-        {groups.map((item) => (
-          <Button
-            key={item.id}
-            variant={item.id === group.id ? "pastel" : "ghost"}
-            aria-pressed={item.id === group.id}
-            aria-controls={`${id}-links`}
-            className="h-auto min-h-10 justify-start px-2.5 py-2 text-left leading-snug sm:justify-center sm:px-3.5"
-            leftIcon={<item.icon aria-hidden="true" animated={false} className="size-4 shrink-0" />}
-            onClick={() => setGroupId(item.id)}
+    <div
+      ref={panelRef}
+      id={id}
+      role="dialog"
+      aria-label="Bảng tiện ích Mây Mây"
+      tabIndex={-1}
+      className="relative flex-1 min-h-0 overflow-y-auto overscroll-contain px-3 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-4 outline-none sm:px-5 lg:px-8 lg:pb-8"
+    >
+      <div className="flex flex-col gap-3 pb-4 md:flex-row md:items-center md:gap-5">
+        <div className="flex items-center gap-3 md:w-72 md:shrink-0">
+          <FramedAvatar src={viewer.signedIn ? user?.avatar : mayPortrait} name={user?.fullname} equipment={viewer.signedIn ? equipment : undefined} className="size-12 text-sm" />
+          <div className="min-w-0 text-sm leading-snug text-foreground">
+            <p className="font-semibold wrap-anywhere">{viewer.signedIn ? `Chào ${firstName || "bạn"}!` : "Chào bạn nhỏ!"}</p>
+            {viewer.signedIn && <EquippedMarks equipment={equipment} className="my-1" />}
+            <p className="text-[color:var(--sn-neutral-600)]">Hôm nay Mây dẫn bạn đi đâu?</p>
+          </div>
+        </div>
+        <form role="search" aria-label="Tìm kiếm khóa học" onSubmit={onSearch} className="flex min-w-0 flex-1 gap-2">
+          <label className="relative block min-w-0 flex-1">
+            <span className="sr-only">Tìm kiếm khóa học</span>
+            <Search aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-primary" />
+            <input
+              ref={searchRef}
+              type="search"
+              autoComplete="off"
+              enterKeyHint="search"
+              placeholder="Tìm khóa học, môn học…"
+              value={keyword}
+              onChange={(event) => onKeyword(event.target.value)}
+              className="h-11 w-full rounded-full border border-border bg-surface pr-4 pl-10 text-base text-foreground placeholder:text-[color:var(--sn-neutral-600)] focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:text-sm"
+            />
+          </label>
+          <button
+            type="submit"
+            className="inline-flex h-11 shrink-0 items-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface motion-reduce:transition-none"
           >
-            {item.label}
-          </Button>
-        ))}
+            Tìm
+          </button>
+        </form>
       </div>
 
-      <nav id={`${id}-links`} aria-label={group.label}>
-        <ul className="grid gap-x-4 gap-y-1 sm:grid-cols-2">
-          {group.items.map((item) => {
-            const current = isCurrentPage(pathname, item.href);
-            const active = current || isInSection(pathname, item.href);
-            return (
-              <li key={item.id} className="min-w-0 border-b border-border/70 pb-1">
-                <Link
-                  href={item.href}
-                  onClick={onNavigate}
-                  aria-current={current ? "page" : undefined}
-                  className={cn(
-                    "flex min-h-11 items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-medium text-foreground hover:bg-primary-light hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                    active && "bg-primary-light text-primary",
-                  )}
-                >
-                  <item.icon aria-hidden="true" animated={false} className="size-4 shrink-0 text-primary" />
-                  <span className="min-w-0 wrap-anywhere">{item.label}</span>
-                  {item.badge === "unread" && unread > 0 && (
-                    <span className="ml-auto shrink-0 rounded-full bg-primary px-2 py-1 text-xs leading-none text-primary-foreground">
-                      {unread > 99 ? "99+" : unread} mới
-                    </span>
-                  )}
-                </Link>
-                {item.children && (
-                  <ul aria-label={`Lối tắt trong ${item.label}`} className="flex flex-wrap gap-x-3 pl-9">
-                    {item.children.map((child) => (
-                      <li key={child.href}>
-                        <Link
-                          href={child.href}
-                          onClick={onNavigate}
-                          aria-current={isCurrentPage(pathname, child.href) ? "page" : undefined}
-                          className="inline-flex min-h-9 items-center rounded-md text-xs font-medium text-primary underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring aria-[current=page]:underline"
-                        >
-                          {child.label}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
+      {viewer.signedIn && (
+        <div className="mb-4">
+          <LiveTicket onNavigate={onNavigate} />
+        </div>
+      )}
 
-      {group.id === "account" && viewer.signedIn && (
-        <Button variant="destructive" onClick={onLogout} leftIcon={<LogOut aria-hidden="true" className="size-4" />}>
-          Đăng xuất
-        </Button>
-      )}
-      {group.id === "wallet" && viewer.signedIn && <WalletChip onNavigate={onNavigate} />}
-      {group.id === "learn" && viewer.signedIn && (
-        <details className="rounded-xl border border-border bg-background p-3">
-          <summary className="cursor-pointer rounded-md text-sm font-medium text-foreground focus-visible:ring-2 focus-visible:ring-ring">Tiến độ học và số dư</summary>
-          <div className="mt-3"><LiveTicket onNavigate={onNavigate} /></div>
-        </details>
-      )}
+      <div className={cn("grid items-start gap-4 lg:gap-5", gridColsClass)}>
+        {groups.map((group) => (
+          <Group
+            key={group.id}
+            group={group}
+            pathname={pathname}
+            unread={unread}
+            onNavigate={onNavigate}
+            onLogout={onLogout}
+            signedIn={viewer.signedIn}
+            singleColumnOnXl={singleColumnOnXl}
+          />
+        ))}
+      </div>
     </div>
   );
 }

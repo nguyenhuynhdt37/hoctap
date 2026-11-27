@@ -51,6 +51,18 @@ mkdir -p data/backups
 
 Chép `data/backups/studynest_dev.sql` sang máy đích qua kênh riêng vì file có thể chứa dữ liệu tài khoản và phiên đăng nhập. Nếu đã có bản dump, dùng file đó và thay đường dẫn trong lệnh nạp bên dưới. Dump gồm schema và dữ liệu PostgreSQL. File lưu trên R2, Redis và cấu hình tích hợp được quản lý riêng.
 
+## Dữ liệu mẫu có sẵn trên GitHub
+
+File [`data/fixtures/studynest_dev_catalog.sql`](../../data/fixtures/studynest_dev_catalog.sql) chứa schema PostgreSQL, 613 khóa học, 45 phiên bản combo và tài khoản giảng viên mẫu. Bản export đã loại dữ liệu đăng nhập, lịch sử chat, giao dịch, dữ liệu học tập cá nhân và tệp riêng. Tạo tài khoản học viên mới qua trang đăng ký và lấy mã xác thực trong Mailpit.
+
+Tạo database `studynest_import_dev` theo bước bên dưới. Trên Windows PowerShell, nạp file có sẵn từ thư mục gốc bằng lệnh sau:
+
+```powershell
+cmd /c 'docker compose exec -T postgres psql -X --single-transaction -v ON_ERROR_STOP=1 -U maymay_dev -d studynest_import_dev < data\fixtures\studynest_dev_catalog.sql'
+```
+
+Trên macOS hoặc Linux, dùng lệnh nạp bên dưới và thay đường dẫn sau dấu `<` bằng `data/fixtures/studynest_dev_catalog.sql`.
+
 ## Nạp SQL ở máy đích
 
 Dùng cùng nhánh mã nguồn hoặc phiên bản mới hơn có các migration tương ứng. Khởi động PostgreSQL và nạp vào database mới. Các lệnh dưới đây chạy từ thư mục gốc trên máy đích:
@@ -80,3 +92,15 @@ Mở web ở [localhost:3000](http://localhost:3000). Backend sẽ chạy các m
 ## Tích hợp tùy chọn
 
 Đặt khóa dev hoặc sandbox trong `studynest_be/.env.docker.local`, dựa theo `studynest_be/.env.development.example`. Với Google OAuth hoặc PayPal, đặt thêm `NEXT_PUBLIC_URL_GOOGLE_LOGIN` hoặc `NEXT_PUBLIC_PAYPAL_CLIENT_ID` trong file `.env` ở thư mục gốc rồi chạy `docker compose up -d --build`.
+
+Để bật Mây Mây Co-Pilot trong Docker dev với 9Router, thêm cấu hình sau vào `studynest_be/.env.docker.local` và điền khóa của môi trường dev:
+
+```dotenv
+AGENT_ENABLED=True
+LLM_PROVIDER=9router
+NINEROUTER_BASE_URL=https://9router.itup.io.vn/v1
+NINEROUTER_API_KEY=
+AGENT_MODEL=ag/gemini-3-flash
+```
+
+Chạy `docker compose up -d --wait backend` để áp dụng. Docker Compose đọc `.env.docker.local` và Git bỏ qua file này.

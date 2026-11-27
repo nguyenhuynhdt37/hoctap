@@ -731,3 +731,13 @@ textarea {
 @utility user-four-column-grid {
   @apply grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
 }
+
+.user-full-canvas :is(.max-w-7xl, .max-w-6xl, .max-w-5xl, .container):not([role="dialog"]):not([aria-modal="true"]):not([data-narrow-container]) {
+  max-width: none;
+  width: 100%;
+}
+
+.user-full-canvas :is([role="dialog"], [aria-modal="true"], [data-narrow-container]) :is(.max-w-7xl, .max-w-6xl, .max-w-5xl, .container) {
+  max-width: revert-layer;
+  width: revert-layer;
+}

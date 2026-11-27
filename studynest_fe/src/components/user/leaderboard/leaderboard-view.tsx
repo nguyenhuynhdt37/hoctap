@@ -36,8 +36,11 @@ const numberFmt = new Intl.NumberFormat("vi-VN");
 interface CategoryTheme {
   id: LeaderboardCategory;
   label: string;
+  shortLabel: string;
   icon: PulsoIcon;
-
+  auraFrom: string;
+  auraVia: string;
+  pillActive: string;
   barGradient: string;
   badgeTone: string;
   ctaHref: string;
@@ -48,8 +51,11 @@ const CATEGORIES: CategoryTheme[] = [
   {
     id: "xp",
     label: "Cấp độ & XP",
+    shortLabel: "XP",
     icon: Trophy,
-
+    auraFrom: "from-amber-400/25",
+    auraVia: "via-sky-400/15",
+    pillActive: "bg-amber-400 text-slate-950 shadow-amber-400/30",
     barGradient: "from-amber-400 to-orange-400",
     badgeTone: "border-amber-300/60 bg-amber-50 text-amber-900",
     ctaHref: "/levels",
@@ -58,8 +64,11 @@ const CATEGORIES: CategoryTheme[] = [
   {
     id: "streak",
     label: "Chuỗi ngày học",
+    shortLabel: "Streak",
     icon: Flame,
-
+    auraFrom: "from-orange-500/25",
+    auraVia: "via-rose-400/15",
+    pillActive: "bg-orange-400 text-slate-950 shadow-orange-400/30",
     barGradient: "from-orange-400 to-rose-400",
     badgeTone: "border-orange-300/60 bg-orange-50 text-orange-900",
     ctaHref: "/missions",
@@ -68,8 +77,11 @@ const CATEGORIES: CategoryTheme[] = [
   {
     id: "coins",
     label: "Kho Coin trắng",
+    shortLabel: "Coin",
     icon: Coins,
-
+    auraFrom: "from-sky-400/25",
+    auraVia: "via-indigo-400/15",
+    pillActive: "bg-sky-300 text-slate-950 shadow-sky-300/30",
     barGradient: "from-sky-400 to-indigo-400",
     badgeTone: "border-sky-300/60 bg-sky-50 text-sky-900",
     ctaHref: "/shop",
@@ -78,8 +90,11 @@ const CATEGORIES: CategoryTheme[] = [
   {
     id: "lessons",
     label: "Chăm chỉ học bài",
+    shortLabel: "Bài học",
     icon: BookOpen,
-
+    auraFrom: "from-violet-400/25",
+    auraVia: "via-sky-400/15",
+    pillActive: "bg-violet-300 text-slate-950 shadow-violet-300/30",
     barGradient: "from-violet-400 to-sky-400",
     badgeTone: "border-violet-300/60 bg-violet-50 text-violet-900",
     ctaHref: "/my-learning",
@@ -88,8 +103,11 @@ const CATEGORIES: CategoryTheme[] = [
   {
     id: "quiz",
     label: "Cao thủ Thực chiến",
+    shortLabel: "Thực chiến",
     icon: Target,
-
+    auraFrom: "from-rose-400/25",
+    auraVia: "via-amber-400/15",
+    pillActive: "bg-rose-300 text-slate-950 shadow-rose-300/30",
     barGradient: "from-rose-400 to-amber-400",
     badgeTone: "border-rose-300/60 bg-rose-50 text-rose-900",
     ctaHref: "/review",
@@ -101,11 +119,13 @@ function ScoreDisplay({
   category,
   score,
   unit,
+  surface = "light",
   size = "md",
 }: {
   category: LeaderboardCategory;
   score: number;
   unit: string;
+  surface?: "light" | "dark";
   size?: "sm" | "md" | "lg";
 }) {
   if (category === "coins") {
@@ -113,6 +133,7 @@ function ScoreDisplay({
       <CoinBadge
         kind="white"
         amount={score}
+        surface={surface}
         size={size === "lg" ? "lg" : size === "sm" ? "sm" : "md"}
       />
     );
@@ -124,9 +145,9 @@ function ScoreDisplay({
         ? "text-sm font-bold tabular-nums"
         : "text-base font-extrabold tabular-nums";
   return (
-    <span className="inline-flex items-baseline gap-1 text-foreground">
+    <span className={cn("inline-flex items-baseline gap-1", surface === "dark" ? "text-white" : "text-foreground")}>
       <span className={textClass}>{numberFmt.format(score)}</span>
-      <span className="text-xs font-semibold text-foreground/85">
+      <span className={cn("text-xs font-semibold", surface === "dark" ? "text-slate-300" : "text-[color:var(--sn-neutral-600)]")}>
         {unit}
       </span>
     </span>
@@ -149,25 +170,28 @@ function PodiumCard({
     place === 1
       ? {
           shell:
-            "border-primary-pastel bg-primary-light text-foreground shadow-sm",
-          pedestal: "bg-accent-vanilla text-accent-vanilla-foreground",
-          ring: "ring-primary-pastel",
+            "border-amber-300/70 bg-gradient-to-b from-slate-900 via-[#152238] to-[#0f172a] text-white shadow-[0_24px_60px_-20px_rgba(245,158,11,0.45)] md:-mt-6 md:pb-8",
+          pedestal: "bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 text-slate-950",
+          ring: "ring-amber-300/50",
           label: "Hạng #1 · Quán quân",
+          surface: "dark" as const,
         }
       : place === 2
         ? {
             shell:
-              "border-border bg-surface text-foreground shadow-xs",
-            pedestal: "bg-primary-light text-primary",
-            ring: "ring-primary-pastel/60",
+              "border-slate-300/80 bg-gradient-to-b from-surface via-surface to-primary-light/40 text-foreground shadow-lg",
+            pedestal: "bg-gradient-to-r from-slate-200 to-slate-300 text-slate-900",
+            ring: "ring-slate-300/60",
             label: "Hạng #2 · Á quân",
+            surface: "light" as const,
           }
         : {
             shell:
-              "border-border bg-surface text-foreground shadow-xs",
-            pedestal: "bg-accent text-accent-foreground",
-            ring: "ring-accent-border/70",
+              "border-amber-200/80 bg-gradient-to-b from-surface via-surface to-accent-vanilla/45 text-foreground shadow-lg",
+            pedestal: "bg-gradient-to-r from-amber-200 to-orange-200 text-amber-950",
+            ring: "ring-amber-200/70",
             label: "Hạng #3 · Quý quân",
+            surface: "light" as const,
           };
 
   return (
@@ -181,7 +205,7 @@ function PodiumCard({
       {isFirst && (
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute -top-12 left-1/2 h-36 w-56 -translate-x-1/2 rounded-full bg-surface/80 blur-3xl"
+          className="pointer-events-none absolute -top-12 left-1/2 h-36 w-56 -translate-x-1/2 rounded-full bg-amber-400/25 blur-3xl"
         />
       )}
 
@@ -208,7 +232,7 @@ function PodiumCard({
         />
       </div>
 
-      <h3 className="max-w-full truncate text-base font-semibold text-foreground">
+      <h3 className={cn("max-w-full truncate text-base font-extrabold", isFirst ? "text-white" : "text-foreground")}>
         {entry.fullname}
         {entry.is_me && (
           <span className="ml-1.5 inline-flex align-middle rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-primary-foreground">
@@ -222,7 +246,7 @@ function PodiumCard({
         <span
           className={cn(
             "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold",
-            isFirst ? "bg-surface text-primary" : "bg-primary-light text-primary",
+            isFirst ? "bg-white/10 text-amber-200" : "bg-primary-light text-primary",
           )}
         >
           <Star aria-hidden="true" animated={false} className="size-3" />
@@ -231,10 +255,13 @@ function PodiumCard({
       </div>
 
       <div
-        className="mt-4 flex w-full flex-col items-center gap-1 rounded-2xl border border-border bg-surface px-3 py-2.5"
+        className={cn(
+          "mt-4 flex w-full flex-col items-center gap-1 rounded-2xl border px-3 py-2.5",
+          isFirst ? "border-white/15 bg-white/8" : "border-border/80 bg-background/70",
+        )}
       >
-        <ScoreDisplay category={category} score={entry.score} unit={unit} size="lg" />
-        <span className="text-xs font-medium text-foreground/85">
+        <ScoreDisplay category={category} score={entry.score} unit={unit} surface={styles.surface} size="lg" />
+        <span className={cn("text-xs font-medium", isFirst ? "text-slate-300" : "text-[color:var(--sn-neutral-600)]")}>
           {entry.secondary_label}
         </span>
       </div>
@@ -381,27 +408,48 @@ export function LeaderboardView() {
   const ActiveIcon = activeTheme.icon;
 
   return (
-    <div className="user-container max-w-6xl space-y-6 pb-16 pt-4">
-      <section aria-labelledby="leaderboard-heading" className="overflow-hidden rounded-3xl border border-border bg-primary-light/75 p-5 sm:p-7">
+    <div className="mx-auto w-full max-w-6xl space-y-6 px-4 pb-16 pt-4 sm:px-6 lg:px-8">
+      {/* ── OBSIDIAN SKY HALL-OF-FAME HERO ── */}
+      <section className="relative overflow-hidden rounded-[32px] border border-slate-800/80 bg-[#0d1628] p-6 text-white shadow-2xl sm:p-8">
+        <div
+          aria-hidden="true"
+          className={cn(
+            "pointer-events-none absolute -top-24 -left-16 h-72 w-72 rounded-full bg-gradient-to-br to-transparent blur-3xl",
+            activeTheme.auraFrom,
+          )}
+        />
+        <div
+          aria-hidden="true"
+          className={cn(
+            "pointer-events-none absolute -right-20 -bottom-24 h-80 w-80 rounded-full bg-gradient-to-tl to-transparent blur-3xl",
+            activeTheme.auraVia,
+          )}
+        />
+
         <div className="relative grid gap-6 lg:grid-cols-[1.25fr_0.95fr] lg:items-center">
           <div className="space-y-4">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/8 px-3.5 py-1 text-xs font-semibold text-sky-200 backdrop-blur-sm">
+              <Crown aria-hidden="true" className="size-4 text-amber-300" />
+              <span>Hall of Fame · Bảng Vàng Mây Mây</span>
+            </div>
+
             <div>
-              <h1 id="leaderboard-heading" className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+              <h1 className="font-display text-3xl font-bold tracking-tight text-white sm:text-4xl">
                 {data?.meta.label ?? activeTheme.label}
               </h1>
-              <p className="mt-2 max-w-xl text-sm leading-relaxed text-foreground/85">
-                {data?.meta.tagline ?? "Theo dõi thứ hạng của bạn theo từng hạng mục."}
+              <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-300">
+                {data?.meta.tagline ?? "Cùng tranh tài qua 5 hạng mục học tập thực chiến và ghi tên mình lên bục vinh danh."}
               </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-3 pt-1">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3.5 py-1.5 text-xs font-semibold text-foreground">
-                <UsersRound aria-hidden="true" animated={false} className="size-4 text-primary" />
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/8 px-3.5 py-1.5 text-xs font-semibold text-slate-200">
+                <UsersRound aria-hidden="true" animated={false} className="size-4 text-sky-300" />
                 {numberFmt.format(data?.total_participants ?? 0)} học viên tham gia
               </span>
               <Link
                 href={activeTheme.ctaHref}
-                className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-1.5 text-xs font-bold text-primary-foreground transition-colors hover:bg-primary-hover"
+                className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-1.5 text-xs font-bold text-slate-950 transition-colors hover:bg-sky-100"
               >
                 <span>{activeTheme.ctaLabel}</span>
                 <ArrowRight aria-hidden="true" className="size-3.5" />
@@ -410,14 +458,14 @@ export function LeaderboardView() {
           </div>
 
           {/* ── MY RANK SPOTLIGHT CARD ── */}
-          <div className="rounded-3xl border border-border bg-surface p-5 backdrop-blur-md">
+          <div className="rounded-3xl border border-white/15 bg-white/[0.06] p-5 backdrop-blur-md">
             <div className="mb-3 flex items-center justify-between gap-2">
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold tracking-wide text-foreground/85 uppercase">
-                <ActiveIcon aria-hidden="true" animated={false} className="size-4 text-primary" />
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold tracking-wide text-slate-300 uppercase">
+                <ActiveIcon aria-hidden="true" animated={false} className="size-4 text-amber-300" />
                 Vị trí của bạn
               </span>
               {data?.me && (
-                <span className="rounded-full bg-accent-vanilla px-2.5 py-0.5 text-xs font-bold text-accent-vanilla-foreground">
+                <span className="rounded-full bg-amber-400/20 px-2.5 py-0.5 text-xs font-bold text-amber-200">
                   Top {data.me.top_percent}%
                 </span>
               )}
@@ -425,60 +473,61 @@ export function LeaderboardView() {
 
             {isLoading && !data ? (
               <div className="space-y-2.5">
-                <Skeleton className="h-9 w-32 bg-primary-light" />
-                <Skeleton className="h-4 w-48 bg-primary-light" />
+                <Skeleton className="h-9 w-32 bg-white/10" />
+                <Skeleton className="h-4 w-48 bg-white/10" />
               </div>
             ) : data?.me ? (
               <div className="space-y-3">
                 <div className="flex flex-wrap items-end justify-between gap-3">
                   <div>
                     <div className="flex items-baseline gap-2">
-                      <span className="text-4xl font-extrabold tracking-tight text-foreground tabular-nums">
+                      <span className="text-4xl font-extrabold tracking-tight text-white tabular-nums">
                         #{data.me.rank}
                       </span>
-                      <span className="text-xs font-medium text-foreground/85">
+                      <span className="text-xs font-medium text-slate-400">
                         / {numberFmt.format(data.me.total_participants)}
                       </span>
                     </div>
-                    <p className="mt-1 text-xs text-foreground/85">{data.me.secondary_label}</p>
+                    <p className="mt-1 text-xs text-slate-300">{data.me.secondary_label}</p>
                   </div>
-                  <div className="rounded-2xl border border-border bg-background px-3.5 py-2 text-right">
+                  <div className="rounded-2xl border border-white/12 bg-slate-950/50 px-3.5 py-2 text-right">
                     <ScoreDisplay
                       category={category}
                       score={data.me.score}
                       unit={data.meta.unit}
+                      surface="dark"
                       size="md"
                     />
                   </div>
                 </div>
 
                 {data.me.rank === 1 ? (
-                  <div className="flex items-center gap-2 rounded-2xl border border-accent-vanilla-border bg-accent-vanilla px-3.5 py-2 text-xs font-semibold text-accent-vanilla-foreground">
+                  <div className="flex items-center gap-2 rounded-2xl border border-amber-300/30 bg-amber-400/12 px-3.5 py-2 text-xs font-semibold text-amber-200">
                     <Crown aria-hidden="true" animated={false} className="size-4 shrink-0" />
                     <span>Bạn đang giữ Ngôi Vương #1 ở hạng mục này!</span>
                   </div>
                 ) : data.me.next_rank_gap !== null ? (
-                  <div className="flex items-center gap-2 rounded-2xl border border-primary-pastel bg-primary-light px-3.5 py-2 text-xs text-foreground">
-                    <TrendingUp aria-hidden="true" animated={false} className="size-4 shrink-0 text-primary" />
+                  <div className="flex items-center gap-2 rounded-2xl border border-sky-300/25 bg-sky-400/10 px-3.5 py-2 text-xs text-sky-100">
+                    <TrendingUp aria-hidden="true" animated={false} className="size-4 shrink-0 text-sky-300" />
                     <span>
                       Cần thêm{" "}
-                      <strong className="font-bold text-foreground">
+                      <strong className="font-bold text-white">
                         {numberFmt.format(data.me.next_rank_gap)} {data.meta.unit}
                       </strong>{" "}
-                      để vượt <strong className="font-bold text-foreground">{data.me.next_rank_user_name}</strong>
+                      để vượt <strong className="font-bold text-white">{data.me.next_rank_user_name}</strong>
                     </span>
                   </div>
                 ) : null}
               </div>
             ) : (
-              <p className="text-sm text-foreground/85">Chưa ghi nhận thứ hạng của bạn trong hạng mục này.</p>
+              <p className="text-sm text-slate-300">Chưa ghi nhận thứ hạng của bạn trong hạng mục này.</p>
             )}
           </div>
         </div>
       </section>
 
       {/* ── FLOATING GLASS CATEGORY SWITCHER + SEARCH ── */}
-      <div className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-3 lg:flex-row lg:items-center lg:justify-between">
+      <div className="sticky top-20 z-20 flex flex-col gap-3 rounded-[24px] border border-border/80 bg-surface/90 p-3 shadow-sm backdrop-blur-md lg:flex-row lg:items-center lg:justify-between">
         <div role="tablist" aria-label="Hạng mục bảng xếp hạng" className="flex flex-wrap gap-1.5">
           {CATEGORIES.map((item) => {
             const Icon = item.icon;
@@ -493,7 +542,7 @@ export function LeaderboardView() {
                 className={cn(
                   "inline-flex min-h-10 items-center gap-2 rounded-full px-3.5 py-2 text-xs font-bold transition-all sm:text-sm motion-reduce:transition-none",
                   selected
-                    ? "border border-primary-pastel bg-primary-light text-primary"
+                    ? cn(item.pillActive, "shadow-md")
                     : "border border-border/70 bg-background/70 text-foreground hover:border-primary-pastel hover:bg-primary-light/60",
                 )}
               >

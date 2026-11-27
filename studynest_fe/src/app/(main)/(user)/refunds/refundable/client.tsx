@@ -9,7 +9,7 @@ export default function RefundableCoursesLoader() {
 
   if (!data && error) {
     return (
-      <div className="user-container py-8">
+      <div className="mx-auto max-w-7xl px-4 py-8">
         <PageLoadError
           message={pageErrorMessage(
             error,

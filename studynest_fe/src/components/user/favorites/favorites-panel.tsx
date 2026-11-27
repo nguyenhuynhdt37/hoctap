@@ -360,7 +360,7 @@ export const FavoritesPanel = () => {
 
       {/* Courses Grid */}
       {!isInitialLoading && !error && favourites.length > 0 && (
-        <div className="mb-8 user-card-grid">
+        <div className="mb-8 grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {favourites.map((course) => (
             <FavoriteCard key={course.id} course={course} />
           ))}

@@ -120,7 +120,7 @@ const CoursesSlider = ({
 
   return (
     <section className="bg-background py-12 sm:py-16">
-      <div className="user-container relative z-10">
+      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <h2 className="font-display text-3xl text-foreground">{title}</h2>
           {subtitle && (
@@ -129,7 +129,7 @@ const CoursesSlider = ({
         </div>
 
         {isLoading ? (
-          <div className="user-card-grid">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {Array.from({ length: 4 }).map((_, i) => (
               <SkeletonCard key={i} />
             ))}

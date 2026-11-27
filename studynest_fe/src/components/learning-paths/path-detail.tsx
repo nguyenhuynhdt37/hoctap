@@ -47,7 +47,7 @@ export default function PathDetail({ slug }: { slug: string }) {
   if (error) return <LoadError error={error} retry={() => mutate()} />;
   if (!data) return <Loading />;
   return (
-    <main className="user-container max-w-6xl space-y-8 py-10 text-foreground">
+    <main className="mx-auto max-w-6xl space-y-8 px-4 py-10 text-foreground sm:px-6">
       <nav className="text-sm">
         <Link className="text-primary underline" href="/learning-paths">
           ← Tất cả lộ trình

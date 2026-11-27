@@ -280,7 +280,7 @@ export function PersonalizedRoadmapView() {
 
   if (error) {
     return (
-      <main className="user-container py-10">
+      <main className="mx-auto max-w-7xl px-4 py-10">
         <LoadError error={error} retry={() => void mutate()} />
       </main>
     );
@@ -291,7 +291,7 @@ export function PersonalizedRoadmapView() {
       <main
         role="status"
         aria-label="Đang tải bản đồ đường bay 12 tầng mây"
-        className="user-container space-y-6 py-8 animate-pulse"
+        className="mx-auto max-w-7xl space-y-6 px-4 py-8 animate-pulse"
       >
         <div className="h-[340px] rounded-[36px] bg-primary/10" />
         <div className="h-72 rounded-[32px] border border-border bg-surface/80" />
@@ -308,7 +308,7 @@ export function PersonalizedRoadmapView() {
 
   return (
     <main className="min-h-screen bg-background pb-20">
-      <div className="user-container space-y-10 py-6 sm:py-8">
+      <div className="mx-auto max-w-7xl space-y-10 px-4 py-6 sm:px-6 sm:py-8">
         {/* ============================================================
             TẦNG 1: BẢN ĐỒ ĐƯỜNG BAY 12 TẦNG MÂY (INTERACTIVE ALTITUDE ATLAS)
            ============================================================ */}

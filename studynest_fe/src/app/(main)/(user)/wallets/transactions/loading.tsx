@@ -3,16 +3,16 @@ export default function WalletTransactionsLoading() {
     <div
       role="status"
       aria-label="Đang tải lịch sử giao dịch"
-      className="user-container space-y-6 py-8 animate-pulse"
+      className="mx-auto max-w-7xl space-y-6 px-4 py-8 animate-pulse"
     >
       {/* Header Skeleton */}
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <div className="w-full max-w-sm min-w-0 space-y-2.5">
+        <div className="space-y-2.5">
           <div className="h-6 w-40 rounded-full bg-primary-light/80" />
-          <div className="h-9 w-64 max-w-full rounded-2xl bg-primary-light/60" />
+          <div className="h-9 w-64 rounded-2xl bg-primary-light/60" />
           <div className="h-4 w-96 max-w-full rounded-xl bg-border/60" />
         </div>
-        <div className="flex flex-wrap gap-2.5">
+        <div className="flex gap-2.5">
           <div className="h-9 w-28 rounded-full bg-primary-light/60" />
           <div className="h-9 w-28 rounded-full bg-primary-light/60" />
         </div>

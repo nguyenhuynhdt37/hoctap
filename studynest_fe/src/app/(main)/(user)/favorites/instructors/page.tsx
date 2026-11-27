@@ -13,12 +13,12 @@ export const metadata: Metadata = {
 
 export default function SavedInstructorsPage() {
   return (
-    <main className="user-container py-8 bg-background min-h-[75vh]">
+    <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 bg-background min-h-[75vh]">
       <Suspense
         fallback={
           <div className="space-y-6 animate-pulse">
             <div className="h-20 w-full rounded-2xl bg-surface border border-border" />
-            <div className="user-card-grid">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
               {[1, 2, 3].map((i) => (
                 <div key={i} className="h-64 rounded-[24px] bg-surface border border-border" />
               ))}

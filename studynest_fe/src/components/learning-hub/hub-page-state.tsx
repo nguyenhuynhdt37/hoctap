@@ -46,7 +46,7 @@ export function HubPageSkeleton({ label = "Đang tải trang học tập" }: { l
     <div
       role="status"
       aria-label={label}
-      className="user-container space-y-6 py-6"
+      className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8"
     >
       <Skeleton className="h-32 w-full motion-reduce:animate-none" />
       <Skeleton className="h-24 w-full motion-reduce:animate-none" />

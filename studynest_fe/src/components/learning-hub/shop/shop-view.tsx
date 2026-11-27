@@ -350,7 +350,7 @@ export function ShopView() {
 
   return (
     <main className="relative isolate min-h-screen overflow-clip bg-background pb-16">
-      <div className="user-container max-w-6xl pt-6 sm:pt-10">
+      <div className="mx-auto w-full max-w-6xl px-4 pt-6 sm:px-8 sm:pt-10">
         {/* HERO ATELIER BOUTIQUE + SPOTLIGHT MIRROR */}
         <header className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:items-stretch">
           <div className="relative isolate flex flex-col justify-between overflow-hidden rounded-[2rem] border border-primary-pastel bg-gradient-to-br from-surface via-primary-light/60 to-accent/35 px-6 py-6 shadow-ambient-sm sm:px-9 sm:py-8">

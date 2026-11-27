@@ -34,6 +34,8 @@ interface SidebarProps {
   totalDurationLabel: string;
   completedLessons: number;
   totalLessons: number;
+  headerHeightPx?: number;
+  footerHeightPx?: number;
 }
 
 export default function Sidebar(props: SidebarProps) {
@@ -56,6 +58,8 @@ export default function Sidebar(props: SidebarProps) {
     totalDurationLabel,
     completedLessons,
     totalLessons,
+    headerHeightPx = 64,
+    footerHeightPx = 64,
   } = props;
 
   const progressPct =
@@ -90,7 +94,10 @@ export default function Sidebar(props: SidebarProps) {
         <aside
           data-learning-sidebar
           aria-label="Mục lục khóa học"
-          className="absolute inset-y-0 right-0 z-40 flex w-full max-w-full flex-col overflow-hidden bg-surface shadow-lg sm:w-[22rem] sm:border-l sm:border-border lg:static lg:z-auto lg:h-full lg:w-[21rem] lg:shrink-0 lg:shadow-none xl:w-[23rem]"
+          className="fixed bottom-16 right-0 top-16 z-40 flex w-full max-w-full flex-col overflow-hidden border-l border-primary-pastel/70 bg-surface/95 shadow-xl backdrop-blur-md md:static md:inset-auto md:z-auto md:h-full md:w-[400px] md:max-w-[400px] md:shrink-0 md:shadow-none"
+          style={{
+            maxHeight: `calc(100dvh - ${headerHeightPx}px - ${footerHeightPx}px)`,
+          }}
         >
           {/* Header Mục lục + Tiến độ tổng + Tìm kiếm nhanh */}
           <div className="shrink-0 space-y-3 border-b border-primary-pastel/60 bg-gradient-to-br from-primary-light/70 via-surface to-accent/30 p-4">

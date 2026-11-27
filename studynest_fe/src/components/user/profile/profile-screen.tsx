@@ -27,7 +27,7 @@ export default function ProfileScreen({
   return (
     <div className="min-h-screen bg-background pb-16">
       <form
-        className="user-container max-w-6xl space-y-6 py-8"
+        className="mx-auto max-w-6xl space-y-6 px-4 py-8 sm:px-6"
         onSubmit={(event) => {
           event.preventDefault();
           void editor.submit();

@@ -10,6 +10,7 @@ import {
   Pill,
   Reveal,
   SectionHeader,
+  SectionShell,
 } from "@/components/user/home/landing-ui";
 import { cn } from "@/lib/utils";
 import { motion, useReducedMotion } from "framer-motion";
@@ -215,61 +216,72 @@ export default function AuthShell({
   const copy = skyCopy[screen];
 
   return (
-    <main className="grid min-h-[var(--auth-screen-min-height,100dvh)] w-full flex-1 grid-rows-[auto_1fr] bg-surface lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1fr)] lg:grid-rows-1">
-      <div className="relative z-10 row-start-2 flex min-w-0 items-center justify-center px-5 py-7 sm:px-8 lg:col-start-2 lg:row-start-1 lg:px-12 lg:py-10">
-        <Reveal className="mx-auto w-full max-w-md min-w-0">
-          <div className="mb-5">
-            <div className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-foreground">
-              <Image src="/logo/maymay-logo.svg" alt="" width={32} height={32} />
-              Mây Mây
-            </div>
-            <h1 className="font-display text-3xl leading-tight font-semibold tracking-tight text-foreground sm:text-4xl">
-              {title}
-            </h1>
-            {description && (
-              <div className="mt-2 text-sm leading-relaxed text-foreground/85">
-                {description}
-              </div>
-            )}
+    <main>
+      <SectionShell
+        tone="blue"
+        label={title}
+        clouds={false}
+        innerClassName="max-w-none! px-0! py-0!"
+      >
+        <div className="grid lg:min-h-[calc(100dvh-76px)] lg:grid-cols-[46%_minmax(0,1fr)]">
+          <div className="relative z-10 row-start-2 -mt-8 min-w-0 px-4 pb-6 sm:px-8 lg:col-start-2 lg:row-start-1 lg:mt-0 lg:flex lg:items-center lg:justify-center lg:py-8">
+            <Reveal className="mx-auto w-full max-w-md min-w-0">
+              <GlassCard tilt={false} className="rounded-[2rem]! bg-surface/98! p-6 sm:p-10">
+                <div className="mb-5">
+                  <div className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-foreground">
+                    <Image src="/logo/maymay-logo.svg" alt="" width={32} height={32} />
+                    Mây Mây
+                  </div>
+                  <h1 className="font-display text-3xl leading-tight font-semibold tracking-tight text-foreground sm:text-4xl">
+                    {title}
+                  </h1>
+                  {description && (
+                    <div className="mt-2 text-sm leading-relaxed text-foreground/85">
+                      {description}
+                    </div>
+                  )}
+                </div>
+                {children}
+              </GlassCard>
+
+              <nav aria-label="Điều khoản và chính sách" className="mt-2 flex flex-wrap justify-center gap-x-4 text-xs">
+                <Link href="/help/terms" className={authLinkClass}>Điều khoản sử dụng</Link>
+                <Link href="/help/privacy-policy" className={authLinkClass}>Chính sách bảo mật</Link>
+              </nav>
+            </Reveal>
           </div>
-          {children}
 
-          <nav aria-label="Điều khoản và chính sách" className="mt-2 flex flex-wrap justify-center gap-x-4 text-xs">
-            <Link href="/help/terms" className={authLinkClass}>Điều khoản sử dụng</Link>
-            <Link href="/help/privacy-policy" className={authLinkClass}>Chính sách bảo mật</Link>
-          </nav>
-        </Reveal>
-      </div>
-
-      <div className="relative isolate row-start-1 min-w-0 overflow-hidden border-b border-border bg-linear-to-br from-primary-pastel via-primary-light to-background px-5 py-5 sm:px-8 lg:col-start-1 lg:flex lg:items-center lg:justify-center lg:border-r lg:border-b-0 lg:px-10 lg:py-10">
-        <CloudBlob className="-top-24 -left-24 h-60 w-[26rem] bg-surface/80!" />
-        <CloudBlob className="top-[46%] -right-36 h-72 w-[28rem] bg-surface/90! lg:top-[30%]" />
-        <CloudBlob className="bottom-0 left-[10%] hidden h-36 w-72 bg-surface/75! lg:block" />
-        <div aria-hidden="true" className="absolute -top-20 -right-12 size-52 rotate-12 rounded-[45%] border border-surface/90 lg:size-72" />
-        <div className="relative w-full max-w-lg">
-          <SectionHeader
-            align="left"
-            title={
-              <>
-                <span className="lg:hidden">{copy.mobileTitle}</span>
-                <span className="hidden lg:inline">{copy.title}</span>
-              </>
-            }
-            className="mb-0! [&>h2]:text-balance [&>h2]:leading-[1.15] lg:[&>h2]:text-5xl xl:[&>h2]:text-[clamp(3rem,3.65vw,3.75rem)]"
-          />
-          <ul className="mt-5 hidden space-y-2.5 lg:block">
-            {benefits.map((benefit, index) => (
-              <Reveal as="li" key={benefit} delay={index * 0.08} className="flex items-center gap-2.5 text-sm font-medium text-foreground">
-                <IconBubble shape="circle" className="size-6! bg-surface!">
-                  <Check animated={false} aria-hidden="true" className="size-3.5" />
-                </IconBubble>
-                {benefit}
-              </Reveal>
-            ))}
-          </ul>
-          <FloatingLearningCards />
+          <div className="relative isolate row-start-1 min-h-[10.5rem] min-w-0 overflow-hidden rounded-b-[2.5rem] border-r border-b border-surface bg-linear-to-br from-primary-pastel via-primary-light to-background px-6 pt-8 pb-12 sm:px-10 lg:col-start-1 lg:flex lg:items-center lg:justify-center lg:rounded-bl-none lg:rounded-tr-[3.5rem] lg:px-10 lg:py-10 xl:px-16">
+            <CloudBlob className="-top-24 -left-24 h-60 w-[26rem] bg-surface/80!" />
+            <CloudBlob className="top-[46%] -right-36 h-72 w-[28rem] bg-surface/90! lg:top-[30%]" />
+            <CloudBlob className="bottom-0 left-[10%] hidden h-36 w-72 bg-surface/75! lg:block" />
+            <div aria-hidden="true" className="absolute -top-20 -right-12 size-52 rotate-12 rounded-[45%] border border-surface/90 lg:size-72" />
+            <div className="relative w-full max-w-lg">
+              <SectionHeader
+                align="left"
+                title={
+                  <>
+                    <span className="lg:hidden">{copy.mobileTitle}</span>
+                    <span className="hidden lg:inline">{copy.title}</span>
+                  </>
+                }
+                className="mb-0! [&>h2]:text-balance [&>h2]:leading-[1.15] lg:[&>h2]:text-5xl xl:[&>h2]:text-[clamp(3rem,3.65vw,3.75rem)]"
+              />
+              <ul className="mt-5 hidden space-y-2.5 lg:block">
+                {benefits.map((benefit, index) => (
+                  <Reveal as="li" key={benefit} delay={index * 0.08} className="flex items-center gap-2.5 text-sm font-medium text-foreground">
+                    <IconBubble shape="circle" className="size-6! bg-surface!">
+                      <Check animated={false} aria-hidden="true" className="size-3.5" />
+                    </IconBubble>
+                    {benefit}
+                  </Reveal>
+                ))}
+              </ul>
+              <FloatingLearningCards />
+            </div>
+          </div>
         </div>
-      </div>
+      </SectionShell>
     </main>
   );
 }

@@ -39,7 +39,7 @@ export default function WalletLoader() {
         />
       </PageDataScope>
       {error && (
-        <div className="user-container max-w-5xl pb-8">
+        <div className="mx-auto max-w-5xl px-4 pb-8">
           <Button type="button" variant="outline" disabled={wallet.isValidating || transactions.isValidating} onClick={retry}>
             Thử lại
           </Button>

@@ -79,7 +79,7 @@ export function RefundStudioShell({
         className="pointer-events-none fixed inset-x-0 top-0 -z-10 h-[30rem] bg-gradient-to-b from-primary-light/55 via-surface-muted/40 to-transparent"
       />
 
-      <div className="user-container max-w-6xl space-y-6">
+      <div className="mx-auto w-full max-w-6xl space-y-6 px-4 sm:px-6 lg:px-8">
         {/* ── THANH ĐIỀU HƯỚNG TRUNG TÂM THỐNG NHẤT CHO TOÀN BỘ /refunds/* ── */}
         <nav
           aria-label="Điều hướng trung tâm bảo vệ tài sản"

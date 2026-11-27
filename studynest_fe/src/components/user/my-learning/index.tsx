@@ -92,7 +92,7 @@ export default function CoursesMeSection() {
         aria-hidden="true"
       />
 
-      <div className="user-container pt-7 md:pt-9">
+      <div className="mx-auto max-w-7xl px-4 pt-7 sm:px-6 md:pt-9 lg:px-8">
         {/* Tiêu đề gọn tinh tế */}
         <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
           <div>

@@ -75,7 +75,7 @@ export function BundleReceiptView({ id }: { id: string }) {
 
   if (!data) {
     return (
-      <main className="user-container max-w-5xl py-12">
+      <main className="mx-auto max-w-5xl px-4 py-12">
         <Loading />
       </main>
     );
@@ -98,7 +98,7 @@ export function BundleReceiptView({ id }: { id: string }) {
         className="pointer-events-none absolute top-56 -right-24 -z-10 h-72 w-72 rounded-full bg-accent/30 blur-3xl print:hidden"
       />
 
-      <div className="user-container max-w-5xl space-y-7 pt-7">
+      <div className="mx-auto max-w-5xl space-y-7 px-4 pt-7 sm:px-6 lg:px-8">
         {/* ── THANH ĐIỀU HƯỚNG & TIỆN ÍCH IN / SAO CHÉP ── */}
         <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
           <Link
