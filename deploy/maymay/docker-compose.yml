@@ -10,6 +10,8 @@ services:
     container_name: maymay_backend
     restart: unless-stopped
     env_file: /home/admin/maymay/deploy/be.env
+    environment:
+      APP_ENV: production
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:

@@ -1,4 +1,5 @@
 # app/core/settings.py
+import os
 from pathlib import Path
 from typing import Literal
 
@@ -6,7 +7,30 @@ from pydantic import Field
 from pydantic_settings import BaseSettings
 
 
+_BASE_DIR = Path(__file__).resolve().parents[2]
+_APP_ENV = os.environ.get("APP_ENV", "development").strip().lower()
+
+
+def _env_files() -> tuple[str, ...]:
+    """Mỗi môi trường chỉ đọc đúng file `.env.<APP_ENV>`, không trộn với môi trường khác.
+
+    `.env` cũ chỉ còn là fallback cho development khi chưa tạo `.env.development`.
+    """
+    specific = _BASE_DIR / f".env.{_APP_ENV}"
+    if specific.exists():
+        return (str(specific),)
+    if _APP_ENV == "development" and (_BASE_DIR / ".env").exists():
+        return (str(_BASE_DIR / ".env"),)
+    return ()
+
+
 class Settings(BaseSettings):
+    # Môi trường chạy: development | test | production (kiểm tra chéo trong env_guard)
+    APP_ENV: Literal["development", "test", "production"] = "development"
+    # Hạ tầng thật mà dev/test tuyệt đối không được trỏ tới.
+    PROD_DB_HOSTS: str = "psql-maymay.itup.io.vn,100.122.190.92"
+    PROD_PUBLIC_HOSTS: str = "may-may.tech"
+
     # Database
     POSTGRES_USER: str = ""
     POSTGRES_PASSWORD: str = ""
@@ -146,8 +170,12 @@ class Settings(BaseSettings):
     PRESENCE_TTL_SECONDS: int = 90
 
     class Config:
-        env_file = str(Path(__file__).resolve().parents[2] / ".env")
+        env_file = _env_files()
         extra = "ignore"  # tránh crash nếu .env có key dư
 
 
 settings = Settings()
+
+from app.core.env_guard import validate_environment  # noqa: E402
+
+validate_environment(settings)

@@ -1,8 +1,9 @@
 # =============================================================================
 # Mây Mây Education Platform — Production Docker Compose Stack
 # Bao gồm: PostgreSQL 16 (pgvector) + Redis 7 + Piston + FastAPI BE + Next.js FE
-# Khởi chạy:
-#   docker compose -f docker-compose.prod.yml --env-file studynest_be/.env up -d --build
+# Khởi chạy (qua Makefile để có bước xác nhận):  make prod-up
+#   docker compose -f docker-compose.prod.yml --env-file studynest_be/.env.production up -d --build
+# Dev dùng stack riêng: docker-compose.dev.yml (project maymay-dev, cổng và volume khác).
 # =============================================================================
 
 services:
@@ -74,8 +75,9 @@ services:
     container_name: studynest_be_prod
     restart: unless-stopped
     env_file:
-      - ./studynest_be/.env
+      - ./studynest_be/.env.production
     environment:
+      APP_ENV: production
       # Override host kết nối nội bộ qua mạng Docker maymay_net
       POSTGRES_HOST: postgres
       POSTGRES_PORT: "5432"
@@ -105,22 +107,22 @@ services:
       context: ./studynest_fe
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_URL_BACKEND: ${BACKEND_URL:-https://macbook-pro-7.tail6d3a82.ts.net:8443}
-        NEXT_PUBLIC_URL_BACKEND_WS: ${NEXT_PUBLIC_URL_BACKEND_WS:-wss://macbook-pro-7.tail6d3a82.ts.net:8443}
-        NEXT_PUBLIC_URL_FRONTEND: ${FRONTEND_URL:-https://macbook-pro-7.tail6d3a82.ts.net}
+        NEXT_PUBLIC_URL_BACKEND: ${BACKEND_URL:-https://api.may-may.tech}
+        NEXT_PUBLIC_URL_BACKEND_WS: ${NEXT_PUBLIC_URL_BACKEND_WS:-wss://api.may-may.tech}
+        NEXT_PUBLIC_URL_FRONTEND: ${FRONTEND_URL:-https://may-may.tech}
         NEXT_PUBLIC_AUTH_MODE: ${NEXT_PUBLIC_AUTH_MODE:-dpop}
-        NEXT_PUBLIC_DPOP_API_ORIGIN: ${PUBLIC_API_URL:-https://macbook-pro-7.tail6d3a82.ts.net:8443}
+        NEXT_PUBLIC_DPOP_API_ORIGIN: ${PUBLIC_API_URL:-https://api.may-may.tech}
         INTERNAL_BACKEND_URL: http://backend:8000
     container_name: studynest_fe_prod
     restart: unless-stopped
     environment:
       NODE_ENV: production
       INTERNAL_BACKEND_URL: http://backend:8000
-      NEXT_PUBLIC_URL_BACKEND: ${BACKEND_URL:-https://macbook-pro-7.tail6d3a82.ts.net:8443}
-      NEXT_PUBLIC_URL_BACKEND_WS: ${NEXT_PUBLIC_URL_BACKEND_WS:-wss://macbook-pro-7.tail6d3a82.ts.net:8443}
-      NEXT_PUBLIC_URL_FRONTEND: ${FRONTEND_URL:-https://macbook-pro-7.tail6d3a82.ts.net}
+      NEXT_PUBLIC_URL_BACKEND: ${BACKEND_URL:-https://api.may-may.tech}
+      NEXT_PUBLIC_URL_BACKEND_WS: ${NEXT_PUBLIC_URL_BACKEND_WS:-wss://api.may-may.tech}
+      NEXT_PUBLIC_URL_FRONTEND: ${FRONTEND_URL:-https://may-may.tech}
       NEXT_PUBLIC_AUTH_MODE: ${NEXT_PUBLIC_AUTH_MODE:-dpop}
-      NEXT_PUBLIC_DPOP_API_ORIGIN: ${PUBLIC_API_URL:-https://macbook-pro-7.tail6d3a82.ts.net:8443}
+      NEXT_PUBLIC_DPOP_API_ORIGIN: ${PUBLIC_API_URL:-https://api.may-may.tech}
     ports:
       - "3000:3000"
     depends_on:

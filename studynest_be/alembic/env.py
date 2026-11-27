@@ -17,10 +17,16 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 import os
-from dotenv import load_dotenv
-load_dotenv()
+from pathlib import Path
 
-# load config URL từ .env
+from dotenv import load_dotenv
+
+# Chỉ nạp đúng file của môi trường hiện tại (APP_ENV), không đọc `.env` chung để migration
+# không bao giờ chạy nhầm vào database của môi trường khác.
+_app_env = os.getenv("APP_ENV", "development").strip().lower()
+load_dotenv(Path(__file__).resolve().parents[1] / f".env.{_app_env}")
+
+# load config URL từ .env.<APP_ENV>
 database_url = os.getenv("DATABASE_ASYNC_URL")
 if database_url:
     config.set_main_option("sqlalchemy.url", database_url.replace("%", "%%"))

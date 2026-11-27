@@ -59,7 +59,10 @@ async def reset_money(conn: AsyncConnection, *, apply: bool) -> dict[str, int]:
 async def _main(apply: bool) -> None:
     from dotenv import load_dotenv
 
-    load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
+    app_env = os.getenv("APP_ENV", "development").strip().lower()
+    if app_env == "production":
+        raise SystemExit("Từ chối: script xóa dữ liệu tiền không được chạy với APP_ENV=production.")
+    load_dotenv(os.path.join(os.path.dirname(__file__), "..", f".env.{app_env}"))
     engine = create_async_engine(os.environ["DATABASE_ASYNC_URL"])
     try:
         async with engine.connect() as conn:

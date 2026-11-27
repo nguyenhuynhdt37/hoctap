@@ -22,23 +22,43 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build and start containers
+      - name: Preflight (build image + kiểm tra cấu hình production)
         working-directory: deploy/maymay
         run: |
           test -f /home/admin/maymay/deploy/be.env
+          nice -n 19 docker compose build
+          # env_guard chạy với đúng be.env trên server. Cấu hình sai (trỏ localhost/DB dev, JWT yếu...)
+          # sẽ dừng ở đây, container production đang chạy vẫn được giữ nguyên.
+          docker compose run --rm --no-deps --entrypoint python backend \
+            -c "from app.core.settings import settings; print('env ok:', settings.APP_ENV)"
+
+      - name: Start containers
+        working-directory: deploy/maymay
+        run: |
           # One-time takeover of the container created by the manual setup.
           docker rm -f maymay_backend maymay_frontend 2>/dev/null || true
-          nice -n 19 docker compose build
           docker compose up -d
 
       - name: Health check
         run: |
-          for i in $(seq 1 30); do
-            code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:13100/ || true)
-            [ "$code" = "200" ] || [ "$code" = "307" ] || [ "$code" = "308" ] && { echo "frontend $code"; exit 0; }
+          ok_be=0; ok_fe=0
+          for i in $(seq 1 36); do
+            if [ "$ok_be" = 0 ]; then
+              code=$(curl -s --max-time 5 -o /dev/null -w '%{http_code}' http://127.0.0.1:18100/health || true)
+              if [ "$code" = "200" ]; then ok_be=1; fi
+            fi
+            if [ "$ok_fe" = 0 ]; then
+              code=$(curl -s --max-time 5 -o /dev/null -w '%{http_code}' http://127.0.0.1:13100/ || true)
+              case "$code" in 200|307|308) ok_fe=1 ;; esac
+            fi
+            if [ "$ok_be" = 1 ] && [ "$ok_fe" = 1 ]; then
+              echo "backend + frontend healthy"
+              exit 0
+            fi
             sleep 5
           done
-          docker compose -f deploy/maymay/docker-compose.yml logs --tail 50
+          echo "backend=$ok_be frontend=$ok_fe"
+          docker compose -f deploy/maymay/docker-compose.yml logs --tail 80
           exit 1
 
       - name: Prune old images

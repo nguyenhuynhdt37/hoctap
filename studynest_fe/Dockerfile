@@ -16,11 +16,11 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ARG NODE_MAX_OLD_SPACE=4096
 ENV NODE_OPTIONS="--max-old-space-size=${NODE_MAX_OLD_SPACE}"
 
-ARG NEXT_PUBLIC_URL_BACKEND=https://macbook-pro-7.tail6d3a82.ts.net:8443
-ARG NEXT_PUBLIC_URL_BACKEND_WS=wss://macbook-pro-7.tail6d3a82.ts.net:8443
-ARG NEXT_PUBLIC_URL_FRONTEND=https://macbook-pro-7.tail6d3a82.ts.net
+ARG NEXT_PUBLIC_URL_BACKEND=https://api.may-may.tech
+ARG NEXT_PUBLIC_URL_BACKEND_WS=wss://api.may-may.tech
+ARG NEXT_PUBLIC_URL_FRONTEND=https://may-may.tech
 ARG NEXT_PUBLIC_AUTH_MODE=dpop
-ARG NEXT_PUBLIC_DPOP_API_ORIGIN=https://macbook-pro-7.tail6d3a82.ts.net:8443
+ARG NEXT_PUBLIC_DPOP_API_ORIGIN=https://api.may-may.tech
 ARG NEXT_PUBLIC_URL_GOOGLE_LOGIN=832199004728-lfqvpnak071c42hejp4357bnqadu5dcm.apps.googleusercontent.com
 ARG NEXT_PUBLIC_PAYPAL_CLIENT_ID=Ae_SkKiW6oGtb6kOnes2QtYOuvuU42bS8H3pjHo6sPH1dWAmtqc5sQD_4lnPPQrZ_BaYhwlvjy4cO-EU
 ARG INTERNAL_BACKEND_URL=http://backend:8000

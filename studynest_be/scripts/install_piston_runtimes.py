@@ -11,7 +11,7 @@ def main(base_url=None):
     if base_url is None:
         from dotenv import load_dotenv
 
-        load_dotenv()
+        load_dotenv(os.path.join(os.path.dirname(__file__), "..", f".env.{os.getenv('APP_ENV', 'development')}"))
     base_url = (base_url or os.getenv("PISTON_URL", "http://localhost:4000")).rstrip(
         "/"
     )

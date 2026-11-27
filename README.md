@@ -217,25 +217,50 @@ hoctap/
 
 ## 🚀 Khởi Chạy Nhanh (Quickstart)
 
-Mở Docker Desktop hoặc OrbStack với Docker Compose v2.24 trở lên. Từ thư mục gốc của repo, chạy:
+### Chạy toàn bộ web local bằng Docker
+
+Mở Docker Desktop hoặc OrbStack có Docker Compose v2.24 trở lên, rồi chạy tại thư mục gốc của repo:
 
 ```bash
 docker compose up -d
 ```
 
-- Web Mây Mây ở [localhost:3001](http://localhost:3001).
-- API Swagger ở [localhost:8001/docs](http://localhost:8001/docs).
-- Mailpit nhận OTP ở [localhost:18025](http://localhost:18025).
+Compose tự build web và API, bật PostgreSQL, Redis, Mailpit và Piston, rồi chạy migration, nạp danh mục mẫu và cài runtime chấm code. Lần đầu cần tải image, build ứng dụng và tải runtime. Xem tiến độ bằng `docker compose ps -a` và `docker compose logs -f backend frontend piston-runtimes`.
 
-Compose tự build web và API, bật PostgreSQL, Redis, Mailpit và Piston, chạy migration rồi cài runtime chấm code. Xem [hướng dẫn chạy local và chuyển database sang máy khác](docs/infra/local-docker.md).
+| Dịch vụ | Địa chỉ local |
+| :--- | :--- |
+| Web Mây Mây | [http://localhost:3001](http://localhost:3001) |
+| FastAPI / Swagger | [http://localhost:8001/docs](http://localhost:8001/docs) |
+| Mailpit (email và OTP) | [http://localhost:18025](http://localhost:18025) |
+| Piston | http://localhost:14000 |
+| PostgreSQL + pgvector | `127.0.0.1:15433` |
+| Redis | `127.0.0.1:16379` |
 
-Ứng dụng mobile chạy riêng qua Expo. Xem [hướng dẫn mobile](mobile/README.md).
+Dừng stack bằng `docker compose down`. Dữ liệu trong volume vẫn được giữ. Sau khi sửa code, dùng `docker compose up -d --build` để build lại image.
+
+Xem [hướng dẫn xuất và nạp database trên máy khác](docs/infra/local-docker.md).
+
+Các tích hợp AI, R2, Google OAuth và PayPal cần credential dev hoặc sandbox. Có thể đặt các biến backend theo mẫu `studynest_be/.env.development.example` trong `studynest_be/.env.docker.local`. Với Google OAuth và PayPal, đặt thêm các biến công khai `NEXT_PUBLIC_URL_GOOGLE_LOGIN` và `NEXT_PUBLIC_PAYPAL_CLIENT_ID` trong `.env` ở thư mục gốc, sau đó build lại.
+
+### Hot reload và ứng dụng mobile
+
+Để chạy backend và web trực tiếp trên máy với hot reload, dùng `make dev-up` để bật riêng hạ tầng rồi xem [hướng dẫn cấu hình môi trường](docs/infra/environments.md).
+
+Expo chạy riêng trên máy. Sao chép `mobile/.env.example` thành `mobile/.env` và trỏ `EXPO_PUBLIC_API_URL` đến `http://127.0.0.1:8001/api/v1`, `EXPO_PUBLIC_WS_URL` đến `ws://127.0.0.1:8001` khi dùng iOS Simulator. Sau đó chạy:
+
+```bash
+cd mobile
+pnpm install --frozen-lockfile
+pnpm dev
+```
+
+Với Android Emulator, dùng `10.0.2.2` thay cho `127.0.0.1`. Xem [hướng dẫn mobile](mobile/README.md) để chọn môi trường chạy Expo.
 
 ---
 
 ## 🔑 Cấu Hình Biến Môi Trường (Third-Party Services)
 
-Các dịch vụ nâng cao có thể được kích hoạt trong file `studynest_be/.env.docker.local` khi dùng Compose, hoặc `studynest_be/.env` khi chạy trực tiếp:
+Các dịch vụ nâng cao có thể được kích hoạt trong file `studynest_be/.env.docker.local` khi dùng Compose, hoặc `studynest_be/.env.development` khi chạy backend trực tiếp:
 
 - **AI Model Router (9Router)**:
   ```env
