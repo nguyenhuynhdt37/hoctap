@@ -27,12 +27,12 @@ export function MyCourses({ current, purchases }: {
       {purchases.error ? (
         <HubLoadError title="Chưa tải được danh sách khóa học" message="Tải lại để xem các khóa bạn đã đăng ký." onRetry={() => void purchases.mutate().catch(() => undefined)} isRetrying={purchases.isValidating} />
       ) : !purchases.data ? (
-        <div role="status" aria-label="Đang tải khóa học của bạn" className="user-card-grid [&_.animate-pulse]:motion-reduce:animate-none">
+        <div role="status" aria-label="Đang tải khóa học của bạn" className="user-four-column-grid [&_.animate-pulse]:motion-reduce:animate-none">
           {[0, 1, 2, 3, 4].map((i) => <Skeleton key={i} className="aspect-[16/12] w-full rounded-3xl" />)}
         </div>
       ) : (
-        <ul aria-label="Khóa học của bạn" className="user-card-grid">
-          {others.slice(0, 10).map((course) => <TicketCourse key={course.id} course={course} />)}
+        <ul aria-label="Khóa học của bạn" className="user-four-column-grid">
+          {others.slice(0, 8).map((course) => <TicketCourse key={course.id} course={course} />)}
         </ul>
       )}
     </section>
@@ -47,7 +47,7 @@ function TicketCourse({ course }: { course: CoursesMeItem }) {
         src={course.thumbnail_url}
         alt={`Ảnh bìa khóa học ${course.title}`}
         sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-        className="flex h-full flex-col border border-border shadow-ambient-sm transition-shadow hover:shadow-ambient-md"
+        className="h-full flex-col border border-border shadow-ambient-sm transition-shadow hover:shadow-ambient-md"
         captionClassName="flex flex-1 flex-col justify-between space-y-2"
       >
         <h3 className="line-clamp-2 text-base font-bold text-foreground">

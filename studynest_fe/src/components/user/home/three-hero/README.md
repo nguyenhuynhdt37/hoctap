@@ -4,7 +4,7 @@
 - `contract.ts`: kiểu chung, `LEVELS`, `SKY_BY_LEVEL`, `HeroQuality`, hàm camera. Không sửa tùy tiện.
 - `progressRef` (`{current: 0..1}`) do `ScrollThreeHero` ghi (đã làm mượt) và được Canvas/Cards đọc trong `useFrame`, không dùng React state.
 - 3 tầng: Tiểu học (0), THCS (0.5), THPT (1).
-- Các file: `ScrollThreeHero` (hero gọn, chọn cấp học bằng nút), `ThreeHeroCanvas`/`SkyGradient`/`CloudField` (cảnh 3D), `FloatingCards` (thẻ nổi), `useHeroQuality.ts` + `ThreeHeroFallback.tsx` (chất lượng và dự phòng tĩnh).
+- Các file: `ScrollThreeHero` (stage sticky + cuộn), `ThreeHeroCanvas`/`SkyGradient`/`CloudField` (cảnh 3D), `FloatingCards` (thẻ nổi), `useHeroQuality.ts` + `ThreeHeroFallback.tsx` (chất lượng và dự phòng tĩnh).
 
 ## Chỉnh tier chất lượng
 Sửa `QUALITY_TIERS` (dpr, cloudCount, enableDepthBlur, enableHtmlCards) và hàm `computeQuality()` trong `useHeroQuality.ts`

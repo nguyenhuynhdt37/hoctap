@@ -45,11 +45,7 @@ const Home = () => {
         }
       />
 
-      <div
-        id="home-main-content"
-        className="scroll-mt-6"
-        aria-hidden="true"
-      />
+      <div id="home-main-content" tabIndex={-1} className="scroll-mt-16" />
 
       {/* Section C: Choose Your Learning Level (Grades 1–5, 6–9, 10–12) */}
       <GradeLevelsSection
@@ -59,7 +55,7 @@ const Home = () => {
       />
 
       {/* Section D: Explore Subjects & Real Categories */}
-      <div ref={subjectsSectionRef}>
+      <div ref={subjectsSectionRef} className="scroll-mt-16">
         <SubjectsSection
           selectedLevel={selectedLevel}
           onChangeLevel={setSelectedLevel}
@@ -68,7 +64,7 @@ const Home = () => {
       </div>
 
       {/* Section E: Public courses from the official catalog */}
-      <div ref={coursesSectionRef}>
+      <div ref={coursesSectionRef} className="scroll-mt-16">
         <CoursesSection />
       </div>
       <CombosSection />

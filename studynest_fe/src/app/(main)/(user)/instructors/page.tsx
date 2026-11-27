@@ -50,13 +50,10 @@ export default function InstructorsPage() {
           <div className="space-y-6 animate-pulse">
             <div className="h-44 w-full rounded-[28px] bg-surface border border-border" />
             <div className="h-10 w-full max-w-md rounded-xl bg-surface border border-border" />
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="hidden md:block h-96 rounded-[24px] bg-surface border border-border" />
-              <div className="md:col-span-3 user-card-grid">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <div key={i} className="h-64 rounded-[24px] bg-surface border border-border" />
-                ))}
-              </div>
+            <div className="user-four-column-grid">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="h-64 rounded-3xl border border-border bg-surface" />
+              ))}
             </div>
           </div>
         }

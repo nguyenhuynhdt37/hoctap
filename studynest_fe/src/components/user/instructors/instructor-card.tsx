@@ -271,7 +271,7 @@ export function InstructorCard({
         </p>
 
         {/* Footer 2 hành động */}
-        <div className="mt-auto flex items-center gap-2 border-t border-border/70 pt-3.5">
+        <div className="mt-auto flex flex-wrap items-center gap-2 border-t border-border/70 pt-3.5">
           {onQuickView && (
             <button
               type="button"
@@ -279,7 +279,7 @@ export function InstructorCard({
               className="inline-flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-full border border-primary-pastel bg-primary-light/70 px-3 text-xs font-bold text-primary transition-colors hover:bg-primary-light cursor-pointer"
             >
               <Eye className="size-3.5" animated={false} aria-hidden="true" />
-              <span>Xem nhanh khóa</span>
+              <span>Xem khóa học</span>
             </button>
           )}
           <Link

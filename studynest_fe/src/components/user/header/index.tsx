@@ -80,72 +80,70 @@ function UserHeader({ pathname }: { pathname: string }) {
   };
 
   return (
-    <header className="pointer-events-none sticky top-0 z-40 pt-2">
-      <div className="user-container">
-        <div className="pointer-events-auto flex min-h-[3.5rem] items-center gap-1 rounded-2xl border border-border bg-surface/95 px-2 shadow-sm backdrop-blur-md sm:gap-2 sm:px-3">
-          <Link
-            href={HOME_HREF}
-            aria-label="Mây Mây, về trang chủ"
-            className={cn("flex min-h-11 shrink-0 items-center gap-1.5 rounded-xl sm:pr-2", focusRing)}
+    <header className="sticky top-0 z-40 h-16 border-b border-border bg-surface">
+      <div className="user-container flex h-full items-center gap-1 sm:gap-2">
+        <Link
+          href={HOME_HREF}
+          aria-label="Mây Mây, về trang chủ"
+          className={cn("flex min-h-11 shrink-0 items-center gap-1.5 rounded-xl sm:pr-2", focusRing)}
+        >
+          <img src="/logo/maymay-mark.svg" alt="" className="size-8 sm:size-9" />
+          <span className="whitespace-nowrap font-semibold text-foreground">Mây Mây</span>
+        </Link>
+
+        <nav aria-label="Điều hướng chính" className="hidden items-center xl:flex">
+          {links.map((link) => {
+            const current = isCurrentPage(pathname, link.href);
+            const inSection = isInSection(pathname, link.href) ||
+              (link.href === "/combo" && pathname.startsWith("/learning-paths")) ||
+              (link.href === "/courses" && (pathname.startsWith("/course/") || pathname.startsWith("/categories/")));
+            return (
+              <Link key={link.href} href={link.href} aria-current={current ? "page" : undefined} className={cn(navLink, focusRing, inSection && "font-semibold text-primary")}>
+                {link.label}
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Tìm khóa học"
+            aria-haspopup="dialog"
+            aria-expanded={mode === "search"}
+            aria-controls={mode === "search" ? panelId : undefined}
+            className={cn(!user && "max-[359px]:hidden")}
+            disabled={authPending}
+            onClick={() => setMode("search")}
           >
-            <img src="/logo/maymay-mark.svg" alt="" className="size-8 sm:size-9" />
-            <span className="whitespace-nowrap font-semibold text-foreground">Mây Mây</span>
-          </Link>
-
-          <nav aria-label="Điều hướng chính" className="hidden items-center xl:flex">
-            {links.map((link) => {
-              const current = isCurrentPage(pathname, link.href);
-              const inSection = isInSection(pathname, link.href) ||
-                (link.href === "/combo" && pathname.startsWith("/learning-paths")) ||
-                (link.href === "/courses" && (pathname.startsWith("/course/") || pathname.startsWith("/categories/")));
-              return (
-                <Link key={link.href} href={link.href} aria-current={current ? "page" : undefined} className={cn(navLink, focusRing, inSection && "font-semibold text-primary")}>
-                  {link.label}
-                </Link>
-              );
-            })}
-          </nav>
-
-          <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Tìm khóa học"
-              aria-haspopup="dialog"
-              aria-expanded={mode === "search"}
-              aria-controls={mode === "search" ? panelId : undefined}
-              className={cn(!user && "max-[359px]:hidden")}
-              disabled={authPending}
-              onClick={() => setMode("search")}
-            >
-              <Search aria-hidden="true" className="size-5" />
-            </Button>
-            {user ? (
-              <>
-                <span className="hidden sm:contents"><NotificationButton role="USER" /></span>
-                <AccountAvatar user={user} pathname={pathname} />
-              </>
-            ) : !authPending && (
-              <>
-                <Link href="/login" className={cn(navLink, focusRing, "px-1.5 font-semibold text-primary sm:px-3")}>Đăng nhập</Link>
-                <Link href="/register" className={cn("hidden min-h-10 items-center rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary-hover sm:inline-flex", focusRing)}>Đăng ký</Link>
-              </>
-            )}
-            <Button
-              variant="pastel"
-              aria-label={unread > 0 && user ? `Mở bảng tiện ích, ${unread} thông báo chưa đọc` : "Mở bảng tiện ích"}
-              aria-haspopup="dialog"
-              aria-expanded={mode === "map"}
-              aria-controls={mode === "map" ? panelId : undefined}
-              disabled={authPending}
-              onClick={() => setMode("map")}
-              className="relative size-10 shrink-0 px-0 md:w-auto md:px-3"
-            >
-              <LayoutGrid aria-hidden="true" className="size-5 shrink-0" />
-              <span className="hidden md:inline">Tiện ích</span>
-              {user && unread > 0 && <span aria-hidden="true" className="absolute top-1 right-1 size-2 rounded-full bg-primary sm:hidden" />}
-            </Button>
-          </div>
+            <Search aria-hidden="true" className="size-5" />
+          </Button>
+          {user ? (
+            <>
+              <span className="hidden sm:contents"><NotificationButton role="USER" /></span>
+              <AccountAvatar user={user} pathname={pathname} />
+            </>
+          ) : !authPending && (
+            <>
+              <Link href="/login" className={cn(navLink, focusRing, "px-1.5 font-semibold text-primary sm:px-3")}>Đăng nhập</Link>
+              <Link href="/register" className={cn("hidden min-h-10 items-center rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary-hover sm:inline-flex", focusRing)}>Đăng ký</Link>
+            </>
+          )}
+          <Button
+            variant="pastel"
+            aria-label={unread > 0 && user ? `Mở bảng tiện ích, ${unread} thông báo chưa đọc` : "Mở bảng tiện ích"}
+            aria-haspopup="dialog"
+            aria-expanded={mode === "map"}
+            aria-controls={mode === "map" ? panelId : undefined}
+            disabled={authPending}
+            onClick={() => setMode("map")}
+            className="relative size-10 shrink-0 px-0 md:w-auto md:px-3"
+          >
+            <LayoutGrid aria-hidden="true" className="size-5 shrink-0" />
+            <span className="hidden md:inline">Tiện ích</span>
+            {user && unread > 0 && <span aria-hidden="true" className="absolute top-1 right-1 size-2 rounded-full bg-primary sm:hidden" />}
+          </Button>
         </div>
       </div>
 

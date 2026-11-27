@@ -101,10 +101,10 @@ export function TicketCard({ src, alt, sizes, fallback, priority, className, cap
   className?: string; captionClassName?: string; children: ReactNode;
 }) {
   return (
-    <div className={cn("relative drop-shadow-lg", className)}>
-      <article style={ticketMask("calc(100% - 2.25rem)", 9)} className="relative flex flex-col overflow-hidden rounded-[1.5rem] bg-surface text-foreground">
-        <CourseThumb src={src} alt={alt} sizes={sizes} fallback={fallback} priority={priority} />
-        <div className={cn("relative min-w-0 border-t-2 border-dashed border-primary-pastel px-5 py-3", captionClassName)}>{children}</div>
+    <div className={cn("relative flex min-w-0 flex-col drop-shadow-lg", className)}>
+      <article style={ticketMask("calc(100% - 2.25rem)", 9)} className="relative flex flex-1 flex-col overflow-hidden rounded-[1.5rem] bg-surface text-foreground">
+        <CourseThumb src={src} alt={alt} sizes={sizes} fallback={fallback} priority={priority} className="shrink-0" />
+        <div className={cn("min-w-0 flex-1 border-t-2 border-dashed border-primary-pastel px-5 py-3", captionClassName)}>{children}</div>
       </article>
     </div>
   );

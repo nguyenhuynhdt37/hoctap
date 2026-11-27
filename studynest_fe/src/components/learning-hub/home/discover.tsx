@@ -20,14 +20,14 @@ async function fetchCombos(url: string): Promise<CatalogCombosResponse> {
   return response.json();
 }
 
-function GridSkeleton({ label, cols = 5 }: { label: string; cols?: 5 }) {
+function GridSkeleton({ label }: { label: string }) {
   return (
     <div
       role="status"
       aria-label={label}
-      className="user-card-grid [&_.animate-pulse]:motion-reduce:animate-none"
+      className="user-four-column-grid [&_.animate-pulse]:motion-reduce:animate-none"
     >
-      {Array.from({ length: cols }, (_, i) => (
+      {Array.from({ length: 4 }, (_, i) => (
         <Skeleton key={i} className="aspect-[16/12] w-full rounded-3xl" />
       ))}
     </div>
@@ -59,8 +59,8 @@ function RecommendedTile({ course }: { course: RecommendedItem }) {
         src={course.thumbnail}
         alt={`Ảnh bìa khóa học ${course.title}`}
         sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-        className="flex h-full flex-col border border-border shadow-ambient-sm transition-shadow hover:shadow-ambient-md"
-        captionClassName="flex flex-1 flex-col justify-between space-y-2"
+        className="flex-1 transition-[filter] hover:drop-shadow-xl"
+        captionClassName="flex flex-col justify-between gap-2"
       >
         <h3 className="line-clamp-2 text-base leading-snug font-bold text-foreground wrap-anywhere">
           <Link href={`/course/${course.slug}`} onClick={(event) => void open(event)} aria-busy={checking || undefined} className={stretchedLink}>
@@ -85,9 +85,9 @@ function ComboTile({ combo }: { combo: CatalogCombo }) {
         src={cover}
         fallback={pathCover}
         alt={`Ảnh bìa combo ${combo.title}`}
-        sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
-        className="flex h-full flex-col border border-border shadow-ambient-sm transition-shadow hover:shadow-ambient-md"
-        captionClassName="flex flex-1 flex-col justify-between space-y-2 py-4"
+        sizes="(min-width: 1280px) 18rem, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+        className="flex-1 transition-[filter] hover:drop-shadow-xl"
+        captionClassName="flex flex-col justify-between gap-2 py-4"
       >
         <div className="space-y-1.5">
           {savings && <p className="w-fit rounded-full bg-accent px-2.5 py-0.5 text-xs font-bold text-accent-foreground">Tiết kiệm {combo.savings_percent > 0 ? `${combo.savings_percent}%` : "< 1%"}</p>}
@@ -96,7 +96,7 @@ function ComboTile({ combo }: { combo: CatalogCombo }) {
           </h3>
           <p className="truncate text-xs text-muted-foreground sm:text-sm">{combo.instructor.name} · {combo.course_count} khóa · {combo.lesson_count} bài</p>
         </div>
-        <div className="pt-1">
+        <div className="mt-auto pt-1">
           <CoinPrice
             priceVnd={combo.price}
             originalPriceVnd={savings ? combo.standalone_total : undefined}
@@ -121,9 +121,9 @@ function Recommended() {
       </div>
       {error ? (
         <HubLoadError title="Chưa tải được khóa gợi ý" message="Tải lại để xem khóa hợp sở thích." onRetry={() => void mutate().catch(() => undefined)} isRetrying={isValidating} />
-      ) : !data ? <GridSkeleton label="Đang tải khóa học gợi ý" cols={5} /> : data.items.length ? (
-        <ul aria-label="Khóa học gợi ý" className="user-card-grid">
-          {data.items.slice(0, 10).map((course) => <RecommendedTile key={course.id} course={course} />)}
+      ) : !data ? <GridSkeleton label="Đang tải khóa học gợi ý" /> : data.items.length ? (
+        <ul aria-label="Khóa học gợi ý" className="user-four-column-grid">
+          {data.items.slice(0, 8).map((course) => <RecommendedTile key={course.id} course={course} />)}
         </ul>
       ) : (
         <div className="flex items-center gap-4 rounded-3xl border border-primary-pastel bg-primary-light/60 p-4">
@@ -136,7 +136,7 @@ function Recommended() {
 }
 
 function Combos() {
-  const { data, error, isLoading, isValidating, mutate } = useSWR<CatalogCombosResponse>("/api/catalog/combos?limit=5&sort=recent", fetchCombos,
+  const { data, error, isLoading, isValidating, mutate } = useSWR<CatalogCombosResponse>("/api/catalog/combos?limit=4&sort=recent", fetchCombos,
     { keepPreviousData: true, dedupingInterval: 30_000, focusThrottleInterval: 60_000, shouldRetryOnError: false });
   const items = data?.items ?? [];
   return (
@@ -150,8 +150,8 @@ function Combos() {
       </div>
       {error ? (
         <HubLoadError title="Chưa tải được combo" message="Tải lại để xem giá và ưu đãi đang mở." onRetry={() => void mutate().catch(() => undefined)} isRetrying={isValidating} />
-      ) : isLoading || !data ? <GridSkeleton label="Đang tải combo" cols={5} /> : items.length ? (
-        <ul aria-label="Combo lộ trình" className="user-card-grid">
+      ) : isLoading || !data ? <GridSkeleton label="Đang tải combo" /> : items.length ? (
+        <ul aria-label="Combo lộ trình" className="user-four-column-grid">
           {items.map((combo) => <ComboTile key={combo.id} combo={combo} />)}
         </ul>
       ) : (

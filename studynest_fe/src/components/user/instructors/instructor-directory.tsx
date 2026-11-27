@@ -6,19 +6,15 @@ import { useRouter, useSearchParams } from "next/navigation";
 import useSWR from "swr";
 import {
   ArrowUpRight,
-  Award,
   BookOpen,
   Calendar,
   Crown,
   Eye,
-  GraduationCap,
   Heart,
   RotateCcw,
   Search,
   SlidersHorizontal,
   Star,
-  Target,
-  Users,
   X,
 } from "pulsoicon-react";
 import { Badge, Button, Card, CoinPrice, EmptyState, Skeleton } from "@/components/ui";
@@ -503,200 +499,6 @@ const STRIP_TONES = [
   "border-secondary-pastel/70 bg-gradient-to-r from-secondary/25 via-surface to-surface hover:border-secondary-pastel",
 ] as const;
 
-function MentorDossierStrip({
-  instructor,
-  index,
-  isSpotlight,
-  isSaved,
-  isSaving,
-  isReady,
-  onToggleSave,
-  onSelectSpotlight,
-  onQuickView,
-}: {
-  instructor: InstructorItem;
-  index: number;
-  isSpotlight: boolean;
-  isSaved: boolean;
-  isSaving: boolean;
-  isReady: boolean;
-  onToggleSave: (id: string) => Promise<unknown>;
-  onSelectSpotlight: (id: string) => void;
-  onQuickView: (instructor: InstructorItem) => void;
-}) {
-  const [imgError, setImgError] = useState(false);
-  const gradeGroups = useMemo(() => summarizeGrades(instructor.grades), [instructor.grades]);
-  const sinceLabel = useMemo(() => formatSinceMonth(instructor.first_public_course_at), [instructor.first_public_course_at]);
-  const hasReviews = (instructor.rating_count > 0 || instructor.evaluated_count > 0) && instructor.rating_avg > 0;
-  const courseTotal = instructor.public_course_count ?? instructor.course_count ?? 0;
-
-  return (
-    <article
-      className={cn(
-        "group relative overflow-hidden rounded-[26px] border p-5 shadow-2xs transition-all duration-200 hover:shadow-md sm:p-6",
-        STRIP_TONES[index % STRIP_TONES.length],
-        isSpotlight && "ring-2 ring-primary/40",
-      )}
-    >
-      <div className="grid gap-5 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:items-center lg:gap-6">
-        {/* Số biên tập + Avatar tròn sắc nét */}
-        <div className="flex items-center gap-4">
-          <span
-            aria-hidden="true"
-            className="hidden w-12 select-none font-display text-4xl font-bold text-primary/25 sm:block"
-          >
-            {String(index + 1).padStart(2, "0")}
-          </span>
-          <Link
-            href={`/instructors/${instructor.id}`}
-            className="relative size-20 shrink-0 overflow-hidden rounded-full border-4 border-surface bg-primary-light shadow-sm ring-1 ring-primary-pastel"
-          >
-            {!instructor.avatar || imgError ? (
-              <div className="grid size-full place-items-center text-lg font-extrabold text-primary">
-                {instructor.name.slice(0, 2).toUpperCase()}
-              </div>
-            ) : (
-              <img
-                src={getImageUrl(instructor.avatar)}
-                alt={instructor.name}
-                loading="lazy"
-                className="size-full object-cover"
-                onError={() => setImgError(true)}
-              />
-            )}
-          </Link>
-        </div>
-
-        {/* Thông tin chuyên môn đầy đủ */}
-        <div className="min-w-0 space-y-2.5">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="font-display text-xl font-bold text-foreground group-hover:text-primary sm:text-2xl">
-              <Link href={`/instructors/${instructor.id}`}>{instructor.name}</Link>
-            </h3>
-            {sinceLabel && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-background px-2.5 py-0.5 text-[11px] font-semibold text-muted-foreground">
-                <Calendar className="size-3 text-primary" animated={false} aria-hidden="true" />
-                {sinceLabel}
-              </span>
-            )}
-          </div>
-
-          <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground sm:text-sm">
-            {instructor.short_bio || "Đồng hành cùng học sinh xây dựng nền tảng vững chắc và tư duy học tập chủ động."}
-          </p>
-
-          {/* Khối lớp + Môn học + Kỳ thi */}
-          <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-            {gradeGroups.map((g) => (
-              <span
-                key={g}
-                className="inline-flex items-center gap-1 rounded-full border border-primary-pastel bg-primary-light/80 px-2.5 py-0.5 text-[11px] font-bold text-primary"
-              >
-                <GraduationCap className="size-3" animated={false} aria-hidden="true" />
-                {g}
-              </span>
-            ))}
-            {instructor.subjects.slice(0, 5).map((sub) => (
-              <span
-                key={sub.id}
-                className="rounded-full border border-border bg-surface px-2.5 py-0.5 text-[11px] font-semibold text-foreground"
-              >
-                {sub.name}
-              </span>
-            ))}
-            {instructor.subjects.length > 5 && (
-              <span className="rounded-full bg-accent/70 px-2.5 py-0.5 text-[11px] font-bold text-accent-foreground">
-                +{instructor.subjects.length - 5} môn
-              </span>
-            )}
-            {instructor.exams?.slice(0, 2).map((ex) => (
-              <span
-                key={ex.id}
-                className="inline-flex items-center gap-1 rounded-full border border-accent-vanilla-border bg-accent-vanilla/70 px-2.5 py-0.5 text-[11px] font-bold text-accent-vanilla-foreground"
-              >
-                <Award className="size-3" animated={false} aria-hidden="true" />
-                {ex.name}
-              </span>
-            ))}
-            {instructor.learning_goals?.slice(0, 2).map((g) => (
-              <span
-                key={g.id}
-                className="inline-flex items-center gap-1 rounded-full border border-secondary-pastel bg-secondary/65 px-2.5 py-0.5 text-[11px] font-bold text-secondary-foreground"
-              >
-                <Target className="size-3" animated={false} aria-hidden="true" />
-                {g.name}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {/* Cột chỉ số & Hành động bên phải */}
-        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border/70 pt-4 lg:w-64 lg:flex-col lg:items-end lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6">
-          <div className="flex items-center gap-4 text-right">
-            <div>
-              <p className="text-lg font-extrabold text-primary tabular-nums">{courseTotal}</p>
-              <p className="text-[10px] font-semibold text-muted-foreground">Khóa học</p>
-            </div>
-            <div>
-              <p className="text-lg font-extrabold text-foreground tabular-nums">{instructor.student_count}</p>
-              <p className="text-[10px] font-semibold text-muted-foreground">Học viên</p>
-            </div>
-            <div>
-              <p className="inline-flex items-center gap-0.5 text-lg font-extrabold text-accent-vanilla-foreground tabular-nums">
-                <Star className="size-4" animated={false} solid={hasReviews} aria-hidden="true" />
-                {hasReviews ? instructor.rating_avg.toFixed(1) : "Mới"}
-              </p>
-              <p className="text-[10px] font-semibold text-muted-foreground">Đánh giá</p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-1.5">
-            <button
-              type="button"
-              disabled={isSaving || !isReady}
-              onClick={() => void onToggleSave(instructor.id).catch(() => undefined)}
-              aria-label={isSaved ? `Bỏ lưu ${instructor.name}` : `Lưu ${instructor.name}`}
-              aria-pressed={isSaved}
-              className={cn(
-                "grid size-9 place-items-center rounded-full border transition-colors cursor-pointer",
-                isSaved
-                  ? "border-secondary-pastel bg-secondary text-secondary-foreground"
-                  : "border-border bg-surface text-muted-foreground hover:border-secondary-pastel hover:text-secondary-foreground",
-              )}
-            >
-              <Heart className="size-4" solid={isSaved} aria-hidden="true" />
-            </button>
-            <button
-              type="button"
-              onClick={() => onSelectSpotlight(instructor.id)}
-              className="inline-flex h-9 items-center gap-1 rounded-full border border-border bg-surface px-3 text-xs font-bold text-foreground hover:border-primary-pastel hover:bg-primary-light hover:text-primary cursor-pointer"
-            >
-              <Crown className="size-3.5" animated={false} aria-hidden="true" />
-              <span>Tiêu điểm</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => onQuickView(instructor)}
-              className="inline-flex h-9 items-center gap-1 rounded-full border border-primary-pastel bg-primary-light px-3 text-xs font-bold text-primary hover:bg-primary hover:text-primary-foreground cursor-pointer"
-            >
-              <Eye className="size-3.5" animated={false} aria-hidden="true" />
-              <span>Khóa học</span>
-            </button>
-            <Link
-              href={`/instructors/${instructor.id}`}
-              className="inline-flex h-9 items-center gap-1 rounded-full bg-primary px-3.5 text-xs font-extrabold text-primary-foreground hover:bg-primary-hover"
-            >
-              <span>Hồ sơ</span>
-              <ArrowUpRight className="size-3.5" aria-hidden="true" />
-            </Link>
-          </div>
-        </div>
-      </div>
-    </article>
-  );
-}
-
-
 export function InstructorDirectory() {
   const router = useRouter();
   const current = useSearchParams();
@@ -707,7 +509,6 @@ export function InstructorDirectory() {
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [quickViewMentor, setQuickViewMentor] = useState<InstructorItem | null>(null);
   const [spotlightId, setSpotlightId] = useState<string | null>(null);
-  const spotlightRef = useRef<HTMLDetailsElement>(null);
 
   // Phân trang tải thêm (load more)
   const [extraState, setExtraState] = useState<{
@@ -1297,7 +1098,7 @@ export function InstructorDirectory() {
 
       {/* 2. INTERACTIVE MENTOR SPOTLIGHT STAGE (ĐỔI NGƯỜI TRỰC TIẾP + KHÓA HỌC SỐNG) */}
       {activeSpotlight && (
-        <details ref={spotlightRef} className="scroll-mt-24 rounded-2xl border border-border bg-surface">
+        <details className="scroll-mt-24 rounded-2xl border border-border bg-surface">
           <summary className="cursor-pointer rounded-xl px-4 py-3 text-sm font-semibold text-foreground focus-visible:ring-2 focus-visible:ring-ring">Giáo viên tiêu điểm</summary>
           <div className="p-3 pt-0 sm:p-4 sm:pt-0">
             <SpotlightStage
@@ -1315,12 +1116,11 @@ export function InstructorDirectory() {
         </details>
       )}
 
-      {/* 4. FULL-WIDTH EDITORIAL DOSSIER STRIPS */}
       <section aria-label="Danh sách hồ sơ giáo viên" aria-busy={isLoading} className="space-y-4">
         {isLoading && items.length === 0 ? (
-          <div role="status" className="space-y-4">
+          <div role="status" aria-label="Đang tải giảng viên" className="user-four-column-grid">
             {[1, 2, 3, 4].map((idx) => (
-              <Skeleton key={idx} className="h-36 rounded-[26px]" />
+              <Skeleton key={idx} className="h-64 rounded-[26px]" />
             ))}
           </div>
         ) : error && items.length === 0 ? (
@@ -1353,29 +1153,22 @@ export function InstructorDirectory() {
           />
         ) : (
           <>
-            <div className="space-y-4">
-              {items.map((instructor, idx) => (
-                <MentorDossierStrip
-                  key={instructor.id}
-                  instructor={instructor}
-                  index={idx}
-                  isSpotlight={spotlightId === instructor.id}
-                  isSaved={isSaved(instructor.id)}
-                  isSaving={isPending(instructor.id)}
-                  isReady={isReady}
-                  onToggleSave={toggleSave}
-                  onSelectSpotlight={(id) => {
-                    setSpotlightId(id);
-                    const spotlight = spotlightRef.current;
-                    if (spotlight) {
-                      spotlight.open = true;
-                      spotlight.scrollIntoView({ block: "start" });
-                    }
-                  }}
-                  onQuickView={setQuickViewMentor}
-                />
+            <ul className="user-four-column-grid">
+              {items.map((instructor, index) => (
+                <li key={instructor.id} className="min-w-0">
+                  <InstructorCard
+                    instructor={instructor}
+                    accentIndex={index}
+                    variant="compact"
+                    isSaved={isSaved(instructor.id)}
+                    isSaving={isPending(instructor.id)}
+                    isReady={isReady}
+                    onToggleSave={toggleSave}
+                    onQuickView={setQuickViewMentor}
+                  />
+                </li>
               ))}
-            </div>
+            </ul>
 
             {nextCursor && (
               <div className="mt-8 flex flex-col items-center justify-center gap-3">

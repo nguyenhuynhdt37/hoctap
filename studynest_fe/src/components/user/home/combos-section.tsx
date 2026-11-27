@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, ArrowUpRight, BookOpen, Layers, ThumbsUp, X } from "pulsoicon-react";
+import { ArrowRight, ArrowUpRight, BookOpen, Layers, X } from "pulsoicon-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
@@ -13,7 +13,7 @@ import { CloudBlob, GlassCard, IconBubble, Pill, Reveal, SectionHeader, SectionS
 import { mayPortrait, pathCover, StudyImage } from "./study-image";
 
 const title = "Combo lộ trình học";
-const limit = 3;
+const limit = 4;
 const levelLabels: Record<ComboLevel, string> = {
   "tieu-hoc": "Tiểu học",
   thcs: "THCS",
@@ -26,22 +26,7 @@ const focusRing = "focus-visible:outline-none focus-visible:ring-2 focus-visible
 const action = cn("inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors motion-reduce:transition-none", focusRing);
 const button = "min-h-11 rounded-full motion-reduce:transition-none motion-reduce:active:translate-y-0";
 const gallery = "relative isolate overflow-hidden rounded-[1.35rem] border border-primary-pastel/70 bg-linear-to-br from-primary-light via-background to-accent/60";
-const featuredGallery = "h-52 sm:h-64 md:h-full md:min-h-64 lg:h-64";
-const compactGallery = "h-36 sm:h-40 lg:h-full lg:min-h-48";
-const leadSpan = "md:col-span-2 lg:col-span-1";
-const cardContent = "flex min-w-0 flex-col justify-center px-2 pb-2";
-const featuredContent = "min-h-64 px-3 pt-2 sm:px-4 md:py-3";
-const compactContent = "min-h-48 lg:py-1.5";
-
-function cardLayout(featured: boolean, only: boolean) {
-  return cn(
-    "grid min-w-0 gap-3 p-2.5",
-    featured
-      ? "md:grid-cols-[minmax(0,1fr)_minmax(0,0.92fr)] md:p-3 lg:px-3.5"
-      : "lg:grid-cols-[minmax(0,1fr)_minmax(8.5rem,0.58fr)] lg:gap-2.5",
-    featured && !only && "lg:grid-cols-1",
-  );
-}
+const cardLayout = "flex h-full min-w-0 flex-col gap-3 p-3";
 
 async function fetchCombos(url: string): Promise<CatalogCombosResponse> {
   const response = await fetch(url, {
@@ -86,7 +71,7 @@ function AllCombos() {
 
 function ComboShelf({ cards }: { cards: ReactNode[] }) {
   return (
-    <div className="grid min-w-0 grid-cols-1 items-stretch gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div className="user-four-column-grid">
       {cards}
     </div>
   );
@@ -99,7 +84,7 @@ const thumbnailPositions = [
   "left-[51%] top-[32%] z-10 rotate-12",
 ];
 
-function ThumbnailStack({ combo, featured }: { combo: CatalogCombo; featured: boolean }) {
+function ThumbnailStack({ combo }: { combo: CatalogCombo }) {
   const cover = { id: combo.id, title: combo.title, thumbnail: combo.thumbnail };
   const previews = combo.thumbnail || !combo.courses.length
     ? [cover, ...combo.courses.slice(0, 3)]
@@ -107,21 +92,16 @@ function ThumbnailStack({ combo, featured }: { combo: CatalogCombo; featured: bo
   const savings = Number(combo.savings_amount);
 
   return (
-    <div className={cn(gallery, featured ? featuredGallery : compactGallery)}>
+    <div className={cn(gallery, "aspect-video")}>
       <CloudBlob className="left-1/3 top-4 h-24 w-40" />
       <div aria-hidden="true" className="absolute left-[17%] top-[8%] aspect-square w-[66%] rounded-full border border-surface/80 bg-surface/30" />
       <div aria-hidden="true" className="absolute -bottom-9 right-[9%] size-28 rounded-full border border-primary-pastel/60" />
       <div aria-hidden="true" className="absolute right-[15%] top-[14%] size-2.5 rounded-full bg-primary-pastel" />
       {previews.map((preview, index) => (
-        <div key={preview.id} className={cn("absolute aspect-[8/5] w-[38%] overflow-hidden rounded-lg border-2 border-surface bg-primary-light shadow-xl sm:rounded-xl", !featured && "lg:aspect-[5/7]", thumbnailPositions[index])}>
+        <div key={preview.id} className={cn("absolute aspect-[8/5] w-[38%] overflow-hidden rounded-lg border-2 border-surface bg-primary-light shadow-xl sm:rounded-xl", thumbnailPositions[index])}>
           <StudyImage src={preview.thumbnail} alt={`Ảnh bìa ${preview.title}`} sizes="(min-width: 1024px) 220px, (min-width: 768px) 15vw, 36vw" fallback={index % 2 ? mayPortrait : pathCover} className="size-full rounded-none" />
         </div>
       ))}
-      {featured && (
-        <Pill className="absolute bottom-2.5 left-2.5 z-40 bg-surface/95 text-info-foreground shadow-md sm:bottom-4 sm:left-4">
-          <ThumbsUp className="size-3.5 shrink-0" aria-hidden="true" /> Đề xuất
-        </Pill>
-      )}
       {savings > 0 && (
         <Pill tone="lavender" className="absolute right-2.5 top-2.5 z-40 shadow-md sm:right-4 sm:top-4">
           {combo.savings_percent > 0
@@ -133,7 +113,7 @@ function ThumbnailStack({ combo, featured }: { combo: CatalogCombo; featured: bo
   );
 }
 
-function ComboCard({ combo, featured, only }: { combo: CatalogCombo; featured: boolean; only: boolean }) {
+function ComboCard({ combo }: { combo: CatalogCombo }) {
   const duration = combo.duration_seconds > 0 && combo.duration_seconds < 360
     ? "< 0,1"
     : hours.format(combo.duration_seconds / 3600);
@@ -142,37 +122,33 @@ function ComboCard({ combo, featured, only }: { combo: CatalogCombo; featured: b
   return (
     <GlassCard
       as="article"
-      className={cn(cardLayout(featured, only), "motion-reduce:hover:translate-y-0")}
+      className={cardLayout}
     >
-      <div className={cn("min-w-0", !featured && "lg:order-last")}>
-        <ThumbnailStack combo={combo} featured={featured} />
-      </div>
-      <div className={cn(cardContent, featured ? featuredContent : compactContent)}>
+      <ThumbnailStack combo={combo} />
+      <div className="flex min-w-0 flex-1 flex-col gap-2 px-1">
         {labels.length > 0 && <p className="mb-2 line-clamp-1 wrap-anywhere text-xs font-medium text-muted-foreground">{labels.join(" · ")}</p>}
-        <h3 className={cn("line-clamp-2 wrap-anywhere font-semibold leading-snug text-foreground", featured ? "text-xl sm:text-2xl" : "text-base")}>
+        <h3 className="line-clamp-2 text-base leading-snug font-semibold wrap-anywhere text-foreground">
           {combo.title}
         </h3>
         <p className="mt-1 line-clamp-1 wrap-anywhere text-xs text-muted-foreground sm:text-sm">{combo.instructor.name}</p>
-        <p className={cn("mt-2 wrap-anywhere text-sm leading-relaxed text-muted-foreground", featured ? "line-clamp-2" : "line-clamp-1")}>
+        <p className="line-clamp-2 text-sm leading-relaxed wrap-anywhere text-muted-foreground">
           {combo.description}
         </p>
         <p className="mt-3 text-xs font-semibold leading-relaxed text-info-foreground">
           {number.format(combo.course_count)} khóa học · {number.format(combo.lesson_count)} bài học · {duration} giờ
         </p>
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-t border-border pt-3">
+        <div className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
           <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
             <CoinPrice
               priceVnd={combo.price}
               originalPriceVnd={Number(combo.savings_amount) > 0 ? combo.standalone_total : undefined}
-              size={featured ? "lg" : "md"}
+              size="md"
             />
           </div>
           <Link
             href={`/combo/${encodeURIComponent(combo.slug)}`}
             aria-label={`Xem combo ${combo.title}`}
-            className={cn(action, featured
-              ? "bg-primary text-primary-foreground hover:bg-primary-hover"
-              : "border border-primary-pastel bg-primary-light text-info-foreground hover:bg-primary-pastel")}
+            className={cn(action, "border border-primary-pastel bg-primary-light text-info-foreground hover:bg-primary-pastel")}
           >
             Xem combo <ArrowUpRight className="size-4 shrink-0" aria-hidden="true" />
           </Link>
@@ -185,15 +161,14 @@ function ComboCard({ combo, featured, only }: { combo: CatalogCombo; featured: b
 function ComboSkeleton({ count = limit }: { count?: number }) {
   return (
     <ComboShelf cards={Array.from({ length: count }, (_, index) => {
-      const featured = index === 0;
       return (
-        <GlassCard key={index} tilt={false} aria-hidden="true" className={cn(cardLayout(featured, count === 1), featured && count > 1 && leadSpan)}>
-          <div className={cn(gallery, featured ? featuredGallery : cn(compactGallery, "lg:order-last"))}>
+        <GlassCard key={index} tilt={false} aria-hidden="true" className={cardLayout}>
+          <div className={cn(gallery, "aspect-video")}>
             <Skeleton className="absolute left-[14%] top-[31%] aspect-[8/5] w-[38%] -rotate-12 border-2 border-surface shadow-md motion-reduce:animate-none" />
             <Skeleton className="absolute right-[14%] top-[24%] aspect-[8/5] w-[38%] rotate-6 border-2 border-surface shadow-md motion-reduce:animate-none" />
             <Skeleton className="absolute left-[27%] top-[27%] aspect-[8/5] w-[38%] -rotate-6 border-2 border-surface shadow-md motion-reduce:animate-none" />
           </div>
-          <div className={cn(cardContent, "gap-3.5", featured ? featuredContent : compactContent)}>
+          <div className="min-w-0 space-y-3.5 px-1">
             <Skeleton className="h-5 w-24 rounded-full motion-reduce:animate-none" />
             <Skeleton variant="text" className="w-4/5 motion-reduce:animate-none" />
             <Skeleton variant="text" className="w-3/5 motion-reduce:animate-none" />
@@ -372,8 +347,8 @@ function CombosResults({ embedded, currentCourse }: { embedded: boolean; current
         </ComboStatus>
       ) : (
         <ComboShelf cards={items.map((combo, index) => (
-          <Reveal key={combo.id} delay={index * 0.08} className={cn("min-w-0", index === 0 && items.length > 1 && leadSpan)}>
-            <ComboCard combo={combo} featured={index === 0} only={items.length === 1} />
+          <Reveal key={combo.id} delay={index * 0.08} className="min-w-0">
+            <ComboCard combo={combo} />
           </Reveal>
         ))} />
       )}

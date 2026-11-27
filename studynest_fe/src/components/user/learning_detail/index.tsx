@@ -533,7 +533,7 @@ function LearningDetail(props: LearningDetailProps) {
     )?.title || "";
 
   return (
-    <div className="mx-auto flex h-dvh w-full max-w-[90rem] min-w-0 flex-col overflow-hidden bg-background px-3 sm:px-5 xl:px-7">
+    <div data-learning-workspace className="flex h-dvh w-full min-w-0 flex-col overflow-hidden bg-background">
       <LearningHeader
         courseTitle={curriculumData.title}
         courseId={courseData.id}
@@ -546,11 +546,11 @@ function LearningDetail(props: LearningDetailProps) {
       />
 
       {/* Main Layout */}
-      <div className="flex min-h-0 w-full min-w-0 flex-1 gap-3 py-2">
+      <div className="relative isolate flex min-h-0 w-full min-w-0 flex-1">
         {/* Khu vực bài học */}
         <div
           data-learning-lesson
-          className={`min-w-0 flex-1 overflow-x-hidden rounded-2xl border border-border bg-surface/80 ${
+          className={`min-w-0 flex-1 overflow-x-hidden bg-surface/80 ${
             initialActiveLesson?.lesson_type === "code" ||
             initialActiveLesson?.lesson_type === "quiz"
               ? "overflow-y-auto lg:flex lg:flex-col lg:overflow-hidden"
@@ -696,8 +696,6 @@ function LearningDetail(props: LearningDetailProps) {
           )}
           completedLessons={curriculumData.completed_lessons || 0}
           totalLessons={curriculumData.total_lessons || 0}
-          headerHeightPx={64}
-          footerHeightPx={64}
         />
       </div>
 
