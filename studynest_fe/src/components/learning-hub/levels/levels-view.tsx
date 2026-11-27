@@ -143,7 +143,7 @@ export function LevelsView() {
         ) : (
           <div role="status" aria-label="Đang tải cấp độ" className="space-y-4">
             <Skeleton className="h-72 rounded-[2rem] motion-reduce:animate-none" />
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {[1, 2, 3, 4, 5, 6].map((k) => (
                 <Skeleton key={k} className="h-36 rounded-2xl motion-reduce:animate-none" />
               ))}

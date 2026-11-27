@@ -430,7 +430,7 @@ export function QuestArenaView() {
               Chưa có nhiệm vụ hằng ngày nào được giao.
             </p>
           ) : (
-            <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {dailyMissions.map((mission) => (
                 <MissionQuestCard
                   key={mission.id}
@@ -586,7 +586,7 @@ export function QuestArenaView() {
                     </div>
                   </div>
 
-                  <div className="mt-4 grid grid-cols-1 gap-3.5 md:grid-cols-2">
+                  <div className="mt-4 grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     {group.missions.map((mission) => (
                       <MissionQuestCard
                         key={mission.id}

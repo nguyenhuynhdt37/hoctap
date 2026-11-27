@@ -189,26 +189,56 @@ async def knowledge(ctx, args):
 
 
 async def course(ctx, args):
+    from app.db.models.database import CourseEnrollments
     from app.services.catalog import CatalogService, public_course
     value = await ctx.db.scalar(select(Courses).where(Courses.id == args.course_id, public_course()))
     if value is None:
         raise HTTPException(404, "Không tìm thấy khóa học công khai")
-    return {"id": str(value.id), "slug": value.slug, "url_path": f"/courses/{value.slug}", "learning_path": f"/learning/{value.slug}", "title": value.title, "description": (value.description or "")[:7000],
+    enrolled = bool(
+        await ctx.db.scalar(
+            select(CourseEnrollments.id).where(
+                CourseEnrollments.user_id == ctx.user.id,
+                CourseEnrollments.course_id == value.id,
+                CourseEnrollments.status == "active",
+            ).limit(1)
+        )
+    )
+    return {"id": str(value.id), "slug": value.slug, "is_enrolled": enrolled,
+            "url_path": f"/course/{value.slug}", "learning_path": f"/learning/{value.slug}",
+            "recommended_path": f"/learning/{value.slug}" if enrolled else f"/course/{value.slug}",
+            "title": value.title, "description": (value.description or "")[:7000],
             "outcomes": value.outcomes or [], "requirements": value.requirements or [],
             "target_audience": value.target_audience or [], "price": str(value.base_price),
             "currency": value.currency, "taxonomy": await CatalogService(ctx.db).course_taxonomy(value.id)}
 
 
 async def courses(ctx, args):
+    from app.db.models.database import CourseEnrollments
     from app.schemas.catalog import CatalogFilters
     from app.services.catalog import CatalogService
-    filters = CatalogFilters(keyword=args.query, grade=args.grade, subject=args.subject, max_price=args.max_price, limit=5)
+    filters = CatalogFilters(keyword=args.query, grade=args.grade, subject=args.subject, max_price=args.max_price, limit=8)
     res = await CatalogService(ctx.db).courses(filters)
     if isinstance(res, dict) and isinstance(res.get("items"), list):
+        enrolled_ids = {
+            str(cid)
+            for cid in (
+                await ctx.db.scalars(
+                    select(CourseEnrollments.course_id).where(
+                        CourseEnrollments.user_id == ctx.user.id,
+                        CourseEnrollments.status == "active",
+                    )
+                )
+            ).all()
+        }
         for item in res["items"]:
             if isinstance(item, dict) and item.get("slug"):
-                item["url_path"] = f"/courses/{item['slug']}"
+                is_enrolled = str(item.get("id") or "") in enrolled_ids
+                item["is_enrolled"] = is_enrolled
+                item["url_path"] = f"/course/{item['slug']}"
                 item["learning_path"] = f"/learning/{item['slug']}"
+                item["recommended_path"] = (
+                    f"/learning/{item['slug']}" if is_enrolled else f"/course/{item['slug']}"
+                )
     return res
 
 
@@ -482,7 +512,7 @@ from app.agent.workspace_mcp import BrowserTarget, BrowserFill, BrowserScroll, B
 for tool in [
     ToolDefinition('mcp.browser_snapshot','Đọc DOM, danh sách điều khiển và đường dẫn (href) đang hiển thị trên màn hình. Dùng trước khi nhấn nút, khoanh vùng highlight hoặc cuộn tới phần tử; không đọc desktop/cookie/iframe khác nguồn.',Empty,client=True),
     ToolDefinition('mcp.browser_click','Nhấn điều khiển hiển thị theo snapshot_id/target_id vừa đọc khi người dùng yêu cầu. Không dùng cho thanh toán, xóa, nộp bài hoặc đổi tài khoản.',BrowserTarget,risk='navigation',requires_approval=False,client=True),
-    ToolDefinition('mcp.browser_navigate','Điều hướng trực tiếp màn hình tới một đường dẫn nội bộ (ví dụ /courses/<slug>, /learning/<slug>, /courses, /dashboard) khi người dùng yêu cầu mở/truy cập trang hoặc khóa học.',BrowserNavigate,risk='navigation',requires_approval=False,client=True),
+    ToolDefinition('mcp.browser_navigate','Điều hướng trực tiếp màn hình tới một đường dẫn nội bộ hợp lệ (ví dụ /course/<slug> cho khóa chưa mua, /learning/<slug> cho khóa đã mua, /courses, /my-learning, /learning-paths/my, /combo, /missions, /wallets). Luôn dùng đúng slug có trong context hoặc kết quả catalog.search_courses, không tự bịa slug hay dùng /courses/<slug>.',BrowserNavigate,risk='navigation',requires_approval=False,client=True),
     ToolDefinition('mcp.browser_fill','Điền trường văn bản không nhạy cảm theo ID vừa đọc; cần xác nhận, không tự gửi form.',BrowserFill,risk='write',requires_approval=True,client=True),
     ToolDefinition('mcp.browser_scroll','Cuộn màn hình học tập lên/xuống/đầu/cuối hoặc cuộn mượt tới một target_id trong snapshot hiện tại.',BrowserScroll,risk='navigation',requires_approval=False,client=True),
     ToolDefinition('mcp.browser_highlight','Khoanh vùng sáng (Telekinesis Spotlight) và gắn chú thích trực tiếp lên phần tử target_id trên màn hình để chỉ điểm cho học viên.',BrowserHighlight,risk='navigation',requires_approval=False,client=True),

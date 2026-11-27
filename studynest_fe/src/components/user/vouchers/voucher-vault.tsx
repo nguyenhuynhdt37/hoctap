@@ -550,7 +550,7 @@ export function VoucherVault() {
 
         {/* DANH SÁCH VOUCHER */}
         {isLoading ? (
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {[0, 1, 2, 3].map((idx) => (
               <Skeleton key={idx} className="h-44 rounded-[26px] motion-reduce:animate-none" />
             ))}
@@ -603,7 +603,7 @@ export function VoucherVault() {
             }
           />
         ) : (
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filteredItems.map((item) => (
               <VoucherTicketCard
                 key={`${item.source}-${item.id}`}
