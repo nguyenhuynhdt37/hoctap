@@ -278,40 +278,18 @@ const CourseDetail = () => {
         try {
           const checkoutResponse = await api.post<{
             message: string;
-            is_free: boolean;
-            transaction_id: string | null;
-            total_paid: string;
             coin_cashback_bonus?: number;
-            items: Array<{
-              course_id: string;
-              price: string;
-              discount_amount: string;
-              applied_discount: boolean;
-            }>;
           }>("/user/transaction/courses/checkout", checkoutPayload);
 
           if (checkoutResponse.status === 200 && checkoutResponse.data) {
-            const { is_free, transaction_id, message, coin_cashback_bonus } = checkoutResponse.data;
+            const { message, coin_cashback_bonus } = checkoutResponse.data;
             const successMsg =
               coin_cashback_bonus && coin_cashback_bonus > 0
                 ? `Thanh toán thành công! Bạn được hoàn +${coin_cashback_bonus} Coin trắng (20%) cho lần mua tiếp theo.`
                 : message || "Thanh toán thành công!";
             showToast.success(successMsg);
 
-            if (is_free) {
-              setTimeout(() => {
-                router.push(`/learning/${courseSlug}`);
-              }, 1500);
-            } else if (transaction_id) {
-              const params = new URLSearchParams({
-                status: "success", order_id: transaction_id, redirect: `/learning/${courseSlug}`,
-              });
-              router.push(`/transaction?${params}`);
-            } else {
-              setTimeout(() => {
-                router.push(`/learning/${courseSlug}`);
-              }, 1500);
-            }
+            router.replace(`/learning/${courseSlug}`);
             return;
           }
         } catch (checkoutError: any) {

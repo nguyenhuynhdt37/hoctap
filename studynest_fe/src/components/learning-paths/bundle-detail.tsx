@@ -25,11 +25,12 @@ import {
 import { sanitizeRedirect } from "@/lib/auth/safe-redirect";
 import { safeUUID } from "@/lib/utils/uuid";
 import { cn } from "@/lib/utils";
+import { showToast } from "@/lib/utils/helpers/toast";
 import api from "@/lib/utils/fetcher/client/axios";
 import { Badge, Button, CoinPrice, Input, Modal } from "@/components/ui";
 import MarkdownRenderer from "@/components/shared/markdown-renderer";
 import { useUserStore } from "@/stores/user";
-import type { Bundle, BundleQuote, BundleReceipt } from "@/types/learning-paths";
+import type { Bundle, BundleQuote } from "@/types/learning-paths";
 import { fetchLearning, LoadError, Loading, message } from "./shared";
 
 function cleanTitle(title: string): string {
@@ -68,8 +69,10 @@ export default function BundleDetail({ slug }: { slug: string }) {
   const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState("");
+  const [purchasedVersionId, setPurchasedVersionId] = useState<string | null>(null);
   const confirmation = useRef<HTMLDivElement>(null);
   const identity = useRef<{ hash: string; key: string } | null>(null);
+  const purchased = purchasedVersionId === data?.id;
 
   function open() {
     if (!user) {
@@ -99,7 +102,7 @@ export default function BundleDetail({ slug }: { slug: string }) {
   }
 
   async function purchase() {
-    if (!data || !quote || busy || isValidating) return;
+    if (!data || !quote || busy || isValidating || purchased) return;
     setBusy(true);
     setFailure("");
     try {
@@ -117,7 +120,7 @@ export default function BundleDetail({ slug }: { slug: string }) {
           sessionStorage.setItem(storageKey, identity.current.key);
         } catch {}
       }
-      const { data: receipt } = await api.post<BundleReceipt>(
+      await api.post(
         "/bundles/checkout",
         {
           version_id: data.id,
@@ -127,7 +130,10 @@ export default function BundleDetail({ slug }: { slug: string }) {
         },
         { timeout: 30000 },
       );
-      router.push(`/combo/orders/${receipt.id}`);
+      setPurchasedVersionId(data.id);
+      setConfirm(false);
+      showToast.success("Thanh toán thành công! Bạn có thể bắt đầu học.");
+      void refreshQuote().catch(() => undefined);
     } catch (err) {
       setFailure(message(err));
       setConfirm(false);
@@ -477,7 +483,14 @@ export default function BundleDetail({ slug }: { slug: string }) {
           </div>
 
           <div className="space-y-5 p-5 sm:p-6">
-            {quoteError ? (
+            {purchased ? (
+              <Link
+                href="/my-learning"
+                className="inline-flex min-h-12 w-full items-center justify-center rounded-full bg-primary px-4 text-sm font-extrabold text-primary-foreground shadow-sm transition hover:bg-primary-hover"
+              >
+                Vào khóa học của tôi
+              </Link>
+            ) : quoteError ? (
               <LoadError error={quoteError} retry={() => refreshQuote()} />
             ) : !quote ? (
               <p role="status" className="text-sm text-muted-foreground">

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   AlignRight,
   Archive,
+  ArrowLeft,
   ArrowRight,
   Bell,
   BookOpen,
@@ -22,6 +23,7 @@ import {
   Share2,
   Star,
 } from "pulsoicon-react";
+import { Button } from "@/components/ui/button";
 import api from "@/lib/utils/fetcher/client/axios";
 import { getImageUrl } from "@/lib/utils/helpers/image";
 import { showToast } from "@/lib/utils/helpers/toast";
@@ -194,23 +196,17 @@ export default function LearningHeader({
     <header className="sticky top-0 z-30 h-16 shrink-0 border-b border-primary-pastel/70 bg-surface/90 shadow-xs backdrop-blur-xl">
       <div className="flex h-full items-center justify-between gap-2 px-3 sm:gap-4 sm:px-6">
         <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3.5">
-          <button
-            type="button"
+          <Button
+            variant="pastel"
+            size="sm"
             onClick={() => router.push("/my-learning")}
-            aria-label="Về khóa học của tôi"
-            className="flex shrink-0 cursor-pointer items-center gap-2 rounded-full border border-primary-pastel/70 bg-primary-light/70 py-1.5 pr-3 pl-2 transition-colors hover:bg-primary-light"
+            aria-label="Quay lại khóa học của tôi"
+            title="Quay lại khóa học của tôi"
+            leftIcon={<ArrowLeft className="size-4" aria-hidden="true" />}
+            className="shrink-0 rounded-full px-2.5 sm:px-3"
           >
-            <img
-              src="/logo/studynest-logo.svg"
-              alt="Mây Mây"
-              width={22}
-              height={22}
-              className="size-5"
-            />
-            <span className="hidden text-sm font-extrabold tracking-tight text-primary sm:inline">
-              Mây Mây
-            </span>
-          </button>
+            <span className="hidden sm:inline">Quay lại</span>
+          </Button>
 
           <div className="min-w-0 flex-1">
             <h1 className="truncate font-display text-sm font-bold text-foreground sm:text-base">

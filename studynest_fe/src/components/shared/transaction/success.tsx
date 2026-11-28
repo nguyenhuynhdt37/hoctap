@@ -162,7 +162,7 @@ export default function Success({
             />
           </div>
 
-          {/* Phần dưới: Thông tin đối chiếu & Đếm ngược sang biên lai */}
+          {/* Thông tin giao dịch và đếm ngược quay lại */}
           <div className="space-y-5 px-6 pb-7 pt-5 sm:px-8">
             <div className="grid grid-cols-2 gap-3 rounded-2xl border border-border bg-background/75 p-4 text-xs">
               <div>
@@ -225,11 +225,10 @@ export default function Success({
               )}
             </div>
 
-            {/* Thanh đếm ngược tự động chuyển sang biên lai */}
             <div className="space-y-2 rounded-2xl border border-primary-pastel/70 bg-primary-light/45 px-4 py-3">
               <div className="flex items-center justify-between gap-2 text-xs">
                 <span className="inline-flex items-center gap-1.5 font-semibold text-primary">
-                  <Receipt
+                  <ArrowLeft
                     aria-hidden="true"
                     animated={false}
                     className="size-3.5"
@@ -237,7 +236,7 @@ export default function Success({
                   <span>
                     {paused
                       ? "Đã tạm dừng chuyển tự động"
-                      : `Tự động mở biên lai chi tiết sau ${secondsLeft} giây...`}
+                      : `Tự động quay lại sau ${secondsLeft} giây…`}
                   </span>
                 </span>
                 <button
@@ -274,20 +273,21 @@ export default function Success({
             {/* Cụm nút điều hướng */}
             <div className="flex flex-col gap-2.5 sm:flex-row">
               <Link
-                href={receiptHref}
+                href={redirectHref}
+                replace
                 className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-xs font-bold text-primary-foreground shadow-sm transition hover:bg-primary-hover"
               >
-                <Receipt aria-hidden="true" className="size-4" />
-                <span>Xem biên lai ngay</span>
-                <ArrowRight aria-hidden="true" className="size-4" />
+                <ArrowLeft aria-hidden="true" className="size-4" />
+                <span>Quay lại ngay</span>
               </Link>
 
               <Link
-                href={redirectHref}
+                href={receiptHref}
                 className="inline-flex items-center justify-center gap-1.5 rounded-full border border-border bg-surface px-4 py-3 text-xs font-bold text-foreground transition hover:border-primary-pastel hover:bg-primary-light hover:text-primary"
               >
-                <ArrowLeft aria-hidden="true" className="size-3.5" />
-                <span>Quay lại Ví</span>
+                <Receipt aria-hidden="true" className="size-3.5" />
+                <span>Xem biên lai</span>
+                <ArrowRight aria-hidden="true" className="size-3.5" />
               </Link>
             </div>
           </div>

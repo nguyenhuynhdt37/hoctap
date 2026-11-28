@@ -78,18 +78,17 @@ const Transaction = () => {
     ? `/wallets/transactions/${resolvedTxId}`
     : "/wallets/transactions";
 
-  // Đếm ngược chuyển sang trang biên lai chi tiết (chỉ chạy sau khi tra cứu xong & không bị tạm dừng)
   useEffect(() => {
-    if (status !== "success" || paused || loadingTx) return;
+    if (status !== "success" || paused) return;
     if (secondsLeft <= 0) {
-      router.push(receiptHref);
+      router.replace(redirectUrl);
       return;
     }
     const timer = window.setTimeout(() => {
       setSecondsLeft((prev) => prev - 1);
     }, 1000);
     return () => window.clearTimeout(timer);
-  }, [status, paused, loadingTx, secondsLeft, receiptHref, router]);
+  }, [status, paused, secondsLeft, redirectUrl, router]);
 
   if (status === "success") {
     return (

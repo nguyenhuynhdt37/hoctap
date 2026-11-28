@@ -383,48 +383,13 @@ export default function CourseSidebar({
         try {
           const checkoutResponse = await api.post<{
             message: string;
-            is_free: boolean;
-            transaction_id: string | null;
-            total_paid: string;
-            items: Array<{
-              course_id: string;
-              price: string;
-              discount_amount: string;
-              applied_discount: boolean;
-            }>;
           }>("/user/transaction/courses/checkout", checkoutPayload);
 
           if (checkoutResponse.status === 200 && checkoutResponse.data) {
-            const { is_free, transaction_id, message } = checkoutResponse.data;
+            const { message } = checkoutResponse.data;
             showToast.success(message || "Thanh toán thành công! 🎉");
 
-            const redirectToLearning = () => {
-              if (typeof window !== "undefined") {
-                window.location.replace(`/learning/${courseSlug}`);
-              } else {
-                router.replace(`/learning/${courseSlug}`);
-              }
-            };
-
-            if (is_free) {
-              setTimeout(() => {
-                redirectToLearning();
-              }, 1500);
-            } else if (transaction_id) {
-              const params = new URLSearchParams({
-                status: "success", order_id: transaction_id, redirect: `/learning/${courseSlug}`,
-              });
-              const redirectUrl = `/transaction?${params}`;
-              if (typeof window !== "undefined") {
-                window.location.replace(redirectUrl);
-              } else {
-                router.replace(redirectUrl);
-              }
-            } else {
-              setTimeout(() => {
-                redirectToLearning();
-              }, 1500);
-            }
+            router.replace(`/learning/${courseSlug}`);
             return;
           }
         } catch (checkoutError: any) {
