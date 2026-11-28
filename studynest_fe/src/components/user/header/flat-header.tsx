@@ -1,7 +1,7 @@
 "use client";
 
 import { EmblemIcon, FramedAvatar } from "@/components/learning-hub/shop/item-art";
-import { Button, Modal } from "@/components/ui";
+import { Button } from "@/components/ui";
 import { logoutEverywhere } from "@/lib/auth/logout";
 import { useHubAuthStatus } from "@/lib/learning-hub/hooks";
 import { useLearnerEquipment } from "@/lib/learning-hub/shop-hooks";
@@ -14,10 +14,11 @@ import type { User } from "@/types/user/user";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { LayoutGrid, Search } from "pulsoicon-react";
-import { useEffect, useId, useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
-import { NotificationButton } from "./notification";
 import { SkyPanel } from "./compact-panel";
+import { NotificationButton } from "./notification";
+import { useFocusTrap } from "./use-focus-trap";
 
 const focusRing = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface";
 
@@ -47,10 +48,31 @@ function UserHeader({ pathname }: { pathname: string }) {
   const unread = useRealtimeNotiStore((state) => state.buckets.USER?.unread ?? 0);
   const authStatus = useHubAuthStatus();
   const panelId = useId();
+  const drawerRef = useRef<HTMLElement>(null);
   const [mode, setMode] = useState<"map" | "search" | null>(null);
   const [keyword, setKeyword] = useState("");
 
   useEffect(() => setMode(null), [pathname]);
+
+  useFocusTrap(drawerRef, Boolean(mode));
+
+  // Đóng sidebar bằng phím Escape & khóa cuộn nền khi đang mở
+  useEffect(() => {
+    if (!mode) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMode(null);
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [mode]);
 
   const viewer: Viewer = {
     signedIn: Boolean(user),
@@ -148,20 +170,43 @@ function UserHeader({ pathname }: { pathname: string }) {
       </div>
 
       {mode && createPortal(
-        <Modal open onClose={close} size="xl" title="Tiện ích" className="max-h-[85dvh]" bodyClassName="overscroll-contain p-3.5 sm:p-5">
-          <SkyPanel
-            id={panelId}
-            viewer={viewer}
-            pathname={pathname}
-            unread={unread}
-            focusSearch={mode === "search"}
-            keyword={keyword}
-            onKeyword={setKeyword}
-            onSearch={handleSearch}
-            onNavigate={close}
-            onLogout={handleLogout}
+        <div className="fixed inset-0 z-50 flex justify-end">
+          {/* Backdrop mờ nhẹ giống Lecturer Shell */}
+          <button
+            type="button"
+            aria-label="Đóng bảng tiện ích"
+            onClick={close}
+            className="fixed inset-0 bg-foreground/25 backdrop-blur-xs transition-opacity"
           />
-        </Modal>,
+
+          {/* Cloudy Sky Dynamic Sidebar Drawer */}
+          <aside
+            ref={drawerRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Tiện ích"
+            tabIndex={-1}
+            className="relative z-10 flex h-dvh w-full max-w-[21rem] flex-col overflow-hidden border-l border-primary-pastel/75 bg-gradient-to-b from-primary-light/80 via-surface/95 to-secondary-light/45 text-foreground shadow-2xl sm:w-[21.5rem] animate-in slide-in-from-right duration-200 motion-reduce:animate-none"
+          >
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -top-10 -right-10 h-36 w-36 rounded-full bg-primary-pastel/50 blur-2xl"
+            />
+            <SkyPanel
+              id={panelId}
+              viewer={viewer}
+              pathname={pathname}
+              unread={unread}
+              focusSearch={mode === "search"}
+              keyword={keyword}
+              userName={user?.fullname}
+              onKeyword={setKeyword}
+              onSearch={handleSearch}
+              onNavigate={close}
+              onLogout={handleLogout}
+            />
+          </aside>
+        </div>,
         document.body,
       )}
     </header>
