@@ -121,6 +121,36 @@ def pick_persona_voice(persona: dict[str, Any] | None) -> VoiceName:
     return "Tina"
 
 
+DEFAULT_REALTIME_MODEL = "qwen3.8-omni-flash-realtime"
+DEFAULT_ASR_MODEL = "qwen3-asr-flash-realtime"
+DEFAULT_CHAT_MODEL = "qwen3.8-omni-flash"
+
+
+def resolve_realtime_model(configured: str | None) -> str:
+    """Chuẩn hóa tên model live: tự fallback về qwen3.8-omni-flash-realtime nếu env còn tên legacy (grok/gemini/gpt)."""
+    name = (configured or "").strip()
+    if not name or not name.lower().startswith("qwen") or name.lower() in {
+        "qwen3-omni-flash-realtime",
+        "qwen-omni-turbo-realtime",
+    }:
+        return DEFAULT_REALTIME_MODEL
+    return name
+
+
+def resolve_asr_model(configured: str | None) -> str:
+    name = (configured or "").strip()
+    if not name or not name.lower().startswith("qwen"):
+        return DEFAULT_ASR_MODEL
+    return name
+
+
+def resolve_chat_model(configured: str | None) -> str:
+    name = (configured or "").strip()
+    if not name or not name.lower().startswith("qwen"):
+        return DEFAULT_CHAT_MODEL
+    return name
+
+
 def realtime_api_key() -> str:
     return (settings.DASHSCOPE_API_KEY or "").strip()
 
@@ -178,7 +208,7 @@ async def open_realtime(
 ):
     """Open a bidirectional speech-to-speech Qwen 3.8 Omni Flash Realtime session."""
     resolved_voice = normalize_voice(voice)
-    model_name = settings.TUTOR_VOICE_MODEL or "qwen3.8-omni-flash-realtime"
+    model_name = resolve_realtime_model(settings.TUTOR_VOICE_MODEL)
     pace_note = ""
     if speed <= 0.88:
         pace_note = "\nHãy nói chậm rãi, rõ ràng từng cụm từ để người học dễ nghe."
@@ -224,7 +254,7 @@ async def open_asr_realtime(
     silence_duration_ms: int = 600,
 ):
     """Open a live speech-to-text dictation stream on Qwen3 ASR Flash Realtime."""
-    model_name = settings.TUTOR_DICTATION_MODEL or "qwen3-asr-flash-realtime"
+    model_name = resolve_asr_model(settings.TUTOR_DICTATION_MODEL)
     short_lang = (language or "vi").split("-")[0].strip().lower() or "vi"
     async with open_qwen_ws(model_name) as socket:
         await wait_for_event(socket, "session.created")
@@ -279,7 +309,7 @@ async def call_qwen_json_async(
             settings.DASHSCOPE_COMPATIBLE_BASE_URL
             or "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
         ).rstrip("/")
-        model = settings.DASHSCOPE_CHAT_MODEL or "qwen3.8-omni-flash"
+        model = resolve_chat_model(settings.DASHSCOPE_CHAT_MODEL)
         try:
             async with httpx.AsyncClient(timeout=timeout_seconds) as client:
                 resp = await client.post(
