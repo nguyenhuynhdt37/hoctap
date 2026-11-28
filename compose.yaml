@@ -37,7 +37,10 @@ services:
       - |
         alembic upgrade head
         python scripts/seed_catalog_v2.py
-        exec uvicorn app.main:app --host 0.0.0.0 --port 8000
+        if [ -f scripts/migrate_digital_contracts.py ]; then
+          python scripts/migrate_digital_contracts.py || true
+        fi
+        exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app/app
     ports:
       - "127.0.0.1:${MAYMAY_DEV_API_PORT:-8000}:8000"
     depends_on:
@@ -48,33 +51,45 @@ services:
       mailpit:
         condition: service_started
     volumes:
+      - ./studynest_be:/app
+      - backend_venv_shadow:/app/.venv
       - backend_r2_cache:/app/.cache/r2
     networks: [maymay_dev_net]
 
   frontend:
     build:
       context: ./studynest_fe
-      args:
-        NEXT_PUBLIC_URL_BACKEND: http://localhost:${MAYMAY_DEV_API_PORT:-8000}
-        NEXT_PUBLIC_URL_BACKEND_WS: ws://localhost:${MAYMAY_DEV_API_PORT:-8000}
-        NEXT_PUBLIC_URL_FRONTEND: http://localhost:${MAYMAY_DEV_WEB_PORT:-3000}
-        NEXT_PUBLIC_AUTH_MODE: cookie
-        NEXT_PUBLIC_DPOP_API_ORIGIN: http://localhost:${MAYMAY_DEV_API_PORT:-8000}
-        NEXT_PUBLIC_URL_GOOGLE_LOGIN: ${NEXT_PUBLIC_URL_GOOGLE_LOGIN:-}
-        NEXT_PUBLIC_PAYPAL_CLIENT_ID: ${NEXT_PUBLIC_PAYPAL_CLIENT_ID:-}
-        INTERNAL_BACKEND_URL: http://backend:8000
+      target: deps
     restart: unless-stopped
+    working_dir: /app
+    command: ["npx", "next", "dev", "--turbopack", "--hostname", "0.0.0.0", "--port", "3000"]
     environment:
+      NODE_ENV: development
+      NEXT_TELEMETRY_DISABLED: "1"
+      NODE_OPTIONS: "--max-old-space-size=4096"
       INTERNAL_BACKEND_URL: http://backend:8000
       NEXT_PUBLIC_URL_BACKEND: http://localhost:${MAYMAY_DEV_API_PORT:-8000}
       NEXT_PUBLIC_URL_BACKEND_WS: ws://localhost:${MAYMAY_DEV_API_PORT:-8000}
       NEXT_PUBLIC_URL_FRONTEND: http://localhost:${MAYMAY_DEV_WEB_PORT:-3000}
       NEXT_PUBLIC_AUTH_MODE: cookie
+      NEXT_PUBLIC_DPOP_API_ORIGIN: http://localhost:${MAYMAY_DEV_API_PORT:-8000}
+      NEXT_PUBLIC_URL_GOOGLE_LOGIN: ${NEXT_PUBLIC_URL_GOOGLE_LOGIN:-}
+      NEXT_PUBLIC_PAYPAL_CLIENT_ID: ${NEXT_PUBLIC_PAYPAL_CLIENT_ID:-}
+    volumes:
+      - ./studynest_fe:/app
+      - /app/node_modules
+      - frontend_next_cache:/app/.next
     ports:
       - "127.0.0.1:${MAYMAY_DEV_WEB_PORT:-3000}:3000"
     depends_on:
       backend:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/login >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 12
     networks: [maymay_dev_net]
 
   piston-runtimes:
@@ -90,3 +105,5 @@ services:
 
 volumes:
   backend_r2_cache:
+  backend_venv_shadow:
+  frontend_next_cache:
