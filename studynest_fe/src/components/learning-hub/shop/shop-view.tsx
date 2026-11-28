@@ -491,7 +491,7 @@ export function ShopView() {
           <section key={tab} id={`${id}-panel-${tab}`} role="tabpanel" aria-labelledby={`${id}-${tab}`} hidden={tab !== activeTab} className="mt-6">
             {tab === activeTab && (
               activeQuery.isLoading && !activeQuery.data ? (
-                <div role="status" aria-label="Đang tải vật phẩm" className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4 xl:grid-cols-5">
+                <div role="status" aria-label="Đang tải vật phẩm" className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
                   {[0, 1, 2, 3].map((item) => <Skeleton key={item} className="h-72 rounded-[24px] motion-reduce:animate-none" />)}
                 </div>
               ) : activeQuery.error && !activeQuery.data ? (
@@ -531,7 +531,7 @@ export function ShopView() {
                       }
                     />
                   ) : (
-                    <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4 xl:grid-cols-5">
+                    <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
                       {items.map((item) => (
                         <li key={item.id} className="min-w-0">
                           <ItemCard

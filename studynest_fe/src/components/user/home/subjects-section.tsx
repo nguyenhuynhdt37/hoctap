@@ -22,7 +22,7 @@ const levels = {
 const levelChoices: SchoolLevelId[] = ["all", "primary", "secondary", "highschool"];
 const resultsId = "subjects-results";
 const previewLimit = 5;
-const grid = "grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5";
+const grid = "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
 const layoutTransition = { layout: { duration: 0.32, ease: [0.22, 1, 0.36, 1] as const } };
 const roundedButton = "rounded-full motion-reduce:transition-none motion-reduce:active:translate-y-0";
 const fetcher = (url: string) => api.get<CatalogOptionsWithCourseCounts>(url).then(({ data }) => {

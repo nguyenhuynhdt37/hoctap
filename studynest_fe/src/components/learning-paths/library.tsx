@@ -408,16 +408,16 @@ function BentoComboCard({
   const savings = item.savings_percent ?? 0;
   const durationLabel = formatDuration(item.duration_seconds);
 
-  const isDeepSky = variant === "deep-sky";
+  const isDeepSky = false;
 
   const shellStyle =
     variant === "deep-sky"
-      ? "lg:col-span-6 border-primary-pastel/70 bg-gradient-to-br from-[#285C90] via-[#356FA7] to-[#4A85BF] text-white shadow-md"
+      ? "border-primary-pastel bg-gradient-to-br from-primary-light/85 via-surface to-surface text-foreground shadow-sm"
       : variant === "wide-blue"
-        ? "lg:col-span-6 border-primary-pastel/80 bg-gradient-to-br from-primary-light/70 via-surface to-surface text-foreground"
+        ? "border-primary-pastel/80 bg-gradient-to-br from-primary-light/70 via-surface to-surface text-foreground"
         : variant === "vanilla-atelier"
-          ? "lg:col-span-6 border-accent-vanilla-border bg-gradient-to-br from-accent-vanilla/70 via-surface to-surface text-foreground"
-          : "lg:col-span-6 border-accent-border bg-gradient-to-br from-accent/60 via-surface to-secondary/20 text-foreground";
+          ? "border-accent-vanilla-border bg-gradient-to-br from-accent-vanilla/70 via-surface to-surface text-foreground"
+          : "border-accent-border bg-gradient-to-br from-accent/60 via-surface to-secondary/20 text-foreground";
 
   return (
     <article
@@ -682,7 +682,7 @@ function CompareModal({
           </button>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        <div className="user-four-column-grid">
           {items.map((item) => (
             <div key={item.bundle_id} className="flex flex-col rounded-2xl border border-border bg-background/70 p-4">
               <div className="mb-3 flex items-start justify-between gap-2">
@@ -1210,25 +1210,10 @@ export default function LearningLibrary() {
           />
         ) : (
           <div className="space-y-6">
-            <div className="grid gap-5 lg:grid-cols-12">
+            <div className="user-four-column-grid">
               {data.items.map((item, idx) => {
                 const displayNumber = (page - 1) * PAGE_SIZE + idx + 1;
-                if (idx === 0) {
-                  return (
-                    <BoardingPassComboCard
-                      key={item.id}
-                      item={item}
-                      index={displayNumber}
-                      bookmarked={isBookmarked(item)}
-                      compared={compareItems.some((c) => c.bundle_id === item.bundle_id)}
-                      copiedCode={copiedCode}
-                      onToggleBookmark={handleToggleBookmark}
-                      onToggleCompare={handleToggleCompare}
-                      onCopyCoupon={handleCopyCoupon}
-                    />
-                  );
-                }
-                const variant = variantCycle[(idx - 1) % variantCycle.length];
+                const variant = variantCycle[idx % variantCycle.length];
                 return (
                   <BentoComboCard
                     key={item.id}
