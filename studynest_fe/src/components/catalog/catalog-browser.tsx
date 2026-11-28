@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import useSWR from "swr";
 import {
   ArrowUpDown,
-  Filter,
   LayoutGrid,
   List,
   RotateCcw,
@@ -448,15 +447,26 @@ export default function CatalogBrowser() {
     return chips;
   }, [filterValues, currentSubject, options, activeKeyword]);
 
+  const remainingCount =
+    totalDisplay !== null && totalDisplay > items.length
+      ? totalDisplay - items.length
+      : null;
+
   return (
-    <div className="space-y-5 text-foreground">
-      {/* 1. Hero Chuyên đề Môn học (Dynamic Subject Hero) */}
-      <SubjectHero currentSubject={currentSubject} />
+    <div className="space-y-6 text-foreground">
+      {/* 1. Hero Chuyên đề Môn học (Cloudy Blue) */}
+      <SubjectHero
+        currentSubject={currentSubject}
+        totalCourses={totalDisplay}
+        subjectCount={options?.subjects?.length}
+        gradeCount={options?.grades?.length}
+        onClearSubject={() => setParam("subject", "")}
+      />
 
       {/* Thông báo lỗi khi không nạp được browse-filters kèm nút retry */}
       {optionError && (
         <div className="rounded-[20px] border border-destructive-border bg-destructive-bg/30 p-4 text-center">
-          <p className="text-xs font-medium text-destructive-foreground mb-2">
+          <p className="mb-2 text-xs font-medium text-destructive-foreground">
             Không thể tải danh mục bộ lọc. Vui lòng kiểm tra kết nối mạng.
           </p>
           <Button variant="outline" size="sm" onClick={() => reloadOptions()}>
@@ -465,132 +475,86 @@ export default function CatalogBrowser() {
         </div>
       )}
 
-      {/* 2. Thanh Chọn Nhanh Môn Học Dạng Pills */}
-      {options?.subjects && options.subjects.length > 0 && (
-        <div className="pt-1">
-          <SubjectPills
-            subjects={options.subjects}
-            selectedSubjectSlug={currentSubjectSlug}
-            onSelectSubject={(slug) => setParam("subject", slug)}
-          />
-        </div>
-      )}
+      {/* 2. Khối Tìm kiếm & Chọn nhanh Môn học hợp nhất */}
+      <section
+        aria-label="Tìm kiếm và chọn môn học"
+        className="space-y-3 rounded-[24px] border border-border bg-surface/95 p-3.5 shadow-[0_8px_24px_-14px_rgba(53,111,167,0.10)] sm:p-4"
+      >
+        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+          <form
+            onSubmit={handleSearchSubmit}
+            className="flex min-w-0 flex-1 items-center gap-2"
+          >
+            <label htmlFor={searchInputId} className="sr-only">
+              Tìm kiếm khóa học
+            </label>
+            <div className="relative min-w-0 flex-1">
+              <Input
+                id={searchInputId}
+                name="keyword"
+                maxLength={160}
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+                placeholder={
+                  currentSubject
+                    ? `Tìm khóa học ${currentSubject.name}...`
+                    : "Tìm theo tên khóa học, chủ đề hoặc giáo viên..."
+                }
+                leftIcon={<Search className="size-4 text-muted-foreground" aria-hidden="true" />}
+                rightIcon={
+                  keyword ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setKeyword("");
+                        setParam("keyword", "");
+                      }}
+                      className="cursor-pointer p-1 text-muted-foreground transition-colors hover:text-foreground"
+                      aria-label="Xóa từ khóa tìm kiếm"
+                    >
+                      <X className="size-3.5" aria-hidden="true" />
+                    </button>
+                  ) : null
+                }
+              />
+            </div>
+            <Button type="submit" variant="primary" size="md" className="shrink-0">
+              Tìm kiếm
+            </Button>
+          </form>
 
-      {/* 3. Floating Glass Command Bar: Tìm Kiếm, Sắp Xếp, View Mode & Lọc Mobile */}
-      <div className="flex flex-col items-stretch justify-between gap-3 rounded-2xl border border-border bg-surface p-3 sm:flex-row sm:flex-wrap sm:items-center">
-        {/* Form tìm kiếm với label accessible */}
-        <form onSubmit={handleSearchSubmit} className="flex min-w-0 flex-1 items-center gap-2 sm:min-w-64">
-          <label htmlFor={searchInputId} className="sr-only">
-            Tìm kiếm khóa học
-          </label>
-          <div className="relative min-w-0 flex-1">
-            <Input
-              id={searchInputId}
-              name="keyword"
-              maxLength={160}
-              value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
-              placeholder={
-                currentSubject
-                  ? `Tìm khóa học ${currentSubject.name}...`
-                  : "Tìm kiếm khóa học..."
-              }
-              leftIcon={<Search className="w-4 h-4 text-muted-foreground" />}
-              rightIcon={
-                keyword ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setKeyword("");
-                      setParam("keyword", "");
-                    }}
-                    className="p-1 text-muted-foreground hover:text-foreground cursor-pointer"
-                    aria-label="Xóa từ khóa tìm kiếm"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                ) : null
-              }
-            />
-          </div>
-          <Button type="submit" variant="primary" size="md">
-            Tìm
-          </Button>
-        </form>
-
-        {/* Cụm điều khiển sắp xếp & View mode */}
-        <div className="flex flex-wrap items-center justify-between gap-2 sm:justify-end">
           {/* Nút bật Drawer bộ lọc trên mobile */}
           <Button
             variant="outline"
             size="md"
             onClick={() => setMobileFilterOpen(true)}
-            className="lg:hidden flex items-center gap-1.5"
-            leftIcon={<SlidersHorizontal className="w-4 h-4 text-primary" />}
+            className="flex shrink-0 items-center justify-center gap-1.5 lg:hidden"
+            leftIcon={<SlidersHorizontal className="size-4 text-primary" aria-hidden="true" />}
           >
             <span>Bộ lọc</span>
             {activeCount > 0 && (
-              <Badge variant="primary" className="ml-1 text-[11px] px-1.5 py-0.2">
+              <Badge variant="primary" className="ml-0.5 px-1.5 py-0.2 text-[11px]">
                 {activeCount}
               </Badge>
             )}
           </Button>
-
-          {/* Dropdown sắp xếp */}
-          <div className="flex items-center gap-1.5">
-            <select
-              aria-label="Sắp xếp kết quả"
-              value={current.get("sort") ?? "newest"}
-              onChange={(e) => setParam("sort", e.target.value)}
-              className="h-10 px-3 rounded-xl border border-input bg-surface text-xs font-semibold text-foreground hover:border-primary-pastel focus:outline-none focus:border-ring cursor-pointer"
-            >
-              {SORTS.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* View Mode Switcher (Grid / List) với aria-pressed */}
-          <div
-            role="group"
-            aria-label="Chế độ hiển thị danh sách"
-            className="hidden sm:flex items-center rounded-xl border border-border bg-surface p-1 shadow-2xs"
-          >
-            <button
-              type="button"
-              aria-pressed={viewMode === "grid"}
-              onClick={() => setViewMode("grid")}
-              aria-label="Xem dạng lưới"
-              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                viewMode === "grid"
-                  ? "bg-primary-light text-primary font-medium"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <LayoutGrid className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              aria-pressed={viewMode === "list"}
-              onClick={() => setViewMode("list")}
-              aria-label="Xem dạng danh sách"
-              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                viewMode === "list"
-                  ? "bg-primary-light text-primary font-medium"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <List className="w-4 h-4" />
-            </button>
-          </div>
         </div>
-      </div>
 
-      {/* 4. Active Filter Chips với nhãn thật */}
+        {/* Dải Chọn Nhanh Môn Học Dạng Pills */}
+        {options?.subjects && options.subjects.length > 0 && (
+          <div className="border-t border-border/70 pt-3">
+            <SubjectPills
+              subjects={options.subjects}
+              selectedSubjectSlug={currentSubjectSlug}
+              onSelectSubject={(slug) => setParam("subject", slug)}
+            />
+          </div>
+        )}
+      </section>
+
+      {/* 3. Active Filter Chips với nhãn thật */}
       {activeChips.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 pt-1 animate-in fade-in duration-150">
+        <div className="flex flex-wrap items-center gap-2 animate-in fade-in duration-150">
           <span className="text-xs font-medium text-muted-foreground">Đang lọc theo:</span>
           {activeChips.map((chip) => (
             <button
@@ -606,10 +570,13 @@ export default function CatalogBrowser() {
                   setParam(chip.key, "");
                 }
               }}
-              className="inline-flex max-w-full items-center gap-1.5 px-3 py-1 rounded-full border border-primary-pastel/80 bg-primary-light/70 text-xs font-medium text-foreground hover:bg-primary-light hover:border-primary transition-colors cursor-pointer group"
+              className="group inline-flex max-w-full cursor-pointer items-center gap-1.5 rounded-full border border-primary-pastel/80 bg-primary-light/70 px-3 py-1 text-xs font-medium text-foreground transition-colors hover:border-primary hover:bg-primary-light"
             >
               <span className="min-w-0 wrap-anywhere text-left">{chip.label}</span>
-              <X className="w-3 h-3 shrink-0 text-muted-foreground group-hover:text-destructive-foreground transition-colors" />
+              <X
+                className="size-3 shrink-0 text-muted-foreground transition-colors group-hover:text-destructive-foreground"
+                aria-hidden="true"
+              />
             </button>
           ))}
 
@@ -618,15 +585,15 @@ export default function CatalogBrowser() {
             size="sm"
             onClick={resetAllFilters}
             className="text-xs text-muted-foreground hover:text-destructive-foreground"
-            leftIcon={<RotateCcw className="w-3 h-3" />}
+            leftIcon={<RotateCcw className="size-3" aria-hidden="true" />}
           >
             Đặt lại tất cả
           </Button>
         </div>
       )}
 
-      {/* 5. Khu Vực Bố Cục Chính: Sidebar Bên Trái + Lưới Khóa Học Bên Phải */}
-      <div className="grid min-w-0 items-start gap-5 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-6">
+      {/* 4. Khu Vực Bố Cục Chính: Sidebar Bên Trái + Lưới Khóa Học Bên Phải */}
+      <div className="grid min-w-0 items-start gap-6 lg:grid-cols-[16.5rem_minmax(0,1fr)] lg:gap-7">
         {/* Sidebar Trên Desktop */}
         <div className="hidden lg:block">
           <FilterSidebar
@@ -655,50 +622,141 @@ export default function CatalogBrowser() {
 
         {/* Danh Sách Khóa Học */}
         <section aria-label="Kết quả tìm kiếm khóa học" aria-busy={isLoading} className="min-w-0">
-          {/* Thông tin số lượng hiển thị */}
-          <div className="mb-4 flex items-center justify-between text-xs text-muted-foreground">
-            <span>
-              {totalDisplay !== null
-                ? `${items.length} trên ${totalDisplay} khóa học`
-                : `Hiển thị ${items.length} khóa học`}
-            </span>
+          {/* Thanh Toolbar Kết Quả: Đếm số lượng + Sắp xếp + View mode */}
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/80 bg-surface/90 px-4 py-2.5 shadow-2xs">
+            <p className="text-xs text-muted-foreground sm:text-sm">
+              {isLoading && items.length === 0 ? (
+                <span>Đang tải danh sách khóa học...</span>
+              ) : totalDisplay !== null ? (
+                <>
+                  Hiển thị{" "}
+                  <span className="font-semibold tabular-nums text-foreground">
+                    {items.length.toLocaleString("vi-VN")}
+                  </span>{" "}
+                  trên{" "}
+                  <span className="font-semibold tabular-nums text-foreground">
+                    {totalDisplay.toLocaleString("vi-VN")}
+                  </span>{" "}
+                  khóa học
+                </>
+              ) : (
+                <>
+                  Hiển thị{" "}
+                  <span className="font-semibold tabular-nums text-foreground">
+                    {items.length.toLocaleString("vi-VN")}
+                  </span>{" "}
+                  khóa học
+                </>
+              )}
+            </p>
+
+            <div className="flex items-center gap-2">
+              {/* Dropdown sắp xếp */}
+              <div className="relative flex items-center">
+                <ArrowUpDown
+                  animated={false}
+                  aria-hidden="true"
+                  className="pointer-events-none absolute left-3 size-3.5 text-muted-foreground"
+                />
+                <select
+                  aria-label="Sắp xếp kết quả"
+                  value={current.get("sort") ?? "newest"}
+                  onChange={(e) => setParam("sort", e.target.value)}
+                  className="h-9 cursor-pointer rounded-xl border border-input bg-background/60 pr-3 pl-8 text-xs font-semibold text-foreground transition-colors hover:border-primary-pastel hover:bg-surface focus:border-ring focus:bg-surface focus:outline-none"
+                >
+                  {SORTS.map((s) => (
+                    <option key={s.value} value={s.value}>
+                      {s.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* View Mode Switcher (Grid / List) với aria-pressed */}
+              <div
+                role="group"
+                aria-label="Chế độ hiển thị danh sách"
+                className="hidden items-center rounded-xl border border-border bg-background/60 p-0.5 sm:flex"
+              >
+                <button
+                  type="button"
+                  aria-pressed={viewMode === "grid"}
+                  onClick={() => setViewMode("grid")}
+                  aria-label="Xem dạng lưới"
+                  className={`cursor-pointer rounded-lg p-1.5 transition-colors ${
+                    viewMode === "grid"
+                      ? "bg-surface text-primary shadow-2xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <LayoutGrid className="size-4" aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={viewMode === "list"}
+                  onClick={() => setViewMode("list")}
+                  aria-label="Xem dạng danh sách"
+                  className={`cursor-pointer rounded-lg p-1.5 transition-colors ${
+                    viewMode === "list"
+                      ? "bg-surface text-primary shadow-2xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <List className="size-4" aria-hidden="true" />
+                </button>
+              </div>
+            </div>
           </div>
 
-          {/* Trạng thái Đang Tải (Skeleton Grid) */}
+          {/* Trạng thái Đang Tải (Skeleton Grid / List) */}
           {isLoading && items.length === 0 ? (
-            <div
-              role="status"
-              className={
-                viewMode === "grid"
-                  ? "user-card-grid"
-                  : "flex flex-col gap-4"
-              }
-            >
-              {[1, 2, 3, 4, 5, 6].map((idx) => (
-                <div
-                  key={idx}
-                  className="overflow-hidden rounded-[20px] border border-border bg-surface shadow-xs p-0 animate-pulse"
-                >
-                  <Skeleton variant="rect" className="aspect-video w-full rounded-none" />
-                  <div className="p-5 space-y-3">
-                    <Skeleton variant="text" className="h-3.5 w-1/3 rounded-md" />
-                    <Skeleton variant="text" className="h-4 w-full rounded-md" />
-                    <Skeleton variant="text" className="h-4 w-3/4 rounded-md" />
-                    <div className="pt-3 border-t border-border/70 flex justify-between">
-                      <Skeleton variant="text" className="h-3 w-16 rounded-md" />
-                      <Skeleton variant="text" className="h-4 w-20 rounded-md" />
+            viewMode === "grid" ? (
+              <div
+                role="status"
+                aria-label="Đang tải danh sách khóa học"
+                className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3"
+              >
+                {[1, 2, 3, 4, 5, 6].map((idx) => (
+                  <CourseTicketCardSkeleton key={idx} />
+                ))}
+              </div>
+            ) : (
+              <div
+                role="status"
+                aria-label="Đang tải danh sách khóa học"
+                className="flex flex-col gap-4"
+              >
+                {[1, 2, 3, 4].map((idx) => (
+                  <div
+                    key={idx}
+                    className="flex flex-col overflow-hidden rounded-[22px] border border-border bg-surface sm:flex-row"
+                  >
+                    <Skeleton
+                      variant="rect"
+                      className="aspect-video w-full rounded-none sm:w-60 md:w-64"
+                    />
+                    <div className="flex flex-1 flex-col justify-between gap-3 p-5">
+                      <div className="space-y-2.5">
+                        <Skeleton variant="text" className="h-5 w-24 rounded-full" />
+                        <Skeleton variant="text" className="h-5 w-11/12 rounded-md" />
+                        <Skeleton variant="text" className="h-4 w-2/3 rounded-md" />
+                      </div>
+                      <div className="flex justify-between border-t border-border/70 pt-3">
+                        <Skeleton variant="text" className="h-6 w-24 rounded-full" />
+                        <Skeleton variant="text" className="h-4 w-20 rounded-md" />
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )
           ) : error && items.length === 0 ? (
             /* Trạng thái Báo Lỗi */
             <Card className="rounded-[24px] border-destructive-border bg-destructive-bg/30 p-8 text-center">
-              <h3 className="text-base font-semibold text-destructive-foreground mb-1">
+              <h3 className="mb-1 text-base font-semibold text-destructive-foreground">
                 Không thể tải danh sách khóa học
               </h3>
-              <p className="text-xs text-muted-foreground mb-4">
+              <p className="mb-4 text-xs text-muted-foreground">
                 Đã xảy ra lỗi khi kết nối với máy chủ. Vui lòng kiểm tra lại đường truyền.
               </p>
               <Button variant="outline" size="sm" onClick={() => mutate()}>
@@ -716,7 +774,7 @@ export default function CatalogBrowser() {
                     variant="primary"
                     size="md"
                     onClick={resetAllFilters}
-                    leftIcon={<RotateCcw className="w-4 h-4" />}
+                    leftIcon={<RotateCcw className="size-4" aria-hidden="true" />}
                   >
                     Đặt lại bộ lọc
                   </Button>
@@ -729,8 +787,8 @@ export default function CatalogBrowser() {
               <div
                 className={
                   viewMode === "grid"
-                    ? "user-four-column-grid"
-                    : "user-four-column-grid"
+                    ? "grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3"
+                    : "flex flex-col gap-4"
                 }
               >
                 {items.map((course) => (
@@ -744,16 +802,18 @@ export default function CatalogBrowser() {
 
               {/* Nút Xem Thêm (Load More) */}
               {nextCursor && (
-                <div className="mt-10 flex flex-col items-center justify-center gap-3">
+                <div className="mt-10 flex flex-col items-center justify-center gap-2.5">
                   <Button
                     variant="outline"
                     size="lg"
                     onClick={handleLoadMore}
                     isLoading={isLoadingMore}
                     loadingText="Đang tải thêm..."
-                    className="min-w-[180px] shadow-xs"
+                    className="min-w-[200px] rounded-full bg-surface shadow-xs"
                   >
-                    Xem thêm khóa học
+                    {remainingCount !== null
+                      ? `Xem thêm (${remainingCount.toLocaleString("vi-VN")} khóa còn lại)`
+                      : "Xem thêm khóa học"}
                   </Button>
                   {moreError && (
                     <p role="alert" className="text-xs text-destructive-foreground">

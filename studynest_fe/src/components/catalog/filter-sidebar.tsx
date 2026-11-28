@@ -86,18 +86,20 @@ export function FilterSidebar({
   }, []);
 
   const selectStyle =
-    "w-full h-10 px-3 rounded-xl border border-input bg-surface text-xs font-medium text-foreground transition-colors hover:border-primary-pastel focus:outline-none focus:border-ring focus:ring-2 focus:ring-ring/15 cursor-pointer";
+    "h-10 w-full cursor-pointer rounded-xl border border-input bg-background/60 px-3 text-xs font-medium text-foreground transition-colors hover:border-primary-pastel hover:bg-surface focus:border-ring focus:bg-surface focus:outline-none focus:ring-2 focus:ring-ring/15";
 
   const content = (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header của Sidebar (chỉ hiện trên desktop) */}
       {!isMobileDrawer && (
-        <div className="flex items-center justify-between pb-3 border-b border-border">
+        <div className="flex items-center justify-between border-b border-border/80 pb-3.5">
           <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-primary" />
-            <h2 className="text-sm font-semibold text-foreground">Bộ lọc nâng cao</h2>
+            <span className="inline-flex size-7 items-center justify-center rounded-lg bg-primary-light text-primary">
+              <Filter className="size-3.5" aria-hidden="true" />
+            </span>
+            <h2 className="text-sm font-semibold text-foreground">Bộ lọc</h2>
             {activeCount > 0 && (
-              <Badge variant="primary" className="text-[11px] px-2 py-0.5">
+              <Badge variant="primary" className="px-2 py-0.5 text-[11px]">
                 {activeCount}
               </Badge>
             )}
@@ -107,9 +109,9 @@ export function FilterSidebar({
             <button
               type="button"
               onClick={onResetFilters}
-              className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-primary-light/60 hover:text-primary cursor-pointer"
             >
-              <RotateCcw className="w-3 h-3" />
+              <RotateCcw className="size-3" aria-hidden="true" />
               <span>Xóa lọc</span>
             </button>
           )}
@@ -118,10 +120,10 @@ export function FilterSidebar({
 
       {/* 0. Lọc Cấp Học (Education Level) */}
       {options?.levels && options.levels.length > 0 && (
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <label
             htmlFor={levelSelectId}
-            className="block text-xs font-semibold text-foreground uppercase tracking-wider"
+            className="block text-[13px] font-semibold text-foreground"
           >
             Cấp học
           </label>
@@ -142,19 +144,19 @@ export function FilterSidebar({
       )}
 
       {/* 1. Lọc Khối Lớp (phù hợp với cả Cấp học và Môn học) */}
-      <div className="space-y-2.5">
-        <label className="block text-xs font-semibold text-foreground uppercase tracking-wider">
+      <div className="space-y-2.5 border-t border-border/70 pt-4">
+        <span className="block text-[13px] font-semibold text-foreground">
           Khối lớp
-        </label>
+        </span>
         <div className="grid grid-cols-3 gap-1.5">
           <button
             type="button"
             aria-pressed={!values.grade}
             onClick={() => onFilterChange("grade", "")}
-            className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer text-center ${
+            className={`cursor-pointer rounded-xl px-2.5 py-1.5 text-center text-xs font-medium transition-all ${
               !values.grade
-                ? "bg-primary text-primary-foreground shadow-2xs font-semibold"
-                : "bg-surface border border-border text-foreground hover:bg-primary-light/60 hover:text-primary"
+                ? "bg-primary font-semibold text-primary-foreground shadow-2xs"
+                : "border border-border bg-background/60 text-foreground hover:border-primary-pastel hover:bg-primary-light/60 hover:text-primary"
             }`}
           >
             Tất cả
@@ -168,10 +170,10 @@ export function FilterSidebar({
                 type="button"
                 aria-pressed={isSelected}
                 onClick={() => onFilterChange("grade", isSelected ? "" : gradeVal)}
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer text-center truncate ${
+                className={`cursor-pointer truncate rounded-xl px-2.5 py-1.5 text-center text-xs font-medium transition-all ${
                   isSelected
-                    ? "bg-primary text-primary-foreground shadow-2xs font-semibold"
-                    : "bg-surface border border-border text-foreground hover:bg-primary-light/60 hover:text-primary"
+                    ? "bg-primary font-semibold text-primary-foreground shadow-2xs"
+                    : "border border-border bg-background/60 text-foreground hover:border-primary-pastel hover:bg-primary-light/60 hover:text-primary"
                 }`}
               >
                 {g.name}
@@ -182,10 +184,10 @@ export function FilterSidebar({
       </div>
 
       {/* 2. Khoảng Giá (Cập nhật min_price và max_price trong một patch router duy nhất) */}
-      <div className="space-y-2.5">
-        <label className="block text-xs font-semibold text-foreground uppercase tracking-wider">
+      <div className="space-y-2.5 border-t border-border/70 pt-4">
+        <span className="block text-[13px] font-semibold text-foreground">
           Khoảng học phí
-        </label>
+        </span>
         <div className="flex flex-col gap-1.5">
           {pricePresets.map((preset) => {
             const isSelected =
@@ -202,14 +204,18 @@ export function FilterSidebar({
                     onFiltersChange({ min_price: preset.min, max_price: preset.max });
                   }
                 }}
-                className={`px-3 py-2 rounded-xl text-left text-xs font-medium transition-all cursor-pointer flex items-center justify-between ${
+                className={`flex cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-left text-xs font-medium transition-all ${
                   isSelected
-                    ? "bg-primary-light text-primary border border-primary-pastel font-semibold"
-                    : "bg-surface border border-border/80 text-foreground hover:bg-primary-light/40 hover:border-primary-pastel/60"
+                    ? "border border-primary-pastel bg-primary-light/85 font-semibold text-primary"
+                    : "border border-border/80 bg-background/50 text-foreground hover:border-primary-pastel/70 hover:bg-primary-light/40"
                 }`}
               >
                 <span>{preset.label}</span>
-                {isSelected && <span className="text-primary font-bold">✓</span>}
+                {isSelected && (
+                  <span aria-hidden="true" className="font-bold text-primary">
+                    ✓
+                  </span>
+                )}
               </button>
             );
           })}
@@ -217,19 +223,19 @@ export function FilterSidebar({
       </div>
 
       {/* 3. Đánh Giá Tối Thiểu (Star Rating) */}
-      <div className="space-y-2.5">
-        <label className="block text-xs font-semibold text-foreground uppercase tracking-wider">
+      <div className="space-y-2.5 border-t border-border/70 pt-4">
+        <span className="block text-[13px] font-semibold text-foreground">
           Đánh giá học viên
-        </label>
+        </span>
         <div className="flex flex-wrap gap-1.5">
           <button
             type="button"
             aria-pressed={!values.rating}
             onClick={() => onFilterChange("rating", "")}
-            className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+            className={`cursor-pointer rounded-xl px-3 py-1.5 text-xs font-medium transition-all ${
               !values.rating
-                ? "bg-primary text-primary-foreground shadow-2xs font-semibold"
-                : "bg-surface border border-border text-foreground hover:bg-primary-light/60"
+                ? "bg-primary font-semibold text-primary-foreground shadow-2xs"
+                : "border border-border bg-background/60 text-foreground hover:border-primary-pastel hover:bg-primary-light/60"
             }`}
           >
             Tất cả
@@ -242,13 +248,17 @@ export function FilterSidebar({
                 type="button"
                 aria-pressed={isSelected}
                 onClick={() => onFilterChange("rating", isSelected ? "" : String(star))}
-                className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                className={`inline-flex cursor-pointer items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-medium transition-all ${
                   isSelected
-                    ? "bg-primary text-primary-foreground shadow-2xs font-semibold"
-                    : "bg-surface border border-border text-foreground hover:bg-primary-light/60"
+                    ? "bg-primary font-semibold text-primary-foreground shadow-2xs"
+                    : "border border-border bg-background/60 text-foreground hover:border-primary-pastel hover:bg-primary-light/60"
                 }`}
               >
-                <Star className="w-3.5 h-3.5 fill-warning text-warning" />
+                <Star
+                  animated={false}
+                  aria-hidden="true"
+                  className="size-3.5 fill-warning text-warning"
+                />
                 <span>Từ {star}★</span>
               </button>
             );
@@ -258,10 +268,10 @@ export function FilterSidebar({
 
       {/* 4. Mục Tiêu Học Tập */}
       {options?.learning_goals && options.learning_goals.length > 0 && (
-        <div className="space-y-1.5">
+        <div className="space-y-2 border-t border-border/70 pt-4">
           <label
             htmlFor={goalSelectId}
-            className="block text-xs font-semibold text-foreground uppercase tracking-wider"
+            className="block text-[13px] font-semibold text-foreground"
           >
             Mục tiêu học tập
           </label>
@@ -283,10 +293,10 @@ export function FilterSidebar({
 
       {/* 5. Kỳ Thi Mục Tiêu */}
       {options?.exams && options.exams.length > 0 && (
-        <div className="space-y-1.5">
+        <div className="space-y-2 border-t border-border/70 pt-4">
           <label
             htmlFor={examSelectId}
-            className="block text-xs font-semibold text-foreground uppercase tracking-wider"
+            className="block text-[13px] font-semibold text-foreground"
           >
             Kỳ thi
           </label>
@@ -305,7 +315,6 @@ export function FilterSidebar({
           </select>
         </div>
       )}
-
     </div>
   );
 
@@ -315,7 +324,7 @@ export function FilterSidebar({
       <Modal
         open={true}
         onClose={onCloseMobileDrawer}
-        title="Bộ lọc nâng cao"
+        title="Bộ lọc khóa học"
         description="Lựa chọn các tiêu chí để tìm khóa học phù hợp"
         size="md"
         footer={
@@ -350,7 +359,7 @@ export function FilterSidebar({
   return (
     <aside
       aria-label="Bộ lọc tìm kiếm khóa học"
-      className="rounded-[24px] border border-border/80 bg-surface/90 p-5 shadow-xs sticky top-24 backdrop-blur-md"
+      className="sticky top-24 rounded-[24px] border border-border bg-surface p-5 shadow-[0_10px_28px_-14px_rgba(53,111,167,0.12)]"
     >
       {content}
     </aside>

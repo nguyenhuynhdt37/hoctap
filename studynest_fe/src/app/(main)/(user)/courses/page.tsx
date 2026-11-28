@@ -1,6 +1,7 @@
 import CatalogBrowser from "@/components/catalog/catalog-browser";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ChevronRight } from "pulsoicon-react";
 import { Suspense } from "react";
 
 export const metadata: Metadata = {
@@ -12,28 +13,26 @@ export const metadata: Metadata = {
 
 export default function CatalogPage() {
   return (
-    <main className="user-container space-y-6 bg-background py-8 sm:py-10">
+    <main className="user-container space-y-5 bg-background py-7 sm:py-9">
       {/* Breadcrumb điều hướng */}
-      <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Link href="/" className="hover:text-primary transition-colors">
+      <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-sm text-muted-foreground">
+        <Link href="/" className="transition-colors hover:text-primary">
           Trang chủ
         </Link>
-        <span aria-hidden="true" className="text-border">
-          /
-        </span>
+        <ChevronRight animated={false} aria-hidden="true" className="size-3.5 text-border-strong" />
         <span className="font-medium text-foreground">Khám phá khóa học</span>
       </nav>
 
       <Suspense
         fallback={
           <div className="space-y-6 animate-pulse">
-            <div className="h-44 w-full rounded-[24px] bg-surface border border-border" />
-            <div className="h-10 w-full max-w-md rounded-xl bg-surface border border-border" />
-            <div className="grid items-start gap-5 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-6">
-              <div className="hidden lg:block h-96 rounded-[20px] bg-surface border border-border" />
-              <div className="user-card-grid">
+            <div className="h-48 w-full rounded-[28px] border border-border bg-surface" />
+            <div className="h-28 w-full rounded-[24px] border border-border bg-surface" />
+            <div className="grid items-start gap-6 lg:grid-cols-[16.5rem_minmax(0,1fr)] lg:gap-7">
+              <div className="hidden h-96 rounded-[24px] border border-border bg-surface lg:block" />
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
                 {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <div key={i} className="h-72 rounded-[20px] bg-surface border border-border" />
+                  <div key={i} className="h-72 rounded-[24px] border border-border bg-surface" />
                 ))}
               </div>
             </div>
