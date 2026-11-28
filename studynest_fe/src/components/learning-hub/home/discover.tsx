@@ -1,17 +1,15 @@
 "use client";
 
-import { CoinPrice, Skeleton } from "@/components/ui";
+import { CourseTicketCard, CourseTicketCardSkeleton } from "@/components/user/shared/course-ticket-card";
 import { mayPortrait, pathCover, StudyImage } from "@/components/user/home/study-image";
 import { useAuthedSWR } from "@/hooks/auth/useAuthedSWR";
 import api from "@/lib/utils/fetcher/client/axios";
 import type { CatalogCombo, CatalogCombosResponse } from "@/types/catalog-combos";
 import type { RecommendedItem, RecommendedResponse } from "@/types/user/course";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type MouseEvent } from "react";
 import useSWR from "swr";
 import { HubLoadError } from "../hub-page-state";
-import { stretchedLink, TicketCard } from "./home-ui";
 import { HomeLink } from "./section";
 
 async function fetchCombos(url: string): Promise<CatalogCombosResponse> {
@@ -22,13 +20,9 @@ async function fetchCombos(url: string): Promise<CatalogCombosResponse> {
 
 function GridSkeleton({ label }: { label: string }) {
   return (
-    <div
-      role="status"
-      aria-label={label}
-      className="user-four-column-grid [&_.animate-pulse]:motion-reduce:animate-none"
-    >
+    <div role="status" aria-label={label} className="user-four-column-grid">
       {Array.from({ length: 4 }, (_, i) => (
-        <Skeleton key={i} className="aspect-[16/12] w-full rounded-3xl" />
+        <CourseTicketCardSkeleton key={i} />
       ))}
     </div>
   );
@@ -54,24 +48,22 @@ function RecommendedTile({ course }: { course: RecommendedItem }) {
   }
 
   return (
-    <li className="relative flex min-w-0 flex-col">
-      <TicketCard
-        src={course.thumbnail}
+    <li className="flex min-w-0 flex-col">
+      <CourseTicketCard
+        href={`/course/${course.slug}`}
+        onClick={(event) => void open(event)}
+        ariaBusy={checking}
+        title={course.title}
+        thumbnail={course.thumbnail}
         alt={`Ảnh bìa khóa học ${course.title}`}
-        sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-        className="flex-1 transition-[filter] hover:drop-shadow-xl"
-        captionClassName="flex flex-col justify-between gap-2"
-      >
-        <h3 className="line-clamp-2 text-base leading-snug font-bold text-foreground wrap-anywhere">
-          <Link href={`/course/${course.slug}`} onClick={(event) => void open(event)} aria-busy={checking || undefined} className={stretchedLink}>
-            {course.title}<span className="sr-only">{checking ? " (đang mở)" : " — xem khóa học"}</span>
-          </Link>
-        </h3>
-        <p className="flex min-w-0 items-center gap-2 text-xs font-medium text-muted-foreground sm:text-sm">
-          {course.instructor && <StudyImage src={course.instructor.avatar} fallback={mayPortrait} sizes="24px" className="size-6 shrink-0 rounded-full border border-surface" />}
-          <span className="truncate">{course.instructor?.name}{course.similarity > 0 && ` · ${Math.round(course.similarity * 100)}% phù hợp`}</span>
-        </p>
-      </TicketCard>
+        badge={
+          course.similarity > 0
+            ? { label: `${Math.round(course.similarity * 100)}% phù hợp`, tone: "lavender" }
+            : { label: "Gợi ý cho bạn", tone: "primary" }
+        }
+        metaParts={[course.instructor?.name]}
+        srLabel={checking ? "(đang mở)" : "— xem khóa học"}
+      />
     </li>
   );
 }
@@ -80,30 +72,32 @@ function ComboTile({ combo }: { combo: CatalogCombo }) {
   const cover = combo.thumbnail || combo.courses.find(({ thumbnail }) => thumbnail)?.thumbnail;
   const savings = Number(combo.savings_amount) > 0;
   return (
-    <li className="relative flex min-w-0 flex-col">
-      <TicketCard
-        src={cover}
+    <li className="flex min-w-0 flex-col">
+      <CourseTicketCard
+        href={`/combo/${encodeURIComponent(combo.slug)}`}
+        title={combo.title}
+        thumbnail={cover}
         fallback={pathCover}
         alt={`Ảnh bìa combo ${combo.title}`}
-        sizes="(min-width: 1280px) 18rem, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-        className="flex-1 transition-[filter] hover:drop-shadow-xl"
-        captionClassName="flex flex-col justify-between gap-2 py-4"
-      >
-        <div className="space-y-1.5">
-          {savings && <p className="w-fit rounded-full bg-accent px-2.5 py-0.5 text-xs font-bold text-accent-foreground">Tiết kiệm {combo.savings_percent > 0 ? `${combo.savings_percent}%` : "< 1%"}</p>}
-          <h3 className="line-clamp-2 text-base leading-snug font-extrabold text-foreground wrap-anywhere sm:text-lg">
-            <Link href={`/combo/${encodeURIComponent(combo.slug)}`} className={stretchedLink}>{combo.title}<span className="sr-only"> — xem combo</span></Link>
-          </h3>
-          <p className="truncate text-xs text-muted-foreground sm:text-sm">{combo.instructor.name} · {combo.course_count} khóa · {combo.lesson_count} bài</p>
-        </div>
-        <div className="mt-auto pt-1">
-          <CoinPrice
-            priceVnd={combo.price}
-            originalPriceVnd={savings ? combo.standalone_total : undefined}
-            size="md"
-          />
-        </div>
-      </TicketCard>
+        badge={
+          savings
+            ? {
+                label: `Tiết kiệm ${combo.savings_percent > 0 ? `${combo.savings_percent}%` : "< 1%"}`,
+                tone: "lavender",
+              }
+            : null
+        }
+        metaParts={[
+          combo.instructor.name,
+          `${combo.course_count} khóa`,
+          `${combo.lesson_count} bài`,
+        ]}
+        price={{
+          priceVnd: combo.price,
+          originalPriceVnd: savings ? combo.standalone_total : undefined,
+        }}
+        srLabel="— xem combo"
+      />
     </li>
   );
 }
@@ -166,9 +160,9 @@ function Combos() {
 
 export function Discover() {
   return (
-    <div className="space-y-10 lg:space-y-12">
+    <>
       <Recommended />
       <Combos />
-    </div>
+    </>
   );
 }

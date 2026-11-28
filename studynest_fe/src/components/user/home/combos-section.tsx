@@ -1,5 +1,7 @@
 "use client";
 
+import { CourseTicketCard, CourseTicketCardSkeleton } from "@/components/user/shared/course-ticket-card";
+
 import { ArrowRight, ArrowUpRight, BookOpen, Layers, X } from "pulsoicon-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -114,72 +116,52 @@ function ThumbnailStack({ combo }: { combo: CatalogCombo }) {
 }
 
 function ComboCard({ combo }: { combo: CatalogCombo }) {
+  const cover = combo.thumbnail || combo.courses.find(({ thumbnail }) => thumbnail)?.thumbnail;
+  const savings = Number(combo.savings_amount) > 0;
   const duration = combo.duration_seconds > 0 && combo.duration_seconds < 360
     ? "< 0,1"
     : hours.format(combo.duration_seconds / 3600);
-  const labels = [...combo.levels.map((level) => levelLabels[level]), ...combo.subjects.map((subject) => subject.name)];
 
   return (
-    <GlassCard
-      as="article"
-      className={cardLayout}
-    >
-      <ThumbnailStack combo={combo} />
-      <div className="flex min-w-0 flex-1 flex-col gap-2 px-1">
-        {labels.length > 0 && <p className="mb-2 line-clamp-1 wrap-anywhere text-xs font-medium text-muted-foreground">{labels.join(" · ")}</p>}
-        <h3 className="line-clamp-2 text-base leading-snug font-semibold wrap-anywhere text-foreground">
-          {combo.title}
-        </h3>
-        <p className="mt-1 line-clamp-1 wrap-anywhere text-xs text-muted-foreground sm:text-sm">{combo.instructor.name}</p>
-        <p className="line-clamp-2 text-sm leading-relaxed wrap-anywhere text-muted-foreground">
-          {combo.description}
-        </p>
-        <p className="mt-3 text-xs font-semibold leading-relaxed text-info-foreground">
-          {number.format(combo.course_count)} khóa học · {number.format(combo.lesson_count)} bài học · {duration} giờ
-        </p>
-        <div className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
-          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-            <CoinPrice
-              priceVnd={combo.price}
-              originalPriceVnd={Number(combo.savings_amount) > 0 ? combo.standalone_total : undefined}
-              size="md"
-            />
-          </div>
-          <Link
-            href={`/combo/${encodeURIComponent(combo.slug)}`}
-            aria-label={`Xem combo ${combo.title}`}
-            className={cn(action, "border border-primary-pastel bg-primary-light text-info-foreground hover:bg-primary-pastel")}
-          >
-            Xem combo <ArrowUpRight className="size-4 shrink-0" aria-hidden="true" />
-          </Link>
-        </div>
-      </div>
-    </GlassCard>
+    <CourseTicketCard
+      href={`/combo/${encodeURIComponent(combo.slug)}`}
+      title={combo.title}
+      thumbnail={cover}
+      fallback={pathCover}
+      alt={`Ảnh bìa combo ${combo.title}`}
+      badge={
+        savings
+          ? {
+              label:
+                combo.savings_percent > 0
+                  ? `Tiết kiệm ${number.format(combo.savings_percent)}%`
+                  : "Tiết kiệm < 1%",
+              tone: "lavender",
+            }
+          : null
+      }
+      metaParts={[
+        combo.instructor.name,
+        `${number.format(combo.course_count)} khóa`,
+        `${number.format(combo.lesson_count)} bài`,
+        combo.duration_seconds > 0 ? `${duration} giờ` : null,
+      ]}
+      price={{
+        priceVnd: combo.price,
+        originalPriceVnd: savings ? combo.standalone_total : undefined,
+      }}
+      srLabel="— xem combo"
+    />
   );
 }
 
 function ComboSkeleton({ count = limit }: { count?: number }) {
   return (
-    <ComboShelf cards={Array.from({ length: count }, (_, index) => {
-      return (
-        <GlassCard key={index} tilt={false} aria-hidden="true" className={cardLayout}>
-          <div className={cn(gallery, "aspect-video")}>
-            <Skeleton className="absolute left-[14%] top-[31%] aspect-[8/5] w-[38%] -rotate-12 border-2 border-surface shadow-md motion-reduce:animate-none" />
-            <Skeleton className="absolute right-[14%] top-[24%] aspect-[8/5] w-[38%] rotate-6 border-2 border-surface shadow-md motion-reduce:animate-none" />
-            <Skeleton className="absolute left-[27%] top-[27%] aspect-[8/5] w-[38%] -rotate-6 border-2 border-surface shadow-md motion-reduce:animate-none" />
-          </div>
-          <div className="min-w-0 space-y-3.5 px-1">
-            <Skeleton className="h-5 w-24 rounded-full motion-reduce:animate-none" />
-            <Skeleton variant="text" className="w-4/5 motion-reduce:animate-none" />
-            <Skeleton variant="text" className="w-3/5 motion-reduce:animate-none" />
-            <div className="flex items-center justify-between gap-3 border-t border-border pt-3">
-              <Skeleton variant="text" className="w-16 motion-reduce:animate-none" />
-              <Skeleton className="h-11 w-28 rounded-full motion-reduce:animate-none" />
-            </div>
-          </div>
-        </GlassCard>
-      );
-    })} />
+    <ComboShelf
+      cards={Array.from({ length: count }, (_, index) => (
+        <CourseTicketCardSkeleton key={index} />
+      ))}
+    />
   );
 }
 

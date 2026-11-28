@@ -11,15 +11,18 @@ import { ChevronLeft, ChevronRight } from "pulsoicon-react";
 import { useAuthedSWR } from "@/hooks/auth/useAuthedSWR";
 import Link from "next/link";
 import { ArrowRight } from "pulsoicon-react";
+import { CourseTicketCard } from "@/components/user/shared/course-ticket-card";
 import { GlassCard } from "./landing-ui";
 import { CourseLecturer } from "./courses/course-card";
 import { mayPortrait, StudyImage } from "./study-image";
 
-const RecommendedCourseCard = ({ course, compact = false }: { course: RecommendedItem; compact?: boolean }) => {
+const RecommendedCourseCard = ({ course }: { course: RecommendedItem; compact?: boolean }) => {
   const router = useRouter();
   const [isChecking, setIsChecking] = useState(false);
 
-  const handleClick = async () => {
+  const handleClick = async (event: React.MouseEvent<HTMLAnchorElement>) => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+    event.preventDefault();
     if (isChecking) return;
     setIsChecking(true);
     try {
@@ -36,44 +39,22 @@ const RecommendedCourseCard = ({ course, compact = false }: { course: Recommende
     }
   };
 
-  if (compact) {
-    return (
-      <article className="grid min-h-33 min-w-0 grid-cols-[5.5rem_minmax(0,1fr)] items-start gap-2.5 rounded-lg border border-border bg-background p-2.5">
-        <StudyImage src={course.thumbnail} alt={`Ảnh bìa khóa học ${course.title}`} sizes="88px" className="aspect-[4/3] rounded-md" />
-        <div className="min-w-0">
-          <h4 className="line-clamp-2 text-sm leading-snug font-semibold wrap-anywhere">{course.title}</h4>
-          {course.instructor && (
-            <p className="mt-1 flex items-center gap-1.5 text-xs wrap-anywhere">
-              <StudyImage src={course.instructor.avatar} fallback={mayPortrait} sizes="20px" className="size-5 shrink-0 rounded-full" />
-              {course.instructor.name}
-            </p>
-          )}
-          {course.similarity > 0 && <p className="mt-1.5 text-xs leading-snug text-info-foreground">Gần với sở thích đã chọn ({Math.round(course.similarity * 100)}% phù hợp).</p>}
-          <Button variant="ghost" className="-ml-2 mt-1 min-h-9 px-2 text-xs text-info-foreground motion-reduce:transition-none"
-            rightIcon={<ArrowRight className="size-3.5" />} onClick={() => void handleClick()} isLoading={isChecking} loadingText="Đang mở…">
-            Xem khóa học<span className="sr-only"> {course.title}</span>
-          </Button>
-        </div>
-      </article>
-    );
-  }
-
   return (
-    <GlassCard as="article" className="flex min-w-0 flex-col gap-2 bg-linear-to-br from-surface to-primary-light/60 p-3 sm:flex-row">
-      <StudyImage src={course.thumbnail} alt={`Ảnh bìa khóa học ${course.title}`} sizes="(min-width: 1280px) 250px, (min-width: 768px) 22vw, (min-width: 640px) 34vw, 85vw" className="aspect-video shrink-0 sm:w-2/5 sm:self-center" />
-      <div className="min-w-0 flex-1 space-y-3 p-5 sm:p-6">
-        <h4 className="wrap-anywhere text-lg font-semibold">{course.title}</h4>
-        {course.instructor && <CourseLecturer name={course.instructor.name} avatar={course.instructor.avatar} />}
-        {Boolean(course.similarity) && (
-          <Badge variant="info">{Math.round(course.similarity * 100)}% phù hợp</Badge>
-        )}
-        <div>
-          <Button className="min-h-11 rounded-full" rightIcon={<ArrowRight className="size-4" />} onClick={() => void handleClick()} isLoading={isChecking} loadingText="Đang mở khóa học…">
-            Khám phá khóa học
-          </Button>
-        </div>
-      </div>
-    </GlassCard>
+    <CourseTicketCard
+      href={`/course/${course.slug}`}
+      onClick={(event) => void handleClick(event)}
+      ariaBusy={isChecking}
+      title={course.title}
+      thumbnail={course.thumbnail}
+      alt={`Ảnh bìa khóa học ${course.title}`}
+      badge={
+        course.similarity > 0
+          ? { label: `${Math.round(course.similarity * 100)}% phù hợp`, tone: "lavender" }
+          : { label: "Gợi ý cho bạn", tone: "primary" }
+      }
+      metaParts={[course.instructor?.name]}
+      srLabel={isChecking ? "(đang mở)" : "— xem khóa học"}
+    />
   );
 };
 

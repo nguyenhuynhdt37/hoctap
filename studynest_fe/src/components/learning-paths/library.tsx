@@ -1,5 +1,8 @@
 "use client";
 
+import { CourseTicketCard } from "@/components/user/shared/course-ticket-card";
+import { pathCover } from "@/components/user/home/study-image";
+
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import useSWR from "swr";
@@ -383,14 +386,10 @@ type CardVariant = "wide-blue" | "deep-sky" | "vanilla-atelier" | "wide-lavender
 
 function BentoComboCard({
   item,
-  index,
-  variant,
   bookmarked,
   compared,
-  copiedCode,
   onToggleBookmark,
   onToggleCompare,
-  onCopyCoupon,
 }: {
   item: Bundle;
   index: number;
@@ -402,242 +401,78 @@ function BentoComboCard({
   onToggleCompare: (item: Bundle) => void;
   onCopyCoupon: (code: string) => void;
 }) {
-  const [failedImage, setFailedImage] = useState(false);
   const href = `/combo/${encodeURIComponent(item.slug)}`;
-  const summary = item.subtitle || item.description;
   const savings = item.savings_percent ?? 0;
   const durationLabel = formatDuration(item.duration_seconds);
 
-  const isDeepSky = false;
+  const badge =
+    savings > 0
+      ? { label: `Tiết kiệm ${savings}%`, tone: "lavender" as const }
+      : item.levels?.[0]
+        ? {
+            label: LEVEL_LABELS[item.levels[0]] ?? item.levels[0],
+            tone: "primary" as const,
+          }
+        : null;
 
-  const shellStyle =
-    variant === "deep-sky"
-      ? "border-primary-pastel bg-gradient-to-br from-primary-light/85 via-surface to-surface text-foreground shadow-sm"
-      : variant === "wide-blue"
-        ? "border-primary-pastel/80 bg-gradient-to-br from-primary-light/70 via-surface to-surface text-foreground"
-        : variant === "vanilla-atelier"
-          ? "border-accent-vanilla-border bg-gradient-to-br from-accent-vanilla/70 via-surface to-surface text-foreground"
-          : "border-accent-border bg-gradient-to-br from-accent/60 via-surface to-secondary/20 text-foreground";
+  const metaParts: Array<string | null | undefined | false> = [
+    item.instructor?.name,
+    `${item.course_count ?? 0} khóa`,
+    item.lesson_count ? `${item.lesson_count} bài` : null,
+    durationLabel || null,
+  ];
 
   return (
-    <article
-      className={cn(
-        "group relative isolate flex flex-col overflow-hidden rounded-[28px] border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl motion-reduce:transition-none motion-reduce:hover:translate-y-0",
-        shellStyle,
-        compared && "ring-2 ring-primary ring-offset-2 ring-offset-background",
-      )}
-    >
-      <span
-        aria-hidden="true"
-        className={cn(
-          "pointer-events-none absolute -right-2 -bottom-6 -z-10 select-none font-display text-[7rem] font-bold leading-none",
-          isDeepSky ? "text-white/[0.08]" : "text-primary/[0.06]",
-        )}
-      >
-        {padIndex(index)}
-      </span>
-
-      <div className="flex flex-1 flex-col">
-        {/* Media — luôn giữ đúng tỷ lệ 16:9 rộng thoáng không bị thu hẹp */}
-        <div className="relative aspect-video w-full overflow-hidden bg-primary-light">
-          {item.thumbnail_url && !failedImage ? (
-            <img
-              src={item.thumbnail_url}
-              alt=""
-              loading="lazy"
-              className="absolute inset-0 size-full object-cover transition-transform duration-500 motion-safe:group-hover:scale-105"
-              onError={() => setFailedImage(true)}
-            />
-          ) : (
-            <div className="grid size-full place-items-center text-primary">
-              <Layers className="size-12 stroke-[1.25]" aria-hidden="true" />
-            </div>
-          )}
-
-          <div className="absolute top-3 left-3 flex flex-wrap items-center gap-1.5">
-            <span className="rounded-full bg-[#1F4B77]/80 px-2.5 py-0.5 font-display text-xs font-bold text-white backdrop-blur-sm">
-              {padIndex(index)}
-            </span>
-            {savings > 0 && (
-              <span className="rounded-full border border-secondary-pastel bg-secondary px-2.5 py-0.5 text-[11px] font-extrabold text-secondary-foreground shadow-2xs">
-                -{savings}%
-              </span>
-            )}
-            {item.levels?.[0] && (
-              <span className="rounded-full bg-surface/95 px-2.5 py-0.5 text-[11px] font-bold text-foreground shadow-2xs">
-                {LEVEL_LABELS[item.levels[0]] ?? item.levels[0]}
-              </span>
-            )}
-          </div>
-
-          <div className="absolute top-3 right-3 flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => onToggleBookmark(item.bundle_id)}
-              aria-label={bookmarked ? "Bỏ lưu combo" : "Lưu combo yêu thích"}
-              aria-pressed={bookmarked}
-              className={cn(
-                "grid size-9 place-items-center rounded-full border backdrop-blur-md transition-colors cursor-pointer",
-                bookmarked
-                  ? "border-secondary-pastel bg-secondary text-secondary-foreground"
-                  : "border-white/50 bg-[#1F4B77]/65 text-white hover:bg-[#1F4B77]",
-              )}
-            >
-              <Heart className="size-4" solid={bookmarked} aria-hidden="true" />
-            </button>
-            <button
-              type="button"
-              onClick={() => onToggleCompare(item)}
-              aria-label={compared ? "Bỏ khỏi bảng so sánh" : "Thêm vào bảng so sánh"}
-              aria-pressed={compared}
-              className={cn(
-                "grid size-9 place-items-center rounded-full border backdrop-blur-md transition-colors cursor-pointer",
-                compared
-                  ? "border-accent-vanilla-border bg-accent-vanilla text-accent-vanilla-foreground"
-                  : "border-white/50 bg-[#1F4B77]/65 text-white hover:bg-[#1F4B77]",
-              )}
-            >
-              <SlidersHorizontal className="size-4" animated={false} aria-hidden="true" />
-            </button>
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="flex min-w-0 flex-col justify-between p-5 sm:p-6">
-          <div className="space-y-3">
-            <div
-              className={cn(
-                "flex flex-wrap items-center gap-2 text-xs font-semibold",
-                isDeepSky ? "text-primary-light" : "text-muted-foreground",
-              )}
-            >
-              <span
-                className={cn(
-                  "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 font-bold",
-                  isDeepSky ? "bg-white/15 text-white" : "border border-border/70 bg-surface text-primary",
-                )}
-              >
-                <BookOpen className="size-3.5" animated={false} aria-hidden="true" />
-                {item.course_count ?? 0} khóa
-              </span>
-              {Boolean(item.lesson_count) && <span>{item.lesson_count} bài</span>}
-              {durationLabel && (
-                <span className="inline-flex items-center gap-1">
-                  <Clock className="size-3.5" animated={false} aria-hidden="true" />
-                  {durationLabel}
-                </span>
-              )}
-            </div>
-
-            <div>
-              <h3 className={cn("font-display text-xl font-bold leading-snug sm:text-2xl", isDeepSky ? "text-white" : "text-foreground")}>
-                <Link href={href} className={cn("transition-colors", isDeepSky ? "hover:text-accent-vanilla" : "hover:text-primary")}>
-                  {cleanTitle(item.title)}
-                </Link>
-              </h3>
-              {item.instructor && (
-                <p className={cn("mt-1 inline-flex items-center gap-1.5 text-xs font-medium", isDeepSky ? "text-primary-light/90" : "text-muted-foreground")}>
-                  <UserRound className="size-3.5" animated={false} aria-hidden="true" />
-                  <span>{item.instructor.name}</span>
-                </p>
-              )}
-            </div>
-
-            {summary && (
-              <p className={cn("line-clamp-2 text-xs leading-relaxed", isDeepSky ? "text-white/85" : "text-muted-foreground")}>
-                {summary}
-              </p>
-            )}
-
-            {item.courses_preview && item.courses_preview.length > 0 && (
-              <ul className="space-y-1">
-                {item.courses_preview.slice(0, 3).map((c) => (
-                  <li
-                    key={c.id}
-                    className={cn(
-                      "flex items-center gap-1.5 text-xs font-medium",
-                      isDeepSky ? "text-white/95" : "text-foreground/90",
-                    )}
-                  >
-                    <Check
-                      className={cn("size-3.5 shrink-0", isDeepSky ? "text-accent-vanilla" : "text-primary")}
-                      animated={false}
-                      aria-hidden="true"
-                    />
-                    <span className="truncate">{c.title}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            {item.active_coupon && (
-              <div
-                className={cn(
-                  "flex items-center justify-between gap-2 rounded-xl border border-dashed px-3 py-1.5",
-                  isDeepSky
-                    ? "border-accent-vanilla/50 bg-white/12 text-white"
-                    : "border-accent-vanilla-border bg-surface/90 text-accent-vanilla-foreground",
-                )}
-              >
-                <span className="inline-flex min-w-0 items-center gap-1.5 text-[11px] font-bold">
-                  <Ticket className="size-3.5 shrink-0" animated={false} aria-hidden="true" />
-                  <span className="truncate">{item.active_coupon.label}</span>
-                  <code
-                    className={cn(
-                      "rounded px-1.5 py-0.5 font-mono text-[10px] font-bold",
-                      isDeepSky ? "bg-[#1B3D5E]/60 text-accent-vanilla" : "bg-accent-vanilla text-accent-vanilla-foreground",
-                    )}
-                  >
-                    {item.active_coupon.code}
-                  </code>
-                </span>
-                <button
-                  type="button"
-                  onClick={() => onCopyCoupon(item.active_coupon!.code)}
-                  className={cn(
-                    "shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold cursor-pointer",
-                    isDeepSky ? "bg-accent-vanilla text-accent-vanilla-foreground" : "bg-primary text-primary-foreground",
-                  )}
-                >
-                  {copiedCode === item.active_coupon.code ? "Đã chép" : "Chép"}
-                </button>
-              </div>
-            )}
-          </div>
-
-          <div
+    <CourseTicketCard
+      href={href}
+      title={cleanTitle(item.title)}
+      thumbnail={item.thumbnail_url}
+      fallback={pathCover}
+      alt={`Ảnh bìa combo ${cleanTitle(item.title)}`}
+      badge={badge}
+      metaParts={metaParts}
+      price={{
+        priceVnd: Number(item.price),
+        originalPriceVnd:
+          item.standalone_total && item.standalone_total > Number(item.price)
+            ? item.standalone_total
+            : undefined,
+      }}
+      highlighted={compared}
+      topRightAction={
+        <>
+          <button
+            type="button"
+            onClick={() => onToggleBookmark(item.bundle_id)}
+            aria-label={bookmarked ? "Bỏ lưu combo" : "Lưu combo yêu thích"}
+            aria-pressed={bookmarked}
             className={cn(
-              "mt-5 flex flex-wrap items-center justify-between gap-3 border-t pt-3.5",
-              isDeepSky ? "border-white/20" : "border-border/70",
+              "grid size-8 cursor-pointer place-items-center rounded-full border shadow-sm backdrop-blur-md transition-colors",
+              bookmarked
+                ? "border-secondary-pastel bg-secondary text-secondary-foreground"
+                : "border-primary-pastel/80 bg-surface/90 text-foreground hover:bg-primary-light hover:text-primary",
             )}
           >
-            <CoinPrice
-              priceVnd={Number(item.price)}
-              originalPriceVnd={
-                item.standalone_total && item.standalone_total > Number(item.price)
-                  ? item.standalone_total
-                  : undefined
-              }
-              surface={isDeepSky ? "dark" : "light"}
-              size="md"
-            />
-            <Link
-              href={href}
-              aria-label={`Xem chi tiết ${cleanTitle(item.title)}`}
-              className={cn(
-                "inline-flex min-h-10 items-center gap-1.5 rounded-full px-4 text-xs font-extrabold transition-colors",
-                isDeepSky
-                  ? "bg-surface text-primary hover:bg-accent-vanilla hover:text-accent-vanilla-foreground"
-                  : "bg-primary text-primary-foreground hover:bg-primary-hover",
-              )}
-            >
-              <span>Xem lộ trình</span>
-              <ArrowUpRight className="size-3.5 shrink-0" aria-hidden="true" />
-            </Link>
-          </div>
-        </div>
-      </div>
-    </article>
+            <Heart className="size-3.5" solid={bookmarked} aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            onClick={() => onToggleCompare(item)}
+            aria-label={compared ? "Bỏ khỏi bảng so sánh" : "Thêm vào bảng so sánh"}
+            aria-pressed={compared}
+            className={cn(
+              "grid size-8 cursor-pointer place-items-center rounded-full border shadow-sm backdrop-blur-md transition-colors",
+              compared
+                ? "border-accent-vanilla-border bg-accent-vanilla text-accent-vanilla-foreground"
+                : "border-primary-pastel/80 bg-surface/90 text-foreground hover:bg-primary-light hover:text-primary",
+            )}
+          >
+            <SlidersHorizontal className="size-3.5" animated={false} aria-hidden="true" />
+          </button>
+        </>
+      }
+      srLabel="— xem combo"
+    />
   );
 }
 

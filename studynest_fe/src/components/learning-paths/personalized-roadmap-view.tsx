@@ -1,5 +1,7 @@
 "use client";
 
+import { CourseTicketCard } from "@/components/user/shared/course-ticket-card";
+
 import { CoinPrice } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import api from "@/lib/utils/fetcher/client/axios";
@@ -103,114 +105,51 @@ function RoadmapCourseCard({
   milestoneLabel: string;
   accentTone: "sky" | "lavender" | "vanilla";
 }) {
-  const hoverBorder =
+  const badgeTone =
     accentTone === "lavender"
-      ? "hover:border-accent-border"
+      ? ("lavender" as const)
       : accentTone === "vanilla"
-        ? "hover:border-accent-vanilla-border"
-        : "hover:border-primary-pastel";
-
-  const milestoneText =
-    accentTone === "lavender"
-      ? "text-accent-foreground"
-      : accentTone === "vanilla"
-        ? "text-warning-foreground"
-        : "text-primary";
+        ? ("vanilla" as const)
+        : ("primary" as const);
 
   const href = course.is_enrolled
     ? `/learning/${course.slug}`
-    : `/courses/${course.slug}`;
+    : `/course/${course.slug}`;
 
   return (
-    <Link
+    <CourseTicketCard
       href={href}
-      className={cn(
-        "group flex h-full flex-col overflow-hidden rounded-[24px] border border-border bg-surface shadow-2xs transition-all duration-200 hover:-translate-y-1 hover:shadow-md",
-        hoverBorder,
-      )}
-    >
-      {/* Luôn giữ chuẩn tỷ lệ 16:9 nguyên vẹn, không cắt méo */}
-      <CourseThumbnail course={course} />
-
-      <div className="flex flex-1 flex-col justify-between p-4">
-        <div>
-          <div className="flex items-center justify-between gap-2">
-            <span
-              className={cn(
-                "text-[10px] font-extrabold uppercase tracking-wider tabular-nums",
-                milestoneText,
-              )}
-            >
-              {milestoneLabel}
-            </span>
-            {course.rating_avg > 0 && (
-              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-warning-foreground tabular-nums">
-                <Star
-                  solid
-                  aria-hidden="true"
-                  animated={false}
-                  className="size-3"
-                />
-                <span>{course.rating_avg}</span>
-              </span>
-            )}
-          </div>
-
-          <h3 className="mt-1.5 line-clamp-2 text-sm font-bold leading-snug text-foreground group-hover:text-primary">
-            {course.title}
-          </h3>
-          <p className="mt-1 truncate text-[11px] font-medium text-muted-foreground">
-            {course.match_reason}
-          </p>
-        </div>
-
-        <div className="mt-3.5 space-y-2.5 border-t border-border/60 pt-3">
-          {course.is_enrolled ? (
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-[11px] font-semibold">
-                <span className="text-muted-foreground">Tiến độ học</span>
-                <span className="text-primary tabular-nums">
-                  {course.progress_percent}%
-                </span>
-              </div>
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-primary-light">
-                <div
-                  className="h-full rounded-full bg-primary transition-all"
-                  style={{ width: `${Math.max(5, course.progress_percent)}%` }}
-                />
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center justify-between gap-2">
-              <CoinPrice
-                priceVnd={course.base_price}
-                size="sm"
-                showWhiteDiscount={false}
-              />
-              <span className="inline-flex items-center gap-1 text-xs font-bold text-primary">
-                <span>Xem ngay</span>
-                <ArrowRight
-                  aria-hidden="true"
-                  animated={false}
-                  className="size-3.5 transition-transform group-hover:translate-x-0.5"
-                />
-              </span>
-            </div>
-          )}
-
-          {course.is_enrolled && (
-            <div className="flex items-center justify-between text-xs font-bold text-primary">
-              <span>Vào học tiếp</span>
-              <ArrowRight
-                aria-hidden="true"
-                animated={false}
-                className="size-3.5 transition-transform group-hover:translate-x-0.5"
-              />
-            </div>
-          )}
-        </div>
-      </div>
-    </Link>
+      title={course.title}
+      thumbnail={course.thumbnail}
+      alt={`Ảnh bìa khóa học ${course.title}`}
+      badge={{ label: milestoneLabel, tone: badgeTone }}
+      metaParts={[
+        course.match_reason,
+        course.rating_avg > 0 ? `${course.rating_avg}★` : null,
+      ]}
+      progress={
+        course.is_enrolled
+          ? {
+              percent: course.progress_percent,
+              label:
+                course.progress_percent >= 100
+                  ? "Đã hoàn thành"
+                  : course.progress_percent > 0
+                    ? "Tiến độ học"
+                    : "Chưa bắt đầu",
+            }
+          : null
+      }
+      price={
+        course.is_enrolled
+          ? null
+          : {
+              priceVnd: course.base_price,
+              isFree: course.base_price === 0,
+            }
+      }
+      srLabel={course.is_enrolled ? "— vào học tiếp" : "— xem khóa học"}
+    />
   );
 }
 

@@ -24,6 +24,7 @@ import type {
   CatalogResult,
 } from "@/types/catalog";
 import { CatalogCard } from "./catalog-card";
+import { CourseTicketCardSkeleton } from "@/components/user/shared/course-ticket-card";
 import { FilterSidebar, type FilterValues } from "./filter-sidebar";
 import { SubjectHero } from "./subject-hero";
 import { SubjectPills } from "./subject-pills";
@@ -728,8 +729,8 @@ export default function CatalogBrowser() {
               <div
                 className={
                   viewMode === "grid"
-                    ? "user-card-grid"
-                    : "flex flex-col gap-4"
+                    ? "user-four-column-grid"
+                    : "user-four-column-grid"
                 }
               >
                 {items.map((course) => (

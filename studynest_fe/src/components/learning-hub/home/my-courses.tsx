@@ -1,11 +1,9 @@
 "use client";
 
-import { Skeleton } from "@/components/ui";
+import { CourseTicketCard, CourseTicketCardSkeleton } from "@/components/user/shared/course-ticket-card";
 import type { useCurrentLesson, usePurchasedCourses } from "@/lib/learning-hub/home-api";
 import type { CoursesMeItem } from "@/types/user/courses-me";
-import Link from "next/link";
 import { HubLoadError } from "../hub-page-state";
-import { stretchedLink, ThinBar, TicketCard } from "./home-ui";
 import { HomeLink } from "./section";
 
 export function MyCourses({ current, purchases }: {
@@ -27,8 +25,8 @@ export function MyCourses({ current, purchases }: {
       {purchases.error ? (
         <HubLoadError title="Chưa tải được danh sách khóa học" message="Tải lại để xem các khóa bạn đã đăng ký." onRetry={() => void purchases.mutate().catch(() => undefined)} isRetrying={purchases.isValidating} />
       ) : !purchases.data ? (
-        <div role="status" aria-label="Đang tải khóa học của bạn" className="user-four-column-grid [&_.animate-pulse]:motion-reduce:animate-none">
-          {[0, 1, 2, 3, 4].map((i) => <Skeleton key={i} className="aspect-[16/12] w-full rounded-3xl" />)}
+        <div role="status" aria-label="Đang tải khóa học của bạn" className="user-four-column-grid">
+          {[0, 1, 2, 3].map((i) => <CourseTicketCardSkeleton key={i} />)}
         </div>
       ) : (
         <ul aria-label="Khóa học của bạn" className="user-four-column-grid">
@@ -41,25 +39,30 @@ export function MyCourses({ current, purchases }: {
 
 function TicketCourse({ course }: { course: CoursesMeItem }) {
   const progress = Math.round(course.progress_percent ?? 0);
+  const completed = progress >= 100;
+
   return (
-    <li className="relative flex min-w-0 flex-col">
-      <TicketCard
-        src={course.thumbnail_url}
+    <li className="flex min-w-0 flex-col">
+      <CourseTicketCard
+        href={`/learning/${encodeURIComponent(course.slug)}`}
+        title={course.title}
+        thumbnail={course.thumbnail_url}
         alt={`Ảnh bìa khóa học ${course.title}`}
-        sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-        className="h-full flex-col border border-border shadow-ambient-sm transition-shadow hover:shadow-ambient-md"
-        captionClassName="flex flex-1 flex-col justify-between space-y-2"
-      >
-        <h3 className="line-clamp-2 text-base font-bold text-foreground">
-          <Link href={`/learning/${encodeURIComponent(course.slug)}`} className={stretchedLink}>
-            {course.title}<span className="sr-only"> — {progress >= 100 ? "xem lại" : progress > 0 ? "học tiếp" : "bắt đầu học"}</span>
-          </Link>
-        </h3>
-        <div className="space-y-1.5">
-          <p className="text-xs font-semibold text-muted-foreground">{progress >= 100 ? "Đã hoàn thành" : progress > 0 ? `Đã học ${progress}%` : "Chưa bắt đầu"}</p>
-          <ThinBar value={progress} label={`Tiến độ ${course.title}`} />
-        </div>
-      </TicketCard>
+        badge={{
+          label: completed ? "Đã hoàn thành" : progress > 0 ? "Đang học" : "Chưa bắt đầu",
+          tone: completed ? "success" : "primary",
+        }}
+        metaParts={[
+          typeof course.total_lessons === "number" && course.total_lessons > 0
+            ? `${course.completed_lessons ?? 0}/${course.total_lessons} bài`
+            : null,
+        ]}
+        progress={{
+          percent: progress,
+          label: completed ? "Đã hoàn thành" : progress > 0 ? `Đã học ${progress}%` : "Chưa bắt đầu",
+        }}
+        srLabel={`— ${completed ? "xem lại" : progress > 0 ? "học tiếp" : "bắt đầu học"}`}
+      />
     </li>
   );
 }
