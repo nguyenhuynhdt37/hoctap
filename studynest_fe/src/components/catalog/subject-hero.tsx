@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { Coins, Layers, RotateCcw } from "pulsoicon-react";
 import { CloudShape } from "@/components/learning-hub/home/home-ui";

@@ -1,7 +1,6 @@
 import CatalogBrowser from "@/components/catalog/catalog-browser";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronRight } from "pulsoicon-react";
 import { Suspense } from "react";
 
 export const metadata: Metadata = {
@@ -19,7 +18,9 @@ export default function CatalogPage() {
         <Link href="/" className="transition-colors hover:text-primary">
           Trang chủ
         </Link>
-        <ChevronRight animated={false} aria-hidden="true" className="size-3.5 text-border-strong" />
+        <span aria-hidden="true" className="text-border-strong">
+          /
+        </span>
         <span className="font-medium text-foreground">Khám phá khóa học</span>
       </nav>
 
