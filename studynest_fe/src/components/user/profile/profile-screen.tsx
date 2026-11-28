@@ -11,6 +11,7 @@ import AccountSection from "./sections/account-section";
 import AboutSection from "./sections/about-section";
 import LecturerSection from "./sections/lecturer-section";
 import LocationSection from "./sections/location-section";
+import SecuritySection from "./sections/security-section";
 
 interface ProfileScreenProps {
   profile: UserProfile;
@@ -74,6 +75,10 @@ export default function ProfileScreen({
           </div>
         </div>
       </form>
+
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <SecuritySection />
+      </div>
     </div>
   );
 }

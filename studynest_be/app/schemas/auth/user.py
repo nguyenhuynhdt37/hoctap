@@ -84,3 +84,16 @@ class ResetPasswordRequest(BaseModel):
     email: EmailStr
     code: Annotated[str, Field(min_length=6, max_length=12)]
     new_password: Annotated[str, Field(min_length=6, max_length=72)] = Field(repr=False)
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: Annotated[str, Field(min_length=1, max_length=128)] = Field(repr=False)
+    new_password: Annotated[str, Field(min_length=6, max_length=72)] = Field(repr=False)
+    confirm_password: Annotated[str, Field(min_length=6, max_length=72)] = Field(repr=False)
+    logout_other_sessions: bool = True
+
+    def validate_business_rules(self) -> None:
+        if self.new_password != self.confirm_password:
+            raise ValueError("Mật khẩu xác nhận không khớp với mật khẩu mới.")
+        if self.new_password == self.current_password:
+            raise ValueError("Mật khẩu mới phải khác mật khẩu hiện tại.")

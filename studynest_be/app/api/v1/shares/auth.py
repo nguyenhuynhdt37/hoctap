@@ -18,6 +18,7 @@ from app.core.settings import settings
 from app.core.ws_manager import ws_manager
 from app.schemas.auth.github import GitHubExchangeRequest, GitHubExchangeResponse, GitHubStartResponse
 from app.schemas.auth.user import (
+    ChangePasswordRequest,
     ForgotPasswordRequest,
     GoogleLogin,
     LoginUser,
@@ -291,6 +292,24 @@ async def reset_password(
 ):
     ip = req.client.host if req.client else None
     return await auth_service.reset_password_async(schema, ip=ip)
+
+
+@router.post("/change-password", status_code=status.HTTP_200_OK)
+async def change_password(
+    req: Request,
+    schema: ChangePasswordRequest = Body(),
+    authorization: AuthorizationService = Depends(AuthorizationService),
+    auth_service: AuthService = Depends(AuthService),
+):
+    user = await authorization.get_current_user()
+    current_session_id = await authorization.get_current_sid()
+    ip = req.client.host if req.client else None
+    return await auth_service.change_password_async(
+        user.id,
+        schema,
+        current_session_id=current_session_id,
+        ip=ip,
+    )
 
 
 @router.post("/github/start", response_model=GitHubStartResponse)

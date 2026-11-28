@@ -31,6 +31,7 @@ from app.db.sesson import get_session
 from app.libs.formats.datetime import now as get_now
 from app.libs.formats.datetime import has_expired, now_tzinfo
 from app.schemas.auth.user import (
+    ChangePasswordRequest,
     ForgotPasswordRequest,
     GoogleLogin,
     LoginUser,
@@ -70,12 +71,22 @@ def _invalid_google_token(*, bound: bool) -> HTTPException:
     return HTTPException(400, "Không thể xác thực thông tin đăng nhập Google.")
 
 
-async def revoke_user_sessions_async(db: AsyncSession, user_id: UUID) -> None:
+async def revoke_user_sessions_async(
+    db: AsyncSession,
+    user_id: UUID,
+    *,
+    exclude_session_id: UUID | None = None,
+) -> int:
     # Flush the account state first to keep the same user -> session lock order as refresh.
     await db.flush()
-    await db.execute(update(Sessions).where(
-        Sessions.user_id == user_id, Sessions.is_revoked.is_not(True),
-    ).values(is_revoked=True))
+    stmt = update(Sessions).where(
+        Sessions.user_id == user_id,
+        Sessions.is_revoked.is_not(True),
+    )
+    if exclude_session_id is not None:
+        stmt = stmt.where(Sessions.id != exclude_session_id)
+    result = await db.execute(stmt.values(is_revoked=True))
+    return int(result.rowcount or 0)
 
 
 class AuthService:
@@ -1339,6 +1350,79 @@ class AuthService:
 
             return {
                 "message": "Đặt lại mật khẩu thành công! Tất cả phiên đăng nhập cũ đã được đăng xuất. Vui lòng đăng nhập bằng mật khẩu mới.",
+            }
+        except HTTPException:
+            raise
+        except Exception:
+            await self.db.rollback()
+            raise
+
+    async def change_password_async(
+        self,
+        user_id: UUID,
+        schema: ChangePasswordRequest,
+        *,
+        current_session_id: UUID | None = None,
+        ip: str | None = None,
+    ) -> dict[str, Any]:
+        try:
+            schema.validate_business_rules()
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"error_code": "INVALID_PASSWORD_INPUT", "message": str(exc)},
+            ) from None
+
+        try:
+            await limit_attempt_async(f"change-password:{user_id}", None, ip)
+
+            user = await self.db.scalar(
+                select(User).where(User.id == user_id).with_for_update()
+            )
+            if user is None or user.deleted_at is not None or user.is_banned:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail={"error_code": "ACCOUNT_UNAVAILABLE", "message": "Tài khoản không khả dụng."},
+                )
+
+            if not user.password or not await self.security.verify_password(
+                schema.current_password, user.password
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail={
+                        "error_code": "INVALID_CURRENT_PASSWORD",
+                        "message": "Mật khẩu hiện tại không chính xác. Nếu bạn đăng nhập bằng Google/GitHub, hãy dùng chức năng Quên mật khẩu để đặt mật khẩu mới.",
+                    },
+                )
+
+            if await self.security.verify_password(schema.new_password, user.password):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail={
+                        "error_code": "SAME_PASSWORD",
+                        "message": "Mật khẩu mới phải khác mật khẩu hiện tại.",
+                    },
+                )
+
+            user.password = await self.security.hash_password(schema.new_password)
+            revoked_count = 0
+            if schema.logout_other_sessions:
+                revoked_count = await revoke_user_sessions_async(
+                    self.db,
+                    user.id,
+                    exclude_session_id=current_session_id,
+                )
+            await self.db.commit()
+
+            message = (
+                f"Đổi mật khẩu thành công! Đã đăng xuất {revoked_count} phiên đăng nhập trên thiết bị khác."
+                if revoked_count > 0
+                else "Đổi mật khẩu thành công!"
+            )
+            return {
+                "message": message,
+                "revoked_other_sessions": revoked_count,
             }
         except HTTPException:
             raise
