@@ -94,7 +94,7 @@ class TutorVoiceSession:
                 lesson_title, course_title = info['lesson'].title, info['course'].title
                 course_id = info['course'].id
             else:
-                supported, course_id = None, None
+                supported, course_id = False, None
                 data = await threads.get_or_create_account_thread(self.user.id)
                 lesson_title, course_title = 'Không có bài học đang mở', 'Trợ lý tài khoản'
             self.thread_id = uuid.UUID(data['thread']['id'])

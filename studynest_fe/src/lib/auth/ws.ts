@@ -31,7 +31,8 @@ function isLegacyMediaReady(socket: WebSocket, path: string, frame: Record<strin
   }
   return socket.protocol === "studynest-voice" &&
     /\/api\/v1\/tutor-chat\/(?:lessons\/[^/]+\/)?voice$/.test(path) &&
-    typeof frame.thread_id === "string" && typeof frame.can_read_lesson === "boolean";
+    typeof frame.thread_id === "string" &&
+    (typeof frame.can_read_lesson === "boolean" || frame.can_read_lesson === null);
 }
 
 export async function openAuthedWebSocket(

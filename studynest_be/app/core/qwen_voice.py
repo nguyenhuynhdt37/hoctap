@@ -7,6 +7,7 @@ from typing import Any, Literal
 from urllib.parse import urlencode
 
 import httpx
+from loguru import logger
 from websockets.asyncio.client import connect
 
 from app.core.settings import settings
@@ -152,6 +153,13 @@ async def wait_for_event(socket, kind: str, timeout_seconds: float = 10.0) -> di
             event = json.loads(raw)
             ev_type = event.get("type")
             if ev_type == "error":
+                err_obj = event.get("error") if isinstance(event.get("error"), dict) else {}
+                logger.warning(
+                    "Qwen Realtime setup rejected: code={} type={} message={}",
+                    err_obj.get("code") or event.get("code"),
+                    err_obj.get("type"),
+                    str(err_obj.get("message") or event.get("message") or "")[:200],
+                )
                 raise ConnectionError("Qwen Realtime rejected session setup")
             if ev_type == kind:
                 return event
