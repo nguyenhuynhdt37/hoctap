@@ -1227,3 +1227,125 @@ async def execute_external_tool_async(user, auth_sid, session_id, name, argument
         finally:
             heartbeat.cancel()
             await asyncio.gather(heartbeat,return_exceptions=True)
+
+
+def _to_spoken_summary(text: str, max_chars: int = 650) -> str:
+    """Rút gọn câu trả lời Markdown thành văn nói ngắn gọn để model live đọc không đốt token."""
+    cleaned = (text or "").strip()
+    if not cleaned:
+        return ""
+    cleaned = re.sub(r"```[\s\S]*?```", " (mã nguồn đã hiển thị trong khung chat) ", cleaned)
+    cleaned = re.sub(r"`([^`]+)`", r"\1", cleaned)
+    cleaned = re.sub(r"\[([^\]]+)\]\((https?://[^)]+|/[^)]+)\)", r"\1", cleaned)
+    cleaned = re.sub(r"https?://\S+", "", cleaned)
+    cleaned = re.sub(r"[#*_~>]+", " ", cleaned)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    if len(cleaned) <= max_chars:
+        return cleaned
+    cut = cleaned[:max_chars].rsplit(" ", 1)[0].rstrip(" ,;:-")
+    return f"{cut}. Chi tiết đầy đủ mình đã ghi trong khung chat nhé."
+
+
+async def delegate_voice_turn_async(
+    user,
+    auth_sid,
+    session_id,
+    message: str,
+    *,
+    idempotency_key: str | None = None,
+    on_run_created=None,
+) -> dict:
+    """Điều phối toàn bộ yêu cầu từ Voice Live sang Chat Agent text model để tránh đốt token audio live."""
+    if not settings.AGENT_ENABLED:
+        raise HTTPException(503, "Agent chưa được bật")
+    clean_message = (message or "").strip()[:4000]
+    if not clean_message:
+        return {
+            "verified": False,
+            "persisted": False,
+            "spoken_reply": "Mình chưa nghe rõ câu hỏi, bạn nói lại giúp mình nhé.",
+        }
+
+    async with AsyncSessionLocal() as db:
+        service = AgentService(db, user, auth_sid)
+        body = CreateRun(
+            session_id=session_id,
+            message=clean_message,
+            idempotency_key=idempotency_key or f"voice-chat:{uuid4()}",
+            channel="voice",
+        )
+        data = await service.create_run_async(body, launch=False, persist_message=True)
+        run_id = UUID(data["id"])
+        if on_run_created:
+            await on_run_created(run_id)
+
+        run = await service.get_run_async(run_id, lock=True)
+        if run.state == RunState.CREATED and not run.worker_id:
+            worker_id = uuid4().hex
+            run.worker_id, run.heartbeat_at = worker_id, now()
+            await db.commit()
+            heartbeat = asyncio.create_task(_heartbeat_async(run_id, worker_id))
+            try:
+                async with asyncio.timeout(min(90, getattr(settings, "AGENT_RUN_MAX_SECONDS", 240))):
+                    await service.run_async(run_id)
+            except asyncio.CancelledError:
+                await db.rollback()
+                with suppress(Exception):
+                    await service.cancel_async(run_id)
+                raise
+            except Exception as exc:
+                logger.warning("Voice delegated chat failed run=%s error=%s", run_id, type(exc).__name__)
+                await db.rollback()
+                with suppress(Exception):
+                    r = await service.get_run_async(run_id, lock=True)
+                    if r.state not in TERMINAL_STATES:
+                        state = RunState.EXPIRED if isinstance(exc, TimeoutError) else RunState.FAILED
+                        await service._transition_async(r, state, error=type(exc).__name__)
+                        await service._close_pending_async(run_id, "expired" if state == RunState.EXPIRED else "failed")
+                        await service._emit_async(
+                            r,
+                            "run.failed",
+                            {"state": str(state), "error": getattr(exc, "detail", "Không thể hoàn tất yêu cầu.")},
+                        )
+                        await db.commit()
+            finally:
+                heartbeat.cancel()
+                await asyncio.gather(heartbeat, return_exceptions=True)
+
+        run = await service.get_run_async(run_id)
+        reply_text = (run.response or "").strip()
+        sources = list(service.sources or [])
+
+        if run.state == RunState.AWAITING_APPROVAL:
+            return {
+                "verified": True,
+                "persisted": True,
+                "state": str(run.state),
+                "awaiting_approval": True,
+                "sources": sources,
+                "reply": reply_text,
+                "spoken_reply": _to_spoken_summary(reply_text)
+                or "Mình đã chuẩn bị xong thao tác trên màn hình, bạn bấm xác nhận giúp mình nhé.",
+            }
+
+        if run.state == RunState.COMPLETED:
+            return {
+                "verified": True,
+                "persisted": True,
+                "state": str(run.state),
+                "awaiting_approval": False,
+                "sources": sources,
+                "reply": reply_text,
+                "spoken_reply": _to_spoken_summary(reply_text) or "Mình đã xử lý xong yêu cầu của bạn.",
+            }
+
+        return {
+            "verified": False,
+            "persisted": True,
+            "state": str(run.state),
+            "awaiting_approval": False,
+            "sources": sources,
+            "reply": reply_text,
+            "spoken_reply": _to_spoken_summary(reply_text)
+            or "Trợ lý chat gặp sự cố tạm thời khi xử lý yêu cầu này. Bạn thử nói lại nhé.",
+        }

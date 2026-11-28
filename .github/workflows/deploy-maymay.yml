@@ -30,7 +30,7 @@ jobs:
           # env_guard chạy với đúng be.env trên server. Cấu hình sai (trỏ localhost/DB dev, JWT yếu...)
           # sẽ dừng ở đây, container production đang chạy vẫn được giữ nguyên.
           docker compose run --rm --no-deps --entrypoint python backend \
-            -c "from app.core.settings import settings; print('env ok:', settings.APP_ENV)"
+            -c "from app.core.settings import settings; print('env ok:', settings.APP_ENV, 'agent:', settings.AGENT_ENABLED, 'voice_model:', settings.TUTOR_VOICE_MODEL, 'dashscope_key_set:', bool(settings.DASHSCOPE_API_KEY), 'voice_origins:', settings.TUTOR_VOICE_ORIGINS)"
 
       - name: Start containers
         working-directory: deploy/maymay
