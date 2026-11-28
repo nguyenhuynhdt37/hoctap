@@ -13,6 +13,7 @@ services:
         required: false
     environment:
       APP_ENV: development
+      STORAGE_PROVIDER: local
       POSTGRES_USER: maymay_dev
       POSTGRES_PASSWORD: dev_only_password
       POSTGRES_DB: studynest_dev

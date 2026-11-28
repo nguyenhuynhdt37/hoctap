@@ -19,8 +19,12 @@ from app.services.shares.storage_cache import StorageCache
 
 class FileStorageService:
     def __init__(self):
-        self.provider = "r2"
+        self.provider = settings.STORAGE_PROVIDER
         self._r2 = None
+
+    @staticmethod
+    def _use_local_storage() -> bool:
+        return settings.STORAGE_PROVIDER == "local" and settings.APP_ENV != "production"
 
     def _client(self):
         if self._r2 is None:
@@ -119,8 +123,15 @@ class FileStorageService:
             raise HTTPException(413, "File vượt quá giới hạn dung lượng upload.")
         key = self.object_key(path_parts, file_name, mime_type)
         url = self.file_url(key)
-        client = self._client()
         content_type = mime_type or mimetypes.guess_type(file_name)[0] or "application/octet-stream"
+        if self._use_local_storage():
+            try:
+                await asyncio.to_thread(StorageCache().write, key, [content], content_type)
+            except OSError:
+                logger.error("Local dev storage write failed for key={}", key)
+                raise HTTPException(502, "Không lưu được file trên ổ đĩa dev.") from None
+            return {"id": key, "name": file_name, "provider": "local", "url": url, "key": key}
+        client = self._client()
         # User-uploaded HTML/SVG must not execute under the application's origin.
         disposition = "inline" if content_type in {
             "image/jpeg", "image/png", "image/webp", "image/gif", "image/avif", "application/pdf",
@@ -146,6 +157,8 @@ class FileStorageService:
         cached = await asyncio.to_thread(cache.get, key)
         if cached is not None:
             return cached
+        if self._use_local_storage():
+            raise HTTPException(404, "Không tìm thấy file.")
 
         def fetch():
             result = self._client().get_object(Bucket=settings.R2_BUCKET_NAME, Key=key)
@@ -167,6 +180,8 @@ class FileStorageService:
             raise HTTPException(502, "Chưa tải được file từ R2. Vui lòng thử lại.") from None
 
     async def signed_download_url(self, key):
+        if self._use_local_storage():
+            return self.file_url(key)
         client = self._client()
         try:
             return await asyncio.to_thread(

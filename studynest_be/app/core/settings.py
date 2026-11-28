@@ -101,7 +101,7 @@ class Settings(BaseSettings):
     CODE_MAX_SECONDS: int = 90
 
     # Upload storage: R2 only.
-    STORAGE_PROVIDER: Literal["r2"] = "r2"
+    STORAGE_PROVIDER: Literal["r2", "local"] = "r2"
     R2_ACCOUNT_ID: str = ""
     R2_ACCESS_KEY_ID: str = ""
     R2_SECRET_ACCESS_KEY: str = ""

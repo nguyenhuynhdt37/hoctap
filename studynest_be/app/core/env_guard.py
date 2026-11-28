@@ -61,6 +61,8 @@ def collect_problems(s) -> tuple[list[str], list[str]]:
             errors.append(f"APP_ENV=production nhưng dùng database dev/test '{db_name}'.")
         if s.MAIL_SERVER.lower() in _LOCAL_HOSTS | {"mailpit"} or s.MAIL_PORT == 1025:
             errors.append("APP_ENV=production nhưng mail đang trỏ Mailpit/localhost.")
+        if s.STORAGE_PROVIDER != "r2":
+            errors.append(f"APP_ENV=production bắt buộc STORAGE_PROVIDER=r2, hiện là '{s.STORAGE_PROVIDER}'.")
         if s.R2_BUCKET_NAME.endswith(tuple(_BUCKET_SUFFIX.values())):
             errors.append(f"APP_ENV=production nhưng dùng bucket dev/test '{s.R2_BUCKET_NAME}'.")
         for key in ("FRONTEND_URL", "BACKEND_URL", "PUBLIC_API_URL"):
